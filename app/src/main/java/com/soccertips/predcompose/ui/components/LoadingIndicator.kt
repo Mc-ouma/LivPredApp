@@ -19,8 +19,25 @@ fun LoadingIndicator(modifier: Modifier = Modifier) {
         LottieLoader(resId = R.raw.loader)
     }
 }
+
+@Composable
+fun ErrorIndicator(modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier.fillMaxSize(),
+    ) {
+        LottieLoader(resId = R.raw.animation)
+    }
+    
+}
 @Preview()
 @Composable
 fun LoadingIndicatorPreview() {
     LoadingIndicator()
+
+}
+@Preview()
+@Composable
+fun ErrorIndicatorPreview() {
+    ErrorIndicator()
 }

@@ -2,7 +2,7 @@
 accompanist = "0.36.0"
 accompanistNavigationMaterial = "0.24.13-rc"
 annotation = "1.9.1"
-androidGradlePlugin = "8.7.2"
+androidGradlePlugin = "8.7.3"
 androidxActivity = "1.9.3"
 
 androidxComposeBom = "2024.11.00"

@@ -12,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -31,7 +33,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Summarize
@@ -91,9 +92,8 @@ import com.soccertips.predcompose.viewmodel.FixtureDetailsViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-enum class FixtureDetailsScreenPage(
-    val titleResId: Int,
-) {
+
+enum class FixtureDetailsScreenPage(val titleResId: Int) {
     MATCH_DETAILS(R.string.match_details),
     STATISTICS(R.string.statistics),
     HEAD_TO_HEAD(R.string.head_to_head),
@@ -162,53 +162,7 @@ fun FixtureDetailsScreen(
                 title = {
                     val fixtureDetails = (uiState as? UiState.Success<ResponseData>)?.data
                     fixtureDetails?.let {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            // Display Home Team Logo
-                            AnimatedVisibility(
-                                visible = !showFixtureScore,
-                                enter = fadeIn(),
-                                exit = fadeOut()
-                            ) {
-                                Image(
-                                    painter = rememberAsyncImagePainter(model = it.teams.home.logo),
-                                    contentDescription = "Home Logo",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-
-                            // Display Fixture Score
-                            AnimatedVisibility(
-                                visible = !showFixtureScore,
-                                enter = fadeIn(),
-                                exit = fadeOut()
-                            ) {
-                                Text(
-                                    text = it.goals?.let { goals ->
-                                        "${goals.home} - ${goals.away}"
-                                    } ?: "${it.score.fulltime.home} - ${it.score.fulltime.away}",
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                )
-                            }
-
-                            // Display Away Team Logo
-                            AnimatedVisibility(
-                                visible = !showFixtureScore,
-                                enter = fadeIn(),
-                                exit = fadeOut()
-                            ) {
-                                Image(
-                                    painter = rememberAsyncImagePainter(model = it.teams.away.logo),
-                                    contentDescription = "Away Logo",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
+                        FixtureTopBarContent(showFixtureScore, it)
                     }
                 },
                 navigationIcon = {
@@ -225,135 +179,216 @@ fun FixtureDetailsScreen(
                 scrollBehavior = scrollBehavior
             )
         }
-
     ) { paddingValues ->
-
-        // UI handling for different states
         when (uiState) {
-            is UiState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    LoadingIndicator()
-                }
-            }
+            is UiState.Loading -> LoadingScreen(paddingValues)
+            is UiState.Success -> DataScreen(
+                paddingValues,
+                scrollState,
+                showFixtureScore,
+                viewModel,
+                pages,
+                fixtureStatsState,
+                fixtureEventsState,
+                fixturePredictionsState,
+                formState,
+                headToHeadState,
+                lineupsState,
+                standingsState,
+                (uiState as UiState.Success<ResponseData>).data,
+                navController
+            )
 
-            is UiState.Success -> {
-                val fixtureDetails = (uiState as UiState.Success<ResponseData>).data
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    state = scrollState,
-                    horizontalAlignment = Alignment.CenterHorizontally
-
-                ) {
-                    item {
-                        AnimatedVisibility(
-                            visible = showFixtureScore,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                        ) {
-                            FixtureScoreAndScorers(
-                                viewModel = viewModel,
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .wrapContentHeight()
-                                    .fillMaxWidth()
-                            )
-                        }
-                    }
-
-                    item {
-                        FixtureDetailsTabs(
-                            modifier = Modifier.fillMaxWidth(),
-                            pages = pages,
-                            fixtureStatsState = fixtureStatsState,
-                            fixtureEventsState = fixtureEventsState,
-                            fixturePredictionsState = fixturePredictionsState,
-                            formState = formState,
-                            headToHeadState = headToHeadState,
-                            lineupsState = lineupsState,
-                            standingsState = standingsState,
-                            fixtureDetails = fixtureDetails,
-                            navController = navController,
-
-                        )
-                    }
-                }
-            }
-
-            is UiState.Error -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "An unexpected error occurred.",
-                        // + (uiState as? UiState.Error)?.message ?: ""
-
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
-
-            UiState.Idle -> {
-                // Placeholder for idle state
-            }
-
-            UiState.Empty -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "No data available",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
+            is UiState.Error -> ErrorScreen(paddingValues)
+            UiState.Idle, UiState.Empty -> EmptyScreen(paddingValues)
         }
 
         // Display "No data available" message for each empty state
-        if (fixtureStatsState is UiState.Empty) {
-            Text(
-                text = "No fixture stats available",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
+        EmptyStateMessages(fixtureStatsState, fixtureEventsState, fixturePredictionsState)
+    }
+}
+
+@Composable
+fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        AnimatedVisibility(
+            visible = !showFixtureScore,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(model = fixtureDetails.teams.home.logo),
+                contentDescription = "Home Logo",
+                modifier = Modifier.size(24.dp)
             )
         }
-
-        if (fixtureEventsState is UiState.Empty) {
+        AnimatedVisibility(
+            visible = !showFixtureScore,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
             Text(
-                text = "No fixture events available",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
+                text = fixtureDetails.goals.let { goals ->
+                    "${goals.home} - ${goals.away}"
+                },
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
-
-        if (fixturePredictionsState is UiState.Empty) {
-            Text(
-                text = "No fixture predictions available",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
+        AnimatedVisibility(
+            visible = !showFixtureScore,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(model = fixtureDetails.teams.away.logo),
+                contentDescription = "Away Logo",
+                modifier = Modifier.size(24.dp)
             )
         }
     }
 }
 
+@Composable
+fun LoadingScreen(paddingValues: PaddingValues) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        contentAlignment = Alignment.Center,
+    ) {
+        LoadingIndicator()
+    }
+}
+
+@Composable
+fun DataScreen(
+    paddingValues: PaddingValues,
+    scrollState: LazyListState,
+    showFixtureScore: Boolean,
+    viewModel: FixtureDetailsViewModel,
+    pages: Array<FixtureDetailsScreenPage>,
+    fixtureStatsState: UiState<List<Response>>,
+    fixtureEventsState: UiState<List<FixtureEvent>>,
+    fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>,
+    formState: UiState<List<FixtureDetailsViewModel.FixtureWithType>>,
+    headToHeadState: UiState<List<FixtureDetails>>,
+    lineupsState: UiState<List<TeamLineup>>,
+    standingsState: UiState<List<TeamStanding>>,
+    fixtureDetails: ResponseData,
+    navController: NavController
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        state = scrollState,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            AnimatedVisibility(
+                visible = showFixtureScore,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                FixtureScoreAndScorers(
+                    viewModel = viewModel,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .wrapContentHeight()
+                        .fillMaxWidth()
+                )
+            }
+        }
+
+        item {
+            FixtureDetailsTabs(
+                modifier = Modifier.fillMaxWidth(),
+                pages = pages,
+                fixtureStatsState = fixtureStatsState,
+                fixtureEventsState = fixtureEventsState,
+                fixturePredictionsState = fixturePredictionsState,
+                formState = formState,
+                headToHeadState = headToHeadState,
+                lineupsState = lineupsState,
+                standingsState = standingsState,
+                fixtureDetails = fixtureDetails,
+                navController = navController,
+            )
+        }
+    }
+}
+
+@Composable
+fun ErrorScreen(paddingValues: PaddingValues) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "An unexpected error occurred.",
+            color = Color.Red,
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Composable
+fun EmptyScreen(paddingValues: PaddingValues) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "No data available",
+            color = Color.Gray,
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Composable
+fun EmptyStateMessages(
+    fixtureStatsState: UiState<List<Response>>,
+    fixtureEventsState: UiState<List<FixtureEvent>>,
+    fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>
+) {
+    if (fixtureStatsState is UiState.Empty) {
+        Text(
+            text = "No fixture stats available",
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+    }
+
+    if (fixtureEventsState is UiState.Empty) {
+        Text(
+            text = "No fixture events available",
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+    }
+
+    if (fixturePredictionsState is UiState.Empty) {
+        Text(
+            text = "No fixture predictions available",
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -416,12 +451,10 @@ fun FixtureDetailsTabs(
             modifier = Modifier
                 .fillMaxWidth()
         ) { pageIndex ->
-
             AnimatedContent(
                 targetState = pageIndex,
                 transitionSpec = {
                     slideInHorizontally(animationSpec = tween(300)) + fadeIn() togetherWith fadeOut()
-
                 },
                 label = "Tab Transition"
             ) { targetPageIndex ->
@@ -440,7 +473,10 @@ fun FixtureDetailsTabs(
                     }
 
                     FixtureDetailsScreenPage.HEAD_TO_HEAD -> {
-                        FixtureHeadToHeadTab(headToHeadState = headToHeadState, navController = navController)
+                        FixtureHeadToHeadTab(
+                            headToHeadState = headToHeadState,
+                            navController = navController
+                        )
                     }
 
                     FixtureDetailsScreenPage.LINEUPS -> {
@@ -527,10 +563,16 @@ fun FixtureStatisticsTab(fixtureStatsState: UiState<List<Response>>) {
 }
 
 @Composable
-fun FixtureHeadToHeadTab(headToHeadState: UiState<List<FixtureDetails>>, navController: NavController) {
+fun FixtureHeadToHeadTab(
+    headToHeadState: UiState<List<FixtureDetails>>,
+    navController: NavController
+) {
     when (headToHeadState) {
         is UiState.Success -> {
-            FixtureHeadToHeadScreen(headToHead = headToHeadState.data, navController = navController)
+            FixtureHeadToHeadScreen(
+                headToHead = headToHeadState.data,
+                navController = navController
+            )
         }
 
         is UiState.Loading -> {
@@ -637,7 +679,6 @@ fun FixtureSummaryTab(
         }
     }
 }
-
 
 @Composable
 fun FixtureScoreAndScorers(
@@ -847,5 +888,4 @@ fun TeamColumn(
         )
     }
 }
-
 

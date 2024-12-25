@@ -1,9 +1,14 @@
 <resources>
     <string name="app_name">Pred Compose</string>
     <string name="match_details">Info</string>
+    <string name="result">Result</string>
     <string name="statistics">Stats</string>
     <string name="head_to_head">H2H</string>
     <string name="lineups">LineUps</string>
     <string name="standings">Standing</string>
     <string name="summary">Summary</string>
+    <string name="squad">Squad</string>
+    <string name="fixtures">Fixtures</string>
+    <string name="transfers">Transfers</string>
+    <string name="overview">Overview</string>
 </resources>

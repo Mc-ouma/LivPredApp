@@ -16,7 +16,10 @@ fun LoadingIndicator(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
         modifier = modifier.fillMaxSize(),
     ) {
-        LottieLoader(resId = R.raw.loader)
+        CircularProgressIndicator(
+            color = MaterialTheme.colorScheme.primary,
+        )
+       // LottieLoader(resId = R.raw.loader)
     }
 }
 

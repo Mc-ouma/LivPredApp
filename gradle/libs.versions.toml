@@ -5,12 +5,12 @@ annotation = "1.9.1"
 androidGradlePlugin = "8.7.3"
 androidxActivity = "1.9.3"
 
-androidxComposeBom = "2024.11.00"
+androidxComposeBom = "2024.12.01"
 androidxComposeCompiler = "1.5.15"
 
 androidxHiltNavigationCompose = "1.2.0"
 androidxLifecycle = "2.8.7"
-androidxNavigation = "2.8.4"
+androidxNavigation = "2.8.5"
 
 # @keep
 coilComposeVersion = "2.7.0"

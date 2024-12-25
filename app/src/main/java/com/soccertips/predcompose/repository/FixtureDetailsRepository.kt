@@ -9,7 +9,6 @@ import com.soccertips.predcompose.model.prediction.PredictionResponse
 import com.soccertips.predcompose.model.standings.StandingsResponse
 import com.soccertips.predcompose.model.statistics.StatisticsResponse
 import com.soccertips.predcompose.network.FixtureDetailsService
-import timber.log.Timber
 import javax.inject.Inject
 
 class FixtureDetailsRepository
@@ -20,7 +19,6 @@ constructor(
     // suspend fun getFixtureDetails(fixtureId: String): ResponseData = fixtureDetailsService.getFixtureDetails(fixtureId)
     suspend fun getFixtureDetails(fixtureId: String): ResponseData {
         val response = fixtureDetailsService.getFixtureDetails(fixtureId)
-        Timber.tag("FixtureDetailsRepository").d("API response: $response")
         return response.response.firstOrNull() ?: throw Exception("No response found")
     }
 
@@ -48,15 +46,10 @@ constructor(
     suspend fun getPredictions(fixtureId: String): PredictionResponse =
         fixtureDetailsService.getPredictions(fixtureId)
 
-    suspend fun getFixturesFormHome(
+    suspend fun getLastFixtures(
         season: String,
         teamId: String,
         last: String,
-    ): FixtureListResponse = fixtureDetailsService.getFixturesFormHome(season, teamId, last)
+    ): FixtureListResponse = fixtureDetailsService.getLastFixtures(season, teamId, last)
 
-    suspend fun getFixturesFormAway(
-        season: String,
-        teamId: String,
-        last: String,
-    ): FixtureListResponse = fixtureDetailsService.getFixturesFormAway(season, teamId, last)
 }

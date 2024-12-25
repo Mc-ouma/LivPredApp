@@ -13,4 +13,8 @@ sealed class Routes(
         fun createRoute(fixtureId: String) = "fixture_details/$fixtureId"
     }
 
+    object TeamDetails : Routes("team_details/{teamId}/{leagueId}/{season}") {
+        fun createRoute(teamId: String, leagueId: String, season: String) = "team_details/$teamId/$leagueId/$season"
+    }
+
 }

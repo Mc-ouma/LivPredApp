@@ -27,14 +27,13 @@ import com.soccertips.predcompose.model.ResponseData
 import com.soccertips.predcompose.model.lastfixtures.FixtureDetails
 import com.soccertips.predcompose.model.prediction.Predictions
 import com.soccertips.predcompose.navigation.Routes
-import com.soccertips.predcompose.viewmodel.FixtureDetailsViewModel.FixtureWithType
-import timber.log.Timber
+import com.soccertips.predcompose.viewmodel.SharedViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun FixtureMatchDetailsScreen(
-    fixtures: List<FixtureWithType>,
+    fixtures: List<SharedViewModel.FixtureWithType>,
     predictions: Predictions?,
     fixtureDetails: ResponseData,
     homeTeamId: String,
@@ -44,7 +43,6 @@ fun FixtureMatchDetailsScreen(
     // Safely convert team IDs to integers, defaulting to 0 if invalid or empty
     val homeTeamIdInt = homeTeamId.toIntOrNull() ?: 0
     val awayTeamIdInt = awayTeamId.toIntOrNull() ?: 0
-    Timber.d("Home Team ID: $homeTeamIdInt, Away Team ID: $awayTeamIdInt")
 
     // Check for invalid team IDs and display an error message if necessary
     if (homeTeamIdInt == 0 || awayTeamIdInt == 0) {
@@ -85,7 +83,7 @@ fun FixtureMatchDetailsScreen(
 
 @Composable
 fun FixtureListScreen(
-    combinedFormData: List<FixtureWithType>,
+    combinedFormData: List<SharedViewModel.FixtureWithType>,
     homeTeamIdInt: Int,
     awayTeamIdInt: Int,
     navController: NavController
@@ -124,7 +122,7 @@ fun FixtureListScreen(
 
 @Composable
 fun FixtureColumn(
-    fixturesWithType: List<FixtureWithType>,
+    fixturesWithType: List<SharedViewModel.FixtureWithType>,
     columnTitle: String,
     homeTeamIdInt: Int,
     awayTeamIdInt: Int,
@@ -274,10 +272,6 @@ fun getCardColor(
     homeTeamIdInt: Int,
     awayTeamIdInt: Int
 ): Color {
-    Timber.tag("getCardColor")
-        .d("isHome: $isHome, homeTeamIdInt: $homeTeamIdInt, awayTeamIdInt: $awayTeamIdInt")
-    Timber.tag("getCardColor")
-        .d("Home Team: ${fixture.teams.home}, Away Team: ${fixture.teams.away}")
 
     return when {
         // Match is a draw

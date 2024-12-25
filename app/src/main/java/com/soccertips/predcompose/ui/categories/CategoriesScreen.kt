@@ -1,6 +1,5 @@
 package com.soccertips.predcompose.ui.categories
 
-import android.content.ContentValues.TAG
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,7 +28,6 @@ import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.components.ErrorMessage
 import com.soccertips.predcompose.ui.components.LoadingIndicator
 import com.soccertips.predcompose.viewmodel.CategoriesViewModel
-import timber.log.Timber
 
 // CategoriesScreen.kt
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,7 +80,7 @@ fun CategoriesScreen(
                                 category = category,
                                 onClick = {
                                     navController.navigate(Routes.ItemsList.createRoute(category.endpoint))
-                                    Timber.tag(TAG).d("CategoriesScreen:  ${category.endpoint}")
+
                                 },
                             )
                         }

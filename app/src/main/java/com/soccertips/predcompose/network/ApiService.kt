@@ -9,10 +9,12 @@ import com.soccertips.predcompose.model.lineups.FixtureLineupResponse
 import com.soccertips.predcompose.model.prediction.PredictionResponse
 import com.soccertips.predcompose.model.standings.StandingsResponse
 import com.soccertips.predcompose.model.statistics.StatisticsResponse
+import com.soccertips.predcompose.model.team.squad.SquadResponse
+import com.soccertips.predcompose.model.team.teamscreen.TeamStatisticsResponse
+import com.soccertips.predcompose.model.team.transfer.TransferResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Url
-import timber.log.Timber
 
 interface ApiService {
     @GET
@@ -29,17 +31,17 @@ interface FixtureDetailsService {
     ): FixtureResponse
 
     @GET("fixtures")
-    suspend fun getFixturesFormHome(
+    suspend fun getLastFixtures(
         @Query("season") season: String,
         @Query("team") teamId: String,
         @Query("last") last: String,
     ): FixtureListResponse
 
     @GET("fixtures")
-    suspend fun getFixturesFormAway(
+    suspend fun getNextFixtures(
         @Query("season") season: String,
-        @Query("team") leagueId: String,
-        @Query("last") last: String,
+        @Query("team") teamId: String,
+        @Query("next") next: String,
     ): FixtureListResponse
 
     @GET("fixtures/headtohead")
@@ -74,4 +76,22 @@ interface FixtureDetailsService {
     suspend fun getPredictions(
         @Query("fixture") fixtureId: String,
     ): PredictionResponse
+
+
+    @GET("teams/statistics")
+    suspend fun getTeams(
+        @Query("league") leagueId: String,
+        @Query("season") season: String,
+        @Query("team") teamId: String,
+    ): TeamStatisticsResponse
+
+    @GET("players/squads")
+    suspend fun getPlayers(
+        @Query("team") teamId: String,
+    ): SquadResponse
+
+    @GET("transfers")
+    suspend fun getTransfers(
+        @Query("team") teamId: String,
+    ): TransferResponse
 }

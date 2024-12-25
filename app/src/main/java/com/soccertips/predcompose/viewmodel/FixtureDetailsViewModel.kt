@@ -8,13 +8,10 @@ import com.soccertips.predcompose.model.events.FixtureEvent
 import com.soccertips.predcompose.model.events.FixtureEventsResponse
 import com.soccertips.predcompose.model.headtohead.HeadToHeadResponse
 import com.soccertips.predcompose.model.lastfixtures.FixtureDetails
-import com.soccertips.predcompose.model.lastfixtures.FixtureListResponse
 import com.soccertips.predcompose.model.lineups.FixtureLineupResponse
 import com.soccertips.predcompose.model.lineups.TeamLineup
 import com.soccertips.predcompose.model.prediction.PredictionResponse
 import com.soccertips.predcompose.model.prediction.Response
-import com.soccertips.predcompose.model.standings.StandingsResponse
-import com.soccertips.predcompose.model.standings.TeamStanding
 import com.soccertips.predcompose.model.statistics.StatisticsResponse
 import com.soccertips.predcompose.repository.FixtureDetailsRepository
 import com.soccertips.predcompose.ui.UiState
@@ -24,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -60,14 +56,14 @@ constructor(
     val fixtureEventsState: StateFlow<UiState<List<FixtureEvent>>> =
         _fixtureEventsState.asStateFlow()
 
-    private val _standingsState = MutableStateFlow<UiState<List<TeamStanding>>>(UiState.Loading)
-    val standingsState: StateFlow<UiState<List<TeamStanding>>> = _standingsState.asStateFlow()
+    /* private val _standingsState = MutableStateFlow<UiState<List<TeamStanding>>>(UiState.Loading)
+     val standingsState: StateFlow<UiState<List<TeamStanding>>> = _standingsState.asStateFlow()*/
 
     private val _predictionsState = MutableStateFlow<UiState<List<Response>>>(UiState.Idle)
     val predictionsState: StateFlow<UiState<List<Response>>> = _predictionsState.asStateFlow()
 
-    private val _formState = MutableStateFlow<UiState<List<FixtureWithType>>>(UiState.Idle)
-    val formState: StateFlow<UiState<List<FixtureWithType>>> = _formState.asStateFlow()
+    /*private val _formState = MutableStateFlow<UiState<List<FixtureWithType>>>(UiState.Idle)
+    val formState: StateFlow<UiState<List<FixtureWithType>>> = _formState.asStateFlow()*/
 
     // Cache to avoid refetching the same fixture details
     private var lastFetchedFixtureId: String? = null
@@ -89,18 +85,15 @@ constructor(
             _uiState.value = UiState.Loading
             try {
                 val response = repository.getFixtureDetails(fixtureId)
-                Timber.d("Fixture Details Data fetched successfully: $response")
                 cachedFixtureDetails = response
                 lastFetchedFixtureId = fixtureId
                 lastFetchTimestamp = System.currentTimeMillis()
                 _uiState.value = UiState.Success(response)
             } catch (e: retrofit2.HttpException) {
-                Timber.e(e, "Error fetching fixture details")
                 _uiState.value =
                     UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
 
             } catch (e: Exception) {
-                Timber.e(e, "Error fetching fixture details")
                 _uiState.value =
                     UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
 
@@ -128,10 +121,7 @@ constructor(
 
             try {
                 // Fetch all data concurrently using async for better performance
-                val homeFormResponseDeferred =
-                    async { repository.getFixturesFormHome(season, homeTeamId, last) }
-                val awayFormResponseDeferred =
-                    async { repository.getFixturesFormAway(season, awayTeamId, last) }
+
                 val predictionsResponseDeferred = async { repository.getPredictions(fixtureId) }
                 val homeStatsResponseDeferred =
                     async { repository.getFixtureStats(fixtureId, homeTeamId) }
@@ -144,8 +134,6 @@ constructor(
                 val standingsResponseDeferred = async { repository.getStandings(leagueId, season) }
 
                 // Await responses
-                val homeFormResponse = homeFormResponseDeferred.await()
-                val awayFormResponse = awayFormResponseDeferred.await()
                 val predictionsResponse = predictionsResponseDeferred.await()
                 val homeStatsResponse = homeStatsResponseDeferred.await()
                 val awayStatsResponse = awayStatsResponseDeferred.await()
@@ -155,19 +143,18 @@ constructor(
                 val standingsResponse = standingsResponseDeferred.await()
 
                 // Process each response and update UI state
-                handleFormResponse(
-                    homeFormResponse,
-                    awayFormResponse
-                ) // Handle both home and away form responses
+                /*  handleFormResponse(
+                      homeFormResponse,
+                      awayFormResponse
+                  )*/ // Handle both home and away form responses
                 handlePredictionsResponse(predictionsResponse)
                 handleStatsResponse(homeStatsResponse, awayStatsResponse)
                 handleHeadToHeadResponse(headToHeadResponse)
                 handleLineupsResponse(lineupsResponse)
                 handleFixtureEventsResponse(fixtureEventsResponse)
-                handleStandingsResponse(standingsResponse)
+                // handleStandingsResponse(standingsResponse)
 
             } catch (e: Exception) {
-                Timber.e(e, "Error fetching form and predictions")
                 setErrorState(e.localizedMessage ?: "An unexpected error occurred.")
             }
         }
@@ -175,13 +162,11 @@ constructor(
 
     // Utility function to set loading state for all states
     private fun setLoadingState() {
-        _formState.value = UiState.Loading
         _predictionsState.value = UiState.Loading
         _fixtureStatsState.value = UiState.Loading
         _headToHeadState.value = UiState.Loading
         _lineupsState.value = UiState.Loading
         _fixtureEventsState.value = UiState.Loading
-        _standingsState.value = UiState.Loading
     }
 
     data class FixtureWithType(
@@ -191,34 +176,34 @@ constructor(
 
 
     // Utility function to handle responses
-    private fun handleFormResponse(
-        homeFormResponse: FixtureListResponse,
-        awayFormResponse: FixtureListResponse
-    ) {
-        // Extract form data
-        val homeFormData = homeFormResponse.response
-        val awayFormData = awayFormResponse.response
+    /* private fun handleFormResponse(
+         homeFormResponse: FixtureListResponse,
+         awayFormResponse: FixtureListResponse
+     ) {
+         // Extract form data
+         val homeFormData = homeFormResponse.response
+         val awayFormData = awayFormResponse.response
 
-        // Combine both home and away form data with a marker
-        val combinedFormData = mutableListOf<FixtureWithType>()
+         // Combine both home and away form data with a marker
+         val combinedFormData = mutableListOf<FixtureWithType>()
 
-        // Add home fixtures with the marker
-        homeFormData.forEach { fixture ->
-            combinedFormData.add(FixtureWithType(fixture, isHome = true))
-        }
+         // Add home fixtures with the marker
+         homeFormData.forEach { fixture ->
+             combinedFormData.add(FixtureWithType(fixture, isHome = true))
+         }
 
-        // Add away fixtures with the marker
-        awayFormData.forEach { fixture ->
-            combinedFormData.add(FixtureWithType(fixture, isHome = false))
-        }
+         // Add away fixtures with the marker
+         awayFormData.forEach { fixture ->
+             combinedFormData.add(FixtureWithType(fixture, isHome = false))
+         }
 
-        // Update the UI state based on the combined data
-        if (combinedFormData.isNotEmpty()) {
-            _formState.value = UiState.Success(combinedFormData)
-        } else {
-            _formState.value = UiState.Error("😞 No data available.")
-        }
-    }
+         // Update the UI state based on the combined data
+         if (combinedFormData.isNotEmpty()) {
+             _formState.value = UiState.Success(combinedFormData)
+         } else {
+             _formState.value = UiState.Error("😞 No data available.")
+         }
+     }*/
 
 
     private fun handlePredictionsResponse(predictionsResponse: PredictionResponse) {
@@ -271,7 +256,7 @@ constructor(
         }
     }
 
-    private fun handleStandingsResponse(standingsResponse: StandingsResponse) {
+    /*private fun handleStandingsResponse(standingsResponse: StandingsResponse) {
         val standingsData = standingsResponse.response
         val teamStandings = standingsData.flatMap { it.league.standings.flatten() }
         if (teamStandings.isNotEmpty()) {
@@ -279,17 +264,15 @@ constructor(
         } else {
             _standingsState.value = UiState.Error("😞 No standings data available.")
         }
-    }
+    }*/
 
     // Centralized error handler
     private fun setErrorState(errorMessage: String) {
-        _formState.value = UiState.Error(errorMessage)
         _predictionsState.value = UiState.Error(errorMessage)
         _fixtureStatsState.value = UiState.Error(errorMessage)
         _headToHeadState.value = UiState.Error(errorMessage)
         _lineupsState.value = UiState.Error(errorMessage)
         _fixtureEventsState.value = UiState.Error(errorMessage)
-        _standingsState.value = UiState.Error(errorMessage)
     }
 
 
@@ -301,7 +284,7 @@ constructor(
             .filter { it.type == "Goal" && it.team.id == homeTeamId }
             .mapNotNull {
                 val playerName = it.player.name
-                if (playerName.isNullOrBlank()) {
+                if (playerName.isBlank()) {
                     null // Skip if playerName is null or blank
                 } else {
                     val lastName = playerName.split(" ").lastOrNull() ?: "" // Safely split
@@ -319,7 +302,7 @@ constructor(
             .filter { it.type == "Goal" && it.team.id == awayTeamId }
             .mapNotNull {
                 val playerName = it.player.name
-                if (playerName.isNullOrBlank()) {
+                if (playerName.isBlank()) {
                     null
                 } else {
                     val lastName = playerName.split(" ").lastOrNull() ?: ""

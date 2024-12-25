@@ -12,7 +12,8 @@ data class FixtureListResponse(
 data class FixtureParameters(
     val season: String,
     val team: String,
-    val last: String,
+    val last: String? = null,
+    val next: String?= null,
 )
 
 data class Paging(

@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,11 +61,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
@@ -79,6 +82,7 @@ import com.soccertips.predcompose.model.headtohead.FixtureDetails
 import com.soccertips.predcompose.model.lineups.TeamLineup
 import com.soccertips.predcompose.model.standings.TeamStanding
 import com.soccertips.predcompose.model.statistics.Response
+import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.components.ErrorMessage
 import com.soccertips.predcompose.ui.components.LoadingIndicator
@@ -89,6 +93,7 @@ import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureSta
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureStatisticsScreen
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureSummaryScreen
 import com.soccertips.predcompose.viewmodel.FixtureDetailsViewModel
+import com.soccertips.predcompose.viewmodel.SharedViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -107,6 +112,7 @@ enum class FixtureDetailsScreenPage(val titleResId: Int) {
 fun FixtureDetailsScreen(
     navController: NavController,
     fixtureId: String,
+    sharedViewModel: SharedViewModel = hiltViewModel(LocalContext.current as ViewModelStoreOwner),
     viewModel: FixtureDetailsViewModel = hiltViewModel(),
     pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
 ) {
@@ -115,14 +121,16 @@ fun FixtureDetailsScreen(
     val fixtureStatsState by viewModel.fixtureStatsState.collectAsState()
     val fixtureEventsState by viewModel.fixtureEventsState.collectAsState()
     val fixturePredictionsState by viewModel.predictionsState.collectAsState()
-    val formState by viewModel.formState.collectAsState()
+    val formState by sharedViewModel.fixturesState.collectAsState()
     val headToHeadState by viewModel.headToHeadState.collectAsState()
     val lineupsState by viewModel.lineupsState.collectAsState()
-    val standingsState by viewModel.standingsState.collectAsState()
+    val standingsState by sharedViewModel.standingsState.collectAsState()
+
 
     // Fetch fixture details when fixtureId changes
     LaunchedEffect(fixtureId) {
         viewModel.fetchFixtureDetails(fixtureId)
+        //  sharedViewModel.fetchFixtures(season = "2023",homeTeamId = "357", awayTeamId = "358", last = "10",)
     }
 
     // Fetch form and predictions when fixture details are available
@@ -136,6 +144,16 @@ fun FixtureDetailsScreen(
                 fixtureId = fixtureId,
                 last = "6",
                 leagueId = fixtureDetails.league.id.toString(),
+            )
+            sharedViewModel.fetchStandings(
+                leagueId = fixtureDetails.league.id.toString(),
+                season = fixtureDetails.league.season.toString()
+            )
+            sharedViewModel.fetchFixtures(
+                season = fixtureDetails.league.season.toString(),
+                homeTeamId = fixtureDetails.teams.home.id.toString(),
+                awayTeamId = fixtureDetails.teams.away.id.toString(),
+                last = "6",
             )
         }
     }
@@ -276,13 +294,14 @@ fun DataScreen(
     fixtureStatsState: UiState<List<Response>>,
     fixtureEventsState: UiState<List<FixtureEvent>>,
     fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>,
-    formState: UiState<List<FixtureDetailsViewModel.FixtureWithType>>,
+    formState: UiState<List<SharedViewModel.FixtureWithType>>,
     headToHeadState: UiState<List<FixtureDetails>>,
     lineupsState: UiState<List<TeamLineup>>,
     standingsState: UiState<List<TeamStanding>>,
     fixtureDetails: ResponseData,
     navController: NavController
 ) {
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -301,7 +320,10 @@ fun DataScreen(
                     modifier = Modifier
                         .padding(16.dp)
                         .wrapContentHeight()
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    navController = navController,
+                    leagueId = fixtureDetails.league.id.toString(),
+                    season = fixtureDetails.league.season.toString(),
                 )
             }
         }
@@ -333,7 +355,7 @@ fun ErrorScreen(paddingValues: PaddingValues) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "An unexpected error occurred.",
+            text = "An unexpected error occurred....",
             color = Color.Red,
             style = MaterialTheme.typography.bodyLarge
         )
@@ -399,7 +421,7 @@ fun FixtureDetailsTabs(
     fixtureStatsState: UiState<List<Response>>,
     fixtureEventsState: UiState<List<FixtureEvent>>,
     fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>,
-    formState: UiState<List<FixtureDetailsViewModel.FixtureWithType>>,
+    formState: UiState<List<SharedViewModel.FixtureWithType>>,
     headToHeadState: UiState<List<FixtureDetails>>,
     lineupsState: UiState<List<TeamLineup>>,
     standingsState: UiState<List<TeamStanding>>,
@@ -466,6 +488,7 @@ fun FixtureDetailsTabs(
                             fixtureDetails = fixtureDetails,
                             navController = navController
                         )
+
                     }
 
                     FixtureDetailsScreenPage.STATISTICS -> {
@@ -506,7 +529,7 @@ fun FixtureDetailsTabs(
 fun FixtureMatchDetailsTab(
     fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>,
     fixtureDetails: ResponseData,
-    formState: UiState<List<FixtureDetailsViewModel.FixtureWithType>>,
+    formState: UiState<List<SharedViewModel.FixtureWithType>>,
     navController: NavController,
 ) {
     when {
@@ -523,6 +546,7 @@ fun FixtureMatchDetailsTab(
                 awayTeamId = fixtureDetails.teams.away.id.toString(),
                 navController = navController
             )
+            Timber.tag("FixtureMatchDetailsTab").d("FixtureMatchDetailsTab: ${formState.data} ")
         }
 
         formState is UiState.Error -> {
@@ -573,6 +597,7 @@ fun FixtureHeadToHeadTab(
                 headToHead = headToHeadState.data,
                 navController = navController
             )
+            Timber.tag("FixtureHeadToHeadTab").d("FixtureHeadToHeadTab: ${headToHeadState.data}")
         }
 
         is UiState.Loading -> {
@@ -630,6 +655,7 @@ fun FixtureStandingsTab(
                 teamId1 = fixtureDetails.teams.home.id,
                 teamId2 = fixtureDetails.teams.away.id,
             )
+            Timber.tag("FixtureStandingsTab").d("FixtureStandingsTab: ${standingsState.data}")
         }
 
         is UiState.Loading -> {
@@ -661,6 +687,7 @@ fun FixtureSummaryTab(
                 homeTeamId = fixtureDetails.teams.home.id,
                 awayTeamId = fixtureDetails.teams.away.id
             )
+            Timber.tag("FixtureSummaryTab").d("FixtureSummaryTab: ${fixtureEventsState.data}")
         }
 
         is UiState.Loading -> {
@@ -684,6 +711,9 @@ fun FixtureSummaryTab(
 fun FixtureScoreAndScorers(
     viewModel: FixtureDetailsViewModel,
     modifier: Modifier = Modifier,
+    navController: NavController,
+    leagueId: String,
+    season: String,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -702,7 +732,7 @@ fun FixtureScoreAndScorers(
             val awayTeamId = response.teams.away.id
             val homeGoalScorers = viewModel.getHomeGoalScorers(response.events, homeTeamId)
             val awayGoalScorers = viewModel.getAwayGoalScorers(response.events, awayTeamId)
-            val formattedTimestamp = viewModel.formatTimestamp(response.fixture.timestamp)
+            viewModel.formatTimestamp(response.fixture.timestamp)
             val matchStatusText =
                 viewModel.getMatchStatusText(
                     response.fixture.status.short,
@@ -735,7 +765,12 @@ fun FixtureScoreAndScorers(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             response.teams.home.let { homeTeam ->
-                                TeamColumn(team = homeTeam)
+                                TeamColumn(
+                                    team = homeTeam,
+                                    leagueId = leagueId,
+                                    season = season,
+                                    navController = navController
+                                )
                             }
                         }
                         Column(
@@ -782,11 +817,15 @@ fun FixtureScoreAndScorers(
                                 )
                             }
 
-                            Timber.d("Timestamp: $formattedTimestamp")
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             response.teams.away.let { awayTeam ->
-                                TeamColumn(team = awayTeam)
+                                TeamColumn(
+                                    team = awayTeam,
+                                    leagueId = leagueId,
+                                    season = season,
+                                    navController = navController
+                                )
                             }
                         }
                     }
@@ -865,12 +904,24 @@ fun Scorers(
 @Composable
 fun TeamColumn(
     team: Team,
+    leagueId: String? = null,
+    season: String? = null,
     modifier: Modifier = Modifier,
+    navController: NavController
 ) {
     Column(
         modifier
             .fillMaxWidth()
-            .wrapContentHeight(),
+            .wrapContentHeight()
+            .clickable {
+                navController.navigate(
+                    Routes.TeamDetails.createRoute(
+                        team.id.toString(),
+                        leagueId.toString(),
+                        season.toString()
+                    )
+                )
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         GlideImage(

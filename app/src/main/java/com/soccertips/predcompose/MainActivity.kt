@@ -29,6 +29,7 @@ import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.categories.CategoriesScreen
 import com.soccertips.predcompose.ui.fixturedetails.FixtureDetailsScreen
 import com.soccertips.predcompose.ui.items.ItemsListScreen
+import com.soccertips.predcompose.ui.team.TeamScreen
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import com.soccertips.predcompose.viewmodel.CategoriesViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -127,6 +128,27 @@ fun AppNavigation() {
                 navController = navController,
                 fixtureId = fixtureId,
             )
+        }
+        composable(
+            Routes.TeamDetails.route,
+            arguments = listOf(navArgument("teamId") { type = NavType.StringType },
+                navArgument("leagueId") { type = NavType.StringType },
+                navArgument("season") { type = NavType.StringType }),
+
+            )
+        { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
+            val leagueId = backStackEntry.arguments?.getString("leagueId") ?: ""
+            val season = backStackEntry.arguments?.getString("season") ?: ""
+
+            TeamScreen(
+                navController = navController,
+                teamId = teamId,
+                leagueId = leagueId,
+                season = season,
+
+
+                )
         }
     }
 }

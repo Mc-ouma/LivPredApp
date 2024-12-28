@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +27,8 @@ import com.soccertips.predcompose.R
 import com.soccertips.predcompose.model.headtohead.FixtureDetails
 import com.soccertips.predcompose.model.headtohead.TeamInfo
 import com.soccertips.predcompose.navigation.Routes
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -54,14 +55,17 @@ fun FixtureCard(
     fixture: FixtureDetails,
     navController: NavController
 ) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
             .clickable {
                 navController.navigate(Routes.FixtureDetails.createRoute(fixture.fixture.id.toString()))
             },
-        elevation = CardDefaults.cardElevation(4.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

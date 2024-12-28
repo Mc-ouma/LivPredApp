@@ -1,14 +1,14 @@
 package com.soccertips.predcompose.ui.categories
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.soccertips.predcompose.R
 import com.soccertips.predcompose.model.Category
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
+import com.soccertips.predcompose.ui.theme.PredComposeTheme
 
 @Composable
 fun CategoryCard(
@@ -37,20 +40,24 @@ fun ImageListItem(
     name: String,
     onClick: () -> Unit,
 ) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        colors = cardColors,
+        elevation = cardElevation,
         modifier =
-            Modifier
-                .padding(horizontal = 12.dp)
-                .padding(bottom = 26.dp),
+        Modifier
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 26.dp),
     ) {
         Column(Modifier.fillMaxWidth()) {
 
             Image(
                 painter = painterResource(id = R.drawable.outline_add_circle_outline_24),
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .height(180.dp),
                 contentScale = ContentScale.Fit,
             )
@@ -61,20 +68,23 @@ fun ImageListItem(
                 maxLines = 1,
                 style = MaterialTheme.typography.titleMedium,
                 modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                        .wrapContentWidth(Alignment.CenterHorizontally),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+                    .wrapContentWidth(Alignment.CenterHorizontally),
             )
         }
     }
 }
 
-@Preview
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview("Dark Theme", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun ImageListItemPreview() {
-    ImageListItem(
-        name = "Category Name",
-        onClick = {},
-    )
+    PredComposeTheme {
+        ImageListItem(
+            name = "Category Name",
+            onClick = {},
+        )
+    }
 }

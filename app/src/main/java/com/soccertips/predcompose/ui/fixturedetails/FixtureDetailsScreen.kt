@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
@@ -38,7 +37,6 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Summarize
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -92,6 +90,8 @@ import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureMat
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureStandingsScreen
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureStatisticsScreen
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureSummaryScreen
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import com.soccertips.predcompose.viewmodel.FixtureDetailsViewModel
 import com.soccertips.predcompose.viewmodel.SharedViewModel
 import kotlinx.coroutines.launch
@@ -739,15 +739,16 @@ fun FixtureScoreAndScorers(
                     response.fixture.status.elapsed,
                     response.fixture.timestamp,
                 )
+            val cardColors = LocalCardColors.current
+            val cardElevation = LocalCardElevation.current
 
             Card(
                 modifier
                     .wrapContentHeight()
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = cardColors,
+                elevation = cardElevation
             ) {
                 Column(
                     modifier

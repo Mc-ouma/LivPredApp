@@ -10,6 +10,7 @@ import com.soccertips.predcompose.model.prediction.PredictionResponse
 import com.soccertips.predcompose.model.standings.StandingsResponse
 import com.soccertips.predcompose.model.statistics.StatisticsResponse
 import com.soccertips.predcompose.model.team.squad.SquadResponse
+import com.soccertips.predcompose.model.team.teamscreen.TeamModelData
 import com.soccertips.predcompose.model.team.teamscreen.TeamStatisticsResponse
 import com.soccertips.predcompose.model.team.transfer.TransferResponse
 import retrofit2.http.GET
@@ -94,4 +95,9 @@ interface FixtureDetailsService {
     suspend fun getTransfers(
         @Query("team") teamId: String,
     ): TransferResponse
+
+    @GET("teams")
+    suspend fun getTeamData(
+        @Query("id") teamId: Int,
+        ): TeamModelData
 }

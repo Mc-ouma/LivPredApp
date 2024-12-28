@@ -1,20 +1,22 @@
 package com.soccertips.predcompose.ui.team
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +25,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,17 +33,19 @@ import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.model.team.squad.Player
 import com.soccertips.predcompose.model.team.squad.Response
 import com.soccertips.predcompose.model.team.squad.Team
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
+import timber.log.Timber
 
 @Composable
 fun SquadScreen(
     squadResponse: List<Response>,
-    teamInfoVisible: Boolean,
     onTeamInfoVisibilityChanged: (Boolean) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
-    val players = squadResponse.flatMap { it.players }
-    val groupedPlayers = players.groupBy { it.position }
+    val playersByPosition = squadResponse.flatMap { it.players }.groupBy { it.position }
+
 
     // Observe scroll state to hide/show the page info
     LaunchedEffect(lazyListState) {
@@ -54,17 +58,43 @@ fun SquadScreen(
 
 
     // Scrollable Content
-    Column(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .onGloballyPositioned { layoutCoordinates ->
+                // Update the top padding of the LazyColumn based on the height of the team info
+                Timber.d("Squad Size: ${layoutCoordinates.size.height}")
+            }
+    ) {
+        // Display players for each position
+
         LazyColumn(
             state = lazyListState,
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(16.dp)
+                .fillMaxSize()
+                .height(1125.dp)
+                .onGloballyPositioned { layoutCoordinates ->
+                    // Update the top padding of the LazyColumn based on the height of the team info
+                    Timber.d("Squad Size: ${layoutCoordinates.size.height}")
+                },
         ) {
-            groupedPlayers.forEach { (position, group) ->
+            playersByPosition.forEach { (position, players) ->
                 item {
-                    PlayerListByPosition(title = position, players = group)
+                    Text(
+                        text = if (position == "Goalkeeper") "Goalkeepers" else if (position == "Defender") "Defence" else if (position == "Midfielder") "Midfield" else if (position == "Attacker") "Attack" else position,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                items(players.size) { player ->
+                    PlayerItem(player = players[player])
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
@@ -75,65 +105,61 @@ fun SquadScreen(
 
 
 @Composable
-fun PlayerListByPosition(title: String, players: List<Player>) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(
-            text = if (title == "Goalkeeper") "Goalkeepers" else if (title == "Defender") "Defenders" else if (title == "Midfielder") "Midfielders" else if (title == "Attacker") " Attackers" else title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-        )
-
-        Column {
-            players.forEach { player ->
-                PlayerCard(player = player)
-            }
-        }
-    }
-}
-
-@Composable
-fun PlayerCard(player: Player) {
-    Row(
+fun PlayerItem(player: Player) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
+    Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 4.dp),
     ) {
-        // Player Photo
-        Image(
-            painter = rememberAsyncImagePainter(model = player.photo),
-            contentDescription = "${player.name}'s Photo",
+        Row(
             modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray)
-        )
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Player Image
+            Image(
+                painter = rememberAsyncImagePainter(player.photo),
+                contentDescription = "Player Photo",
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+            )
 
-        Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
-        // Player Details
-        Column {
+            // Player Details
+            Column {
+                Text(
+                    text = player.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Age: ${player.age} years",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Player Number
             Text(
-                text = player.name,
+                text = "#${player.number}",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )
-            Text(
-                text = "Age: ${player.age} | Number: ${player.number}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = player.position,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
-            )
         }
     }
 }
 
+
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun SquadScreenPreview() {
@@ -170,6 +196,14 @@ fun SquadScreenPreview() {
                 photo = "https://media.api-sports.io/football/players/19220.png"
             ),
             Player(
+                id = 19221,
+                name = "Mark Mount",
+                age = 28,
+                number = 17,
+                position = "Midfielder",
+                photo = "https://media.api-sports.io/football/players/19220.png"
+            ),
+            Player(
                 id = 909,
                 name = "M. Rashford",
                 age = 27,
@@ -181,7 +215,7 @@ fun SquadScreenPreview() {
     )
 
     PredComposeTheme {
-        SquadScreen(squadResponse = listOf(mockResponse), teamInfoVisible = true) { visible ->
+        SquadScreen(squadResponse = listOf(mockResponse)) { visible ->
         }
     }
 }

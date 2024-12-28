@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.soccertips.predcompose.model.ServerResponse
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 
 
 @Composable
@@ -39,6 +41,8 @@ fun ItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -47,6 +51,8 @@ fun ItemCard(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple()
             ),
+        colors = cardColors,
+        elevation = cardElevation
     ) {
         Column(
             modifier = Modifier

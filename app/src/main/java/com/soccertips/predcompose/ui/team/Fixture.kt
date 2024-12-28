@@ -5,35 +5,38 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.model.lastfixtures.FixtureDetails
 import com.soccertips.predcompose.navigation.Routes
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
+import com.soccertips.predcompose.viewmodel.TeamViewModel
 
 @Composable
 fun FixturesScreen(
     fixtures: List<FixtureDetails>, navController: NavController,
+    viewModel: TeamViewModel,
     onTeamInfoVisibilityChanged: (Boolean) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
@@ -46,33 +49,41 @@ fun FixturesScreen(
             }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-        ) {
-            items(fixtures.size) { index ->
-                if (index < fixtures.size) {
-                    NextFixtureCard(fixture = fixtures[index], navController = navController)
-                    HorizontalDivider()
-                }
+
+    LazyColumn(
+        state = lazyListState,
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        items(fixtures.size) { index ->
+            if (index < fixtures.size) {
+                NextFixtureCard(
+                    fixture = fixtures[index],
+                    navController = navController,
+                    viewModel = viewModel
+                )
+                HorizontalDivider()
             }
-
         }
-    }
 
+    }
 }
 
 
 @Composable
 fun NextFixtureCard(
     fixture: FixtureDetails,
-    navController: NavController
+    navController: NavController,
+    viewModel: TeamViewModel
 ) {
+    // Format the date and time
+    val formattedDateTime = viewModel.formatDateTime(fixture.fixture.date, "UTC")
 
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
@@ -80,78 +91,86 @@ fun NextFixtureCard(
                 navController.navigate(
                     Routes.FixtureDetails.createRoute(fixture.fixture.id.toString())
                 )
-            },
-
-        ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-        ) {
-            Column(modifier = Modifier.weight(5f)) {
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-
-                    Image(
-                        painter = rememberAsyncImagePainter(model = fixture.teams.home.logo),
-                        contentDescription = "Home Team Logo",
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        text = fixture.teams.home.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(8.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-
-                    Image(
-                        painter = rememberAsyncImagePainter(model = fixture.teams.away.logo),
-                        contentDescription = "Away Team Logo",
-                        modifier = Modifier.size(24.dp)
-                    )
-
-                    Text(
-                        text = fixture.teams.away.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(8.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
-
-            VerticalDivider(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp)
-                    .padding(top = 8.dp, bottom = 8.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = fixture.league.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                modifier = Modifier.padding(bottom = 16.dp)
             )
-
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center,
+            Row(
                 modifier = Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = fixture.score.fulltime.home.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(8.dp)
+                // Home Team
+                TeamInfo(
+                    logo = fixture.teams.home.logo,
+                    name = fixture.teams.home.name,
+                    modifier = Modifier.weight(1f)
                 )
 
-                Text(
-                    text = fixture.score.fulltime.away.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(8.dp)
+                // Fixture Details (Date, Time, and League)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = formattedDateTime.date,//date
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = formattedDateTime.time,//time
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+
+                }
+
+                // Away Team
+                TeamInfo(
+                    logo = fixture.teams.away.logo,
+                    name = fixture.teams.away.name,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
-
     }
 }
+
+@Composable
+fun TeamInfo(
+    logo: String,
+    name: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painter = rememberAsyncImagePainter(model = logo),
+            contentDescription = "Team Logo",
+            modifier = Modifier.size(32.dp),
+            contentScale = ContentScale.Fit
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+

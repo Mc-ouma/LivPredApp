@@ -12,33 +12,54 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FiberManualRecord
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.soccertips.predcompose.model.ServerResponse
+import com.soccertips.predcompose.data.model.ServerResponse
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
+import com.soccertips.predcompose.viewmodel.ItemsListViewModel
 
 
 @Composable
 fun ItemCard(
     item: ServerResponse,
     onClick: () -> Unit,
+    onFavoriteClick: (ServerResponse) -> Unit,
+    isFavorite: Boolean,
     modifier: Modifier = Modifier,
+    viewModel: ItemsListViewModel
 ) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
+    val teamHomeDetails = TeamDetails(item.hLogoPath, item.homeTeam)
+    val teamAwayDetails = TeamDetails(item.aLogoPath, item.awayTeam)
+    var isFavorite by remember { mutableStateOf(false) }
+
+    LaunchedEffect (isFavorite) {
+        isFavorite = viewModel.isFavorite(item)
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -47,6 +68,8 @@ fun ItemCard(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple()
             ),
+        colors = cardColors,
+        elevation = cardElevation
     ) {
         Column(
             modifier = Modifier
@@ -54,10 +77,31 @@ fun ItemCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            LeagueInfo(
-                leagueLogo = item.leagueLogo,
-                leagueName = item.league?.split(",")?.firstOrNull()
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+
+                LeagueInfo(
+                    leagueLogo = item.leagueLogo,
+                    leagueName = item.league?.split(",")?.firstOrNull()
+                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(onClick = {
+                    onFavoriteClick(item)
+                    viewModel.toggleFavorite(item)
+                    isFavorite = !isFavorite
+                }) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else Color.Gray,
+                        modifier = Modifier.align(Alignment.Top),
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -68,14 +112,16 @@ fun ItemCard(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TeamInfo(teamLogo = item.hLogoPath, teamName = item.homeTeam, item = item,modifier = Modifier.weight(1f))
+                TeamInfo(
+                    teamDetails = teamHomeDetails,
+                    modifier = Modifier.weight(1f)
+                )
 
                 Box(
                     modifier = Modifier
                         .padding(horizontal = 8.dp),
                     contentAlignment = Alignment.Center,
-
-                    ) {
+                ) {
                     item.mTime?.let {
                         Text(
                             text = it,
@@ -85,7 +131,10 @@ fun ItemCard(
                     }
                 }
 
-                TeamInfo(teamLogo = item.aLogoPath, teamName = item.awayTeam, item = item,modifier = Modifier.weight(1f))
+                TeamInfo(
+                    teamDetails = teamAwayDetails,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             Row(
@@ -110,11 +159,11 @@ fun ItemCard(
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.padding(start = 8.dp),
                 )
+
             }
         }
     }
 }
-
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -144,14 +193,22 @@ fun LeagueInfo(leagueLogo: String?, leagueName: String?) {
     }
 }
 
+data class TeamDetails(
+    val teamLogo: String?,
+    val teamName: String?
+)
+
 // Reusable Composable for Team Info
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun TeamInfo(teamLogo: String?, teamName: String?, item: ServerResponse,modifier: Modifier = Modifier) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally,modifier = modifier) {
+fun TeamInfo(
+    teamDetails: TeamDetails,
+    modifier: Modifier = Modifier
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         GlideImage(
-            model = teamLogo,
-            contentDescription = if (teamLogo == item.hLogoPath) "Home Team Logo" else "Away Team Logo",
+            model = teamDetails.teamLogo,
+            contentDescription = "Team Logo",
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .height(24.dp)
@@ -160,7 +217,7 @@ fun TeamInfo(teamLogo: String?, teamName: String?, item: ServerResponse,modifier
             contentScale = ContentScale.Fit,
 
             )
-        teamName?.let {
+        teamDetails.teamName?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodyMedium,
@@ -169,67 +226,4 @@ fun TeamInfo(teamLogo: String?, teamName: String?, item: ServerResponse,modifier
             )
         }
     }
-}
-
-// Placeholder Drawable
-
-@Preview
-@Composable
-private fun ItemCardPreview() {
-    ItemCard(
-        item =
-        ServerResponse(
-            homeTeam = "Chelsea Manchester United",
-            awayTeam = "Arsenal",
-            mTime = "12:30",
-            mDate = "12/12/2023",
-            league = "Premier League",
-            country = "England",
-            outcome = "win",
-            mStatus = "FT",
-            pick = "0",
-            color = Color.Green,
-        ),
-        onClick = {},
-    )
-}
-
-@Preview
-@Composable
-private fun ItemCardPreviewLose() {
-    ItemCard(
-        item =
-        ServerResponse(
-            homeTeam = "Chelsea",
-            awayTeam = "Arsenal",
-            mTime = "12:30",
-            mDate = "2023-12-12",
-            league = "Premier League",
-            outcome = "lose",
-            mStatus = "FT",
-            pick = "1",
-            color = Color.Red,
-        ),
-        onClick = {},
-    )
-}
-
-@Preview
-@Composable
-private fun ItemCardPreviewNoOutcome() {
-    ItemCard(
-        item =
-        ServerResponse(
-            homeTeam = "Chelsea",
-            awayTeam = "Arsenal",
-            mTime = "12:30",
-            mDate = "2023-12-12",
-            league = "Premier League",
-            outcome = "",
-            mStatus = "FT",
-            pick = "1",
-            color = Color.Unspecified,
-        ),
-        onClick = {},
-    )
 }

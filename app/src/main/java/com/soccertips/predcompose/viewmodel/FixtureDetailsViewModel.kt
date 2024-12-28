@@ -2,17 +2,17 @@ package com.soccertips.predcompose.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.soccertips.predcompose.model.Event
-import com.soccertips.predcompose.model.ResponseData
-import com.soccertips.predcompose.model.events.FixtureEvent
-import com.soccertips.predcompose.model.events.FixtureEventsResponse
-import com.soccertips.predcompose.model.headtohead.HeadToHeadResponse
-import com.soccertips.predcompose.model.lastfixtures.FixtureDetails
-import com.soccertips.predcompose.model.lineups.FixtureLineupResponse
-import com.soccertips.predcompose.model.lineups.TeamLineup
-import com.soccertips.predcompose.model.prediction.PredictionResponse
-import com.soccertips.predcompose.model.prediction.Response
-import com.soccertips.predcompose.model.statistics.StatisticsResponse
+import com.soccertips.predcompose.data.model.Event
+import com.soccertips.predcompose.data.model.ResponseData
+import com.soccertips.predcompose.data.model.events.FixtureEvent
+import com.soccertips.predcompose.data.model.events.FixtureEventsResponse
+import com.soccertips.predcompose.data.model.headtohead.HeadToHeadResponse
+import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
+import com.soccertips.predcompose.data.model.lineups.FixtureLineupResponse
+import com.soccertips.predcompose.data.model.lineups.TeamLineup
+import com.soccertips.predcompose.data.model.prediction.PredictionResponse
+import com.soccertips.predcompose.data.model.prediction.Response
+import com.soccertips.predcompose.data.model.statistics.StatisticsResponse
 import com.soccertips.predcompose.repository.FixtureDetailsRepository
 import com.soccertips.predcompose.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,20 +36,20 @@ constructor(
     val uiState: StateFlow<UiState<ResponseData>> = _uiState.asStateFlow()
 
     private val _headToHeadState =
-        MutableStateFlow<UiState<List<com.soccertips.predcompose.model.headtohead.FixtureDetails>>>(
+        MutableStateFlow<UiState<List<com.soccertips.predcompose.data.model.headtohead.FixtureDetails>>>(
             UiState.Loading,
         )
-    val headToHeadState: StateFlow<UiState<List<com.soccertips.predcompose.model.headtohead.FixtureDetails>>> =
+    val headToHeadState: StateFlow<UiState<List<com.soccertips.predcompose.data.model.headtohead.FixtureDetails>>> =
         _headToHeadState.asStateFlow()
 
     private val _lineupsState = MutableStateFlow<UiState<List<TeamLineup>>>(UiState.Loading)
     val lineupsState: StateFlow<UiState<List<TeamLineup>>> = _lineupsState.asStateFlow()
 
     private val _fixtureStatsState =
-        MutableStateFlow<UiState<List<com.soccertips.predcompose.model.statistics.Response>>>(
+        MutableStateFlow<UiState<List<com.soccertips.predcompose.data.model.statistics.Response>>>(
             UiState.Loading,
         )
-    val fixtureStatsState: StateFlow<UiState<List<com.soccertips.predcompose.model.statistics.Response>>> =
+    val fixtureStatsState: StateFlow<UiState<List<com.soccertips.predcompose.data.model.statistics.Response>>> =
         _fixtureStatsState.asStateFlow()
 
     private val _fixtureEventsState = MutableStateFlow<UiState<List<FixtureEvent>>>(UiState.Loading)
@@ -140,7 +140,7 @@ constructor(
                 val headToHeadResponse = headToHeadResponseDeferred.await()
                 val lineupsResponse = lineupsResponseDeferred.await()
                 val fixtureEventsResponse = fixtureEventsResponseDeferred.await()
-                val standingsResponse = standingsResponseDeferred.await()
+                standingsResponseDeferred.await()
 
                 // Process each response and update UI state
                 /*  handleFormResponse(
@@ -174,36 +174,6 @@ constructor(
         val isHome: Boolean // True for home team, false for away team
     )
 
-
-    // Utility function to handle responses
-    /* private fun handleFormResponse(
-         homeFormResponse: FixtureListResponse,
-         awayFormResponse: FixtureListResponse
-     ) {
-         // Extract form data
-         val homeFormData = homeFormResponse.response
-         val awayFormData = awayFormResponse.response
-
-         // Combine both home and away form data with a marker
-         val combinedFormData = mutableListOf<FixtureWithType>()
-
-         // Add home fixtures with the marker
-         homeFormData.forEach { fixture ->
-             combinedFormData.add(FixtureWithType(fixture, isHome = true))
-         }
-
-         // Add away fixtures with the marker
-         awayFormData.forEach { fixture ->
-             combinedFormData.add(FixtureWithType(fixture, isHome = false))
-         }
-
-         // Update the UI state based on the combined data
-         if (combinedFormData.isNotEmpty()) {
-             _formState.value = UiState.Success(combinedFormData)
-         } else {
-             _formState.value = UiState.Error("😞 No data available.")
-         }
-     }*/
 
 
     private fun handlePredictionsResponse(predictionsResponse: PredictionResponse) {

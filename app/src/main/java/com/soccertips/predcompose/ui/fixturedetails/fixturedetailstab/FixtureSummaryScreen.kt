@@ -28,11 +28,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.soccertips.predcompose.model.events.AssistInfo
-import com.soccertips.predcompose.model.events.EventTime
-import com.soccertips.predcompose.model.events.FixtureEvent
-import com.soccertips.predcompose.model.events.PlayerInfo
-import com.soccertips.predcompose.model.events.TeamInfo
+import com.soccertips.predcompose.data.model.events.AssistInfo
+import com.soccertips.predcompose.data.model.events.EventTime
+import com.soccertips.predcompose.data.model.events.FixtureEvent
+import com.soccertips.predcompose.data.model.events.PlayerInfo
+import com.soccertips.predcompose.data.model.events.TeamInfo
 
 @Composable
 fun FixtureSummaryScreen(events: List<FixtureEvent>, homeTeamId: Int, awayTeamId: Int) {

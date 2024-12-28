@@ -1,8 +1,11 @@
 package com.soccertips.predcompose
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -12,6 +15,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -23,10 +27,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.soccertips.predcompose.model.Category
+import com.soccertips.predcompose.data.model.Category
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.categories.CategoriesScreen
+import com.soccertips.predcompose.ui.favorites.FavoritesScreen
 import com.soccertips.predcompose.ui.fixturedetails.FixtureDetailsScreen
 import com.soccertips.predcompose.ui.items.ItemsListScreen
 import com.soccertips.predcompose.ui.team.TeamScreen
@@ -36,13 +41,17 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() { // Annotate with Hilt
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             PredComposeTheme {
-                Surface(color = MaterialTheme.colorScheme.background) {
+                Surface(modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.surface) {
                     AppNavigation()
                 }
+
             }
         }
     }
@@ -58,11 +67,20 @@ fun AppNavigation() {
         navController = navController,
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
-        startDestination = Routes.Categories.route
+        startDestination = Routes.Home.route
     ) {
+        composable(Routes.Home.route) {
+            HomeScreen(navController = navController)
+        }
         composable(Routes.Categories.route) {
             CategoriesScreen(navController = navController)
         }
+        composable(
+            Routes.Favorites.route
+        ) {
+            FavoritesScreen(navController = navController)
+        }
+
         composable(
             Routes.ItemsList.route,
             arguments = listOf(navArgument("categoryId") { type = NavType.StringType }),

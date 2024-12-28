@@ -1,17 +1,18 @@
 package com.soccertips.predcompose.network
 
-import com.soccertips.predcompose.model.FixtureResponse
-import com.soccertips.predcompose.model.RootResponse
-import com.soccertips.predcompose.model.events.FixtureEventsResponse
-import com.soccertips.predcompose.model.headtohead.HeadToHeadResponse
-import com.soccertips.predcompose.model.lastfixtures.FixtureListResponse
-import com.soccertips.predcompose.model.lineups.FixtureLineupResponse
-import com.soccertips.predcompose.model.prediction.PredictionResponse
-import com.soccertips.predcompose.model.standings.StandingsResponse
-import com.soccertips.predcompose.model.statistics.StatisticsResponse
-import com.soccertips.predcompose.model.team.squad.SquadResponse
-import com.soccertips.predcompose.model.team.teamscreen.TeamStatisticsResponse
-import com.soccertips.predcompose.model.team.transfer.TransferResponse
+import com.soccertips.predcompose.data.model.FixtureResponse
+import com.soccertips.predcompose.data.model.RootResponse
+import com.soccertips.predcompose.data.model.events.FixtureEventsResponse
+import com.soccertips.predcompose.data.model.headtohead.HeadToHeadResponse
+import com.soccertips.predcompose.data.model.lastfixtures.FixtureListResponse
+import com.soccertips.predcompose.data.model.lineups.FixtureLineupResponse
+import com.soccertips.predcompose.data.model.prediction.PredictionResponse
+import com.soccertips.predcompose.data.model.standings.StandingsResponse
+import com.soccertips.predcompose.data.model.statistics.StatisticsResponse
+import com.soccertips.predcompose.data.model.team.squad.SquadResponse
+import com.soccertips.predcompose.data.model.team.teamscreen.TeamModelData
+import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatisticsResponse
+import com.soccertips.predcompose.data.model.team.transfer.TransferResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Url
@@ -94,4 +95,9 @@ interface FixtureDetailsService {
     suspend fun getTransfers(
         @Query("team") teamId: String,
     ): TransferResponse
+
+    @GET("teams")
+    suspend fun getTeamData(
+        @Query("id") teamId: Int,
+        ): TeamModelData
 }

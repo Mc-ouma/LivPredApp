@@ -12,9 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.KeyboardBackspace
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -38,12 +35,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predcompose.Menu
-import com.soccertips.predcompose.model.Category
+import com.soccertips.predcompose.data.model.Category
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.components.ErrorMessage
@@ -81,6 +77,7 @@ fun ItemsListScreen(
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
 
+    // Fetch items when the category or selected date changes
     LaunchedEffect(key1 = category, key2 = selectedDate) {
         viewModel.fetchItems(category.endpoint, selectedDate)
     }
@@ -143,19 +140,28 @@ fun ItemsListScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(items) { item ->
+                                // Check if the item is a favorite
+                                var isFavorite by remember { mutableStateOf(false) }
+                                LaunchedEffect(item) {
+                                    isFavorite = viewModel.isFavorite(item)
+                                }
 
-                                    ItemCard(
-                                        item = item,
-                                        onClick = {
-                                            navController.navigate(
-                                                Routes.FixtureDetails.createRoute(
-                                                    item.fixtureId ?: ""
-                                                ),
-                                            )
-                                        },
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-
+                                ItemCard(
+                                    item = item,
+                                    onClick = {
+                                        navController.navigate(
+                                            Routes.FixtureDetails.createRoute(
+                                                item.fixtureId ?: ""
+                                            ),
+                                        )
+                                    },
+                                    onFavoriteClick = {
+                                        viewModel.toggleFavorite(item)
+                                    },
+                                    isFavorite = isFavorite,
+                                    viewModel = viewModel
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }

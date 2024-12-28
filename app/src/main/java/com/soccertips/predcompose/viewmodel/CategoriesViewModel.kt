@@ -2,7 +2,7 @@ package com.soccertips.predcompose.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.soccertips.predcompose.model.Category
+import com.soccertips.predcompose.data.model.Category
 import com.soccertips.predcompose.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

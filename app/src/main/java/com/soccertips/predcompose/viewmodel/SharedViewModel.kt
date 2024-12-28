@@ -2,8 +2,8 @@ package com.soccertips.predcompose.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.soccertips.predcompose.model.lastfixtures.FixtureDetails
-import com.soccertips.predcompose.model.standings.TeamStanding
+import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
+import com.soccertips.predcompose.data.model.standings.TeamStanding
 import com.soccertips.predcompose.repository.FixtureDetailsRepository
 import com.soccertips.predcompose.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.collections.flatten
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
@@ -30,31 +31,31 @@ class SharedViewModel @Inject constructor(
     var isStandingsDataLoaded = false
 
     // Fetch fixtures
-   fun fetchFixtures(season: String, homeTeamId: String, awayTeamId: String, last: String) {
-    viewModelScope.launch {
-        _fixturesState.value = UiState.Loading
-        Timber.d("Fetching fixtures for season: $season, homeTeamId: $homeTeamId, awayTeamId: $awayTeamId, last: $last")
-        try {
-            val homeResponse = repository.getLastFixtures(season, homeTeamId, last)
-            val awayResponse = repository.getLastFixtures(season, awayTeamId, last)
+    fun fetchFixtures(season: String, homeTeamId: String, awayTeamId: String, last: String) {
+        viewModelScope.launch {
+            _fixturesState.value = UiState.Loading
+            Timber.d("Fetching fixtures for season: $season, homeTeamId: $homeTeamId, awayTeamId: $awayTeamId, last: $last")
+            try {
+                val homeResponse = repository.getLastFixtures(season, homeTeamId, last)
+                val awayResponse = repository.getLastFixtures(season, awayTeamId, last)
 
-            Timber.d("Home response: $homeResponse")
-            Timber.d("Away response: $awayResponse")
+                val homeFixtures =
+                    homeResponse.response.map { FixtureWithType(it, isHome = true) }
+                val awayFixtures =
+                    awayResponse.response.map { FixtureWithType(it, isHome = false) }
 
-            val homeFixtures = homeResponse.response.map { FixtureWithType(it, isHome = true) }
-            val awayFixtures = awayResponse.response.map { FixtureWithType(it, isHome = false) }
+                val combinedFixtures = homeFixtures + awayFixtures
+                _fixturesState.value = UiState.Success(combinedFixtures)
+                isFixturesDataLoaded = true
+                Timber.d("Combined fixtures: $combinedFixtures")
 
-            val combinedFixtures = homeFixtures + awayFixtures
-            _fixturesState.value = UiState.Success(combinedFixtures)
-            isFixturesDataLoaded = true
-            Timber.d("Combined fixtures: $combinedFixtures")
-
-        } catch (e: Exception) {
-            _fixturesState.value = UiState.Error(e.message ?: "An error occurred while fetching fixtures.")
-            Timber.e(e, "Error fetching fixtures")
+            } catch (e: Exception) {
+                _fixturesState.value =
+                    UiState.Error(e.message ?: "An error occurred while fetching fixtures.")
+                Timber.e(e, "Error fetching fixtures")
+            }
         }
     }
-}
 
     data class FixtureWithType(
         val fixture: FixtureDetails,
@@ -67,7 +68,8 @@ class SharedViewModel @Inject constructor(
             _standingsState.value = UiState.Loading
             try {
                 val response = repository.getStandings(leagueId, season)
-                val teamStandings = response.response.flatMap { it.league.standings.flatten() }
+                val teamStandings =
+                    response.response.flatMap { it.league.standings.flatten() }
                 _standingsState.value = UiState.Success(teamStandings)
                 isStandingsDataLoaded = true
                 Timber.tag("fetch standings").d("%s", teamStandings)

@@ -11,9 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,8 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.soccertips.predcompose.model.statistics.Response
-import com.soccertips.predcompose.model.statistics.Team
+import com.soccertips.predcompose.data.model.statistics.Response
+import com.soccertips.predcompose.data.model.statistics.Team
 
 @Composable
 fun FixtureStatisticsScreen(statistics: List<Response>) {
@@ -33,11 +32,10 @@ fun FixtureStatisticsScreen(statistics: List<Response>) {
     val team1 = statistics[0]
     val team2 = statistics[1]
 
-    OutlinedCard(
+    Card(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp),
     ) {
         Column(
             modifier = Modifier
@@ -149,16 +147,19 @@ fun getTextStyle(value1: String, value2: String): TextStyle {
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+
                 numericValue2 > numericValue1 -> {
                     // If value2 is greater, highlight value2
                     MaterialTheme.typography.bodyMedium
                 }
+
                 else -> {
                     // If both are equal, no highlighting
                     MaterialTheme.typography.bodyMedium
                 }
             }
         }
+
         else -> {
             // For non-numeric values, apply default style (no highlight)
             MaterialTheme.typography.bodyMedium

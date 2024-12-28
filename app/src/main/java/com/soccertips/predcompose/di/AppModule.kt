@@ -2,6 +2,8 @@ package com.soccertips.predcompose.di
 
 import android.app.Application
 import android.content.Context
+import com.soccertips.predcompose.data.local.AppDatabase
+import com.soccertips.predcompose.data.local.dao.FavoriteDao
 import com.soccertips.predcompose.network.ApiService
 import com.soccertips.predcompose.network.Constants
 import com.soccertips.predcompose.network.FixtureDetailsService
@@ -10,6 +12,7 @@ import com.soccertips.predcompose.repository.PredictionRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Cache
 import okhttp3.HttpUrl
@@ -51,6 +54,7 @@ object AppModule {
         return logging
     }
 
+
     @Provides
     @Singleton
     @Named("cacheInterceptor")
@@ -76,7 +80,7 @@ object AppModule {
     fun provideDefaultOkHttpClient(
         context: Context,
         loggingInterceptor: HttpLoggingInterceptor,
-      @Named("cacheInterceptor")  cacheInterceptor: Interceptor
+        @Named("cacheInterceptor") cacheInterceptor: Interceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .cache(provideCache(context))
@@ -85,12 +89,24 @@ object AppModule {
             .build()
     }
 
+    // Configuration for AppDatabase and FavoriteItemDao
+    @Provides
+    @Singleton
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+        return AppDatabase.getDatabase(context)
+    }
+
+    @Provides
+    fun provideFavoriteDao(database: AppDatabase): FavoriteDao {
+        return database.favoriteDao()
+    }
+
     // Configuration for ApiService and PredictionRepository
     @Provides
     @Singleton
     @Named("defaultRetrofit")
     fun provideDefaultRetrofit(
-       @Named("defaultOkHttpClient") okHttpClient: OkHttpClient
+        @Named("defaultOkHttpClient") okHttpClient: OkHttpClient
     ): Retrofit =
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -107,7 +123,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providePredictionRepository(apiService: ApiService): PredictionRepository =
+    fun providePredictionRepository(
+        apiService: ApiService,
+    ): PredictionRepository =
         PredictionRepository(apiService)
 
 

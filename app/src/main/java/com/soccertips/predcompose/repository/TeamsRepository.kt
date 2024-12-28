@@ -29,4 +29,7 @@ constructor(
     ) = teamsService.getNextFixtures(season, teamId, next)
 
 
+    suspend fun getTeamData(
+        id: Int,
+    ) = teamsService.getTeamData(id)
 }

@@ -1,13 +1,13 @@
 package com.soccertips.predcompose.repository
 
-import com.soccertips.predcompose.model.ResponseData
-import com.soccertips.predcompose.model.events.FixtureEventsResponse
-import com.soccertips.predcompose.model.headtohead.HeadToHeadResponse
-import com.soccertips.predcompose.model.lastfixtures.FixtureListResponse
-import com.soccertips.predcompose.model.lineups.FixtureLineupResponse
-import com.soccertips.predcompose.model.prediction.PredictionResponse
-import com.soccertips.predcompose.model.standings.StandingsResponse
-import com.soccertips.predcompose.model.statistics.StatisticsResponse
+import com.soccertips.predcompose.data.model.ResponseData
+import com.soccertips.predcompose.data.model.events.FixtureEventsResponse
+import com.soccertips.predcompose.data.model.headtohead.HeadToHeadResponse
+import com.soccertips.predcompose.data.model.lastfixtures.FixtureListResponse
+import com.soccertips.predcompose.data.model.lineups.FixtureLineupResponse
+import com.soccertips.predcompose.data.model.prediction.PredictionResponse
+import com.soccertips.predcompose.data.model.standings.StandingsResponse
+import com.soccertips.predcompose.data.model.statistics.StatisticsResponse
 import com.soccertips.predcompose.network.FixtureDetailsService
 import javax.inject.Inject
 

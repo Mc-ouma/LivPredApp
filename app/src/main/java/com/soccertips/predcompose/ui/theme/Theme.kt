@@ -2,15 +2,19 @@ package com.soccertips.predcompose.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 
@@ -78,12 +82,28 @@ private val LightColorScheme = lightColorScheme(
     scrim = md_theme_light_scrim,
 )
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun PredComposeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colors = if(darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+
+    val cardColors = CardDefaults.cardColors(
+        containerColor = if (darkTheme) colorScheme.surface else colorScheme.secondaryContainer,
+        contentColor = if (darkTheme) colorScheme.onSurface else colorScheme.onSecondaryContainer,
+    )
+    val cardElevation = CardDefaults.cardElevation(8.dp)
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -93,9 +113,15 @@ fun PredComposeTheme(
 
 
     MaterialTheme(
-        colorScheme = colors,
+        colorScheme = colorScheme,
         typography = Typography,
         shapes = Shapes,
-        content = content
+        content = {
+            CompositionLocalProvider(
+                LocalCardColors provides cardColors,
+                LocalCardElevation provides cardElevation,
+                content = content
+            )
+        }
     )
 }

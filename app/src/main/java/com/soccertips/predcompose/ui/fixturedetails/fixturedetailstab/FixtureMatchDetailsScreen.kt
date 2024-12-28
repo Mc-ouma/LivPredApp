@@ -22,11 +22,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.soccertips.predcompose.model.Fixture
-import com.soccertips.predcompose.model.ResponseData
-import com.soccertips.predcompose.model.lastfixtures.FixtureDetails
-import com.soccertips.predcompose.model.prediction.Predictions
+import com.soccertips.predcompose.data.model.Fixture
+import com.soccertips.predcompose.data.model.ResponseData
+import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
+import com.soccertips.predcompose.data.model.prediction.Predictions
 import com.soccertips.predcompose.navigation.Routes
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import com.soccertips.predcompose.viewmodel.SharedViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -180,7 +182,11 @@ fun FixtureCard(
         homeTeamIdInt,
         awayTeamIdInt
     )
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
@@ -317,14 +323,15 @@ fun FixtureDetailCard(fixture: Fixture) {
     val venueName = fixture.venue.name ?: ""
     val venueCity = fixture.venue.city ?: ""
 
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier =
         Modifier
             .fillMaxWidth()
             .padding(top = 8.dp),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
             modifier =
@@ -413,7 +420,6 @@ fun PredictionCard(predictions: Predictions) {
         Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

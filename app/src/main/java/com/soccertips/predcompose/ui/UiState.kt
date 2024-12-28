@@ -1,6 +1,6 @@
 package com.soccertips.predcompose.ui
 
-import com.soccertips.predcompose.model.ResponseData
+import com.soccertips.predcompose.data.model.ResponseData
 
 sealed class UiState<out T> {
     object Idle : UiState<Nothing>()

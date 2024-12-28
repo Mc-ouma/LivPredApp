@@ -1,6 +1,8 @@
 package com.soccertips.predcompose.ui.team
 
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -27,11 +29,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.soccertips.predcompose.model.standings.Goals
-import com.soccertips.predcompose.model.standings.HomeAwayRecord
-import com.soccertips.predcompose.model.standings.OverallRecord
-import com.soccertips.predcompose.model.standings.TeamInfo
-import com.soccertips.predcompose.model.standings.TeamStanding
+import com.soccertips.predcompose.data.model.standings.Goals
+import com.soccertips.predcompose.data.model.standings.HomeAwayRecord
+import com.soccertips.predcompose.data.model.standings.OverallRecord
+import com.soccertips.predcompose.data.model.standings.TeamInfo
+import com.soccertips.predcompose.data.model.standings.TeamStanding
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import kotlin.collections.List
 
@@ -39,7 +41,6 @@ import kotlin.collections.List
 fun FixtureStandings(
     standings: List<TeamStanding>,
     teamId1: Int,
-    teamInfoVisible: Boolean,
     onTeamInfoVisibilityChanged: (Boolean) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
@@ -54,24 +55,22 @@ fun FixtureStandings(
 
     val groupedStandings = standings.groupBy { it.group }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(16.dp)
-        ) {
-            groupedStandings.forEach { (groupName, groupStandings) ->
-                item {
-                    GroupHeader(groupName = groupName)
-                }
-                items(groupStandings) { teamStanding ->
-                    TeamRow(
-                        teamStanding = teamStanding,
-                        isHighlighted = teamStanding.team.id == teamId1
-                    )
-                }
+
+    LazyColumn(
+        state = lazyListState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        groupedStandings.forEach { (groupName, groupStandings) ->
+            item {
+                GroupHeader(groupName = groupName)
+            }
+            items(groupStandings) { teamStanding ->
+                TeamRow(
+                    teamStanding = teamStanding,
+                    isHighlighted = teamStanding.team.id == teamId1
+                )
             }
         }
     }
@@ -176,6 +175,7 @@ fun TeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
 }
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 private fun LeagueCardPreview() {
@@ -266,7 +266,6 @@ private fun LeagueCardPreview() {
         FixtureStandings(
             standings = sampleStandings,
             teamId1 = 33,
-            teamInfoVisible = true
         ) { visible ->
             // Do nothing
         }

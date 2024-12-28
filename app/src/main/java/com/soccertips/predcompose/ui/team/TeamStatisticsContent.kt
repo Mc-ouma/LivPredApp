@@ -1,11 +1,13 @@
 package com.soccertips.predcompose.ui.team
 
+import android.content.res.Configuration
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,27 +32,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.soccertips.predcompose.model.team.teamscreen.AverageGoals
-import com.soccertips.predcompose.model.team.teamscreen.Biggest
-import com.soccertips.predcompose.model.team.teamscreen.CardDetail
-import com.soccertips.predcompose.model.team.teamscreen.Cards
-import com.soccertips.predcompose.model.team.teamscreen.CleanSheet
-import com.soccertips.predcompose.model.team.teamscreen.FailedToScore
-import com.soccertips.predcompose.model.team.teamscreen.Fixtures
-import com.soccertips.predcompose.model.team.teamscreen.ForAgainstGoals
-import com.soccertips.predcompose.model.team.teamscreen.GoalMinute
-import com.soccertips.predcompose.model.team.teamscreen.Goals
-import com.soccertips.predcompose.model.team.teamscreen.HomeAway
-import com.soccertips.predcompose.model.team.teamscreen.HomeAwayGoals
-import com.soccertips.predcompose.model.team.teamscreen.League
-import com.soccertips.predcompose.model.team.teamscreen.Lineup
-import com.soccertips.predcompose.model.team.teamscreen.Penalty
-import com.soccertips.predcompose.model.team.teamscreen.PenaltyDetails
-import com.soccertips.predcompose.model.team.teamscreen.Played
-import com.soccertips.predcompose.model.team.teamscreen.Streak
-import com.soccertips.predcompose.model.team.teamscreen.Team
-import com.soccertips.predcompose.model.team.teamscreen.TeamStatistics
-import com.soccertips.predcompose.model.team.teamscreen.UnderOver
+import com.soccertips.predcompose.data.model.team.teamscreen.AverageGoals
+import com.soccertips.predcompose.data.model.team.teamscreen.Biggest
+import com.soccertips.predcompose.data.model.team.teamscreen.CardDetail
+import com.soccertips.predcompose.data.model.team.teamscreen.Cards
+import com.soccertips.predcompose.data.model.team.teamscreen.CleanSheet
+import com.soccertips.predcompose.data.model.team.teamscreen.FailedToScore
+import com.soccertips.predcompose.data.model.team.teamscreen.Fixtures
+import com.soccertips.predcompose.data.model.team.teamscreen.ForAgainstGoals
+import com.soccertips.predcompose.data.model.team.teamscreen.GoalMinute
+import com.soccertips.predcompose.data.model.team.teamscreen.Goals
+import com.soccertips.predcompose.data.model.team.teamscreen.HomeAway
+import com.soccertips.predcompose.data.model.team.teamscreen.HomeAwayGoals
+import com.soccertips.predcompose.data.model.team.teamscreen.League
+import com.soccertips.predcompose.data.model.team.teamscreen.Lineup
+import com.soccertips.predcompose.data.model.team.teamscreen.Penalty
+import com.soccertips.predcompose.data.model.team.teamscreen.PenaltyDetails
+import com.soccertips.predcompose.data.model.team.teamscreen.Played
+import com.soccertips.predcompose.data.model.team.teamscreen.Streak
+import com.soccertips.predcompose.data.model.team.teamscreen.Team
+import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatistics
+import com.soccertips.predcompose.data.model.team.teamscreen.UnderOver
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import timber.log.Timber
 
@@ -74,204 +78,230 @@ fun TeamStatisticsContent(
             }
     }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .onGloballyPositioned { layoutCoordinates ->
-            Timber.d("TeamStatisticsContent: Parent Size: ${layoutCoordinates.size}")
-        }) {
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(16.dp),
-        ) {
-            Timber.d("TeamStatisticsContent: statistics: $statistics")
-            // Form Card
-            item {
-                StatisticCard(title = "Form") {
-                    Row(horizontalArrangement = Arrangement.Center) {
-                        statistics.form.forEach { letter ->
-                            val (color, background) = when (letter) {
-                                'W' -> Color.Green to Color.Green.copy(alpha = 0.2f)
-                                'D' -> Color.Gray to Color.Gray.copy(alpha = 0.2f)
-                                'L' -> Color.Red to Color.Red.copy(alpha = 0.2f)
-                                else -> Color.Gray to Color.Gray.copy(alpha = 0.2f)
-                            }
-                            Text(
-                                text = letter.toString(),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = color,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(
-                                        color = background
-                                    ),
-                                textAlign = TextAlign.Center,
-                                maxLines = 2
 
-                            )
+
+    LazyColumn(
+        state = lazyListState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .onGloballyPositioned { layoutCoordinates ->
+                Timber.d("TeamStatisticsContent: LazyColumn Size: ${layoutCoordinates.size}")
+            }
+    ) {
+        Timber.d("TeamStatisticsContent: statistics: $statistics")
+        // Form Card
+        item {
+            StatisticCard(title = "Form") {
+                Row(horizontalArrangement = Arrangement.Center) {
+                    statistics.form.forEach { letter ->
+                        val (color, background) = when (letter) {
+                            'W' -> Color.Green to Color.Green.copy(alpha = 0.2f)
+                            'D' -> Color.Gray to Color.Gray.copy(alpha = 0.2f)
+                            'L' -> Color.Red to Color.Red.copy(alpha = 0.2f)
+                            else -> Color.Gray to Color.Gray.copy(alpha = 0.2f)
                         }
-                    }
-                }
-            }
-            // Fixtures Card
-            item {
-                StatisticCard(title = "Fixtures") {
-                    TableComposable(
-                        headers = listOf("Category", "Home", "Away", "Total"),
-                        rows = listOf(
-                            listOf(
-                                "Played",
-                                "${statistics.fixtures.played.home}",
-                                "${statistics.fixtures.played.away}",
-                                "${statistics.fixtures.played.total}"
-                            ),
-                            listOf(
-                                "Wins",
-                                "${statistics.fixtures.wins.home}",
-                                "${statistics.fixtures.wins.away}",
-                                "${statistics.fixtures.wins.total}"
-                            ),
-                            listOf(
-                                "Draws",
-                                "${statistics.fixtures.draws.home}",
-                                "${statistics.fixtures.draws.away}",
-                                "${statistics.fixtures.draws.total}"
-                            ),
-                            listOf(
-                                "Losses",
-                                "${statistics.fixtures.loses.home}",
-                                "${statistics.fixtures.loses.away}",
-                                "${statistics.fixtures.loses.total}"
-                            )
-                        )
-                    )
-                }
-            }
-            // Goals Card
-            item {
-                StatisticCard(title = "Goals") {
-                    TableComposable(
-                        headers = listOf("Type", "Home", "Away", "Total"),
-                        rows = listOf(
-                            listOf(
-                                "For",
-                                "${statistics.goals.`for`.total.home}",
-                                "${statistics.goals.`for`.total.away}",
-                                "${statistics.goals.`for`.total.total}"
-                            ),
-                            listOf(
-                                "Against",
-                                "${statistics.goals.against.total.home}",
-                                "${statistics.goals.against.total.away}",
-                                "${statistics.goals.against.total.total}"
-                            )
-                        )
-                    )
-                }
-            }
-            // Penalties Card
-            item {
-                StatisticCard(title = "Penalties") {
-                    Text(text = "Scored: ${statistics.penalty.scored.total} (${statistics.penalty.scored.percentage})")
-                    LinearProgressIndicator(
-                        progress = { statistics.penalty.scored.total / statistics.penalty.total.toFloat() },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Missed: ${statistics.penalty.missed.total} (${statistics.penalty.missed.percentage})")
-                    LinearProgressIndicator(
-                        progress = { statistics.penalty.missed.total / statistics.penalty.total.toFloat() },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-            // Most Used Formation Card
-            item {
-                StatisticCard(title = "Most Used Formation: ${statistics.lineups.maxByOrNull { it.played }?.formation}") {
-                    statistics.lineups.forEach { lineup ->
                         Text(
-                            text = "${lineup.formation}: (${lineup.played} times)",
-                            style = MaterialTheme.typography.bodySmall
+                            text = letter.toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = color,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    color = background
+                                ),
+                            textAlign = TextAlign.Center,
+                            maxLines = 2
+
                         )
                     }
                 }
             }
-            // Cards Card
-            item {
-                StatisticCard(title = "Cards") {
-                    Text(text = "Yellow Cards: ${statistics.cards.yellow.size}")
-                    Text(text = "Red Cards: ${statistics.cards.red.size}")
+        }
+        // Fixtures Card
+        item {
+            StatisticCard(title = "Fixtures") {
+                TableComposable(
+                    headers = listOf("Category", "Home", "Away", "Total"),
+                    rows = listOf(
+                        listOf(
+                            "Played",
+                            "${statistics.fixtures.played.home}",
+                            "${statistics.fixtures.played.away}",
+                            "${statistics.fixtures.played.total}"
+                        ),
+                        listOf(
+                            "Wins",
+                            "${statistics.fixtures.wins.home}",
+                            "${statistics.fixtures.wins.away}",
+                            "${statistics.fixtures.wins.total}"
+                        ),
+                        listOf(
+                            "Draws",
+                            "${statistics.fixtures.draws.home}",
+                            "${statistics.fixtures.draws.away}",
+                            "${statistics.fixtures.draws.total}"
+                        ),
+                        listOf(
+                            "Losses",
+                            "${statistics.fixtures.loses.home}",
+                            "${statistics.fixtures.loses.away}",
+                            "${statistics.fixtures.loses.total}"
+                        )
+                    )
+                )
+            }
+        }
+        // Goals Card
+        item {
+            StatisticCard(title = "Goals") {
+                TableComposable(
+                    headers = listOf("Type", "Home", "Away", "Total"),
+                    rows = listOf(
+                        listOf(
+                            "For",
+                            "${statistics.goals.`for`.total.home}",
+                            "${statistics.goals.`for`.total.away}",
+                            "${statistics.goals.`for`.total.total}"
+                        ),
+                        listOf(
+                            "Against",
+                            "${statistics.goals.against.total.home}",
+                            "${statistics.goals.against.total.away}",
+                            "${statistics.goals.against.total.total}"
+                        )
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Goals For Minute table
+                TableComposable(
+                    headers = listOf("Minute", "Total", "Percentage"),
+                    rows = statistics.goals.`for`.minute.map { (minute, goalMinute) ->
+                        listOf(minute, "${goalMinute.total ?: "-"}", goalMinute.percentage ?: "N/A")
+                    }
+                )
+
+            }
+        }
+        // Penalties Card
+        item {
+            StatisticCard(title = "Penalties") {
+                Text(text = "Scored: ${statistics.penalty.scored.total} (${statistics.penalty.scored.percentage})")
+                LinearProgressIndicator(
+                    progress = { statistics.penalty.scored.total / statistics.penalty.total.toFloat() },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Missed: ${statistics.penalty.missed.total} (${statistics.penalty.missed.percentage})")
+                LinearProgressIndicator(
+                    progress = { statistics.penalty.missed.total / statistics.penalty.total.toFloat() },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        // Most Used Formation Card
+        item {
+            StatisticCard(title = "Most Used Formation: ${statistics.lineups.maxByOrNull { it.played }?.formation}") {
+                statistics.lineups.forEach { lineup ->
+                    Text(
+                        text = "${lineup.formation}: (${lineup.played} times)",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-            // Biggest Streaks Card
-            item {
-                StatisticCard(title = "Biggest Streaks") {
-                    Text(text = "Wins: ${statistics.biggest.streak.wins}")
-                    Text(text = "Draws: ${statistics.biggest.streak.draws}")
-                    Text(text = "Loses: ${statistics.biggest.streak.loses}")
-                }
-                StatisticCard(title = "Biggest Wins") {
-                    Text(text = "Home: ${statistics.biggest.wins.home}")
-                    Text(text = "Away: ${statistics.biggest.wins.away}")
-                }
-                StatisticCard(title = "Biggest Losses") {
-                    Text(text = "Home: ${statistics.biggest.loses.home}")
-                    Text(text = "Away: ${statistics.biggest.loses.away}")
-                }
-                StatisticCard(title = "Biggest Goals For") {
-                    Text(text = "Home: ${statistics.biggest.goals.`for`.home}")
-                    LinearProgressIndicator(
-                        progress = { statistics.biggest.goals.`for`.home.toFloat() / statistics.goals.`for`.total.total },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Away: ${statistics.biggest.goals.`for`.away}")
-                    LinearProgressIndicator(
-                        progress = { statistics.biggest.goals.`for`.away.toFloat() / statistics.goals.`for`.total.total },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                StatisticCard(title = "Biggest Goals Against") {
-                    Text(text = "Home: ${statistics.biggest.goals.against.home}")
-                    LinearProgressIndicator(
-                        progress = { statistics.biggest.goals.against.home.toFloat() / statistics.goals.against.total.total },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Away: ${statistics.biggest.goals.against.away}")
-                    LinearProgressIndicator(
-                        progress = { statistics.biggest.goals.against.away.toFloat() / statistics.goals.against.total.total },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+        }
+        // Cards Card
+        item {
+            StatisticCard(title = "Cards") {
+                // Yellow Cards table
+                Text(text = "Yellow Cards")
+                TableComposable(
+                    headers = listOf("Minute", "Total", "Percentage"),
+                    rows = statistics.cards.yellow.map { (minute, cardDetail) ->
+                        listOf(minute, "${cardDetail.total ?: "-"}", cardDetail.percentage ?: "N/A")
+                    }
+                )
+                // Red Cards table
+                Text(text = "Red Cards")
+                TableComposable(
+                    headers = listOf("Minute", "Total", "Percentage"),
+                    rows = statistics.cards.red.map { (minute, cardDetail) ->
+                        listOf(minute, "${cardDetail.total ?: "-"}", cardDetail.percentage ?: "N/A")
+                    }
+                )
             }
-            // Clean Sheets Card
-            item {
-                StatisticCard(title = "Clean Sheets") {
-                    Text(text = "Home: ${statistics.clean_sheet.home}")
-                    Text(text = "Away: ${statistics.clean_sheet.away}")
-                    Text(text = "Total: ${statistics.clean_sheet.total}")
-                }
+        }
+        // Biggest Streaks Card
+        item {
+            StatisticCard(title = "Biggest Streaks") {
+                Text(text = "Wins: ${statistics.biggest.streak.wins}")
+                Text(text = "Draws: ${statistics.biggest.streak.draws}")
+                Text(text = "Loses: ${statistics.biggest.streak.loses}")
             }
-            // Failed to Score Card
-            item {
-                StatisticCard(title = "Failed to Score") {
-                    Text(text = "Home: ${statistics.failed_to_score.home}")
-                    Text(text = "Away: ${statistics.failed_to_score.away}")
-                    Text(text = "Total: ${statistics.failed_to_score.total}")
-                }
+            StatisticCard(title = "Biggest Wins") {
+                Text(text = "Home: ${statistics.biggest.wins.home}")
+                Text(text = "Away: ${statistics.biggest.wins.away}")
+            }
+            StatisticCard(title = "Biggest Losses") {
+                Text(text = "Home: ${statistics.biggest.loses.home}")
+                Text(text = "Away: ${statistics.biggest.loses.away}")
+            }
+            StatisticCard(title = "Most Goals For") {
+                Text(text = "Home: ${statistics.biggest.goals.`for`.home}")
+                LinearProgressIndicator(
+                    progress = { statistics.biggest.goals.`for`.home.toFloat() / statistics.goals.`for`.total.total },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Away: ${statistics.biggest.goals.`for`.away}")
+                LinearProgressIndicator(
+                    progress = { statistics.biggest.goals.`for`.away.toFloat() / statistics.goals.`for`.total.total },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            StatisticCard(title = "Most Goals Against") {
+                Text(text = "Home: ${statistics.biggest.goals.against.home}")
+                LinearProgressIndicator(
+                    progress = { statistics.biggest.goals.against.home.toFloat() / statistics.goals.against.total.total },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Away: ${statistics.biggest.goals.against.away}")
+                LinearProgressIndicator(
+                    progress = { statistics.biggest.goals.against.away.toFloat() / statistics.goals.against.total.total },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        // Clean Sheets Card
+        item {
+            StatisticCard(title = "Clean Sheets") {
+                Text(text = "Home: ${statistics.clean_sheet.home}")
+                Text(text = "Away: ${statistics.clean_sheet.away}")
+                Text(text = "Total: ${statistics.clean_sheet.total}")
+            }
+        }
+        // Failed to Score Card
+        item {
+            StatisticCard(title = "Failed to Score") {
+                Text(text = "Home: ${statistics.failed_to_score.home}")
+                Text(text = "Away: ${statistics.failed_to_score.away}")
+                Text(text = "Total: ${statistics.failed_to_score.total}")
             }
         }
     }
 }
 
+
 @Composable
 fun StatisticCard(title: String, content: @Composable () -> Unit) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp)
@@ -289,10 +319,11 @@ fun StatisticCard(title: String, content: @Composable () -> Unit) {
 
 @Composable
 fun TableComposable(headers: List<String>, rows: List<List<String>>) {
-    Table(headers = headers, rows = rows)
+    Table(headers = headers, rows = rows.map { row -> row.map { it ?: "-" } })
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 640)
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true, widthDp = 360, heightDp = 640, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 
 fun TeamStatisticsContentPreview() {
@@ -438,7 +469,3 @@ fun TeamStatisticsContentPreview() {
     }
 
 }
-
-
-
-

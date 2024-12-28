@@ -3,7 +3,11 @@ package com.soccertips.predcompose.navigation
 sealed class Routes(
     val route: String,
 ) {
+    object Home : Routes("home")
+
     object Categories : Routes("categories")
+
+    object Favorites : Routes("favorites")
 
     object ItemsList : Routes("items_list/{categoryId}") {
         fun createRoute(categoryId: String) = "items_list/$categoryId"

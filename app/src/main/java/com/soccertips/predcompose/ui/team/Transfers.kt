@@ -1,5 +1,7 @@
 package com.soccertips.predcompose.ui.team
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,11 +47,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
-import com.soccertips.predcompose.model.team.transfer.Player2
-import com.soccertips.predcompose.model.team.transfer.Response2
-import com.soccertips.predcompose.model.team.transfer.Team
-import com.soccertips.predcompose.model.team.transfer.Teams
-import com.soccertips.predcompose.model.team.transfer.Transfer
+import com.soccertips.predcompose.data.model.team.transfer.Player2
+import com.soccertips.predcompose.data.model.team.transfer.Response2
+import com.soccertips.predcompose.data.model.team.transfer.Team
+import com.soccertips.predcompose.data.model.team.transfer.Teams
+import com.soccertips.predcompose.data.model.team.transfer.Transfer
 import com.soccertips.predcompose.repository.TeamsRepository
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import com.soccertips.predcompose.viewmodel.TeamViewModel
@@ -63,7 +64,6 @@ fun TransferScreen(
     viewModel: TeamViewModel,
     transfers: List<Response2>,
     teamId: String,
-    teamInfoVisible: Boolean,
     onTeamInfoVisibilityChanged: (Boolean) -> Unit
 ) {
     var currentPage by rememberSaveable { mutableIntStateOf(1) }
@@ -87,76 +87,73 @@ fun TransferScreen(
 
 
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(16.dp)
-        ) {
-            itemsIndexed(transfers) { index, response ->
-                //   val isExpanded = expandedItems.contains(index)
-                val isExpanded by remember(
-                    expandedItems,
-                    index
-                ) { derivedStateOf { expandedItems.contains(index) } }
+    LazyColumn(
+        state = lazyListState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        itemsIndexed(transfers) { index, response ->
+            //   val isExpanded = expandedItems.contains(index)
+            val isExpanded by remember(
+                expandedItems,
+                index
+            ) { derivedStateOf { expandedItems.contains(index) } }
 
-                Column(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize()
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .animateContentSize()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                expandedItems = if (isExpanded) {
-                                    expandedItems - index
-                                } else {
-                                    expandedItems + index
-                                }
+                        .clickable {
+                            expandedItems = if (isExpanded) {
+                                expandedItems - index
+                            } else {
+                                expandedItems + index
                             }
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = response.player.name ?: "Unknown Player",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (isExpanded) "Collapse" else "Expand"
-                        )
-                    }
-
-                    if (isExpanded) {
-                        response.transfers.forEach { transfer ->
-                            TransferItem(
-                                playerName = response.player.name ?: "Unknown Player",
-                                transfer = transfer,
-                                teamId = teamId
-                            )
                         }
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = response.player.name ?: "Unknown Player",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Collapse" else "Expand"
+                    )
                 }
-            }
 
-            // Loading Indicator
-            if (viewModel.isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+                if (isExpanded) {
+                    response.transfers.forEach { transfer ->
+                        TransferItem(
+                            playerName = response.player.name ?: "Unknown Player",
+                            transfer = transfer,
+                            teamId = teamId
+                        )
                     }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            }
+        }
+
+        // Loading Indicator
+        if (viewModel.isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -257,6 +254,7 @@ fun TransferItem(playerName: String, transfer: Transfer, teamId: String) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
 @Composable
 fun TransferScreenPreview() {
@@ -371,7 +369,6 @@ fun TransferScreenPreview() {
                     teamsService = TODO()
                 )
             ),
-            teamInfoVisible = true,
         ) { visible ->
         }
 

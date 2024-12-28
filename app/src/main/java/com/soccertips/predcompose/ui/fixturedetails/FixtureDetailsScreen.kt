@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
@@ -38,7 +37,6 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Summarize
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,13 +73,13 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.soccertips.predcompose.Menu
 import com.soccertips.predcompose.R
-import com.soccertips.predcompose.model.ResponseData
-import com.soccertips.predcompose.model.Team
-import com.soccertips.predcompose.model.events.FixtureEvent
-import com.soccertips.predcompose.model.headtohead.FixtureDetails
-import com.soccertips.predcompose.model.lineups.TeamLineup
-import com.soccertips.predcompose.model.standings.TeamStanding
-import com.soccertips.predcompose.model.statistics.Response
+import com.soccertips.predcompose.data.model.ResponseData
+import com.soccertips.predcompose.data.model.Team
+import com.soccertips.predcompose.data.model.events.FixtureEvent
+import com.soccertips.predcompose.data.model.headtohead.FixtureDetails
+import com.soccertips.predcompose.data.model.lineups.TeamLineup
+import com.soccertips.predcompose.data.model.standings.TeamStanding
+import com.soccertips.predcompose.data.model.statistics.Response
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.components.ErrorMessage
@@ -92,6 +90,8 @@ import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureMat
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureStandingsScreen
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureStatisticsScreen
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureSummaryScreen
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import com.soccertips.predcompose.viewmodel.FixtureDetailsViewModel
 import com.soccertips.predcompose.viewmodel.SharedViewModel
 import kotlinx.coroutines.launch
@@ -293,7 +293,7 @@ fun DataScreen(
     pages: Array<FixtureDetailsScreenPage>,
     fixtureStatsState: UiState<List<Response>>,
     fixtureEventsState: UiState<List<FixtureEvent>>,
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>,
+    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
     headToHeadState: UiState<List<FixtureDetails>>,
     lineupsState: UiState<List<TeamLineup>>,
@@ -382,7 +382,7 @@ fun EmptyScreen(paddingValues: PaddingValues) {
 fun EmptyStateMessages(
     fixtureStatsState: UiState<List<Response>>,
     fixtureEventsState: UiState<List<FixtureEvent>>,
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>
+    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>
 ) {
     if (fixtureStatsState is UiState.Empty) {
         Text(
@@ -420,7 +420,7 @@ fun FixtureDetailsTabs(
     fixtureDetails: ResponseData,
     fixtureStatsState: UiState<List<Response>>,
     fixtureEventsState: UiState<List<FixtureEvent>>,
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>,
+    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
     headToHeadState: UiState<List<FixtureDetails>>,
     lineupsState: UiState<List<TeamLineup>>,
@@ -527,7 +527,7 @@ fun FixtureDetailsTabs(
 
 @Composable
 fun FixtureMatchDetailsTab(
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.model.prediction.Response>>,
+    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>,
     fixtureDetails: ResponseData,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
     navController: NavController,
@@ -739,15 +739,16 @@ fun FixtureScoreAndScorers(
                     response.fixture.status.elapsed,
                     response.fixture.timestamp,
                 )
+            val cardColors = LocalCardColors.current
+            val cardElevation = LocalCardElevation.current
 
             Card(
                 modifier
                     .wrapContentHeight()
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = cardColors,
+                elevation = cardElevation
             ) {
                 Column(
                     modifier

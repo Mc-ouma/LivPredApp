@@ -158,7 +158,6 @@ fun ItemsListScreen(
                                     onFavoriteClick = {
                                         viewModel.toggleFavorite(item)
                                     },
-                                    isFavorite = isFavorite,
                                     viewModel = viewModel
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))

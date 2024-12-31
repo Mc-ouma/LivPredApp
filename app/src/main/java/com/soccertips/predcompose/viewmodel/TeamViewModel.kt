@@ -4,13 +4,10 @@ import android.icu.text.SimpleDateFormat
 import android.icu.util.TimeZone
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.soccertips.predcompose.data.model.team.transfer.Response2
 import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
-import com.soccertips.predcompose.data.model.lastfixtures.FixtureListResponse
 import com.soccertips.predcompose.data.model.team.squad.Response
-import com.soccertips.predcompose.data.model.team.squad.SquadResponse
 import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatistics
-import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatisticsResponse
+import com.soccertips.predcompose.data.model.team.transfer.Response2
 import com.soccertips.predcompose.repository.TeamsRepository
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.viewmodel.TeamViewModel.FormattedDateTime

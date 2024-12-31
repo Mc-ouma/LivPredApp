@@ -1,6 +1,5 @@
 package com.soccertips.predcompose.ui.favorites
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -34,14 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
@@ -52,7 +47,6 @@ import com.soccertips.predcompose.ui.items.TeamDetails
 import com.soccertips.predcompose.ui.items.TeamInfo
 import com.soccertips.predcompose.ui.theme.LocalCardColors
 import com.soccertips.predcompose.ui.theme.LocalCardElevation
-import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import com.soccertips.predcompose.viewmodel.FavoritesViewModel
 
 

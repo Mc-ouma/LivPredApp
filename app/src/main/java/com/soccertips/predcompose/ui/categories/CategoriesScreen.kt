@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,6 +35,7 @@ fun CategoriesScreen(
         is UiState.Loading -> {
             LoadingIndicator()
         }
+
         is UiState.Error -> {
             ErrorMessage(
                 (uiState as UiState.Error).message,
@@ -43,6 +43,7 @@ fun CategoriesScreen(
                 modifier = Modifier.fillMaxSize(),
             )
         }
+
         is UiState.Success -> {
             val categories = (uiState as UiState.Success<List<Category>>).data
             CategoriesScreen(

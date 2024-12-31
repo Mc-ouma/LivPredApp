@@ -407,7 +407,7 @@ fun FixtureDetailCard(fixture: Fixture) {
 @Composable
 fun PredictionCard(predictions: Predictions) {
     val underOverText =
-        predictions.under_over?.let {
+        predictions.under_over.let {
             when {
                 it.startsWith("-") -> "Under ${it.removePrefix("-")}"
                 it.startsWith("+") -> "Over ${it.removePrefix("+")}"

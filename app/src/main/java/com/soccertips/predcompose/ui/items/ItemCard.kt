@@ -47,7 +47,6 @@ fun ItemCard(
     item: ServerResponse,
     onClick: () -> Unit,
     onFavoriteClick: (ServerResponse) -> Unit,
-    isFavorite: Boolean,
     modifier: Modifier = Modifier,
     viewModel: ItemsListViewModel
 ) {

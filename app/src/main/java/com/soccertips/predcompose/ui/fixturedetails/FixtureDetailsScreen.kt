@@ -219,6 +219,7 @@ fun FixtureDetailsScreen(
 
             is UiState.Error -> ErrorScreen(paddingValues)
             UiState.Empty -> EmptyScreen(paddingValues)
+            else -> Unit
         }
 
         // Display "No data available" message for each empty state
@@ -878,9 +879,9 @@ fun FixtureScoreAndScorers(
         }
 
 
-        UiState.Empty -> {
+        UiState.Empty ->
             EmptyScreen(paddingValues = PaddingValues(0.dp))
-        }
+        else -> Unit
     }
 }
 

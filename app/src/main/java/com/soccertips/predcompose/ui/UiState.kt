@@ -13,7 +13,13 @@ sealed class UiState<out T> {
     data class Error(
         val message: String,
     ) : UiState<Nothing>()
+
     object Empty : UiState<Nothing>()
+    data class ShowSnackbar(
+        val message: String,
+        val actionLabel: String,
+        val onActionPerformed: (() -> Unit)?
+    ) : UiState<Nothing>()
 }
 
 sealed class FixtureDetailsUiState {

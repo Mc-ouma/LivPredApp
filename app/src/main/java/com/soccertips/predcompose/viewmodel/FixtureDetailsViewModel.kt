@@ -140,11 +140,6 @@ constructor(
                 val fixtureEventsResponse = fixtureEventsResponseDeferred.await()
                 standingsResponseDeferred.await()
 
-                // Process each response and update UI state
-                /*  handleFormResponse(
-                      homeFormResponse,
-                      awayFormResponse
-                  )*/ // Handle both home and away form responses
                 handlePredictionsResponse(predictionsResponse)
                 handleStatsResponse(homeStatsResponse, awayStatsResponse)
                 handleHeadToHeadResponse(headToHeadResponse)
@@ -224,15 +219,6 @@ constructor(
         }
     }
 
-    /*private fun handleStandingsResponse(standingsResponse: StandingsResponse) {
-        val standingsData = standingsResponse.response
-        val teamStandings = standingsData.flatMap { it.league.standings.flatten() }
-        if (teamStandings.isNotEmpty()) {
-            _standingsState.value = UiState.Success(teamStandings)
-        } else {
-            _standingsState.value = UiState.Error("😞 No standings data available.")
-        }
-    }*/
 
     // Centralized error handler
     private fun setErrorState(errorMessage: String) {

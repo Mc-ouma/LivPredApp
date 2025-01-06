@@ -117,11 +117,31 @@ android {
  all versions in a single place. This improves readability and helps managing project complexity.
  */
 dependencies {
+    // Unit testing dependencies
+    testImplementation (libs.junit)
+    testImplementation (libs.mockito.core)
+    testImplementation (libs.mockito.inline)
+    testImplementation (libs.kotlinx.coroutines.test)
+    testImplementation (libs.androidx.core.testing)
+    testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
+    testImplementation ("app.cash.turbine:turbine:0.12.0")
+
+    // AndroidX Test - JVM testing
+    testImplementation (libs.androidx.core)
+    testImplementation (libs.androidx.junit)
+    testImplementation (libs.androidx.runner)
+    testImplementation (libs.androidx.rules)
+
+    // AndroidX Test - Instrumented testing
+    androidTestImplementation (libs.ext.junit)
+    androidTestImplementation (libs.androidx.espresso.core)
+
     implementation(libs.androidx.annotation)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.activity.ktx)
+    implementation(libs.kotlinx.coroutines.guava)
 
 
     // Room

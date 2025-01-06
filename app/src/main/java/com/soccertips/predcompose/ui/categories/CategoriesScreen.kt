@@ -26,6 +26,7 @@ import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.components.ErrorMessage
 import com.soccertips.predcompose.ui.components.LoadingIndicator
+import com.soccertips.predcompose.ui.fixturedetails.EmptyScreen
 import com.soccertips.predcompose.viewmodel.CategoriesViewModel
 
 
@@ -61,7 +62,8 @@ fun CategoriesScreen(
             NotificationPermissionEffect()
         }
 
-        UiState.Empty -> TODO()
+        UiState.Empty -> EmptyScreen(paddingValues = PaddingValues( 16.dp), message= "Error, Try Restarting App")
+        else -> Unit
     }
 }
 

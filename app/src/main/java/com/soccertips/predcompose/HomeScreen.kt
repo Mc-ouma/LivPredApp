@@ -1,5 +1,10 @@
 package com.soccertips.predcompose
 
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -22,16 +27,17 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.soccertips.predcompose.ui.categories.CategoriesScreen
 import com.soccertips.predcompose.ui.favorites.FavoritesScreen
@@ -61,9 +67,10 @@ sealed class BottomNavScreens(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
+    val context = LocalContext.current
     val homeNavController = rememberNavController()
     val favoritesViewModel: FavoritesViewModel = hiltViewModel()
-    val favoriteCount by favoritesViewModel.favoriteCount.collectAsStateWithLifecycle()
+    val favoriteCount by favoritesViewModel.favoriteCount.collectAsStateWithLifecycle(initialValue = 0)
     val items = listOf(
         BottomNavScreens.Categories,
         BottomNavScreens.Favorite(badgeCount = favoriteCount),
@@ -72,6 +79,25 @@ fun HomeScreen(navController: NavController) {
         mutableIntStateOf(0)
     }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    // State to track the last back press time
+    var backPressState by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    // Handle back button press
+    BackHandler(enabled = true) {
+        if (selectedItemIndex == 1) { // If on FavoritesScreen
+            selectedItemIndex = 0 // Navigate back to CategoriesScreen
+        } else { // If on CategoriesScreen
+            // Handle double back press to exit
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - backPressState <= 2000) {
+                android.os.Process.killProcess(android.os.Process.myPid())
+            } else {
+                backPressState = currentTime
+                Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Scaffold(modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -87,7 +113,6 @@ fun HomeScreen(navController: NavController) {
                         selected = selectedItemIndex == index,
                         onClick = {
                             selectedItemIndex = index
-                            homeNavController.navigate(item.route)
                         },
                         label = {
                             Text(text = item.title)
@@ -118,16 +143,19 @@ fun HomeScreen(navController: NavController) {
         },
         content = { padding ->
             Column(modifier = Modifier.padding(padding)) {
-                NavHost(
-                    navController = homeNavController,
-                    startDestination = BottomNavScreens.Categories.route
+                AnimatedVisibility(
+                    visible = selectedItemIndex == 0,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
                 ) {
-                    composable(BottomNavScreens.Categories.route) {
-                        CategoriesScreen(navController = navController)
-                    }
-                    composable(BottomNavScreens.Favorite().route) {
-                        FavoritesScreen(navController = navController)
-                    }
+                    CategoriesScreen(navController = navController)
+                }
+                AnimatedVisibility(
+                    visible = selectedItemIndex == 1,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    FavoritesScreen(navController = navController)
                 }
             }
         }

@@ -76,6 +76,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.R
 import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
 import com.soccertips.predcompose.data.model.standings.TeamStanding
+import com.soccertips.predcompose.data.model.team.teamscreen.Response
 import com.soccertips.predcompose.data.model.team.teamscreen.TeamData
 import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatistics
 import com.soccertips.predcompose.data.model.team.teamscreen.Venue
@@ -157,7 +158,7 @@ fun TeamScreen(
                     val countryName = when (val state = teamDataState) {
                         is UiState.Success<*> -> {
                             val data = state.data
-                            if (data is com.soccertips.predcompose.data.model.team.teamscreen.Response) {
+                            if (data is Response) {
                                 data.team.country
                             } else {
                                 "Team Info"
@@ -167,6 +168,7 @@ fun TeamScreen(
                         is UiState.Loading -> "Loading..."
                         is UiState.Error -> "Error"
                         UiState.Empty -> "No Data"
+                        is UiState.ShowSnackbar -> TODO()
                     }
                     Text(
                         text = countryName,
@@ -186,16 +188,16 @@ fun TeamScreen(
         }
     ) { paddingValues ->
         when (teamDataState) {
-            is UiState.Loading -> {
+            is UiState.Loading ->
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
                     CircularProgressIndicator()
                 }
-            }
 
-            is UiState.Success -> {
+
+            is UiState.Success ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -235,15 +237,17 @@ fun TeamScreen(
                         teamInfoVisible = teamInfoVisible // Pass MutableState<Boolean>
                     )
                 }
-            }
 
-            is UiState.Error -> {
+
+            is UiState.Error ->
                 ErrorScreen(paddingValues)
-            }
 
-            UiState.Empty -> {
+
+            UiState.Empty ->
                 EmptyScreen(paddingValues)
-            }
+
+            else -> Unit
+
         }
     }
 }
@@ -383,28 +387,28 @@ fun <T> ShowDataOrLoading(
     onRetry: () -> Unit = {}
 ) {
     when (state) {
-        is UiState.Loading -> {
+        is UiState.Loading ->
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
-        }
+
 
         is UiState.Success -> {
             Timber.tag("ShowDataOrLoading").d("Data loaded successfully: ${state.data}")
             content(state.data)
         }
 
-        is UiState.Error -> {
-            ErrorScreen(paddingValues = PaddingValues(0.dp),)
-        }
+        is UiState.Error ->
+            ErrorScreen(paddingValues = PaddingValues(0.dp))
 
-        UiState.Empty -> {
+
+        UiState.Empty ->
             EmptyScreen(paddingValues = PaddingValues(0.dp))
 
-        }
+        else -> Unit
 
     }
 }

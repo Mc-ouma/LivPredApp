@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +25,7 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -42,6 +45,7 @@ import com.soccertips.predcompose.Menu
 import com.soccertips.predcompose.data.model.Category
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
+import com.soccertips.predcompose.ui.components.DateUtils
 import com.soccertips.predcompose.ui.components.ErrorMessage
 import com.soccertips.predcompose.ui.components.LoadingIndicator
 import com.soccertips.predcompose.viewmodel.ItemsListViewModel
@@ -76,18 +80,20 @@ fun ItemsListScreen(
     val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    val formattedDate = DateUtils.formatRelativeDate(selectedDate.toString())
+    var scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     // Fetch items when the category or selected date changes
     LaunchedEffect(key1 = category, key2 = selectedDate) {
         viewModel.fetchItems(category.endpoint, selectedDate)
     }
 
-    Scaffold(
+    Scaffold(Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        category.name,
+                        text = formattedDate,
                     )
                 },
                 navigationIcon = {
@@ -107,7 +113,8 @@ fun ItemsListScreen(
                         )
                     }
                     Menu()
-                }
+                },
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { paddingValues ->

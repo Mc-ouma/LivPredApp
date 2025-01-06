@@ -154,8 +154,7 @@ fun FixtureColumn(
                 FixtureCard(
                     fixture = fixtureWithType.fixture,
                     isHome = fixtureWithType.isHome,
-                    homeTeamIdInt = homeTeamIdInt,
-                    awayTeamIdInt = awayTeamIdInt,
+                    teamId = TeamId(homeTeamIdInt, awayTeamIdInt),
                     navController = navController
                 )
 
@@ -168,19 +167,20 @@ fun FixtureColumn(
 }
 
 
+data class TeamId(val homeTeamId: Int, val awayTeamId: Int)
+
+
 @Composable
 fun FixtureCard(
     fixture: FixtureDetails,
     isHome: Boolean,
-    homeTeamIdInt: Int,
-    awayTeamIdInt: Int,
+    teamId: TeamId,
     navController: NavController
 ) {
     val cardColor = getCardColor(
         fixture,
         isHome,
-        homeTeamIdInt,
-        awayTeamIdInt
+        teamId,
     )
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
@@ -275,8 +275,7 @@ fun FixtureCard(
 fun getCardColor(
     fixture: FixtureDetails,
     isHome: Boolean,
-    homeTeamIdInt: Int,
-    awayTeamIdInt: Int
+    teamId: TeamId
 ): Color {
 
     return when {
@@ -285,8 +284,8 @@ fun getCardColor(
 
         // Home team logic
         isHome -> {
-            if ((fixture.teams.home.winner == true && fixture.teams.home.id == homeTeamIdInt) ||
-                (fixture.teams.away.winner == true && fixture.teams.away.id == homeTeamIdInt)
+            if ((fixture.teams.home.winner == true && fixture.teams.home.id == teamId.homeTeamId) ||
+                (fixture.teams.away.winner == true && fixture.teams.away.id == teamId.homeTeamId)
             ) {
                 Color.Green
             } else {
@@ -296,8 +295,8 @@ fun getCardColor(
 
         // Away team logic
         !isHome -> {
-            if ((fixture.teams.away.winner == true && fixture.teams.away.id == awayTeamIdInt) ||
-                (fixture.teams.home.winner == true && fixture.teams.home.id == awayTeamIdInt)
+            if ((fixture.teams.away.winner == true && fixture.teams.away.id == teamId.awayTeamId) ||
+                (fixture.teams.home.winner == true && fixture.teams.home.id == teamId.awayTeamId)
             ) {
                 Color.Green
             } else {
@@ -407,13 +406,13 @@ fun FixtureDetailCard(fixture: Fixture) {
 @Composable
 fun PredictionCard(predictions: Predictions) {
     val underOverText =
-        predictions.under_over.let {
+        predictions.under_over?.let {
             when {
                 it.startsWith("-") -> "Under ${it.removePrefix("-")}"
                 it.startsWith("+") -> "Over ${it.removePrefix("+")}"
                 else -> it
             }
-        }
+        } ?: ""
 
     OutlinedCard(
         modifier =

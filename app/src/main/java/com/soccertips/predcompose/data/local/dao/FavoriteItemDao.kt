@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FavoriteDao {
@@ -17,4 +18,10 @@ interface FavoriteDao {
 
     @Query("DELETE FROM favorites WHERE fixtureId = :fixtureId")
     suspend fun delete(fixtureId: String)
+
+    @Query("SELECT COUNT(*) FROM favorites")
+    fun getFavoriteCount(): Flow<Int>
+
+    @Query("SELECT * FROM favorites WHERE mTime = :mTime AND mDate = :mDate")
+    suspend fun getDueItem(mTime: String, mDate: String): List<FavoriteItem>
 }

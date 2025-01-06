@@ -22,8 +22,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,8 +55,10 @@ fun ItemCard(
     val teamHomeDetails = TeamDetails(item.hLogoPath, item.homeTeam)
     val teamAwayDetails = TeamDetails(item.aLogoPath, item.awayTeam)
     var isFavorite by remember { mutableStateOf(false) }
+    var showToast by remember { mutableStateOf(false) }
+    var toastMessage by remember { mutableStateOf("") }
 
-    LaunchedEffect (isFavorite) {
+    LaunchedEffect(isFavorite) {
         isFavorite = viewModel.isFavorite(item)
     }
     Card(
@@ -92,6 +94,9 @@ fun ItemCard(
                     onFavoriteClick(item)
                     viewModel.toggleFavorite(item)
                     isFavorite = !isFavorite
+                    showToast = true
+                    toastMessage =
+                        if (isFavorite) "Added to Favorites" else "Removed from Favorites"
                 }) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,

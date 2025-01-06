@@ -3,7 +3,6 @@ package com.soccertips.predcompose.ui
 import com.soccertips.predcompose.data.model.ResponseData
 
 sealed class UiState<out T> {
-    object Idle : UiState<Nothing>()
 
     object Loading : UiState<Nothing>()
 

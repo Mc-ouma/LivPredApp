@@ -81,6 +81,7 @@ import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatistics
 import com.soccertips.predcompose.data.model.team.teamscreen.Venue
 import com.soccertips.predcompose.data.model.team.transfer.Response2
 import com.soccertips.predcompose.ui.UiState
+import com.soccertips.predcompose.ui.fixturedetails.EmptyScreen
 import com.soccertips.predcompose.ui.fixturedetails.ErrorScreen
 import com.soccertips.predcompose.ui.theme.LocalCardColors
 import com.soccertips.predcompose.ui.theme.LocalCardElevation
@@ -166,7 +167,6 @@ fun TeamScreen(
                         is UiState.Loading -> "Loading..."
                         is UiState.Error -> "Error"
                         UiState.Empty -> "No Data"
-                        UiState.Idle -> "Idle"
                     }
                     Text(
                         text = countryName,
@@ -241,8 +241,9 @@ fun TeamScreen(
                 ErrorScreen(paddingValues)
             }
 
-            UiState.Empty -> TODO()
-            UiState.Idle -> TODO()
+            UiState.Empty -> {
+                EmptyScreen(paddingValues)
+            }
         }
     }
 }
@@ -362,8 +363,7 @@ fun TeamsTab(
                             ResultsScreen(
                                 fixtures = fixtures,
                                 navController = navController,
-                                homeTeamIdInt = teamId.toInt(),
-                                awayTeamIdInt = teamId.toInt(),
+                                teamId = teamId.toInt(),
                                 onScroll = { visible ->
                                     teamInfoVisible.value = visible
                                 }
@@ -398,41 +398,14 @@ fun <T> ShowDataOrLoading(
         }
 
         is UiState.Error -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = state.message,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = onRetry) {
-                        Text("Retry")
-                    }
-                }
-            }
+            ErrorScreen(paddingValues = PaddingValues(0.dp),)
         }
 
         UiState.Empty -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "No data available", style = MaterialTheme.typography.bodySmall)
-            }
+            EmptyScreen(paddingValues = PaddingValues(0.dp))
+
         }
 
-        UiState.Idle -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "Waiting for input", style = MaterialTheme.typography.bodySmall)
-            }
-        }
     }
 }
 

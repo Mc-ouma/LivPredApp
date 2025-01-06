@@ -152,6 +152,7 @@ dependencies {
     implementation(libs.accompanist.appcompat.theme)
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.swiperefresh)
+    implementation (libs.accompanist.permissions)
 
     debugImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.tooling.core)
@@ -177,5 +178,14 @@ dependencies {
 
     //shared elements
     implementation(libs.accompanist.navigation.material)
+
+    // WorkManager
+    implementation(libs.work.runtime)
+
+    testImplementation (libs.androidx.work.testing)
+    testImplementation (libs.mockito.core)
+    testImplementation (libs.kotlinx.coroutines.test)
+
+
 
 }

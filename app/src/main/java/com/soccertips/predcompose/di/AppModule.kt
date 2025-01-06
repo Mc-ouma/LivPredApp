@@ -2,6 +2,7 @@ package com.soccertips.predcompose.di
 
 import android.app.Application
 import android.content.Context
+import androidx.work.WorkManager
 import com.soccertips.predcompose.data.local.AppDatabase
 import com.soccertips.predcompose.data.local.dao.FavoriteDao
 import com.soccertips.predcompose.network.ApiService
@@ -88,6 +89,14 @@ object AppModule {
             .addNetworkInterceptor(cacheInterceptor)
             .build()
     }
+
+    // Configuration for WorkManager
+    @Provides
+    @Singleton
+    fun provideWorkManager(context: Context): WorkManager {
+        return WorkManager.getInstance(context)
+    }
+
 
     // Configuration for AppDatabase and FavoriteItemDao
     @Provides

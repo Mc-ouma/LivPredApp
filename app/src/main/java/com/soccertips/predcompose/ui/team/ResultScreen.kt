@@ -12,17 +12,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureCard
+import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.TeamId
 import com.soccertips.predcompose.viewmodel.SharedViewModel.FixtureWithType
+import timber.log.Timber
 
 @Composable
 fun ResultsScreen(
     fixtures: List<FixtureWithType>,
     navController: NavController,
-    homeTeamIdInt: Int,
-    awayTeamIdInt: Int,
+    teamId: Int,
     onScroll: (Boolean) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
+
+    Timber.d("ResultsScreen: $fixtures  homeTeamIdInt: $teamId")
 
     // Observe scroll state to hide/show the team info card
     LaunchedEffect(lazyListState) {
@@ -33,21 +36,28 @@ fun ResultsScreen(
             }
     }
 
+    // Filter fixtures based on isHome property and team ID
+    val filteredFixtures = fixtures.filter { fixtureWithType ->
+        (fixtureWithType.specialId.toInt() == teamId)
+    }
+
     // Display the list of fixtures
     LazyColumn(
         state = lazyListState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp)
     ) {
-        items(fixtures) { fixture ->
+        items(filteredFixtures) { fixture ->
             FixtureCard(
                 fixture = fixture.fixture,
                 isHome = fixture.isHome,
-                homeTeamIdInt = homeTeamIdInt,
-                awayTeamIdInt = awayTeamIdInt,
+                teamId = TeamId(teamId, teamId),
                 navController = navController
             )
             HorizontalDivider()
+        }
+        item {
+            Spacer(modifier = Modifier.height(200.dp))
         }
     }
 }

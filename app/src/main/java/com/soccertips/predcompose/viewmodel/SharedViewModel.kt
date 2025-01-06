@@ -40,9 +40,9 @@ class SharedViewModel @Inject constructor(
                 val awayResponse = repository.getLastFixtures(season, awayTeamId, last)
 
                 val homeFixtures =
-                    homeResponse.response.map { FixtureWithType(it, isHome = true) }
+                    homeResponse.response.map { FixtureWithType(it, isHome = true, specialId = homeTeamId) }
                 val awayFixtures =
-                    awayResponse.response.map { FixtureWithType(it, isHome = false) }
+                    awayResponse.response.map { FixtureWithType(it, isHome = false, specialId = awayTeamId) }
 
                 val combinedFixtures = homeFixtures + awayFixtures
                 _fixturesState.value = UiState.Success(combinedFixtures)
@@ -59,7 +59,8 @@ class SharedViewModel @Inject constructor(
 
     data class FixtureWithType(
         val fixture: FixtureDetails,
-        val isHome: Boolean // True for home team, false for away team
+        val isHome: Boolean, // True for home team, false for away team
+        val specialId: String
     )
 
     // Fetch standings

@@ -23,11 +23,21 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,8 +50,11 @@ import androidx.navigation.NavController
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
+import com.soccertips.predcompose.ui.components.DateUtils
 import com.soccertips.predcompose.ui.components.ErrorMessage
 import com.soccertips.predcompose.ui.components.LoadingIndicator
+import com.soccertips.predcompose.ui.components.MyCustomIndicator
+import com.soccertips.predcompose.ui.fixturedetails.EmptyScreen
 import com.soccertips.predcompose.ui.items.LeagueInfo
 import com.soccertips.predcompose.ui.items.TeamDetails
 import com.soccertips.predcompose.ui.items.TeamInfo
@@ -57,73 +70,124 @@ fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarState = rememberSnackBarState()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val state = rememberPullToRefreshState()
 
-
-    when (uiState) {
-        is UiState.Loading -> {
-            LoadingIndicator()
-        }
-
-        is UiState.Error -> {
-            ErrorMessage(
-                message = (uiState as UiState.Error).message,
-                onRetry = { viewModel.loadFavorites() },
+    // Observe SnackbarState changes and show Snackbar
+    LaunchedEffect(snackbarState.message) {
+        if (snackbarState.message.isNotEmpty()) {
+            val result = snackbarHostState.showSnackbar(
+                message = snackbarState.message,
+                actionLabel = snackbarState.actionLabel,
             )
+            if (result == SnackbarResult.ActionPerformed) {
+                snackbarState.onActionPerformed?.invoke()
+            }
+            // Reset SnackbarState after showing
+            snackbarState.message = ""
+            snackbarState.actionLabel = ""
+            snackbarState.onActionPerformed = null
         }
+    }
 
-        is UiState.Success -> {
-            val favoriteItems = (uiState as UiState.Success<List<FavoriteItem>>).data
-            if (favoriteItems.isEmpty()) {
-                Text(
-                    text = "No favorite items found.",
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-            } else {
-                FavoritesScreen(
-                    navController = navController,
-                    viewModel = viewModel,
-                    favoriteItems = favoriteItems,
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        when (uiState) {
+            is UiState.Loading -> {
+                LoadingIndicator()
+            }
+
+            is UiState.Error -> {
+                ErrorMessage(
+                    message = (uiState as UiState.Error).message,
+                    onRetry = { viewModel.loadFavorites() },
                 )
             }
-        }
 
-        else -> { /* No Action */
+            is UiState.Success -> {
+                val favoriteItems = (uiState as UiState.Success<List<FavoriteItem>>).data
+                if (favoriteItems.isEmpty()) {
+                    EmptyScreen(paddingValues = PaddingValues(16.dp), message = "No favorite items")
+                } else {
+                    FavoritesScreen(
+                        navController = navController,
+                        viewModel = viewModel,
+                        favoriteItems = favoriteItems,
+                        snackbarState = snackbarState,
+                        isRefreshing = isRefreshing,
+                        state = state,
+                        onRefresh = {
+                            isRefreshing = true
+                            viewModel.loadFavorites()
+                            isRefreshing = false
+                        }
+                    )
+                }
+            }
+
+            is UiState.Empty -> {
+                EmptyScreen(paddingValues = PaddingValues(16.dp))
+            }
+
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
     navController: NavController,
     viewModel: FavoritesViewModel = hiltViewModel(),
-    favoriteItems: List<FavoriteItem>
+    favoriteItems: List<FavoriteItem>,
+    snackbarState: SnackbarState,
+    isRefreshing: Boolean,
+    state: PullToRefreshState,
+    onRefresh: () -> Unit,
 ) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(favoriteItems) { item ->
-            FavoriteItemCard(
-                item = item,
-                onFavoriteClick = { viewModel.removeFromFavorites(item) },
-                isFavorite = true,
-                viewModel = viewModel,
-                onClick = {
-                    navController.navigate(
-                        Routes.FixtureDetails.createRoute(
-                            item.fixtureId
-                        )
-                    )
-                }
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        state = state,
+        indicator = {
+            MyCustomIndicator(
+                state = state,
+                isRefreshing = isRefreshing,
+                modifier = Modifier.align(Alignment.TopCenter)
             )
         }
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
+    ) {
+        LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(favoriteItems) { item ->
+                FavoriteItemCard(
+                    item = item,
+                    onFavoriteClick = { favoriteItem ->
+                        viewModel.removeFromFavorites(favoriteItem) // Remove the item
+                        snackbarState.message = "Removed from Favorites"
+                        snackbarState.actionLabel = "Undo"
+                        snackbarState.onActionPerformed = {
+                            viewModel.restoreFavorites(favoriteItem) // Restore the item
+                        }
+                    },
+                    isFavorite = true,
+                    onClick = {
+                        navController.navigate(
+                            Routes.FixtureDetails.createRoute(item.fixtureId)
+                        )
+                    },
+                    snackbarState = snackbarState,
+                )
+            }
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
-
 }
 
 @Composable
@@ -131,14 +195,16 @@ fun FavoriteItemCard(
     item: FavoriteItem,
     onFavoriteClick: (FavoriteItem) -> Unit = {},
     isFavorite: Boolean,
-    viewModel: FavoritesViewModel,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    snackbarState: SnackbarState,
 ) {
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
     val teamHomeDetails = TeamDetails(item.hLogoPath, item.homeTeam)
     val teamAwayDetails = TeamDetails(item.aLogoPath, item.awayTeam)
-    val formattedDate = viewModel.formatRelativeDate(item.mDate)
+    val formattedDate = DateUtils.formatRelativeDate(item.mDate)
+
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -166,7 +232,14 @@ fun FavoriteItemCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
 
-                IconButton(onClick = { onFavoriteClick(item) }) {
+                IconButton(onClick = {
+                    onFavoriteClick(item) // Remove the item
+                    snackbarState.message = "Removed from Favorites"
+                    snackbarState.actionLabel = "Undo"
+                    snackbarState.onActionPerformed = {
+                        onFavoriteClick(item) // Restore the item when "Undo" is clicked
+                    }
+                }) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                         contentDescription = "Favorite",
@@ -227,7 +300,7 @@ fun FavoriteItemCard(
                     Icon(
                         imageVector = Icons.Outlined.FiberManualRecord,
                         contentDescription = "Status Indicator",
-                        //tint = item.color,
+                        tint = Color(item.color),
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
@@ -241,5 +314,16 @@ fun FavoriteItemCard(
             }
         }
     }
+}
+
+@Composable
+fun rememberSnackBarState(): SnackbarState {
+    return remember { SnackbarState() }
+}
+
+class SnackbarState {
+    var message by mutableStateOf("")
+    var actionLabel by mutableStateOf("")
+    var onActionPerformed by mutableStateOf<(() -> Unit)?>(null)
 }
 

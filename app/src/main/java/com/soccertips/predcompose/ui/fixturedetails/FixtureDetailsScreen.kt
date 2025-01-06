@@ -218,7 +218,7 @@ fun FixtureDetailsScreen(
             )
 
             is UiState.Error -> ErrorScreen(paddingValues)
-            UiState.Idle, UiState.Empty -> EmptyScreen(paddingValues)
+            UiState.Empty -> EmptyScreen(paddingValues)
         }
 
         // Display "No data available" message for each empty state
@@ -363,7 +363,7 @@ fun ErrorScreen(paddingValues: PaddingValues) {
 }
 
 @Composable
-fun EmptyScreen(paddingValues: PaddingValues) {
+fun EmptyScreen(paddingValues: PaddingValues, message: String = "No data available") {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -371,7 +371,7 @@ fun EmptyScreen(paddingValues: PaddingValues) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "No data available",
+            text = message,
             color = Color.Gray,
             style = MaterialTheme.typography.bodyLarge
         )
@@ -874,18 +874,13 @@ fun FixtureScoreAndScorers(
         }
 
         is UiState.Error -> {
-            Text(
-                text = (uiState as UiState.Error).message,
-                modifier = Modifier.padding(16.dp),
-                color = Color.Red,
-            )
+            ErrorScreen(paddingValues = PaddingValues(0.dp))
         }
 
-        UiState.Idle -> {
-            // Do nothing
-        }
 
-        UiState.Empty -> TODO()
+        UiState.Empty -> {
+            EmptyScreen(paddingValues = PaddingValues(0.dp))
+        }
     }
 }
 

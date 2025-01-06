@@ -1,5 +1,6 @@
 package com.soccertips.predcompose
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -40,28 +43,64 @@ import com.soccertips.predcompose.viewmodel.CategoriesViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() { // Annotate with Hilt
+class MainActivity : ComponentActivity() {
+
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             PredComposeTheme {
-                Surface(modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surface) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.surface
+                ) {
                     AppNavigation()
                 }
+            }
+        }
 
+        // Handle notification click
+        handleNotificationIntent(intent)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Handle notification click if the activity is already open
+        handleNotificationIntent(intent)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun handleNotificationIntent(intent: Intent?) {
+        val fixtureId = intent?.getStringExtra("fixtureId") ?: return
+        if (fixtureId.isNotEmpty()) {
+            // Navigate to the FixtureDetailsScreen
+            setContent {
+                PredComposeTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        AppNavigation(fixtureId)
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(fixtureId: String? = null) {
     val navController = rememberNavController()
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()
     val uiState by categoriesViewModel.uiState.collectAsState()
+
+    if (fixtureId != null) {
+        LaunchedEffect(fixtureId) {
+            navController.navigate(Routes.FixtureDetails.createRoute(fixtureId))
+        }
+    }
 
     NavHost(
         navController = navController,

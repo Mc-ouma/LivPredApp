@@ -1,5 +1,7 @@
 package com.soccertips.predcompose.ui.categories
 
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,13 +9,18 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus.Denied
+import com.google.accompanist.permissions.rememberPermissionState
 import com.soccertips.predcompose.data.model.Category
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
@@ -30,6 +37,7 @@ fun CategoriesScreen(
     viewModel: CategoriesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
 
     when (uiState) {
         is UiState.Loading -> {
@@ -50,12 +58,13 @@ fun CategoriesScreen(
                 navController = navController,
                 categories = categories,
             )
+            NotificationPermissionEffect()
         }
 
         UiState.Empty -> TODO()
-        UiState.Idle -> TODO()
     }
 }
+
 
 @Composable
 fun CategoriesScreen(navController: NavController, categories: List<Category>) {
@@ -78,6 +87,24 @@ fun CategoriesScreen(navController: NavController, categories: List<Category>) {
 
                 },
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun NotificationPermissionEffect() {
+    // Permission requests should only be made from an Activity Context, which is not present
+    // in previews
+    if (LocalInspectionMode.current) return
+    if (VERSION.SDK_INT < VERSION_CODES.TIRAMISU) return
+    val notificationsPermissionState = rememberPermissionState(
+        android.Manifest.permission.POST_NOTIFICATIONS,
+    )
+    LaunchedEffect(notificationsPermissionState) {
+        val status = notificationsPermissionState.status
+        if (status is Denied && !status.shouldShowRationale) {
+            notificationsPermissionState.launchPermissionRequest()
         }
     }
 }

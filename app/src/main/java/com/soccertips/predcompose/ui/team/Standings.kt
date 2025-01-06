@@ -72,6 +72,9 @@ fun FixtureStandings(
                     isHighlighted = teamStanding.team.id == teamId1
                 )
             }
+            item {
+                Spacer(modifier = Modifier.height(200.dp))
+            }
         }
     }
 }

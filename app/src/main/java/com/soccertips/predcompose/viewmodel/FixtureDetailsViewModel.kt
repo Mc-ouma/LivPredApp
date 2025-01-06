@@ -32,7 +32,7 @@ class FixtureDetailsViewModel
 constructor(
     private val repository: FixtureDetailsRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow<UiState<ResponseData>>(UiState.Idle)
+    private val _uiState = MutableStateFlow<UiState<ResponseData>>(UiState.Loading)
     val uiState: StateFlow<UiState<ResponseData>> = _uiState.asStateFlow()
 
     private val _headToHeadState =
@@ -59,11 +59,9 @@ constructor(
     /* private val _standingsState = MutableStateFlow<UiState<List<TeamStanding>>>(UiState.Loading)
      val standingsState: StateFlow<UiState<List<TeamStanding>>> = _standingsState.asStateFlow()*/
 
-    private val _predictionsState = MutableStateFlow<UiState<List<Response>>>(UiState.Idle)
+    private val _predictionsState = MutableStateFlow<UiState<List<Response>>>(UiState.Loading)
     val predictionsState: StateFlow<UiState<List<Response>>> = _predictionsState.asStateFlow()
 
-    /*private val _formState = MutableStateFlow<UiState<List<FixtureWithType>>>(UiState.Idle)
-    val formState: StateFlow<UiState<List<FixtureWithType>>> = _formState.asStateFlow()*/
 
     // Cache to avoid refetching the same fixture details
     private var lastFetchedFixtureId: String? = null

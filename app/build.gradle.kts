@@ -123,8 +123,8 @@ dependencies {
     testImplementation (libs.mockito.inline)
     testImplementation (libs.kotlinx.coroutines.test)
     testImplementation (libs.androidx.core.testing)
-    testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
-    testImplementation ("app.cash.turbine:turbine:0.12.0")
+    testImplementation(libs.mockito.kotlin)
+    testImplementation (libs.turbine)
 
     // AndroidX Test - JVM testing
     testImplementation (libs.androidx.core)
@@ -195,6 +195,10 @@ dependencies {
     implementation(libs.sheets.m3)
 
     implementation (libs.lottie.compose)
+
+    // App update
+    implementation(libs.app.update)
+    implementation(libs.app.update.ktx)
 
     //shared elements
     implementation(libs.accompanist.navigation.material)

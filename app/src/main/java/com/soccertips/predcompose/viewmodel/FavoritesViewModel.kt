@@ -95,8 +95,7 @@ class FavoritesViewModel @Inject constructor(
         viewModelScope.launch {
             snackbarChannel.send(SnackbarData(message, actionLabel, onActionPerformed))
             delay(3000)
-            snackbarChannel.close()
-            snackbarChannel = Channel()
+
         }
     }
 

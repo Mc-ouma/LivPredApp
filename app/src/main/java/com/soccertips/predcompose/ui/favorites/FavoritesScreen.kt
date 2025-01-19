@@ -66,7 +66,6 @@ import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.components.DateUtils
 import com.soccertips.predcompose.ui.components.ErrorMessage
 import com.soccertips.predcompose.ui.components.LoadingIndicator
-import com.soccertips.predcompose.ui.components.MyCustomIndicator
 import com.soccertips.predcompose.ui.fixturedetails.EmptyScreen
 import com.soccertips.predcompose.ui.items.LeagueInfo
 import com.soccertips.predcompose.ui.items.TeamDetails
@@ -126,13 +125,13 @@ fun FavoritesScreen(
 
                 is UiState.Error -> {
                     ErrorMessage(
-                        message = (uiState as UiState.Error).message,
+                        message = uiState.message,
                         onRetry = { viewModel.loadFavorites() },
                     )
                 }
 
                 is UiState.Success -> {
-                    val favoriteItems = (uiState as UiState.Success<List<FavoriteItem>>).data
+                    val favoriteItems = uiState.data
                     val listState = rememberLazyListState()
                     if (favoriteItems.isEmpty()) {
                         EmptyScreen(
@@ -180,13 +179,6 @@ fun FavoritesScreen(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
         state = state,
-        indicator = {
-            MyCustomIndicator(
-                state = state,
-                isRefreshing = isRefreshing,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
-        }
     ) {
         LazyColumn(
             state = listState,

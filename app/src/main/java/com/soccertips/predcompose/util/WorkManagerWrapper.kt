@@ -31,7 +31,7 @@ class WorkManagerWrapperImpl @Inject constructor(private val workManager: WorkMa
     }
 
     override suspend fun getWorkInfosForUniqueWork(uniqueWorkName: String): List<WorkInfo> {
-        return workManager.getWorkInfosForUniqueWork(uniqueWorkName).await() ?: emptyList()
+        return workManager.getWorkInfosForUniqueWork(uniqueWorkName).await()
 
     }
 }

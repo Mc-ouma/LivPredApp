@@ -17,19 +17,41 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.InstallStateUpdatedListener
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallStatus
+import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.review.ReviewInfo
+import com.google.android.play.core.review.ReviewManager
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.soccertips.predcompose.data.model.Category
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.UiState
@@ -41,51 +63,179 @@ import com.soccertips.predcompose.ui.team.TeamScreen
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import com.soccertips.predcompose.viewmodel.CategoriesViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    // In-app update manager
+    private lateinit var appUpdateManager: AppUpdateManager
+    private val updateRequestCode = 100 // Request code for in-app updates
+    private val updateType = AppUpdateType.FLEXIBLE // Update type: FLEXIBLE or IMMEDIATE
+
+    // In-app review manager
+    private val reviewManager: ReviewManager by lazy { ReviewManagerFactory.create(this) }
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Initialize AppUpdateManager
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        if (updateType == AppUpdateType.FLEXIBLE) {
+            appUpdateManager.registerListener(installStateUpdatedListener)
+        }
+
         setContent {
             PredComposeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
-                    AppNavigation()
+                    val navController = rememberNavController()
+                    AppNavigation(navController.toString())
+
+                    // Handle notification intent
+                    val fixtureId = remember { mutableStateOf<String?>(null) }
+                    LaunchedEffect(Unit) {
+                        handleNotificationIntent(intent, fixtureId)
+                    }
+
+                    // Navigate to FixtureDetailsScreen if fixtureId is not null
+                    if (fixtureId.value != null) {
+                        LaunchedEffect(fixtureId.value) {
+                            navController.navigate("fixtureDetails/${fixtureId.value}")
+                        }
+                    }
+
+                    // Trigger in-app review after some user action (e.g., button click)
+                    val context = LocalContext.current
+                    Button(
+                        onClick = { (context as MainActivity).requestReview() },
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text("Rate the App")
+                    }
                 }
             }
         }
 
-        // Handle notification click
-        handleNotificationIntent(intent)
+        // Check for app updates when the activity is created
+        checkForAppUpdates()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Handle notification click if the activity is already open
-        handleNotificationIntent(intent)
+        handleNotificationIntent(intent, null)
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    private fun handleNotificationIntent(intent: Intent?) {
-        val fixtureId = intent?.getStringExtra("fixtureId") ?: return
-        if (fixtureId.isNotEmpty()) {
-            // Navigate to the FixtureDetailsScreen
-            setContent {
-                PredComposeTheme {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        AppNavigation(fixtureId)
-                    }
+    private fun handleNotificationIntent(intent: Intent?, fixtureId: MutableState<String?>?) {
+        val id = intent?.getStringExtra("fixtureId") ?: return
+        if (id.isNotEmpty()) {
+            fixtureId?.value = id
+        }
+    }
+
+    // In-app update logic
+    private fun checkForAppUpdates() {
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
+            val appUpdateOptions =
+                AppUpdateOptions.newBuilder(updateType).setAllowAssetPackDeletion(true).build()
+            val updateAvailability =
+                appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+            val isUpdateTypeAllowed = when (updateType) {
+                AppUpdateType.FLEXIBLE -> appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+                AppUpdateType.IMMEDIATE -> appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+                else -> false
+            }
+            if (updateAvailability && isUpdateTypeAllowed) {
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateInfo,
+                    this,
+                    appUpdateOptions,
+                    updateRequestCode
+                )
+            }
+        }
+    }
+
+    private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
+        if (state.installStatus() == InstallStatus.DOWNLOADED) {
+            // Notify the user that the update is ready to be installed
+            showSnackbarForCompleteUpdate()
+        }
+    }
+
+    @Composable
+    fun ShowSnackbarForCompleteUpdateWrapper(appUpdateManager: AppUpdateManager) {
+        ShowSnackbarForCompleteUpdate(appUpdateManager)
+    }
+
+    private fun showSnackbarForCompleteUpdate() {
+        setContent {
+            ShowSnackbarForCompleteUpdateWrapper(appUpdateManager)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (updateType == AppUpdateType.IMMEDIATE) {
+            appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
+                    val appUpdateOptions =
+                        AppUpdateOptions.newBuilder(updateType).setAllowAssetPackDeletion(true)
+                            .build()
+                    appUpdateManager.startUpdateFlowForResult(
+                        appUpdateInfo,
+                        this,
+                        appUpdateOptions,
+                        updateRequestCode
+                    )
                 }
             }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == updateRequestCode) {
+            if (resultCode != RESULT_OK) {
+                // Handle update failure
+                Timber.d("Update failed")
+            }
+        }
+    }
+
+    // In-app review logic
+    private fun requestReview() {
+        reviewManager.requestReviewFlow().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val reviewInfo: ReviewInfo = task.result
+                launchReviewFlow(reviewInfo)
+            } else {
+                val exception = task.exception
+                exception?.printStackTrace()
+                Timber.e(exception)
+            }
+        }
+    }
+
+    private fun launchReviewFlow(reviewInfo: ReviewInfo) {
+        reviewManager.launchReviewFlow(this, reviewInfo).addOnCompleteListener {
+            // The flow has finished. The API does not indicate whether the user reviewed or not.
+            Timber.d("Review flow completed.")
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (updateType == AppUpdateType.FLEXIBLE) {
+            appUpdateManager.unregisterListener(installStateUpdatedListener)
         }
     }
 }
@@ -206,6 +356,23 @@ fun AppNavigation(fixtureId: String? = null) {
 
 
                 )
+        }
+    }
+}
+
+@Composable
+fun ShowSnackbarForCompleteUpdate(appUpdateManager: AppUpdateManager) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    SnackbarHost(hostState = snackbarHostState)
+
+    LaunchedEffect(Unit) { // Show snackbar when the update is downloaded
+        val result = snackbarHostState.showSnackbar(
+            message = "An update has just been downloaded.",
+            actionLabel = "RESTART",
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            appUpdateManager.completeUpdate()
         }
     }
 }

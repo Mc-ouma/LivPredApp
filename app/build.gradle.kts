@@ -90,10 +90,15 @@ android {
     buildFeatures {
         compose = true
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 
     kotlinOptions {
@@ -118,23 +123,22 @@ android {
  */
 dependencies {
     // Unit testing dependencies
-    testImplementation (libs.junit)
-    testImplementation (libs.mockito.core)
-    testImplementation (libs.mockito.inline)
-    testImplementation (libs.kotlinx.coroutines.test)
-    testImplementation (libs.androidx.core.testing)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.core.testing)
     testImplementation(libs.mockito.kotlin)
-    testImplementation (libs.turbine)
+    testImplementation(libs.turbine)
 
     // AndroidX Test - JVM testing
-    testImplementation (libs.androidx.core)
-    testImplementation (libs.androidx.junit)
-    testImplementation (libs.androidx.runner)
-    testImplementation (libs.androidx.rules)
+    testImplementation(libs.androidx.core)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.androidx.runner)
+    testImplementation(libs.androidx.rules)
 
     // AndroidX Test - Instrumented testing
-    androidTestImplementation (libs.ext.junit)
-    androidTestImplementation (libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(libs.androidx.annotation)
     implementation(libs.kotlinx.coroutines.android)
@@ -164,7 +168,9 @@ dependencies {
     implementation(libs.androidx.compose.foundation.core)
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.animation)
-    implementation(libs.androidx.compose.material.core)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material3.windowsizeclass)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.runtimeCompose)
@@ -172,7 +178,7 @@ dependencies {
     implementation(libs.accompanist.appcompat.theme)
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.swiperefresh)
-    implementation (libs.accompanist.permissions)
+    implementation(libs.accompanist.permissions)
 
     debugImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.tooling.core)
@@ -194,11 +200,15 @@ dependencies {
 
     implementation(libs.sheets.m3)
 
-    implementation (libs.lottie.compose)
+    implementation(libs.lottie.compose)
 
     // App update
     implementation(libs.app.update)
     implementation(libs.app.update.ktx)
+
+    // Review
+    implementation(libs.review)
+    implementation(libs.review.ktx)
 
     //shared elements
     implementation(libs.accompanist.navigation.material)
@@ -206,10 +216,9 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime)
 
-    testImplementation (libs.androidx.work.testing)
-    testImplementation (libs.mockito.core)
-    testImplementation (libs.kotlinx.coroutines.test)
-
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.kotlinx.coroutines.test)
 
 
 }

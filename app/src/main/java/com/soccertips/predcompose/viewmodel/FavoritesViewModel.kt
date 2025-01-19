@@ -11,8 +11,6 @@ import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.util.WorkManagerWrapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -30,8 +28,26 @@ class FavoritesViewModel @Inject constructor(
 
     val favoriteCount = favoriteItemDao.getFavoriteCount().distinctUntilChanged()
 
-    private var snackbarChannel = Channel<SnackbarData>()
-    val snackbarFlow = snackbarChannel.receiveAsFlow()
+    // Use MutableSharedFlow for snackbar events
+    private val _snackbarFlow = MutableSharedFlow<SnackbarData>(replay = 1)
+    val snackbarFlow: SharedFlow<SnackbarData> = _snackbarFlow
+
+    fun showSnackbar(
+        message: String,
+        actionLabel: String,
+        onActionPerformed: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            _snackbarFlow.emit(SnackbarData(message, actionLabel, onActionPerformed))
+
+        }
+    }
+
+    data class SnackbarData(
+        val message: String,
+        val actionLabel: String,
+        val onActionPerformed: (() -> Unit)?
+    )
 
     init {
         loadFavorites()
@@ -91,19 +107,6 @@ class FavoritesViewModel @Inject constructor(
         }
     }
 
-    fun showSnackbar(message: String, actionLabel: String, onActionPerformed: (() -> Unit)?) {
-        viewModelScope.launch {
-            snackbarChannel.send(SnackbarData(message, actionLabel, onActionPerformed))
-            delay(3000)
-
-        }
-    }
-
-    data class SnackbarData(
-        val message: String,
-        val actionLabel: String,
-        val onActionPerformed: (() -> Unit)?
-    )
 
     private fun scheduleNotification(items: List<FavoriteItem>) {
         items.forEach { item ->

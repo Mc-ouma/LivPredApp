@@ -17,14 +17,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -33,8 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -110,21 +105,13 @@ class MainActivity : ComponentActivity() {
                             navController.navigate("fixtureDetails/${fixtureId.value}")
                         }
                     }
-
-                    // Trigger in-app review after some user action (e.g., button click)
-                    val context = LocalContext.current
-                    Button(
-                        onClick = { (context as MainActivity).requestReview() },
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text("Rate the App")
-                    }
                 }
             }
         }
 
         // Check for app updates when the activity is created
         checkForAppUpdates()
+        requestReview()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)

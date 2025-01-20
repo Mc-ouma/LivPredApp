@@ -71,41 +71,37 @@ class FavoritesViewModel @Inject constructor(
         }
     }
 
-    fun restoreFavorites(item: FavoriteItem) {
-        viewModelScope.launch {
-            try {
-                favoriteItemDao.insert(item)
-                val currentFavorites =
-                    (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
-                currentFavorites.add(item)
-                _uiState.value = UiState.Success(currentFavorites.sortedBy {
-                    it.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
-                })
-                scheduleNotification(currentFavorites)
-            } catch (e: Exception) {
-                _uiState.value =
-                    UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
-            }
+   fun restoreFavorites(item: FavoriteItem) {
+    viewModelScope.launch {
+        try {
+            favoriteItemDao.insert(item)
+            val currentFavorites = (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
+            currentFavorites.add(item)
+            _uiState.value = UiState.Success(currentFavorites.sortedBy {
+                it.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
+            })
+            scheduleNotification(currentFavorites)
+        } catch (e: Exception) {
+            _uiState.value = UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
         }
     }
+}
 
-    fun removeFromFavorites(item: FavoriteItem) {
-        viewModelScope.launch {
-            try {
-                favoriteItemDao.delete(fixtureId = item.fixtureId.toString())
-                val currentFavorites =
-                    (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
-                currentFavorites.removeAll { it.fixtureId == item.fixtureId }
-                _uiState.value = UiState.Success(currentFavorites.sortedBy {
-                    it.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
-                })
-                cancelNotification(item.fixtureId.toString())
-            } catch (e: Exception) {
-                _uiState.value =
-                    UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
-            }
+fun removeFromFavorites(item: FavoriteItem) {
+    viewModelScope.launch {
+        try {
+            favoriteItemDao.delete(fixtureId = item.fixtureId.toString())
+            val currentFavorites = (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
+            currentFavorites.removeAll { it.fixtureId == item.fixtureId }
+            _uiState.value = UiState.Success(currentFavorites.sortedBy {
+                it.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
+            })
+            cancelNotification(item.fixtureId.toString())
+        } catch (e: Exception) {
+            _uiState.value = UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
         }
     }
+}
 
 
     private fun scheduleNotification(items: List<FavoriteItem>) {

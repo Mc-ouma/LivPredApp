@@ -38,13 +38,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -74,10 +74,12 @@ import com.soccertips.predcompose.ui.items.TeamDetails
 import com.soccertips.predcompose.ui.items.TeamInfo
 import com.soccertips.predcompose.ui.theme.LocalCardColors
 import com.soccertips.predcompose.viewmodel.FavoritesViewModel
-import kotlinx.coroutines.flow.collectLatest
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,
+    ExperimentalMaterial3ExpressiveApi::class
+)
 @Composable
 fun FavoritesScreen(
     navController: NavController,
@@ -85,204 +87,31 @@ fun FavoritesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarData by viewModel.snackbarFlow.collectAsStateWithLifecycle()
     var isRefreshing by remember { mutableStateOf(false) }
     val state = rememberPullToRefreshState()
 
+
     // Observe SnackbarState changes and show Snackbar
-    LaunchedEffect(viewModel.snackbarFlow) {
-        viewModel.snackbarFlow.collectLatest { snackbarData ->
+    LaunchedEffect(snackbarData) {
+        snackbarData?.let {data ->
             val result = snackbarHostState.showSnackbar(
-                message = snackbarData.message,
-                actionLabel = snackbarData.actionLabel,
+                message = data.message,
+                actionLabel = data.actionLabel,
+                duration = SnackbarDuration.Short
             )
             when (result) {
                 SnackbarResult.ActionPerformed -> {
-                    snackbarData.onActionPerformed?.invoke()
+                    data.onActionPerformed?.invoke()
                 }
 
                 SnackbarResult.Dismissed -> {
                     // Do nothing
                 }
             }
+            viewModel.resetSnackbar()
         }
 
-    }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        AnimatedContent(
-            targetState = uiState,
-            transitionSpec = {
-                if (targetState is UiState.Success) {
-                    fadeIn(animationSpec = tween(durationMillis = 300)) +
-                            scaleIn(
-                                initialScale = 0.9f,
-                                animationSpec = tween(durationMillis = 300)
-                            ) togetherWith
-                            fadeOut(animationSpec = tween(durationMillis = 200))
-                } else {
-                    fadeIn(animationSpec = tween(durationMillis = 300)) togetherWith
-                            fadeOut(animationSpec = tween(durationMillis = 200))
-                }
-            }
-        ) { uiState ->
-            when (uiState) {
-                is UiState.Loading -> {
-                    LoadingIndicator()
-                }
-
-                is UiState.Error -> {
-                    ErrorMessage(
-                        message = uiState.message,
-                        onRetry = { viewModel.loadFavorites() },
-                    )
-                }
-
-                is UiState.Success -> {
-                    val favoriteItems = uiState.data
-                    val listState = rememberLazyListState()
-                    if (favoriteItems.isEmpty()) {
-                        EmptyScreen(
-                            paddingValues = PaddingValues(16.dp),
-                            message = "No favorite items"
-                        )
-                    } else {
-                        FavoritesScreen(
-                            navController = navController,
-                            viewModel = viewModel,
-                            favoriteItems = favoriteItems,
-                            isRefreshing = isRefreshing,
-                            state = state,
-                            onRefresh = {
-                                isRefreshing = true
-                                viewModel.loadFavorites()
-                                isRefreshing = false
-                            },
-                            listState = listState
-                        )
-                    }
-                }
-
-                is UiState.Empty ->
-                    EmptyScreen(paddingValues = PaddingValues(16.dp))
-
-                else -> Unit
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun FavoritesScreen(
-    navController: NavController,
-    viewModel: FavoritesViewModel = hiltViewModel(),
-    favoriteItems: List<FavoriteItem>,
-    isRefreshing: Boolean,
-    state: PullToRefreshState,
-    onRefresh: () -> Unit,
-    listState: LazyListState,
-) {
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = onRefresh,
-        state = state,
-        indicator = {
-            PullToRefreshDefaults.LoadingIndicator(
-                state = state,
-                isRefreshing = isRefreshing,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
-        }
-    ) {
-        LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(16.dp),
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(items = favoriteItems, key = { item -> item.fixtureId }
-            ) { item ->
-                var isItemVisible by remember { mutableStateOf(true) }
-                AnimatedVisibility(
-                    visible = isItemVisible,
-                    enter = fadeIn() + slideInVertically(),
-                    exit = slideOutHorizontally(
-                        targetOffsetX = { -it },
-                        animationSpec = tween(300)
-                    ) + fadeOut(animationSpec = tween(300)),
-                    content = {
-                        FavoriteItemCard(
-                            item = item,
-                            onFavoriteClick = { favoriteItem ->
-                                viewModel.removeFromFavorites(favoriteItem) // Remove the item
-                                viewModel.showSnackbar(
-                                    message = "Removed from Favorites",
-                                    actionLabel = "Undo",
-                                    onActionPerformed = {
-                                        viewModel.restoreFavorites(favoriteItem)
-                                        isItemVisible = true
-                                    }
-                                )
-                                isItemVisible = false
-                            },
-                            isFavorite = true,
-                            onClick = {
-                                navController.navigate(
-                                    Routes.FixtureDetails.createRoute(item.fixtureId)
-                                )
-                            },
-                        )
-                    }
-                )
-            }
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
-}
-
-
-/*@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FavoritesScreen(
-    navController: NavController,
-    viewModel: FavoritesViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-    var isRefreshing by remember { mutableStateOf(false) }
-    val pullToRefreshState = rememberPullToRefreshState()
-
-    // Observe SnackbarState changes and show Snackbar
-    LaunchedEffect(viewModel.snackbarFlow) {
-        viewModel.snackbarFlow.collectLatest { snackbarData ->
-            val result = snackbarHostState.showSnackbar(
-                message = snackbarData.message,
-                actionLabel = snackbarData.actionLabel,
-            )
-            when (result) {
-                SnackbarResult.ActionPerformed -> {
-                    snackbarData.onActionPerformed?.invoke()
-                }
-
-                SnackbarResult.Dismissed -> {
-                    // Do nothing
-                }
-            }
-        }
-    }
-
-    // Handle pull-to-refresh
-    LaunchedEffect(pullToRefreshState.isRefreshing) {
-        if (pullToRefreshState.isRefreshing) {
-            isRefreshing = true
-            viewModel.loadFavorites() // Trigger refresh in ViewModel
-            isRefreshing = false
-            pullToRefreshState.endRefresh() // End the refresh gesture
-        }
     }
 
     Scaffold(
@@ -290,8 +119,17 @@ fun FavoritesScreen(
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
-            onRefresh = { pullToRefreshState.startRefresh() }, // Start refresh gesture
-            state = pullToRefreshState,
+            onRefresh = {
+                isRefreshing = true; viewModel.loadFavorites(); isRefreshing = false
+            }, // Start refresh gesture
+            state = state,
+            indicator = {
+                PullToRefreshDefaults.LoadingIndicator(
+                    state = state,
+                    isRefreshing = isRefreshing,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            }
         ) {
             AnimatedContent(
                 targetState = uiState,
@@ -330,19 +168,17 @@ fun FavoritesScreen(
                                 message = "No favorite items"
                             )
                         } else {
-                            FavoriteItemList(
+                            FavoritesScreen(
                                 navController = navController,
                                 viewModel = viewModel,
                                 favoriteItems = favoriteItems,
-                                listState = listState,
-                                paddingValues = paddingValues,
+                                listState = listState
                             )
                         }
                     }
 
-                    is UiState.Empty -> {
+                    is UiState.Empty ->
                         EmptyScreen(paddingValues = PaddingValues(16.dp))
-                    }
 
                     else -> Unit
                 }
@@ -351,21 +187,23 @@ fun FavoritesScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun FavoriteItemList(
+fun FavoritesScreen(
     navController: NavController,
-    viewModel: FavoritesViewModel,
+    viewModel: FavoritesViewModel = hiltViewModel(),
     favoriteItems: List<FavoriteItem>,
     listState: LazyListState,
-    paddingValues: PaddingValues,
 ) {
+
     LazyColumn(
         state = listState,
-        contentPadding = paddingValues,
+        contentPadding = PaddingValues(16.dp),
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(items = favoriteItems, key = { item -> item.fixtureId }) { item ->
+        items(items = favoriteItems, key = { item -> item.fixtureId }
+        ) { item ->
             var isItemVisible by remember { mutableStateOf(true) }
             AnimatedVisibility(
                 visible = isItemVisible,
@@ -378,7 +216,7 @@ fun FavoriteItemList(
                     FavoriteItemCard(
                         item = item,
                         onFavoriteClick = { favoriteItem ->
-                            viewModel.removeFromFavorites(favoriteItem)
+                            viewModel.removeFromFavorites(favoriteItem) // Remove the item
                             viewModel.showSnackbar(
                                 message = "Removed from Favorites",
                                 actionLabel = "Undo",
@@ -403,7 +241,8 @@ fun FavoriteItemList(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}*/
+
+}
 
 @Composable
 fun FavoriteItemCard(

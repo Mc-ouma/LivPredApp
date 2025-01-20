@@ -29,8 +29,8 @@ class FavoritesViewModel @Inject constructor(
     val favoriteCount = favoriteItemDao.getFavoriteCount().distinctUntilChanged()
 
     // Use MutableSharedFlow for snackbar events
-    private val _snackbarFlow = MutableSharedFlow<SnackbarData>(replay = 1)
-    val snackbarFlow: SharedFlow<SnackbarData> = _snackbarFlow
+    private val _snackbarFlow = MutableStateFlow<SnackbarData?>(null)
+    val snackbarFlow: StateFlow<SnackbarData?> = _snackbarFlow
 
     fun showSnackbar(
         message: String,
@@ -38,9 +38,13 @@ class FavoritesViewModel @Inject constructor(
         onActionPerformed: (() -> Unit)? = null
     ) {
         viewModelScope.launch {
-            _snackbarFlow.emit(SnackbarData(message, actionLabel, onActionPerformed))
+            _snackbarFlow.value = (SnackbarData(message, actionLabel, onActionPerformed))
 
         }
+    }
+
+    fun resetSnackbar() {
+        _snackbarFlow.value = null
     }
 
     data class SnackbarData(
@@ -96,6 +100,13 @@ fun removeFromFavorites(item: FavoriteItem) {
             _uiState.value = UiState.Success(currentFavorites.sortedBy {
                 it.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
             })
+            showSnackbar(
+                message = "Removed from favorites",
+                actionLabel = "Undo",
+                onActionPerformed = {
+                    restoreFavorites(item)
+                }
+            )
             cancelNotification(item.fixtureId.toString())
         } catch (e: Exception) {
             _uiState.value = UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")

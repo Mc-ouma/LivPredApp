@@ -22,6 +22,7 @@ compiler = "1.5.15"
 compose = "1.0.0-beta01"
 compileSdk = "35"
 converterGson = "2.11.0"
+coreSplashscreen = "1.0.1"
 espressoCore = "3.6.1"
 core = "1.6.1"
 coreTesting = "2.2.0"
@@ -79,6 +80,7 @@ androidx-compose-material-iconsExtended = { group = "androidx.compose.material",
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-tooling-core = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }
 androidx-core = { module = "androidx.test:core", version.ref = "core" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }

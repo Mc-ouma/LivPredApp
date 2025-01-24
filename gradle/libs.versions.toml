@@ -28,9 +28,10 @@ core = "1.6.1"
 coreTesting = "2.2.0"
 gson = "2.11.0"
 hilt = "2.52"
+javaDotenv = "5.2.2"
 junit = "4.13.2"
 junitVersion = "1.2.1"
-kotlin = "2.0.21"
+kotlin = "2.1.0"
 kotlinxCoroutines = "1.9.0"
 kotlinxCoroutinesCore = "1.9.0"
 kotlinxCoroutinesGuava = "1.9.0"
@@ -103,6 +104,7 @@ converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android-core = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+java-dotenv = { module = "io.github.cdimascio:java-dotenv", version.ref = "javaDotenv" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }

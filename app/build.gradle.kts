@@ -222,6 +222,7 @@ dependencies {
 
     //Splash Screen
     implementation(libs.androidx.core.splashscreen)
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.0")
 
 
 }

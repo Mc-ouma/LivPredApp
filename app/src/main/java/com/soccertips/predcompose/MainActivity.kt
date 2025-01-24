@@ -1,8 +1,10 @@
 package com.soccertips.predcompose
 
+import android.app.AlarmManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -85,6 +87,12 @@ class MainActivity : ComponentActivity() {
         if (updateType == AppUpdateType.FLEXIBLE) {
             appUpdateManager.registerListener(installStateUpdatedListener)
         }
+        //Request exact alarm permission
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+        if (!alarmManager.canScheduleExactAlarms()) {
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            startActivity(intent)
+        }
 
         setContent {
             PredComposeTheme {
@@ -101,8 +109,8 @@ class MainActivity : ComponentActivity() {
         handleNotificationIntent(intent, fixtureId)
 
         // Check for app updates when the activity is created
-       // checkForAppUpdates()
-       // requestReview()
+        // checkForAppUpdates()
+        // requestReview()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -225,11 +233,11 @@ fun AppNavigation(fixtureId: String? = null) {
     val uiState by categoriesViewModel.uiState.collectAsState()
     val sharedViewModel: SharedViewModel = hiltViewModel()
 
-   /* LaunchedEffect(fixtureId) {
-        fixtureId?.let {
-            navController.navigate(Routes.FixtureDetails.createRoute(fixtureId))
-        }
-    }*/
+    /* LaunchedEffect(fixtureId) {
+         fixtureId?.let {
+             navController.navigate(Routes.FixtureDetails.createRoute(fixtureId))
+         }
+     }*/
 
     NavHost(
         navController = navController,

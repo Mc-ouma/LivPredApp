@@ -29,7 +29,8 @@ import javax.inject.Inject
 class FavoritesViewModel @Inject constructor(
     application: Application,
     private val favoriteItemDao: FavoriteDao,
-    private val workManagerWrapper: WorkManagerWrapper
+    private val workManagerWrapper: WorkManagerWrapper,
+   private val context: Context
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<UiState<List<FavoriteItem>>>(UiState.Loading)
@@ -147,7 +148,7 @@ class FavoritesViewModel @Inject constructor(
 
             if (delay > 0) {
                 val alarmManager =
-                    getApplication<Application>().getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                    context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 if (alarmManager.canScheduleExactAlarms()) {
                     try {
 
@@ -161,7 +162,7 @@ class FavoritesViewModel @Inject constructor(
                             putExtra("currentDate", currentDate)
                         }
                         val pendingIntent = PendingIntent.getBroadcast(
-                            getApplication<Application>(),
+                            context,
                             item.fixtureId.toInt(),
                             intent,
                             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

@@ -57,6 +57,7 @@ import com.soccertips.predcompose.ui.items.ItemsListScreen
 import com.soccertips.predcompose.ui.team.TeamScreen
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import com.soccertips.predcompose.viewmodel.CategoriesViewModel
+import com.soccertips.predcompose.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 
@@ -71,6 +72,7 @@ class MainActivity : ComponentActivity() {
 
     // In-app review manager
     private val reviewManager: ReviewManager by lazy { ReviewManagerFactory.create(this) }
+    private val fixtureId = mutableStateOf<String?>(null)
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,28 +92,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
-                    val navController = rememberNavController()
-                    AppNavigation(navController.toString())
+                    AppNavigation(fixtureId.value)
 
-                    // Handle notification intent
-                    val fixtureId = remember { mutableStateOf<String?>(null) }
-                    LaunchedEffect(Unit) {
-                        handleNotificationIntent(intent, fixtureId)
-                    }
-
-                    // Navigate to FixtureDetailsScreen if fixtureId is not null
-                    if (fixtureId.value != null) {
-                        LaunchedEffect(fixtureId.value) {
-                            navController.navigate("fixtureDetails/${fixtureId.value}")
-                        }
-                    }
                 }
             }
         }
+        // Handle notification intent
+        handleNotificationIntent(intent, fixtureId)
 
         // Check for app updates when the activity is created
-        checkForAppUpdates()
-        requestReview()
+       // checkForAppUpdates()
+       // requestReview()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -122,8 +113,8 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     private fun handleNotificationIntent(intent: Intent?, fixtureId: MutableState<String?>?) {
-        val id = intent?.getStringExtra("fixtureId") ?: return
-        if (id.isNotEmpty()) {
+        val id = intent?.getStringExtra("fixtureId")
+        if (!id.isNullOrEmpty()) {
             fixtureId?.value = id
         }
     }
@@ -232,12 +223,13 @@ fun AppNavigation(fixtureId: String? = null) {
     val navController = rememberNavController()
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()
     val uiState by categoriesViewModel.uiState.collectAsState()
+    val sharedViewModel: SharedViewModel = hiltViewModel()
 
-    if (fixtureId != null) {
-        LaunchedEffect(fixtureId) {
+   /* LaunchedEffect(fixtureId) {
+        fixtureId?.let {
             navController.navigate(Routes.FixtureDetails.createRoute(fixtureId))
         }
-    }
+    }*/
 
     NavHost(
         navController = navController,
@@ -245,6 +237,15 @@ fun AppNavigation(fixtureId: String? = null) {
         exitTransition = { ExitTransition.None },
         startDestination = Routes.Home.route
     ) {
+        // Splash Screen
+        composable(Routes.Splash.route) {
+            SplashScreen(
+                navController = navController,
+                initialFixtureId = fixtureId,
+                onSplashCompleted = { sharedViewModel.markSplashCompleted() }
+            )
+        }
+
         composable(Routes.Home.route) {
             HomeScreen(navController = navController)
         }
@@ -343,6 +344,14 @@ fun AppNavigation(fixtureId: String? = null) {
 
 
                 )
+        }
+    }
+    // Handle deep links after splash screen
+    LaunchedEffect(fixtureId) {
+        if (sharedViewModel.isSplashCompleted) {
+            fixtureId?.let { id ->
+                navController.navigate(Routes.FixtureDetails.createRoute(id))
+            }
         }
     }
 }

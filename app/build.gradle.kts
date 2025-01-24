@@ -220,5 +220,8 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
+    //Splash Screen
+    implementation(libs.androidx.core.splashscreen)
+
 
 }

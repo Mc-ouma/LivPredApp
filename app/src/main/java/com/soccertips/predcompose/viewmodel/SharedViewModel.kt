@@ -1,5 +1,8 @@
 package com.soccertips.predcompose.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
@@ -19,6 +22,13 @@ import kotlin.collections.flatten
 class SharedViewModel @Inject constructor(
     private val repository: FixtureDetailsRepository
 ) : ViewModel() {
+
+    var isSplashCompleted by mutableStateOf(false)
+        private set
+
+    fun markSplashCompleted() {
+        isSplashCompleted = true
+    }
 
     // StateFlows for fixtures and standings
     private val _fixturesState = MutableStateFlow<UiState<List<FixtureWithType>>>(UiState.Loading)
@@ -40,9 +50,21 @@ class SharedViewModel @Inject constructor(
                 val awayResponse = repository.getLastFixtures(season, awayTeamId, last)
 
                 val homeFixtures =
-                    homeResponse.response.map { FixtureWithType(it, isHome = true, specialId = homeTeamId) }
+                    homeResponse.response.map {
+                        FixtureWithType(
+                            it,
+                            isHome = true,
+                            specialId = homeTeamId
+                        )
+                    }
                 val awayFixtures =
-                    awayResponse.response.map { FixtureWithType(it, isHome = false, specialId = awayTeamId) }
+                    awayResponse.response.map {
+                        FixtureWithType(
+                            it,
+                            isHome = false,
+                            specialId = awayTeamId
+                        )
+                    }
 
                 val combinedFixtures = homeFixtures + awayFixtures
                 _fixturesState.value = UiState.Success(combinedFixtures)

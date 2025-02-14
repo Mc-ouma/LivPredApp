@@ -68,7 +68,7 @@ sealed class BottomNavScreens(
 @Composable
 fun HomeScreen(navController: NavController) {
     val context = LocalContext.current
-    val homeNavController = rememberNavController()
+    rememberNavController()
     val favoritesViewModel: FavoritesViewModel = hiltViewModel()
     val favoriteCount by favoritesViewModel.favoriteCount.collectAsStateWithLifecycle(initialValue = 0)
     val items = listOf(

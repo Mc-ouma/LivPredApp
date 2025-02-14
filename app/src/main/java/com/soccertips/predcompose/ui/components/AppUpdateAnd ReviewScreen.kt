@@ -22,7 +22,7 @@ fun AppUpdateAndReviewScreen(
     onCompleteUpdate: () -> Unit,
     onRequestReview: () -> Unit
 ) {
-    val context = LocalContext.current
+    LocalContext.current
 
     Box(
         modifier = Modifier

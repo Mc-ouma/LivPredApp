@@ -1,6 +1,7 @@
 package com.soccertips.predcompose
 
 import android.app.AlarmManager
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -91,7 +92,7 @@ class MainActivity : ComponentActivity() {
         val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
         if (!alarmManager.canScheduleExactAlarms()) {
             val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-            startActivity(intent)
+            showExactAlarmPermissionDialog()
         }
 
         setContent {
@@ -111,6 +112,19 @@ class MainActivity : ComponentActivity() {
         // Check for app updates when the activity is created
         // checkForAppUpdates()
         // requestReview()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun showExactAlarmPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Exact Alarm Permission Required")
+            .setMessage("This app requires permission to schedule exact alarms. Please grant the permission in the settings.")
+            .setPositiveButton("Go to Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)

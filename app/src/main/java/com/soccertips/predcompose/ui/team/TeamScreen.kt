@@ -212,7 +212,7 @@ fun TeamScreen(
                         exit = slideOutVertically() + shrinkVertically() + fadeOut(),
                     ) {
                         val teamInfoCardData =
-                            (teamDataState as? UiState.Success<List<com.soccertips.predcompose.data.model.team.teamscreen.Response>>)?.data?.firstOrNull()
+                            (teamDataState as? UiState.Success<List<Response>>)?.data?.firstOrNull()
 
                         teamInfoCardData?.let { response ->
                             TeamInfoCard(
@@ -462,7 +462,7 @@ fun TeamsTabRow(
 
 @Composable
 fun TeamInfoCard(
-    statistics: com.soccertips.predcompose.data.model.team.teamscreen.Response,
+    statistics: Response,
     modifier: Modifier = Modifier
 ) {
     val stadiumDetailsVisible = remember { mutableStateOf(false) }
@@ -673,7 +673,7 @@ fun Table(headers: List<String>, rows: List<List<String>>) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewTeamInfoCard() {
-    val sampleStatistics = com.soccertips.predcompose.data.model.team.teamscreen.Response(
+    val sampleStatistics = Response(
         team = TeamData(
             name = "Manchester United",
             founded = 1878,

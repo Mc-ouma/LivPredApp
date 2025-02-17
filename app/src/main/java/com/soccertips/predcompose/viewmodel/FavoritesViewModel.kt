@@ -1,27 +1,20 @@
 package com.soccertips.predcompose.viewmodel
 
-import android.app.AlarmManager
 import android.app.Application
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.soccertips.predcompose.NotificationReceiver
 import com.soccertips.predcompose.data.local.dao.FavoriteDao
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
+import com.soccertips.predcompose.notification.NotificationScheduler
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.util.WorkManagerWrapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import timber.log.Timber
-import java.time.Duration
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -30,7 +23,7 @@ class FavoritesViewModel @Inject constructor(
     application: Application,
     private val favoriteItemDao: FavoriteDao,
     private val workManagerWrapper: WorkManagerWrapper,
-   private val context: Context
+    private val context: Context
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<UiState<List<FavoriteItem>>>(UiState.Loading)
@@ -41,6 +34,8 @@ class FavoritesViewModel @Inject constructor(
     // Use MutableSharedFlow for snackbar events
     private val _snackbarFlow = MutableStateFlow<SnackbarData?>(null)
     val snackbarFlow: StateFlow<SnackbarData?> = _snackbarFlow
+
+    private val notificationScheduler = NotificationScheduler(context)
 
     fun showSnackbar(
         message: String,
@@ -110,6 +105,7 @@ class FavoritesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 favoriteItemDao.delete(fixtureId = item.fixtureId.toString())
+                notificationScheduler.cancelNotification(item.fixtureId.toString())
                 val currentFavorites =
                     (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
                 currentFavorites.removeAll { it.fixtureId == item.fixtureId }
@@ -135,52 +131,7 @@ class FavoritesViewModel @Inject constructor(
     @RequiresApi(Build.VERSION_CODES.S)
     private fun scheduleNotification(items: List<FavoriteItem>) {
         items.forEach { item ->
-            val currentTime = item.mTime ?: return@forEach
-            val currentDate = item.mDate ?: return@forEach
-
-            // Parse the date and time
-            val dateTime = LocalDateTime.parse(
-                "$currentDate $currentTime",
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-            )
-            val notificationTime = dateTime.minusMinutes(15)
-            val delay = Duration.between(LocalDateTime.now(), notificationTime).toMillis()
-
-            if (delay > 0) {
-                val alarmManager =
-                    context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                if (alarmManager.canScheduleExactAlarms()) {
-                    try {
-
-
-                        val intent = Intent(
-                            getApplication<Application>(),
-                            NotificationReceiver::class.java
-                        ).apply {
-                            putExtra("fixtureId", item.fixtureId)
-                            putExtra("currentTime", currentTime)
-                            putExtra("currentDate", currentDate)
-                        }
-                        val pendingIntent = PendingIntent.getBroadcast(
-                            context,
-                            item.fixtureId.toInt(),
-                            intent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                        )
-
-                        alarmManager.setExactAndAllowWhileIdle(
-                            AlarmManager.RTC_WAKEUP,
-                            System.currentTimeMillis() + delay,
-                            pendingIntent
-                        )
-                    } catch (e: SecurityException) {
-                        Timber.e("Cannot Schedule exact alarm: ${e.message}")
-
-                    }
-                } else {
-                    Timber.e("App does not have permission to schedule exact alarms")
-                }
-            }
+            notificationScheduler.scheduleMatchNotification(item)
         }
     }
 

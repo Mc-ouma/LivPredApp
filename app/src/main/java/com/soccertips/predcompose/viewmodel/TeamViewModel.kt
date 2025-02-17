@@ -52,6 +52,8 @@ constructor(
         _teamData.asStateFlow()
     private val cache = mutableMapOf<String, Any>()
 
+
+
     var isTeamDataLoaded = false
     var isPlayersDataLoaded = false
     var isTransfersDataLoaded = false

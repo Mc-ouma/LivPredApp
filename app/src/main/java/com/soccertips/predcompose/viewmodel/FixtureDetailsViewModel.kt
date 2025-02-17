@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -90,10 +91,13 @@ constructor(
             } catch (e: retrofit2.HttpException) {
                 _uiState.value =
                     UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
+                Timber.tag("Fixture Details").d(e.localizedMessage)
 
             } catch (e: Exception) {
                 _uiState.value =
                     UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
+                Timber.tag("Fixture Details").d(e.localizedMessage)
+
 
             }
         }
@@ -149,6 +153,7 @@ constructor(
 
             } catch (e: Exception) {
                 setErrorState(e.localizedMessage ?: "An unexpected error occurred.")
+                Timber.d(e)
             }
         }
     }

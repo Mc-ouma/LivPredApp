@@ -2,7 +2,7 @@ package com.soccertips.predcompose.network
 
 
 object Constants {
-    const val BASE_URL = "https://api-football-v1.p.rapidapi.com/v3/"
+    const val BASE_URL = "https://v3.football.api-sports.io/"
     const val API_KEY = "0880f79a66438c6e30f16c8ff7f6fe2d"
     const val API_HOST = "v3.football.api-sports.io"
     const val CACHE_MAX_AGE_SHORT = 60 * 60 // 1 hour in seconds

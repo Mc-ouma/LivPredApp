@@ -2,16 +2,15 @@ package com.soccertips.predcompose.ui.team
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,20 +22,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -54,12 +48,14 @@ import com.soccertips.predcompose.data.model.team.transfer.Team
 import com.soccertips.predcompose.data.model.team.transfer.Teams
 import com.soccertips.predcompose.data.model.team.transfer.Transfer
 import com.soccertips.predcompose.repository.TeamsRepository
+import com.soccertips.predcompose.ui.components.rememberPaginationState
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import com.soccertips.predcompose.viewmodel.TeamViewModel
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalFoundationApi::class)
 @Composable
 fun TransferScreen(
     viewModel: TeamViewModel,
@@ -71,24 +67,40 @@ fun TransferScreen(
     var expandedItems by rememberSaveable { mutableStateOf(setOf<Int>()) }
     val lazyListState = rememberLazyListState()
 
+    val paginationState = rememberPaginationState()
+
+    // Constants
+    val LOAD_MORE_THRESHOLD = 5
+
     // Observe scroll state to hide/show the page info
     //pagination
 
     LaunchedEffect(lazyListState) {
+        snapshotFlow {
+            val layoutInfo = lazyListState.layoutInfo
+            val totalItemsNumber = layoutInfo.totalItemsCount
+            val lastVisibleItemIndex =
+                (lazyListState.firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size)
+
+            // Check if we're near the end of the list
+            lastVisibleItemIndex > (totalItemsNumber - LOAD_MORE_THRESHOLD)
+        }.distinctUntilChanged() // Only emit when the value changes
+            .collect { shouldLoadMore ->
+                if (shouldLoadMore && !viewModel.isLoading && paginationState.hasMorePages) {
+                    paginationState.loadNextPage()
+                    viewModel.getTransfers(teamId, paginationState.currentPage)
+                }
+            }
+
+        // Handle scroll position for team info visibility
         snapshotFlow { lazyListState.firstVisibleItemIndex }
             .collect { firstVisibleItemIndex ->
                 onTeamInfoVisibilityChanged(firstVisibleItemIndex == 0)
             }
-
-        if (lazyListState.isScrollInProgress && lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index == transfers.size - 1 && !viewModel.isLoading) {
-            currentPage++
-            viewModel.getTransfers(teamId, currentPage)
-        }
     }
 
 
-
-    LazyColumn(
+    /*LazyColumn(
         state = lazyListState,
         modifier = Modifier
             .fillMaxWidth()
@@ -161,12 +173,52 @@ fun TransferScreen(
                 }
             }
         }
+    }*/
+   LazyColumn(
+       state = lazyListState,
+       modifier = Modifier
+           .fillMaxWidth()
+           .padding(16.dp)
+   ) {
+       itemsIndexed(transfers) { index, response ->
+           TransferItem(
+               transfer = response.transfers.first(),
+               teamId = teamId,
+               playerName = response.player.name ?: "Unknown Player",
+               modifier = Modifier
+                   .fillMaxWidth()
+                   .animateItem()
+           )
+       }
+
+       if (transfers.isNotEmpty() && viewModel.isLoading) {
+           item {
+               Box(
+                   modifier = Modifier
+                       .fillMaxWidth()
+                       .padding(16.dp),
+                   contentAlignment = Alignment.Center
+               ) {
+                   CircularProgressIndicator()
+               }
+           }
+       }
+   }
+
+    // Show loading indicator when initially loading
+    if (transfers.isEmpty() && viewModel.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
     }
 }
 
 
 @Composable
-fun TransferItem(playerName: String, transfer: Transfer, teamId: String) {
+fun TransferItem(playerName: String, transfer: Transfer, teamId: String, modifier: Modifier = Modifier) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -179,7 +231,7 @@ fun TransferItem(playerName: String, transfer: Transfer, teamId: String) {
             text = playerName,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
+           modifier = modifier.padding(bottom = 8.dp)
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -189,23 +241,23 @@ fun TransferItem(playerName: String, transfer: Transfer, teamId: String) {
                 imageVector = if (isIncoming) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = if (isIncoming) "Incoming" else "Outgoing",
                 tint = if (isIncoming) Color.Green else Color.Red,
-                modifier = Modifier.size(24.dp)
+                modifier = modifier.size(24.dp)
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = modifier.width(16.dp))
 
             // Team To Logo
             Image(
                 painter = rememberAsyncImagePainter(model = transfer.teams.`in`.logo),
                 contentDescription = "Team Logo",
-                modifier = Modifier
+                modifier = modifier
                     .size(48.dp)
                     .clip(CircleShape)
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = modifier.weight(1f)) {
                 // Team To Name
                 Text(
                     text = transfer.teams.`in`.name ?: "Unknown",

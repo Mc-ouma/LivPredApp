@@ -1,9 +1,6 @@
 package com.soccertips.predcompose.util
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
@@ -12,9 +9,8 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.soccertips.predcompose.NotificationReceiver
 import com.soccertips.predcompose.data.local.AppDatabase
-import com.soccertips.predcompose.data.local.entities.FavoriteItem
+import com.soccertips.predcompose.notification.NotificationScheduler
 import kotlinx.coroutines.guava.await
 import timber.log.Timber
 import javax.inject.Inject
@@ -60,54 +56,35 @@ class WorkManagerWrapperImpl @Inject constructor(private val workManager: WorkMa
     }
 }
 
-class RescheduleWorker(context: Context, params: WorkerParameters) :
-    CoroutineWorker(context, params) {
+class RescheduleWorker(
+    context: Context,
+    params: WorkerParameters
+) : CoroutineWorker(context, params) {
+
+    private val notificationScheduler = NotificationScheduler(applicationContext)
 
     override suspend fun doWork(): Result {
-        val tasks = AppDatabase.getDatabase(applicationContext).favoriteDao().getDueItem(
-            mTime = System.currentTimeMillis()
-                .toString(), mDate = System.currentTimeMillis().toString()
-        )
-        val currentTime = System.currentTimeMillis()
+        return try {
+            val tasks = AppDatabase.getDatabase(applicationContext)
+                .favoriteDao()
+                .getDueItem(
+                    mTime = System.currentTimeMillis().toString(),
+                    mDate = System.currentTimeMillis().toString()
+                )
 
-        tasks.forEach { task ->
-            val triggerTime = task.mTime?.toLong()?.minus((15 * 60 * 1000))
-            if (triggerTime != null) {
-                if (triggerTime > currentTime) { // Only future alarms
-                    scheduleNotification(task, triggerTime, applicationContext)
+            tasks.forEach { favoriteItem ->
+                try {
+                    notificationScheduler.scheduleMatchNotification(favoriteItem)
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to reschedule notification for match ${favoriteItem.fixtureId}")
                 }
             }
-        }
-        return Result.success()
-    }
 
-    private fun scheduleNotification(
-        task: FavoriteItem,
-        triggerTime: Long,
-        context: Context
-    ) {
-        try {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, NotificationReceiver::class.java).apply {
-                putExtra("fixtureId", task.fixtureId)
-                putExtra("currentTime", task.mTime)
-                putExtra("currentDate", task.mDate)
-            }
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                task.fixtureId.toInt(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent
-            )
-        } catch (e: SecurityException) {
-            Timber.e("Cannot Schedule exact alarm: ${e.message}")
+            Result.success()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to reschedule notifications")
+            Result.failure()
         }
     }
-    // Same implementation as in ViewModel
 }
 

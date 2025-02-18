@@ -5,12 +5,14 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,19 +22,15 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,17 +40,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.soccertips.predcompose.data.model.FixtureResponse
+import com.soccertips.predcompose.data.model.events.FixtureEventsResponse
+import com.soccertips.predcompose.data.model.headtohead.HeadToHeadResponse
+import com.soccertips.predcompose.data.model.lastfixtures.FixtureListResponse
+import com.soccertips.predcompose.data.model.lineups.FixtureLineupResponse
+import com.soccertips.predcompose.data.model.prediction.PredictionResponse
+import com.soccertips.predcompose.data.model.standings.StandingsResponse
+import com.soccertips.predcompose.data.model.statistics.StatisticsResponse
+import com.soccertips.predcompose.data.model.team.squad.SquadResponse
+import com.soccertips.predcompose.data.model.team.teamscreen.TeamModelData
+import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatisticsResponse
 import com.soccertips.predcompose.data.model.team.transfer.Player2
 import com.soccertips.predcompose.data.model.team.transfer.Response2
 import com.soccertips.predcompose.data.model.team.transfer.Team
 import com.soccertips.predcompose.data.model.team.transfer.Teams
 import com.soccertips.predcompose.data.model.team.transfer.Transfer
+import com.soccertips.predcompose.data.model.team.transfer.TransferResponse
+import com.soccertips.predcompose.network.FixtureDetailsService
 import com.soccertips.predcompose.repository.TeamsRepository
 import com.soccertips.predcompose.ui.components.rememberPaginationState
 import com.soccertips.predcompose.ui.theme.PredComposeTheme
 import com.soccertips.predcompose.viewmodel.TeamViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 
 @OptIn(FlowPreview::class, ExperimentalFoundationApi::class)
@@ -63,8 +75,6 @@ fun TransferScreen(
     teamId: String,
     onTeamInfoVisibilityChanged: (Boolean) -> Unit
 ) {
-    var currentPage by rememberSaveable { mutableIntStateOf(1) }
-    var expandedItems by rememberSaveable { mutableStateOf(setOf<Int>()) }
     val lazyListState = rememberLazyListState()
 
     val paginationState = rememberPaginationState()
@@ -72,31 +82,29 @@ fun TransferScreen(
     // Constants
     val LOAD_MORE_THRESHOLD = 5
 
-    // Observe scroll state to hide/show the page info
-    //pagination
-
     LaunchedEffect(lazyListState) {
-        snapshotFlow {
-            val layoutInfo = lazyListState.layoutInfo
-            val totalItemsNumber = layoutInfo.totalItemsCount
-            val lastVisibleItemIndex =
-                (lazyListState.firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size)
-
-            // Check if we're near the end of the list
-            lastVisibleItemIndex > (totalItemsNumber - LOAD_MORE_THRESHOLD)
-        }.distinctUntilChanged() // Only emit when the value changes
-            .collect { shouldLoadMore ->
-                if (shouldLoadMore && !viewModel.isLoading && paginationState.hasMorePages) {
-                    paginationState.loadNextPage()
-                    viewModel.getTransfers(teamId, paginationState.currentPage)
+        launch {
+            snapshotFlow {
+                val layoutInfo = lazyListState.layoutInfo
+                val totalItems = layoutInfo.totalItemsCount
+                val lastVisibleItemIndex =
+                    lazyListState.firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size
+                lastVisibleItemIndex > (totalItems - LOAD_MORE_THRESHOLD)
+            }
+                .distinctUntilChanged()
+                .collect { shouldLoadMore ->
+                    if (shouldLoadMore && !viewModel.isLoading && paginationState.hasMorePages) {
+                        paginationState.loadNextPage()
+                        viewModel.getTransfers(teamId)
+                    }
                 }
-            }
-
-        // Handle scroll position for team info visibility
-        snapshotFlow { lazyListState.firstVisibleItemIndex }
-            .collect { firstVisibleItemIndex ->
-                onTeamInfoVisibilityChanged(firstVisibleItemIndex == 0)
-            }
+        }
+        launch {
+            snapshotFlow { lazyListState.firstVisibleItemIndex }
+                .collect { firstVisibleItemIndex ->
+                    onTeamInfoVisibilityChanged(firstVisibleItemIndex == 0)
+                }
+        }
     }
 
 
@@ -174,36 +182,36 @@ fun TransferScreen(
             }
         }
     }*/
-   LazyColumn(
-       state = lazyListState,
-       modifier = Modifier
-           .fillMaxWidth()
-           .padding(16.dp)
-   ) {
-       itemsIndexed(transfers) { index, response ->
-           TransferItem(
-               transfer = response.transfers.first(),
-               teamId = teamId,
-               playerName = response.player.name ?: "Unknown Player",
-               modifier = Modifier
-                   .fillMaxWidth()
-                   .animateItem()
-           )
-       }
+    LazyColumn(
+        state = lazyListState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        itemsIndexed(items = transfers) { index, response ->
+            TransferItem(
+                transfer = response.transfers.first(),
+                teamId = teamId,
+                playerName = response.player.name ?: "Unknown Player",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItem()
+            )
+        }
 
-       if (transfers.isNotEmpty() && viewModel.isLoading) {
-           item {
-               Box(
-                   modifier = Modifier
-                       .fillMaxWidth()
-                       .padding(16.dp),
-                   contentAlignment = Alignment.Center
-               ) {
-                   CircularProgressIndicator()
-               }
-           }
-       }
-   }
+        if (transfers.isNotEmpty() && viewModel.isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
 
     // Show loading indicator when initially loading
     if (transfers.isEmpty() && viewModel.isLoading) {
@@ -216,99 +224,131 @@ fun TransferScreen(
     }
 }
 
-
 @Composable
-fun TransferItem(playerName: String, transfer: Transfer, teamId: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = Modifier
+fun TransferItem(
+    transfer: Transfer,
+    playerName: String,
+    teamId: String, // The ID of the team you consider “current” (optional)
+    modifier: Modifier = Modifier
+) {
+    // Determine if the transfer is incoming (the current team is the destination)
+    val isIncoming = transfer.teams.`in`.id == teamId.toInt()
+
+    Card(
+        modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp))
-            .padding(16.dp)
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(8.dp)
     ) {
-        // Player Name
-        Text(
-            text = playerName,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-           modifier = modifier.padding(bottom = 8.dp)
-        )
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Arrow Icon
-            val isIncoming = transfer.teams.`in`.id == teamId.toInt()
-            Icon(
-                imageVector = if (isIncoming) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = if (isIncoming) "Incoming" else "Outgoing",
-                tint = if (isIncoming) Color.Green else Color.Red,
-                modifier = modifier.size(24.dp)
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Player Name
+            Text(
+                text = playerName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = modifier.width(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Team To Logo
-            Image(
-                painter = rememberAsyncImagePainter(model = transfer.teams.`in`.logo),
-                contentDescription = "Team Logo",
-                modifier = modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-            )
+            // Teams and transfer direction row
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // "From" team (the team the player is leaving)
+                TeamLogoAndName(team = transfer.teams.out)
 
-            Spacer(modifier = modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-            Column(modifier = modifier.weight(1f)) {
-                // Team To Name
-                Text(
-                    text = transfer.teams.`in`.name ?: "Unknown",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
+                // Transfer direction icon (arrow)
+                Icon(
+                    imageVector =  Icons.AutoMirrored.Default.ArrowForward,
+                    contentDescription = if (isIncoming) "Incoming Transfer" else "Outgoing Transfer",
+                    tint = if (isIncoming) Color.Green else Color.Red,
+                    modifier = Modifier.size(24.dp)
                 )
 
-                // Transfer Date
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // "To" team (the team the player is joining)
+                TeamLogoAndName(team = transfer.teams.`in`)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Transfer Date and Type
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = transfer.date ?: "N/A",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = transfer.date ?: "Unknown date",
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
+
+                TransferTypeLabel(type = transfer.type)
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Transfer Type
-            val transferType = transfer.type ?: "N/A"
-
-            // Determine the color based on transfer type
-            val transferColor = when {
-                transferType.contains("Loan", ignoreCase = true) -> Color.Blue
-                transferType.contains("Free", ignoreCase = true) -> Color.Gray
-                transferType.contains("Swap", ignoreCase = true) -> Color.Magenta
-                transferType.contains("€") || transferType.contains("$") || transferType.contains("£") -> Color.Green
-                transferType == "N/A" -> Color.LightGray
-                else -> MaterialTheme.colorScheme.primary
-            }
-
-            // Format transfer type if monetary (e.g., "€ 250K", "€ 30.5M")
-            val formattedTransferType = when {
-                transferType.contains("€") -> transferType // Already formatted
-                else -> transferType // Keep as-is for other types
-            }
-            Text(
-                text = formattedTransferType,
-                style = MaterialTheme.typography.bodyMedium,
-                color = transferColor,
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                    .background(
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(4.dp)
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            )
         }
     }
 }
+
+@Composable
+fun TeamLogoAndName(
+    team: Team,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        // Load team logo (using Coil's AsyncImage or similar)
+        Image(
+            painter = rememberAsyncImagePainter(model = team.logo),
+            contentDescription = team.name,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = team.name ?: "Unknown Team",
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+fun TransferTypeLabel(
+    type: String?,
+    modifier: Modifier = Modifier
+) {
+    val text = type ?: "N/A"
+    // Color coding based on transfer type
+    val backgroundColor = when {
+        text.contains("Free", ignoreCase = true) -> Color.Green.copy(alpha = 0.2f)
+        text.contains("Loan", ignoreCase = true) -> Color.Blue.copy(alpha = 0.2f)
+        text.contains("Swap", ignoreCase = true) -> Color.Magenta.copy(alpha = 0.2f)
+        else -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+    }
+    val textColor = when {
+        text.contains("Free", ignoreCase = true) -> Color.Green
+        text.contains("Loan", ignoreCase = true) -> Color.Blue
+        text.contains("Swap", ignoreCase = true) -> Color.Magenta
+        else -> MaterialTheme.colorScheme.secondary
+    }
+
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = textColor,
+        modifier = modifier
+            .background(backgroundColor, shape = RoundedCornerShape(4.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    )
+}
+
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true)
@@ -376,10 +416,9 @@ fun TransferScreenPreview() {
                             name = "Manchester United",
                             logo = "https://media.api-sports.io/football/teams/33.png"
                         )
-                    ),
+                    )
                 ),
                 Transfer(
-
                     date = "2004-08-31",
                     type = "€ 2M",
                     teams = Teams(
@@ -393,9 +432,8 @@ fun TransferScreenPreview() {
                             name = "Middlesbrough",
                             logo = "https://media.api-sports.io/football/teams/70.png"
                         )
-                    ),
+                    )
                 ),
-
                 Transfer(
                     date = "2006-08-10",
                     type = "€ 250K",
@@ -419,15 +457,95 @@ fun TransferScreenPreview() {
 
     PredComposeTheme {
         TransferScreen(
-            transfers = sampleResponses, teamId = "33",
+            transfers = sampleResponses,
+            teamId = "60",
             viewModel = TeamViewModel(
                 repository = TeamsRepository(
-                    teamsService = TODO()
+                    // Replace this TODO with an actual implementation or a fake service for preview purposes
+                    teamsService = DummyTeamsService()
                 )
-            ),
+            )
         ) { visible ->
+            // Optionally handle team info visibility change for preview purposes
         }
-
     }
 }
 
+class DummyTeamsService : FixtureDetailsService {
+    override suspend fun getFixtureDetails(fixtureId: String): FixtureResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getLastFixtures(
+        season: String,
+        teamId: String,
+        last: String
+    ): FixtureListResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getNextFixtures(
+        season: String,
+        teamId: String,
+        next: String
+    ): FixtureListResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getHeadToHeadFixtures(
+        teams: String,
+        last: String
+    ): HeadToHeadResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getLineups(fixtureId: String): FixtureLineupResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getFixtureStats(
+        fixtureId: String,
+        teamId: String
+    ): StatisticsResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getFixtureEvents(fixtureId: String): FixtureEventsResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getStandings(
+        leagueId: String,
+        season: String
+    ): StandingsResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPredictions(fixtureId: String): PredictionResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getTeams(
+        leagueId: String,
+        season: String,
+        teamId: String
+    ): TeamStatisticsResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPlayers(teamId: String): SquadResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getTransfers(
+        teamId: String,
+        page: Int
+    ): TransferResponse {
+        TODO("Not yet implemented")
+    }
+
+
+    override suspend fun getTeamData(teamId: Int): TeamModelData {
+        TODO("Not yet implemented")
+    }
+}

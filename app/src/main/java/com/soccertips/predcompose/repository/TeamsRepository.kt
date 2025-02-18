@@ -1,6 +1,11 @@
 package com.soccertips.predcompose.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import com.soccertips.predcompose.data.model.team.transfer.Response2
 import com.soccertips.predcompose.network.FixtureDetailsService
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class TeamsRepository
@@ -18,9 +23,21 @@ constructor(
         teamId: String,
     ) = teamsService.getPlayers(teamId)
 
-    suspend fun getTransfers(
-        teamId: String, page: Int
-    ) = teamsService.getTransfers(teamId)
+    /*suspend fun getTransfers(
+        teamId: String,
+        page: Int,
+    ) = teamsService.getTransfers(teamId, page)*/
+    fun getTransfers(
+        teamId: String
+    ): Flow< PagingData<Response2>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 10,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = { TransferPagingSource(teamId, teamsService) }
+        ).flow
+    }
 
     suspend fun getNextFixtures(
         season: String,

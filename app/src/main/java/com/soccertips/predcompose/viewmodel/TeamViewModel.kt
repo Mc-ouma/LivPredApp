@@ -4,6 +4,9 @@ import android.icu.text.SimpleDateFormat
 import android.icu.util.TimeZone
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.filter
 import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
 import com.soccertips.predcompose.data.model.team.squad.Response
 import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatistics
@@ -34,12 +37,9 @@ constructor(
     private val _players = MutableStateFlow<UiState<List<Response>>>(UiState.Loading)
     val players: StateFlow<UiState<List<Response>>> = _players.asStateFlow()
 
-    private val _transfers =
-        MutableStateFlow<UiState<List<Response2>>>(
-            UiState.Loading
-        )
-    val transfers: StateFlow<UiState<List<Response2>>> =
-        _transfers.asStateFlow()
+    private val _transfersPaging = MutableStateFlow<PagingData<Response2>>(PagingData.empty())
+    val transfersPaging: StateFlow<PagingData<Response2>> = _transfersPaging.asStateFlow()
+
 
     private val _fixtures = MutableStateFlow<UiState<List<FixtureDetails>>>(UiState.Loading)
     val fixtures: StateFlow<UiState<List<FixtureDetails>>> = _fixtures.asStateFlow()
@@ -118,14 +118,34 @@ constructor(
         }
     }
 
-    fun getTransfers(teamId: String, page: Int = 1) {
-        fetchData(
-            _transfers,
-            "transfers_$teamId",
-            {
-                repository.getTransfers(teamId, page).response.sortedByDescending { it.update }
-            }) {
-            isTransfersDataLoaded = true
+
+    fun getTransfers(teamId: String) {
+        viewModelScope.launch {
+            try {
+                repository.getTransfers(teamId)
+                    .cachedIn(viewModelScope)
+                    .collect { pagingData ->
+                        val oneYearAgo = Calendar.getInstance().apply { add(Calendar.YEAR, -3) }.time
+                        val oneYearForward = Calendar.getInstance().apply { add(Calendar.YEAR, 1) }.time
+                        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+                        val filteredPagingData = pagingData.filter { response ->
+                            try {
+                                val latestTransferDate = response.transfers
+                                    .maxOfOrNull { dateFormat.parse(it.date) ?: Date(0) } ?: Date(0)
+                                latestTransferDate in oneYearAgo..oneYearForward
+                            } catch (e: Exception) {
+                                Timber.tag("ViewModelFetch").e(e, "Error parsing transfer date")
+                                false
+                            }
+                        }
+                        _transfersPaging.value = filteredPagingData
+                        isTransfersDataLoaded = true
+                    }
+            } catch (e: Exception) {
+                Timber.tag("ViewModelFetch").e(e, "Error loading transfers")
+                _transfersPaging.value = PagingData.empty()
+            }
         }
     }
 

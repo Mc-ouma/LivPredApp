@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     id("org.jetbrains.compose") version "1.8.0-dev1875"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
 }
 
 android {
@@ -222,7 +222,11 @@ dependencies {
 
     //Splash Screen
     implementation(libs.androidx.core.splashscreen)
-    implementation("io.github.cdimascio:dotenv-kotlin:6.5.0")
+    implementation(libs.dotenv.kotlin)
+
+    //paging
+    implementation (libs.androidx.paging.runtime)
+    implementation (libs.androidx.paging.compose)
 
 
 }

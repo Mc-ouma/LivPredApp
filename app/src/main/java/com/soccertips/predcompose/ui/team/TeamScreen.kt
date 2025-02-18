@@ -118,7 +118,7 @@ fun TeamScreen(
     val teamDataState by viewModel.teamData.collectAsStateWithLifecycle()
     val teamState by viewModel.team.collectAsStateWithLifecycle()
     val playersState by viewModel.players.collectAsStateWithLifecycle()
-    val transfersState by viewModel.transfers.collectAsStateWithLifecycle()
+    val transfersState by viewModel.transfersPaging.collectAsStateWithLifecycle()
     val lastFixturesState by sharedViewModel.fixturesState.collectAsStateWithLifecycle()
     val standingsState by sharedViewModel.standingsState.collectAsStateWithLifecycle()
     val nextFixturesState by viewModel.fixtures.collectAsStateWithLifecycle()

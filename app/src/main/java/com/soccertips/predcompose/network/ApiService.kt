@@ -94,10 +94,11 @@ interface FixtureDetailsService {
     @GET("transfers")
     suspend fun getTransfers(
         @Query("team") teamId: String,
+        @Query("page") page: Int
     ): TransferResponse
 
     @GET("teams")
     suspend fun getTeamData(
         @Query("id") teamId: Int,
-        ): TeamModelData
+    ): TeamModelData
 }

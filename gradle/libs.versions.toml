@@ -23,6 +23,7 @@ compose = "1.0.0-beta01"
 compileSdk = "35"
 converterGson = "2.11.0"
 coreSplashscreen = "1.0.1"
+dotenvKotlin = "6.5.0"
 espressoCore = "3.6.1"
 core = "1.6.1"
 coreTesting = "2.2.0"
@@ -48,6 +49,8 @@ mockitoCore = "4.0.0"
 mockitoInline = "3.11.2"
 mockitoKotlin = "3.2.0"
 okhttpVersion = "4.12.0"
+pagingRuntime = "3.3.6"
+pagingCompose = "3.3.6"
 retrofitVersion = "2.11.0"
 review = "2.0.2"
 reviewKtx = "2.0.2"
@@ -93,6 +96,8 @@ androidx-material3-adaptive-navigation-suite = { module = "androidx.compose.mate
 androidx-material3-windowsizeclass = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
 androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidxNavigation" }
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pagingCompose" }
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pagingRuntime" }
 androidx-rules = { module = "androidx.test:rules", version.ref = "rules" }
 androidx-runner = { module = "androidx.test:runner", version.ref = "runner" }
 androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "workTesting" }
@@ -101,6 +106,7 @@ app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.re
 coil-kt-coil-compose-v240 = { module = "io.coil-kt:coil-compose", version.ref = "coilComposeVersion" }
 compose = { module = "com.github.bumptech.glide:compose", version.ref = "compose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android-core = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }

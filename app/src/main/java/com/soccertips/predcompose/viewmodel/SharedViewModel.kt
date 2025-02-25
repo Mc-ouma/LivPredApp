@@ -1,5 +1,6 @@
 package com.soccertips.predcompose.viewmodel
 
+import android.util.LruCache
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.collections.flatten
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
@@ -29,8 +29,16 @@ class SharedViewModel @Inject constructor(
     fun markSplashCompleted() {
         isSplashCompleted = true
     }
+    // Cache duration in milliseconds (e.g., 5 minutes)
+    private val cacheDuration = 15 * 60 * 1000L
 
-    // StateFlows for fixtures and standings
+    // Define a data class to hold cached data and its expiry timestamp
+    data class CachedData<T>(val data: T, val expiryTime: Long)
+
+    // Create a cache for fixtures and standings
+    private val fixturesCache = LruCache<String, CachedData<UiState<List<FixtureWithType>>>>(10)
+    private val standingsCache = LruCache<String, CachedData<UiState<List<TeamStanding>>>>(10)
+
     private val _fixturesState = MutableStateFlow<UiState<List<FixtureWithType>>>(UiState.Loading)
     val fixturesState: StateFlow<UiState<List<FixtureWithType>>> = _fixturesState.asStateFlow()
 
@@ -40,42 +48,70 @@ class SharedViewModel @Inject constructor(
     var isFixturesDataLoaded = false
     var isStandingsDataLoaded = false
 
-    // Fetch fixtures
+    // Generic function to fetch data and use cache
+    private suspend fun <T> fetchData(
+        cache: LruCache<String, CachedData<UiState<T>>>,
+        cacheKey: String,
+        dataFetcher: suspend () -> UiState<T>,
+        stateFlow: MutableStateFlow<UiState<T>>
+    ) {
+        val cachedData = cache.get(cacheKey)
+        val currentTime = System.currentTimeMillis()
+
+        if (cachedData != null && cachedData.expiryTime > currentTime) {
+            // Use cached data if it's not expired
+            stateFlow.value = cachedData.data
+            Timber.d("Data fetched from cache for key: $cacheKey")
+        } else {
+            // Fetch new data
+            stateFlow.value = UiState.Loading
+            try {
+                val result = dataFetcher()
+                cache.put(cacheKey, CachedData(result, currentTime + cacheDuration))
+                stateFlow.value = result
+                Timber.d("Data fetched from network for key: $cacheKey")
+            } catch (e: Exception) {
+                stateFlow.value = UiState.Error(e.message ?: "Failed to fetch data")
+                Timber.e(e, "Error fetching data for key: $cacheKey")
+            }
+        }
+    }
+
     fun fetchFixtures(season: String, homeTeamId: String, awayTeamId: String, last: String) {
         viewModelScope.launch {
-            _fixturesState.value = UiState.Loading
-            Timber.d("Fetching fixtures for season: $season, homeTeamId: $homeTeamId, awayTeamId: $awayTeamId, last: $last")
-            try {
-                val homeResponse = repository.getLastFixtures(season, homeTeamId, last)
-                val awayResponse = repository.getLastFixtures(season, awayTeamId, last)
+            fetchData(
+                cache = fixturesCache,
+                cacheKey = "fixtures_$season-$homeTeamId-$awayTeamId-$last",
+                dataFetcher = {
+                    try {
+                        val homeResponse = repository.getLastFixtures(season, homeTeamId, last)
+                        val awayResponse = repository.getLastFixtures(season, awayTeamId, last)
 
-                val homeFixtures =
-                    homeResponse.response.map {
-                        FixtureWithType(
-                            it,
-                            isHome = true,
-                            specialId = homeTeamId
-                        )
+                        val homeFixtures =
+                            homeResponse.response.map {
+                                FixtureWithType(
+                                    it,
+                                    isHome = true,
+                                    specialId = homeTeamId
+                                )
+                            }
+                        val awayFixtures =
+                            awayResponse.response.map {
+                                FixtureWithType(
+                                    it,
+                                    isHome = false,
+                                    specialId = awayTeamId
+                                )
+                            }
+
+                        val combinedFixtures = homeFixtures + awayFixtures
+                        UiState.Success(combinedFixtures)
+                    } catch (e: Exception) {
+                        UiState.Error(e.message ?: "An error occurred while fetching fixtures.")
                     }
-                val awayFixtures =
-                    awayResponse.response.map {
-                        FixtureWithType(
-                            it,
-                            isHome = false,
-                            specialId = awayTeamId
-                        )
-                    }
-
-                val combinedFixtures = homeFixtures + awayFixtures
-                _fixturesState.value = UiState.Success(combinedFixtures)
-                isFixturesDataLoaded = true
-                Timber.d("Combined fixtures: $combinedFixtures")
-
-            } catch (e: Exception) {
-                _fixturesState.value =
-                    UiState.Error(e.message ?: "An error occurred while fetching fixtures.")
-                Timber.e(e, "Error fetching fixtures")
-            }
+                },
+                stateFlow = _fixturesState
+            )
         }
     }
 
@@ -85,21 +121,21 @@ class SharedViewModel @Inject constructor(
         val specialId: String
     )
 
-    // Fetch standings
     fun fetchStandings(leagueId: String, season: String) {
         viewModelScope.launch {
-            _standingsState.value = UiState.Loading
-            try {
-                val response = repository.getStandings(leagueId, season)
-                val teamStandings =
-                    response.response.flatMap { it.league.standings.flatten() }
-                _standingsState.value = UiState.Success(teamStandings)
-                isStandingsDataLoaded = true
-                Timber.tag("fetch standings").d("%s", teamStandings)
-            } catch (e: Exception) {
-                _standingsState.value =
-                    UiState.Error(e.message ?: "An error occurred while fetching standings.")
-            }
+            fetchData(
+                cache = standingsCache,
+                cacheKey = "standings_$leagueId-$season",
+                dataFetcher = {
+                    try {
+                        val standings = repository.getStandings(leagueId, season).response[0].league.standings.flatten()
+                        UiState.Success(standings)
+                    } catch (e: Exception) {
+                        UiState.Error(e.message ?: "Failed to fetch standings")
+                    }
+                },
+                stateFlow = _standingsState
+            )
         }
     }
 }

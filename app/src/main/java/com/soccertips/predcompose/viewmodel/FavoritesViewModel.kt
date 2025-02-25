@@ -85,7 +85,7 @@ class FavoritesViewModel @Inject constructor(
     fun restoreFavorites(item: FavoriteItem) {
         viewModelScope.launch {
             try {
-                favoriteItemDao.insert(item)
+                favoriteItemDao.insertFavoriteItem(item)
                 val currentFavorites =
                     (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
                 currentFavorites.add(item)
@@ -104,7 +104,7 @@ class FavoritesViewModel @Inject constructor(
     fun removeFromFavorites(item: FavoriteItem) {
         viewModelScope.launch {
             try {
-                favoriteItemDao.delete(fixtureId = item.fixtureId.toString())
+                favoriteItemDao.deleteFavoriteItem(fixtureId = item.fixtureId.toString())
                 notificationScheduler.cancelNotification(item.fixtureId.toString())
                 val currentFavorites =
                     (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()

@@ -1,22 +1,17 @@
 package com.soccertips.predcompose.viewmodel
 
+import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.soccertips.predcompose.data.model.Event
-import com.soccertips.predcompose.data.model.ResponseData
 import com.soccertips.predcompose.data.model.events.FixtureEvent
-import com.soccertips.predcompose.data.model.events.FixtureEventsResponse
-import com.soccertips.predcompose.data.model.headtohead.HeadToHeadResponse
-import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
-import com.soccertips.predcompose.data.model.lineups.FixtureLineupResponse
+import com.soccertips.predcompose.data.model.headtohead.FixtureDetails
 import com.soccertips.predcompose.data.model.lineups.TeamLineup
-import com.soccertips.predcompose.data.model.prediction.PredictionResponse
 import com.soccertips.predcompose.data.model.prediction.Response
-import com.soccertips.predcompose.data.model.statistics.StatisticsResponse
 import com.soccertips.predcompose.repository.FixtureDetailsRepository
+import com.soccertips.predcompose.ui.FixtureDetailsUiState
 import com.soccertips.predcompose.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,214 +21,227 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import com.soccertips.predcompose.data.model.statistics.Response as StatsResponse
 
 @HiltViewModel
-class FixtureDetailsViewModel
-@Inject
-constructor(
-    private val repository: FixtureDetailsRepository,
+class FixtureDetailsViewModel @Inject constructor(
+    private val fixtureDetailsRepository: FixtureDetailsRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow<UiState<ResponseData>>(UiState.Loading)
-    val uiState: StateFlow<UiState<ResponseData>> = _uiState.asStateFlow()
+
+    private val _uiState: MutableStateFlow<FixtureDetailsUiState> =
+        MutableStateFlow(FixtureDetailsUiState.Loading)
+    val uiState: StateFlow<FixtureDetailsUiState> = _uiState.asStateFlow()
 
     private val _headToHeadState =
-        MutableStateFlow<UiState<List<com.soccertips.predcompose.data.model.headtohead.FixtureDetails>>>(
-            UiState.Loading,
-        )
-    val headToHeadState: StateFlow<UiState<List<com.soccertips.predcompose.data.model.headtohead.FixtureDetails>>> =
+        MutableStateFlow<UiState<List<FixtureDetails>>>(UiState.Loading)
+    val headToHeadState: StateFlow<UiState<List<FixtureDetails>>> =
         _headToHeadState.asStateFlow()
 
     private val _lineupsState = MutableStateFlow<UiState<List<TeamLineup>>>(UiState.Loading)
     val lineupsState: StateFlow<UiState<List<TeamLineup>>> = _lineupsState.asStateFlow()
 
     private val _fixtureStatsState =
-        MutableStateFlow<UiState<List<com.soccertips.predcompose.data.model.statistics.Response>>>(
-            UiState.Loading,
-        )
-    val fixtureStatsState: StateFlow<UiState<List<com.soccertips.predcompose.data.model.statistics.Response>>> =
+        MutableStateFlow<UiState<List<StatsResponse>>>(UiState.Loading)
+    val fixtureStatsState: StateFlow<UiState<List<StatsResponse>>> =
         _fixtureStatsState.asStateFlow()
 
     private val _fixtureEventsState = MutableStateFlow<UiState<List<FixtureEvent>>>(UiState.Loading)
     val fixtureEventsState: StateFlow<UiState<List<FixtureEvent>>> =
         _fixtureEventsState.asStateFlow()
 
-    /* private val _standingsState = MutableStateFlow<UiState<List<TeamStanding>>>(UiState.Loading)
-     val standingsState: StateFlow<UiState<List<TeamStanding>>> = _standingsState.asStateFlow()*/
-
     private val _predictionsState = MutableStateFlow<UiState<List<Response>>>(UiState.Loading)
     val predictionsState: StateFlow<UiState<List<Response>>> = _predictionsState.asStateFlow()
 
+    // Cache duration in milliseconds (e.g., 15 minutes)
+    private val cacheDuration = 15 * 60 * 1000L
 
-    // Cache to avoid refetching the same fixture details
-    private var lastFetchedFixtureId: String? = null
-    private var cachedFixtureDetails: ResponseData? = null
-    private var lastFetchTimestamp: Long? = null
+    // Define a data class to hold cached data and its expiry timestamp
+    data class CachedData<T>(val data: T, val expiryTime: Long)
 
-    private val cacheExpirationDuration =
-        5 * 60 * 1000 // Cache expires in 5 minutes (in milliseconds)
+    // Create a cache for each data type
+    private val fixtureDetailsCache = LruCache<String, CachedData<FixtureDetailsUiState>>(10)
+    private val headToHeadCache = LruCache<String, CachedData<UiState<List<FixtureDetails>>>>(10)
+    private val lineupsCache = LruCache<String, CachedData<UiState<List<TeamLineup>>>>(10)
+    private val fixtureStatsCache = LruCache<String, CachedData<UiState<List<StatsResponse>>>>(10)
+    private val fixtureEventsCache = LruCache<String, CachedData<UiState<List<FixtureEvent>>>>(10)
+    private val predictionsCache = LruCache<String, CachedData<UiState<List<Response>>>>(10)
+
+    // Generic function to fetch data and use cache
+    private suspend fun <T> fetchData(
+        cache: LruCache<String, CachedData<UiState<T>>>,
+        cacheKey: String,
+        dataFetcher: suspend () -> UiState<T>,
+        stateFlow: MutableStateFlow<UiState<T>>
+    ) {
+        val cachedData = cache.get(cacheKey)
+        val currentTime = System.currentTimeMillis()
+
+        if (cachedData != null && cachedData.expiryTime > currentTime) {
+            // Use cached data if it's not expired
+            stateFlow.value = cachedData.data
+            Timber.d("Data fetched from cache for key: $cacheKey")
+        } else {
+            // Fetch new data
+            stateFlow.value = UiState.Loading
+            try {
+                val result = dataFetcher()
+                cache.put(cacheKey, CachedData(result, currentTime + cacheDuration))
+                stateFlow.value = result
+                Timber.d("Data fetched from network for key: $cacheKey")
+            } catch (e: Exception) {
+                stateFlow.value = UiState.Error(e.message ?: "Failed to fetch data")
+                Timber.e(e, "Error fetching data for key: $cacheKey")
+            }
+        }
+    }
 
     fun fetchFixtureDetails(fixtureId: String) {
-        if (fixtureId == lastFetchedFixtureId && cachedFixtureDetails != null && !isCacheExpired()) {
-            // Use cached data
-            _uiState.value = UiState.Success(cachedFixtureDetails!!)
-            return
-        }
-
-        // Fetch new data if cache is expired or not available
         viewModelScope.launch {
-            _uiState.value = UiState.Loading
-            try {
-                val response = repository.getFixtureDetails(fixtureId)
-                cachedFixtureDetails = response
-                lastFetchedFixtureId = fixtureId
-                lastFetchTimestamp = System.currentTimeMillis()
-                _uiState.value = UiState.Success(response)
-            } catch (e: retrofit2.HttpException) {
-                _uiState.value =
-                    UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
-                Timber.tag("Fixture Details").d(e.localizedMessage)
-
-            } catch (e: Exception) {
-                _uiState.value =
-                    UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
-                Timber.tag("Fixture Details").d(e.localizedMessage)
-
-
-            }
+            fetchData(
+                cache = fixtureDetailsCache as LruCache<String, CachedData<UiState<FixtureDetailsUiState>>>,
+                cacheKey = "fixture_details_$fixtureId",
+                dataFetcher = {
+                    try {
+                        val fixtureDetails = fixtureDetailsRepository.getFixtureDetails(fixtureId)
+                        UiState.Success(
+                            FixtureDetailsUiState.Success(
+                                fixtureDetails = fixtureDetails,
+                                predictions = null,
+                                fixtureStats = null,
+                                headToHead = null,
+                                lineups = null,
+                                fixtureEvents = null
+                            )
+                        )
+                    } catch (e: Exception) {
+                        UiState.Error(e.message ?: "Failed to fetch fixture details")
+                    }
+                },
+                stateFlow = _uiState as MutableStateFlow<UiState<FixtureDetailsUiState>>
+            )
         }
     }
 
-    private fun isCacheExpired(): Boolean {
-        val currentTime = System.currentTimeMillis()
-        return lastFetchTimestamp == null || (currentTime - lastFetchTimestamp!!) > cacheExpirationDuration
-    }
-
-
-    fun fetchFormAndPredictions(
-        season: String,
-        homeTeamId: String,
-        awayTeamId: String,
-        fixtureId: String,
-        last: String,
-        leagueId: String
-    ) {
+    fun fetchFixtureStats(fixtureId: String, homeTeamId: String, awayTeamId: String) {
         viewModelScope.launch {
-            // Set loading state for all requests
-            setLoadingState()
+            fetchData(
+                cache = fixtureStatsCache,
+                cacheKey = "fixture_stats_$fixtureId",
+                dataFetcher = {
+                    try {
+                        val homeTeamStats =
+                            fixtureDetailsRepository.getFixtureStats(fixtureId, homeTeamId).response
+                        val awayTeamStats =
+                            fixtureDetailsRepository.getFixtureStats(fixtureId, awayTeamId).response
 
-            try {
-                // Fetch all data concurrently using async for better performance
+                        val combinedStats = homeTeamStats + awayTeamStats
+                        if (combinedStats.isNotEmpty()) {
+                            UiState.Success(combinedStats)
+                        } else {
+                            UiState.Error("No fixture stats available yet")
+                        }
+                    } catch (e: Exception) {
+                        UiState.Error("Failed to fetch fixture stats")
 
-                val predictionsResponseDeferred = async { repository.getPredictions(fixtureId) }
-                val homeStatsResponseDeferred =
-                    async { repository.getFixtureStats(fixtureId, homeTeamId) }
-                val awayStatsResponseDeferred =
-                    async { repository.getFixtureStats(fixtureId, awayTeamId) }
-                val headToHeadResponseDeferred =
-                    async { repository.getHeadToHeadFixtures("$homeTeamId-$awayTeamId", last) }
-                val lineupsResponseDeferred = async { repository.getLineups(fixtureId) }
-                val fixtureEventsResponseDeferred = async { repository.getFixtureEvents(fixtureId) }
-                val standingsResponseDeferred = async { repository.getStandings(leagueId, season) }
-
-                // Await responses
-                val predictionsResponse = predictionsResponseDeferred.await()
-                val homeStatsResponse = homeStatsResponseDeferred.await()
-                val awayStatsResponse = awayStatsResponseDeferred.await()
-                val headToHeadResponse = headToHeadResponseDeferred.await()
-                val lineupsResponse = lineupsResponseDeferred.await()
-                val fixtureEventsResponse = fixtureEventsResponseDeferred.await()
-                standingsResponseDeferred.await()
-
-                handlePredictionsResponse(predictionsResponse)
-                handleStatsResponse(homeStatsResponse, awayStatsResponse)
-                handleHeadToHeadResponse(headToHeadResponse)
-                handleLineupsResponse(lineupsResponse)
-                handleFixtureEventsResponse(fixtureEventsResponse)
-                // handleStandingsResponse(standingsResponse)
-
-            } catch (e: Exception) {
-                setErrorState(e.localizedMessage ?: "An unexpected error occurred.")
-                Timber.d(e)
-            }
+                    }
+                },
+                stateFlow = _fixtureStatsState
+            )
         }
     }
 
-    // Utility function to set loading state for all states
-    private fun setLoadingState() {
-        _predictionsState.value = UiState.Loading
-        _fixtureStatsState.value = UiState.Loading
-        _headToHeadState.value = UiState.Loading
-        _lineupsState.value = UiState.Loading
-        _fixtureEventsState.value = UiState.Loading
-    }
-
-    data class FixtureWithType(
-        val fixture: FixtureDetails,
-        val isHome: Boolean // True for home team, false for away team
-    )
-
-
-
-    private fun handlePredictionsResponse(predictionsResponse: PredictionResponse) {
-        val predictionsData = predictionsResponse.response
-        if (predictionsData.isNotEmpty()) {
-            _predictionsState.value = UiState.Success(predictionsData)
-        } else {
-            _predictionsState.value = UiState.Error("😞 No predictions available.")
+    fun fetchFixtureEvents(fixtureId: String) {
+        viewModelScope.launch {
+            fetchData(
+                cache = fixtureEventsCache,
+                cacheKey = "fixture_events_$fixtureId",
+                dataFetcher = {
+                    try {
+                        val fixtureEvents =
+                            fixtureDetailsRepository.getFixtureEvents(fixtureId).response
+                        if (fixtureEvents.isNotEmpty()) {
+                            UiState.Success(fixtureEvents)
+                        } else {
+                            UiState.Error("No fixture events available yet")
+                        }
+                    } catch (e: Exception) {
+                        UiState.Error("Failed to fetch fixture events")
+                    }
+                },
+                stateFlow = _fixtureEventsState
+            )
         }
     }
 
-    private fun handleStatsResponse(
-        homeStatsResponse: StatisticsResponse,
-        awayStatsResponse: StatisticsResponse
-    ) {
-        val combinedStats = homeStatsResponse.response + awayStatsResponse.response
-        if (combinedStats.isNotEmpty()) {
-            _fixtureStatsState.value = UiState.Success(combinedStats)
-        } else {
-            _fixtureStatsState.value = UiState.Error("😞 No statistics available.")
-
-        }
-
-    }
-
-    private fun handleHeadToHeadResponse(headToHeadResponse: HeadToHeadResponse) {
-        val headToHeadData = headToHeadResponse.response
-        if (headToHeadData.isNotEmpty()) {
-            _headToHeadState.value = UiState.Success(headToHeadData)
-        } else {
-            _headToHeadState.value = UiState.Error("😞 No head-to-head data found.")
-        }
-    }
-
-    private fun handleLineupsResponse(lineupsResponse: FixtureLineupResponse) {
-        val lineupsData = lineupsResponse.response
-        if (lineupsData.isNotEmpty()) {
-            _lineupsState.value = UiState.Success(lineupsData)
-        } else {
-            _lineupsState.value = UiState.Error("😞 No lineups available.")
+    fun fetchHeadToHead(homeTeamId: String, awayTeamId: String) {
+        viewModelScope.launch {
+            fetchData(
+                cache = headToHeadCache,
+                cacheKey = "head_to_head_$homeTeamId-$awayTeamId",
+                dataFetcher = {
+                    try {
+                        val headToHead = fixtureDetailsRepository.getHeadToHeadFixtures(
+                            "$homeTeamId-$awayTeamId",
+                            "10"
+                        ).response
+                        if (headToHead.isNotEmpty()) {
+                            UiState.Success(headToHead)
+                        } else {
+                            UiState.Error("No head to head data available yet")
+                        }
+                    } catch (e: Exception) {
+                        UiState.Error("Failed to fetch head to head")
+                    }
+                },
+                stateFlow = _headToHeadState
+            )
         }
     }
 
-    private fun handleFixtureEventsResponse(fixtureEventsResponse: FixtureEventsResponse) {
-        val fixtureEventsData = fixtureEventsResponse.response
-        if (fixtureEventsData.isNotEmpty()) {
-            _fixtureEventsState.value = UiState.Success(fixtureEventsData)
-        } else {
-            _fixtureEventsState.value = UiState.Error("😞 No fixture events available.")
+    fun fetchLineups(fixtureId: String) {
+        viewModelScope.launch {
+            fetchData(
+                cache = lineupsCache,
+                cacheKey = "lineups_$fixtureId",
+                dataFetcher = {
+                    try {
+                        val lineups = fixtureDetailsRepository.getLineups(fixtureId).response
+                        if (lineups.isNotEmpty()) {
+                            UiState.Success(lineups)
+                        } else {
+                            UiState.Error("No lineups available yet")
+                        }
+                    } catch (e: Exception) {
+                        UiState.Error("Failed to fetch lineups")
+                    }
+                },
+                stateFlow = _lineupsState
+            )
         }
     }
 
-
-    // Centralized error handler
-    private fun setErrorState(errorMessage: String) {
-        _predictionsState.value = UiState.Error(errorMessage)
-        _fixtureStatsState.value = UiState.Error(errorMessage)
-        _headToHeadState.value = UiState.Error(errorMessage)
-        _lineupsState.value = UiState.Error(errorMessage)
-        _fixtureEventsState.value = UiState.Error(errorMessage)
+    fun fetchFormAndPredictions(fixtureId: String) {
+        viewModelScope.launch {
+            fetchData(
+                cache = predictionsCache,
+                cacheKey = "predictions_$fixtureId",
+                dataFetcher = {
+                    try {
+                        val predictions =
+                            fixtureDetailsRepository.getPredictions(fixtureId).response
+                        if (predictions.isNotEmpty()) {
+                            UiState.Success(predictions)
+                        } else {
+                            UiState.Error("No predictions available yet")
+                        }
+                    } catch (e: Exception) {
+                        UiState.Error("Failed to fetch predictions")
+                    }
+                },
+                stateFlow = _predictionsState
+            )
+        }
     }
-
 
     fun getHomeGoalScorers(
         events: List<Event>,
@@ -244,14 +252,13 @@ constructor(
             .mapNotNull {
                 val playerName = it.player.name
                 if (playerName.isBlank()) {
-                    null // Skip if playerName is null or blank
+                    null
                 } else {
-                    val lastName = playerName.split(" ").lastOrNull() ?: "" // Safely split
+                    val lastName = playerName.split(" ").lastOrNull() ?: ""
                     val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}’"
                     lastName to elapsed
                 }
             }
-
 
     fun getAwayGoalScorers(
         events: List<Event>,
@@ -293,5 +300,4 @@ constructor(
                 }
             }
         }
-
 }

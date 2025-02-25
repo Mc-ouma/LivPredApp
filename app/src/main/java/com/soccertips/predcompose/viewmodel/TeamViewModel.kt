@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import androidx.paging.filter
 import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
 import com.soccertips.predcompose.data.model.team.squad.Response
 import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatistics
@@ -15,6 +14,7 @@ import com.soccertips.predcompose.repository.TeamsRepository
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.viewmodel.TeamViewModel.FormattedDateTime
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,16 +33,21 @@ constructor(
 ) : ViewModel() {
     private val _team = MutableStateFlow<UiState<TeamStatistics>>(UiState.Loading)
     val team: StateFlow<UiState<TeamStatistics>> = _team.asStateFlow()
+    private val _isTeamLoading = MutableStateFlow(false)
+    val isTeamLoading: StateFlow<Boolean> = _isTeamLoading.asStateFlow()
 
     private val _players = MutableStateFlow<UiState<List<Response>>>(UiState.Loading)
     val players: StateFlow<UiState<List<Response>>> = _players.asStateFlow()
+    private val _isPlayersLoading = MutableStateFlow(false)
+    val isPlayersLoading: StateFlow<Boolean> = _isPlayersLoading.asStateFlow()
 
     private val _transfersPaging = MutableStateFlow<PagingData<Response2>>(PagingData.empty())
     val transfersPaging: StateFlow<PagingData<Response2>> = _transfersPaging.asStateFlow()
 
-
     private val _fixtures = MutableStateFlow<UiState<List<FixtureDetails>>>(UiState.Loading)
     val fixtures: StateFlow<UiState<List<FixtureDetails>>> = _fixtures.asStateFlow()
+    private val _isFixturesLoading = MutableStateFlow(false)
+    val isFixturesLoading: StateFlow<Boolean> = _isFixturesLoading.asStateFlow()
 
     private val _teamData =
         MutableStateFlow<UiState<List<com.soccertips.predcompose.data.model.team.teamscreen.Response>>>(
@@ -50,20 +55,19 @@ constructor(
         )
     val teamData: StateFlow<UiState<List<com.soccertips.predcompose.data.model.team.teamscreen.Response>>> =
         _teamData.asStateFlow()
+    private val _isTeamDataLoading = MutableStateFlow(false)
+    val isTeamDataLoading: StateFlow<Boolean> = _isTeamDataLoading.asStateFlow()
+
     private val cache = mutableMapOf<String, Any>()
-
-
 
     var isTeamDataLoaded = false
     var isPlayersDataLoaded = false
     var isTransfersDataLoaded = false
     var isFixturesDataLoaded = false
 
-    var isLoading = false
-        private set
-
     private inline fun <reified T> fetchData(
         stateFlow: MutableStateFlow<UiState<T>>,
+        loadingStateFlow: MutableStateFlow<Boolean>,
         cacheKey: String,
         crossinline apiCall: suspend () -> T,
         noinline onError: (Exception) -> Unit = {},
@@ -79,7 +83,7 @@ constructor(
             }
 
             stateFlow.value = UiState.Loading
-            isLoading = true
+            loadingStateFlow.value = true
             try {
                 Timber.tag("ViewModelFetch").d("fetching fresh data for $cacheKey")
                 val response = apiCall()
@@ -90,13 +94,13 @@ constructor(
                 stateFlow.value = UiState.Error(e.message ?: "An error occurred")
                 onError(e)
             } finally {
-                isLoading = false
+                loadingStateFlow.value = false
             }
         }
     }
 
     fun getTeamData(teamId: Int) {
-        fetchData(_teamData, "teamData_$teamId", { repository.getTeamData(teamId).response }) {
+        fetchData(_teamData, _isTeamDataLoading, "teamData_$teamId", { repository.getTeamData(teamId).response }) {
             isTeamDataLoaded = true
         }
     }
@@ -104,6 +108,7 @@ constructor(
     fun getTeams(leagueId: String, season: String, teamId: String) {
         fetchData(
             _team,
+            _isTeamLoading,
             "team_$teamId",
             { repository.getTeams(leagueId, season, teamId).response }) {
             isTeamDataLoaded = true
@@ -112,47 +117,21 @@ constructor(
 
     fun getPlayers(teamId: String) {
         if (!isPlayersDataLoaded) {
-            fetchData(_players, "players_$teamId", { repository.getPlayers(teamId).response }) {
+            fetchData(_players, _isPlayersLoading, "players_$teamId", { repository.getPlayers(teamId).response }) {
                 isPlayersDataLoaded = true
             }
         }
     }
 
-
-    fun getTransfers(teamId: String) {
-        viewModelScope.launch {
-            try {
-                repository.getTransfers(teamId)
-                    .cachedIn(viewModelScope)
-                    .collect { pagingData ->
-                        val oneYearAgo = Calendar.getInstance().apply { add(Calendar.YEAR, -3) }.time
-                        val oneYearForward = Calendar.getInstance().apply { add(Calendar.YEAR, 1) }.time
-                        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-                        val filteredPagingData = pagingData.filter { response ->
-                            try {
-                                val latestTransferDate = response.transfers
-                                    .maxOfOrNull { dateFormat.parse(it.date) ?: Date(0) } ?: Date(0)
-                                latestTransferDate in oneYearAgo..oneYearForward
-                            } catch (e: Exception) {
-                                Timber.tag("ViewModelFetch").e(e, "Error parsing transfer date")
-                                false
-                            }
-                        }
-                        _transfersPaging.value = filteredPagingData
-                        isTransfersDataLoaded = true
-                    }
-            } catch (e: Exception) {
-                Timber.tag("ViewModelFetch").e(e, "Error loading transfers")
-                _transfersPaging.value = PagingData.empty()
-            }
-        }
+    fun getTransfers(teamId: String): Flow<PagingData<Response2>> {
+        return repository.getTransfers(teamId).cachedIn(viewModelScope)
     }
 
     fun getNextFixtures(teamId: String, season: String, next: String) {
         if (!isFixturesDataLoaded) {
             fetchData(
                 _fixtures,
+                _isFixturesLoading,
                 "fixtures_$teamId",
                 { repository.getNextFixtures(teamId, season, next).response }) {
                 isFixturesDataLoaded = true

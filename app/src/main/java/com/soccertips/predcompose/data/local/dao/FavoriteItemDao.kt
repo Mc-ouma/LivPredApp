@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.Flow
 interface FavoriteDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(favoriteItem: FavoriteItem)
+    suspend fun insertFavoriteItem(favoriteItem: FavoriteItem)
 
     @Query("SELECT * FROM favorites")
     suspend fun getAllFavorites(): List<FavoriteItem>
 
     @Query("DELETE FROM favorites WHERE fixtureId = :fixtureId")
-    suspend fun delete(fixtureId: String)
+    suspend fun deleteFavoriteItem(fixtureId: String)
 
     @Query("SELECT COUNT(*) FROM favorites")
     fun getFavoriteCount(): Flow<Int>

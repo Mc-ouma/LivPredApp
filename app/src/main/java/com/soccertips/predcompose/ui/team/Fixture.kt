@@ -11,14 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -37,19 +35,8 @@ import com.soccertips.predcompose.viewmodel.TeamViewModel
 fun FixturesScreen(
     fixtures: List<FixtureDetails>, navController: NavController,
     viewModel: TeamViewModel,
-    onTeamInfoVisibilityChanged: (Boolean) -> Unit
+    lazyListState: LazyListState
 ) {
-    val lazyListState = rememberLazyListState()
-    // Observe scroll state to hide/show the page info
-    LaunchedEffect(lazyListState) {
-        snapshotFlow { lazyListState.firstVisibleItemIndex }
-            .collect { firstVisibleItemIndex ->
-                // Hide page info when scrolling up, show it when scrolling down
-                onTeamInfoVisibilityChanged(firstVisibleItemIndex == 0)
-            }
-    }
-
-
     LazyColumn(
         state = lazyListState,
         modifier = Modifier

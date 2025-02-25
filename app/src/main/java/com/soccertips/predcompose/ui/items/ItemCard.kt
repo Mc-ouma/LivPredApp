@@ -1,5 +1,6 @@
 package com.soccertips.predcompose.ui.items
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -30,12 +31,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
+import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.data.model.ServerResponse
 import com.soccertips.predcompose.ui.theme.LocalCardColors
 import com.soccertips.predcompose.ui.theme.LocalCardElevation
@@ -169,7 +168,7 @@ fun ItemCard(
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
+
 @Composable
 fun LeagueInfo(leagueLogo: String?, leagueName: String?) {
     Row(
@@ -177,14 +176,12 @@ fun LeagueInfo(leagueLogo: String?, leagueName: String?) {
         modifier = Modifier.padding(start = 8.dp)
     ) {
 
-        GlideImage(
-            model = leagueLogo,
+        Image(
+            rememberAsyncImagePainter(leagueLogo),
             contentDescription = "League Logo",
             modifier = Modifier
                 .height(24.dp)
                 .width(24.dp),
-            alignment = Alignment.Center,
-            contentScale = ContentScale.Fit,
 
             )
         Text(
@@ -203,22 +200,20 @@ data class TeamDetails(
 )
 
 // Reusable Composable for Team Info
-@OptIn(ExperimentalGlideComposeApi::class)
+
 @Composable
 fun TeamInfo(
     teamDetails: TeamDetails,
     modifier: Modifier = Modifier
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
-        GlideImage(
-            model = teamDetails.teamLogo,
+        Image(
+            rememberAsyncImagePainter(teamDetails.teamLogo),
             contentDescription = "Team Logo",
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .height(24.dp)
                 .width(24.dp),
-            alignment = Alignment.Center,
-            contentScale = ContentScale.Fit,
 
             )
         teamDetails.teamName?.let {

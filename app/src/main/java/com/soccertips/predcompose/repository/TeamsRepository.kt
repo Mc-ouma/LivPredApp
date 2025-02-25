@@ -23,13 +23,9 @@ constructor(
         teamId: String,
     ) = teamsService.getPlayers(teamId)
 
-    /*suspend fun getTransfers(
-        teamId: String,
-        page: Int,
-    ) = teamsService.getTransfers(teamId, page)*/
     fun getTransfers(
         teamId: String
-    ): Flow< PagingData<Response2>> {
+    ): Flow<PagingData<Response2>> {
         return Pager(
             config = PagingConfig(
                 pageSize = 10,

@@ -1,5 +1,6 @@
 package com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,10 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
-import com.soccertips.predcompose.R
+import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.data.model.headtohead.FixtureDetails
 import com.soccertips.predcompose.data.model.headtohead.TeamInfo
 import com.soccertips.predcompose.navigation.Routes
@@ -122,7 +120,6 @@ fun FixtureCard(
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun TeamSection(
     team: TeamInfo,
@@ -134,11 +131,10 @@ fun TeamSection(
         verticalArrangement = Arrangement.Center,
         modifier = modifier.padding(8.dp),
     ) {
-        GlideImage(
-            model = team.logo,
+        Image(
+            painter = rememberAsyncImagePainter(model = team.logo),
             contentDescription = "${team.name} logo",
             modifier = Modifier.size(24.dp),
-            failure = placeholder(R.drawable.placeholder),
         )
         Text(
             text = team.name,

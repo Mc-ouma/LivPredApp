@@ -19,7 +19,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.soccertips.predcompose.R
 import com.soccertips.predcompose.data.model.Category
 import com.soccertips.predcompose.ui.theme.LocalCardColors
@@ -34,7 +33,7 @@ fun CategoryCard(
     ImageListItem(name = category.name, onClick = onClick)
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
+
 @Composable
 fun ImageListItem(
     name: String,

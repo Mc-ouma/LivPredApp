@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -54,7 +55,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,6 +75,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.R
 import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
@@ -80,7 +84,6 @@ import com.soccertips.predcompose.data.model.team.teamscreen.Response
 import com.soccertips.predcompose.data.model.team.teamscreen.TeamData
 import com.soccertips.predcompose.data.model.team.teamscreen.TeamStatistics
 import com.soccertips.predcompose.data.model.team.teamscreen.Venue
-import com.soccertips.predcompose.data.model.team.transfer.Response2
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.ui.fixturedetails.EmptyScreen
 import com.soccertips.predcompose.ui.fixturedetails.ErrorScreen
@@ -91,6 +94,9 @@ import com.soccertips.predcompose.viewmodel.SharedViewModel
 import com.soccertips.predcompose.viewmodel.SharedViewModel.FixtureWithType
 import com.soccertips.predcompose.viewmodel.TeamViewModel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -118,35 +124,65 @@ fun TeamScreen(
     val teamDataState by viewModel.teamData.collectAsStateWithLifecycle()
     val teamState by viewModel.team.collectAsStateWithLifecycle()
     val playersState by viewModel.players.collectAsStateWithLifecycle()
-    val transfersState by viewModel.transfersPaging.collectAsStateWithLifecycle()
     val lastFixturesState by sharedViewModel.fixturesState.collectAsStateWithLifecycle()
     val standingsState by sharedViewModel.standingsState.collectAsStateWithLifecycle()
     val nextFixturesState by viewModel.fixtures.collectAsStateWithLifecycle()
+
+    val isTeamDataLoading by viewModel.isTeamDataLoading.collectAsStateWithLifecycle()
+    val isPlayersLoading by viewModel.isPlayersLoading.collectAsStateWithLifecycle()
+    val isFixturesLoading by viewModel.isFixturesLoading.collectAsStateWithLifecycle()
+    val isTeamLoading by viewModel.isTeamLoading.collectAsStateWithLifecycle()
 
     var currentTab by remember { mutableStateOf(TeamStatisticsTab.OVERVIEW) }
     val teamInfoVisible = remember { mutableStateOf(true) } // Declare as MutableState<Boolean>
 
     LaunchedEffect(teamId) {
-        if (!viewModel.isTeamDataLoaded) {
-            viewModel.getTeams(leagueId, season, teamId)
-        }
-        if (!viewModel.isTeamDataLoaded) {
-            viewModel.getTeamData(teamId.toInt())
-        }
-        if (!viewModel.isPlayersDataLoaded) {
-            viewModel.getPlayers(teamId)
-        }
-        if (!viewModel.isTransfersDataLoaded) {
-            viewModel.getTransfers(teamId)
-        }
-        if (!viewModel.isFixturesDataLoaded) {
-            viewModel.getNextFixtures(season, teamId, "10")
-        }
-        if (!sharedViewModel.isStandingsDataLoaded) {
-            sharedViewModel.fetchStandings(leagueId, season)
-        }
-        if (!sharedViewModel.isFixturesDataLoaded) {
-            sharedViewModel.fetchFixtures(season, teamId, teamId, "10")
+        coroutineScope {
+            val teamDataDeferred = async {
+                if (!viewModel.isTeamDataLoaded) {
+                    viewModel.getTeams(leagueId, season, teamId)
+                }
+            }
+            val teamDeferred = async {
+                if (!viewModel.isTeamDataLoaded) {
+                    viewModel.getTeamData(teamId.toInt())
+                }
+            }
+            val playersDeferred = async {
+                if (!viewModel.isPlayersDataLoaded) {
+                    viewModel.getPlayers(teamId)
+                }
+            }
+            val transfersDeferred = async {
+                if (!viewModel.isTransfersDataLoaded) {
+                    viewModel.getTransfers(teamId)
+                }
+            }
+            val nextFixturesDeferred = async {
+                if (!viewModel.isFixturesDataLoaded) {
+                    viewModel.getNextFixtures(season, teamId, "10")
+                }
+            }
+            val standingsDeferred = async {
+                if (!sharedViewModel.isStandingsDataLoaded) {
+                    sharedViewModel.fetchStandings(leagueId, season)
+                }
+            }
+            val fixturesDeferred = async {
+                if (!sharedViewModel.isFixturesDataLoaded) {
+                    sharedViewModel.fetchFixtures(season, teamId, teamId, "10")
+                }
+            }
+
+            awaitAll(
+                teamDataDeferred,
+                teamDeferred,
+                playersDeferred,
+                transfersDeferred,
+                nextFixturesDeferred,
+                standingsDeferred,
+                fixturesDeferred
+            )
         }
     }
 
@@ -165,7 +201,7 @@ fun TeamScreen(
                             }
                         }
 
-                        is UiState.Loading -> "Loading..."
+                        is UiState.Loading -> if (isTeamDataLoading) "Loading Team Info..." else "Team Info"
                         is UiState.Error -> "Error"
                         UiState.Empty -> "No Data"
                         is UiState.ShowSnackbar -> TODO()
@@ -187,67 +223,78 @@ fun TeamScreen(
             )
         }
     ) { paddingValues ->
-        when (teamDataState) {
-            is UiState.Loading ->
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    CircularProgressIndicator()
-                }
+        if (isTeamDataLoading || isPlayersLoading || isFixturesLoading || isTeamLoading) {
+
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                CircularProgressIndicator()
+            }
 
 
-            is UiState.Success ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                ) {
-                    val density = LocalDensity.current
-                    AnimatedVisibility(
-                        visible = teamInfoVisible.value,
-                        enter = slideInVertically { with(density) { -40.dp.roundToPx() } } + expandVertically(
-                            expandFrom = Alignment.Top
-                        ) + fadeIn(initialAlpha = 0.3f),
-                        exit = slideOutVertically() + shrinkVertically() + fadeOut(),
+        } else {
+            when (teamDataState) {
+                is UiState.Loading ->
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        val teamInfoCardData =
-                            (teamDataState as? UiState.Success<List<Response>>)?.data?.firstOrNull()
-
-                        teamInfoCardData?.let { response ->
-                            TeamInfoCard(
-                                statistics = response,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
+                        CircularProgressIndicator()
                     }
 
-                    TeamsTab(
-                        pages = pages,
-                        navController = navController,
-                        teamState = teamState,
-                        playersState = playersState,
-                        transfersState = transfersState,
-                        lastFixturesState = lastFixturesState,
-                        nextFixturesState = nextFixturesState,
-                        standingsState = standingsState,
-                        teamId = teamId,
-                        viewModel = viewModel,
-                        onTabSelected = { currentTab = it },
-                        teamInfoVisible = teamInfoVisible // Pass MutableState<Boolean>
-                    )
-                }
+                is UiState.Success ->
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                    ) {
+                        val density = LocalDensity.current
+                        AnimatedVisibility(
+                            visible = teamInfoVisible.value,
+                            enter = slideInVertically { with(density) { -40.dp.roundToPx() } } + expandVertically(
+                                expandFrom = Alignment.Top
+                            ) + fadeIn(initialAlpha = 0.3f),
+                            exit = slideOutVertically() + shrinkVertically() + fadeOut(),
+                        ) {
+                            val teamInfoCardData =
+                                (teamDataState as? UiState.Success<List<Response>>)?.data?.firstOrNull()
+
+                            teamInfoCardData?.let { response ->
+                                TeamInfoCard(
+                                    statistics = response,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
+
+                        TeamsTab(
+                            pages = pages,
+                            navController = navController,
+                            teamState = teamState,
+                            playersState = playersState,
+                            lastFixturesState = lastFixturesState,
+                            nextFixturesState = nextFixturesState,
+                            standingsState = standingsState,
+                            teamId = teamId,
+                            viewModel = viewModel,
+                            onTabSelected = { currentTab = it },
+                            teamInfoVisible = teamInfoVisible // Pass MutableState<Boolean>
+                        )
+                    }
 
 
-            is UiState.Error ->
-                ErrorScreen(paddingValues)
+                is UiState.Error ->
+                    ErrorScreen(paddingValues, (teamDataState as UiState.Error).message)
 
 
-            UiState.Empty ->
-                EmptyScreen(paddingValues)
+                UiState.Empty ->
+                    EmptyScreen(paddingValues)
 
-            else -> Unit
+                else -> Unit
 
+            }
         }
     }
 }
@@ -258,7 +305,6 @@ fun TeamsTab(
     navController: NavController,
     teamState: UiState<TeamStatistics>,
     playersState: UiState<List<com.soccertips.predcompose.data.model.team.squad.Response>>,
-    transfersState: UiState<List<Response2>>,
     lastFixturesState: UiState<List<FixtureWithType>>,
     nextFixturesState: UiState<List<FixtureDetails>>,
     standingsState: UiState<List<TeamStanding>>,
@@ -270,13 +316,31 @@ fun TeamsTab(
     val pagerState = rememberPagerState { pages.size }
     val coroutineScope = rememberCoroutineScope()
 
+    val transfersFlow = viewModel.getTransfers(teamId)
+    val transfers = transfersFlow.collectAsLazyPagingItems()
+
+    // Remember the current tab selection and prevent recomposition
+    val currentOnTabSelected by rememberUpdatedState(onTabSelected)
+
+    //Lift the scroll state up to the parent composable
+    val lazyListState = rememberLazyListState()
+
+    // Observe scroll state to hide/show the team info card
+    LaunchedEffect(lazyListState) {
+        snapshotFlow { lazyListState.firstVisibleItemIndex }
+            .collect { firstVisibleItemIndex ->
+                // Hide team info card when scrolling up, show it when scrolling down
+                teamInfoVisible.value = firstVisibleItemIndex == 0
+            }
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         // Tab Row
         TeamsTabRow(
             pages = pages,
             pagerState = pagerState,
             coroutineScope = coroutineScope,
-            onTabSelected = onTabSelected
+            onTabSelected = currentOnTabSelected
         )
 
         // Horizontal Pager for Tab Content
@@ -295,10 +359,8 @@ fun TeamsTab(
                         content = { statistics: TeamStatistics ->
                             TeamStatisticsContent(
                                 statistics = statistics,
-                                teamInfoVisible = teamInfoVisible,
-                            ) { visible ->
-                                teamInfoVisible.value = visible
-                            }
+                                lazyListState = lazyListState
+                            )
                         }
                     )
                 }
@@ -309,9 +371,8 @@ fun TeamsTab(
                         content = { squadResponse: List<com.soccertips.predcompose.data.model.team.squad.Response> ->
                             SquadScreen(
                                 squadResponse = squadResponse,
-                            ) { visible ->
-                                teamInfoVisible.value = visible
-                            }
+                                lazyListState = lazyListState
+                            )
                         }
                     )
                 }
@@ -323,26 +384,19 @@ fun TeamsTab(
                             FixtureStandings(
                                 standings = standings,
                                 teamId1 = teamId.toInt(),
-                            ) { visible ->
-                                teamInfoVisible.value = visible
-                            }
+                                lazyListState = lazyListState
+                            )
                         }
                     )
                 }
 
                 TeamStatisticsTab.TRANSFERS -> {
-                    ShowDataOrLoading(
-                        state = transfersState,
-                        content = { transfers: List<Response2> ->
-                            TransferScreen(
-                                viewModel = viewModel,
-                                transfers = transfers,
-                                teamId = teamId,
-                            ) { visible ->
-                                teamInfoVisible.value = visible
-                            }
-                        }
+                    TransferScreen(
+                        transfers = transfers,
+                        teamId = teamId,
+                        lazyListState = lazyListState
                     )
+
                 }
 
                 TeamStatisticsTab.FIXTURES -> {
@@ -353,9 +407,8 @@ fun TeamsTab(
                                 fixtures = fixtures,
                                 navController = navController,
                                 viewModel = viewModel,
-                            ) { visible ->
-                                teamInfoVisible.value = visible
-                            }
+                                lazyListState = lazyListState
+                            )
                         }
                     )
                 }
@@ -368,9 +421,7 @@ fun TeamsTab(
                                 fixtures = fixtures,
                                 navController = navController,
                                 teamId = teamId.toInt(),
-                                onScroll = { visible ->
-                                    teamInfoVisible.value = visible
-                                }
+                                lazyListState = lazyListState
                             )
                         }
                     )
@@ -383,8 +434,7 @@ fun TeamsTab(
 @Composable
 fun <T> ShowDataOrLoading(
     state: UiState<T>,
-    content: @Composable (T) -> Unit,
-    onRetry: () -> Unit = {}
+    content: @Composable (T) -> Unit
 ) {
     when (state) {
         is UiState.Loading ->
@@ -402,7 +452,7 @@ fun <T> ShowDataOrLoading(
         }
 
         is UiState.Error ->
-            ErrorScreen(paddingValues = PaddingValues(0.dp))
+            ErrorScreen(paddingValues = PaddingValues(0.dp), message = state.message)
 
 
         UiState.Empty ->

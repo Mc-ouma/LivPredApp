@@ -1,5 +1,6 @@
 package com.soccertips.predcompose.viewmodel
 
+import android.util.LruCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -25,33 +27,43 @@ class ItemsListViewModel @Inject constructor(
 ) : ViewModel() {
 
     // Cache for fetched data with timestamps
-    private val cachedData = mutableMapOf<String, Pair<Long, List<ServerResponse>>>()
+    private val maxCacheSize = 20
     private val cacheExpirationDuration =
         12 * 60 * 60 * 1000 // Cache expires in 12 hours (in milliseconds)
 
+    private val cachedData =
+        object : LruCache<String, Pair<Long, List<ServerResponse>>>(maxCacheSize) {
+            override fun entryRemoved(
+                evicted: Boolean,
+                key: String?,
+                oldValue: Pair<Long, List<ServerResponse>>?,
+                newValue: Pair<Long, List<ServerResponse>>?
+            ) {
+                if (evicted) {
+                    // Log cache eviction
+                    Timber.d("Cache evicted for key: $key")
+                }
+            }
+        }
     private val _uiState = MutableStateFlow<UiState<List<ServerResponse>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<ServerResponse>>> = _uiState.asStateFlow()
 
     // Fetch data only if not already cached for the given date
     fun fetchItems(categoryEndpoint: String, date: LocalDate?) {
-        // Check if data for the selected date is already cached
         val cacheKey = "${categoryEndpoint}_$date"
-        val cachedItems = cachedData[cacheKey]
+        val cachedItems = cachedData.get(cacheKey)
 
         if (cachedItems != null) {
             val (timestamp, items) = cachedItems
             val currentTime = System.currentTimeMillis()
             if (currentTime - timestamp < cacheExpirationDuration) {
-                // If data is cached and not expired, use the cached data
                 _uiState.value = UiState.Success(items)
                 return
             } else {
-                // Remove expired cache
-                cachedData.remove(cacheKey)
+                cachedData.remove(cacheKey) // Remove expired cache
             }
         }
 
-        // If no cached data or cache is expired, fetch from the repository
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
@@ -88,10 +100,9 @@ class ItemsListViewModel @Inject constructor(
                         )
                     }
 
-                // Cache the fetched data with the current timestamp
-                cachedData[cacheKey] = System.currentTimeMillis() to items
-
+                cachedData.put(cacheKey, System.currentTimeMillis() to items)
                 _uiState.value = UiState.Success(items)
+
             } catch (e: Exception) {
                 _uiState.value =
                     UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
@@ -119,9 +130,9 @@ class ItemsListViewModel @Inject constructor(
 
                 )
             if (isFavorite(item)) {
-                favoriteDao.delete(favoriteItem.fixtureId)
+                favoriteDao.deleteFavoriteItem(favoriteItem.fixtureId)
             } else {
-                favoriteDao.insert(favoriteItem)
+                favoriteDao.insertFavoriteItem(favoriteItem)
             }
         }
     }

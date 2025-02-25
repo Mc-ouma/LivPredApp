@@ -1,6 +1,8 @@
 package com.soccertips.predcompose.ui
 
 import com.soccertips.predcompose.data.model.ResponseData
+import com.soccertips.predcompose.data.model.events.FixtureEvent
+import com.soccertips.predcompose.data.model.lineups.TeamLineup
 
 sealed class UiState<out T> {
 
@@ -24,12 +26,13 @@ sealed class UiState<out T> {
 
 sealed class FixtureDetailsUiState {
     object Loading : FixtureDetailsUiState()
-
     data class Success(
         val fixtureDetails: ResponseData,
+        val predictions: List<com.soccertips.predcompose.data.model.prediction.Response>?,
+        val fixtureStats: List<com.soccertips.predcompose.data.model.statistics.Response>?,
+        val headToHead: List<com.soccertips.predcompose.data.model.headtohead.FixtureDetails>?,
+        val lineups: List<TeamLineup>?,
+        val fixtureEvents: List<FixtureEvent>?
     ) : FixtureDetailsUiState()
-
-    data class Error(
-        val message: String,
-    ) : FixtureDetailsUiState()
+    data class Error(val message: String) : FixtureDetailsUiState()
 }

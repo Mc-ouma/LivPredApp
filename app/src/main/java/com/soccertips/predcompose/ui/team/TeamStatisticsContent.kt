@@ -19,11 +19,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -62,23 +58,8 @@ import timber.log.Timber
 @Composable
 fun TeamStatisticsContent(
     statistics: TeamStatistics,
-    teamInfoVisible: MutableState<Boolean>,
-    onTeamInfoVisibilityChanged: (Boolean) -> Unit
+    lazyListState: LazyListState,
 ) {
-    val lazyListState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
-    Timber.d("TeamStatisticsContent: teamInfoVisible: ${teamInfoVisible.value}, state: $lazyListState")
-
-    // Observe scroll state to hide/show the page info
-    LaunchedEffect(lazyListState) {
-        snapshotFlow { lazyListState.firstVisibleItemIndex }
-            .collect { firstVisibleItemIndex ->
-                Timber.d("TeamStatisticsContent: firstVisibleItemIndex: $firstVisibleItemIndex")
-                // Hide page info when scrolling up, show it when scrolling down
-                onTeamInfoVisibilityChanged(firstVisibleItemIndex == 0)
-            }
-    }
-
-
 
     LazyColumn(
         state = lazyListState,
@@ -323,7 +304,12 @@ fun TableComposable(headers: List<String>, rows: List<List<String>>) {
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
-@Preview(showBackground = true, widthDp = 360, heightDp = 640, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 640,
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
 @Composable
 
 fun TeamStatisticsContentPreview() {
@@ -463,8 +449,7 @@ fun TeamStatisticsContentPreview() {
     PredComposeTheme {
         TeamStatisticsContent(
             statistics = statistics,
-            teamInfoVisible = rememberSaveable { mutableStateOf(true) },
-            onTeamInfoVisibilityChanged = {}
+            lazyListState = rememberSaveable { LazyListState() }
         )
     }
 

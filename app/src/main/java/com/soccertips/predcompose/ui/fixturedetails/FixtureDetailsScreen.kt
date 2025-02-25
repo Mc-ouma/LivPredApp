@@ -11,9 +11,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,9 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -36,7 +31,6 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Summarize
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -68,34 +62,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
 import com.soccertips.predcompose.Menu
 import com.soccertips.predcompose.R
 import com.soccertips.predcompose.data.model.ResponseData
 import com.soccertips.predcompose.data.model.Team
-import com.soccertips.predcompose.data.model.events.FixtureEvent
-import com.soccertips.predcompose.data.model.headtohead.FixtureDetails
-import com.soccertips.predcompose.data.model.lineups.TeamLineup
-import com.soccertips.predcompose.data.model.standings.TeamStanding
-import com.soccertips.predcompose.data.model.statistics.Response
 import com.soccertips.predcompose.navigation.Routes
+import com.soccertips.predcompose.ui.FixtureDetailsUiState
 import com.soccertips.predcompose.ui.UiState
-import com.soccertips.predcompose.ui.components.ErrorMessage
-import com.soccertips.predcompose.ui.components.LoadingIndicator
-import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureHeadToHeadScreen
-import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureLineupsScreen
-import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureMatchDetailsScreen
-import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureStandingsScreen
-import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureStatisticsScreen
-import com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab.FixtureSummaryScreen
-import com.soccertips.predcompose.ui.theme.LocalCardColors
-import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import com.soccertips.predcompose.viewmodel.FixtureDetailsViewModel
 import com.soccertips.predcompose.viewmodel.SharedViewModel
 import kotlinx.coroutines.launch
-import timber.log.Timber
+import kotlin.toString
 
 
 enum class FixtureDetailsScreenPage(val titleResId: Int) {
@@ -116,45 +93,52 @@ fun FixtureDetailsScreen(
     viewModel: FixtureDetailsViewModel = hiltViewModel(),
     pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
 ) {
-    // Collecting various states from the ViewModel
     val uiState by viewModel.uiState.collectAsState()
-    val fixtureStatsState by viewModel.fixtureStatsState.collectAsState()
-    val fixtureEventsState by viewModel.fixtureEventsState.collectAsState()
-    val fixturePredictionsState by viewModel.predictionsState.collectAsState()
     val formState by sharedViewModel.fixturesState.collectAsState()
-    val headToHeadState by viewModel.headToHeadState.collectAsState()
-    val lineupsState by viewModel.lineupsState.collectAsState()
-    val standingsState by sharedViewModel.standingsState.collectAsState()
 
-
-    // Fetch fixture details when fixtureId changes
+    // FixtureDetailsScreen.kt
     LaunchedEffect(fixtureId) {
         viewModel.fetchFixtureDetails(fixtureId)
-        //  sharedViewModel.fetchFixtures(season = "2023",homeTeamId = "357", awayTeamId = "358", last = "10",)
-    }
+        viewModel.uiState.collect { uiState ->
+            if (uiState is FixtureDetailsUiState.Success) {
+                val fixtureDetails = uiState.fixtureDetails
+                val season = fixtureDetails.league.season.toString()
+                val homeTeamId = fixtureDetails.teams.home.id.toString()
+                val awayTeamId = fixtureDetails.teams.away.id.toString()
+                val leagueId = fixtureDetails.league.id.toString()
+                val last = "10"
 
-    // Fetch form and predictions when fixture details are available
-    LaunchedEffect(uiState) {
-        if (uiState is UiState.Success) {
-            val fixtureDetails = (uiState as UiState.Success<ResponseData>).data
-            viewModel.fetchFormAndPredictions(
-                season = fixtureDetails.league.season.toString(),
-                homeTeamId = fixtureDetails.teams.home.id.toString(),
-                awayTeamId = fixtureDetails.teams.away.id.toString(),
-                fixtureId = fixtureId,
-                last = "6",
-                leagueId = fixtureDetails.league.id.toString(),
-            )
-            sharedViewModel.fetchStandings(
-                leagueId = fixtureDetails.league.id.toString(),
-                season = fixtureDetails.league.season.toString()
-            )
-            sharedViewModel.fetchFixtures(
-                season = fixtureDetails.league.season.toString(),
-                homeTeamId = fixtureDetails.teams.home.id.toString(),
-                awayTeamId = fixtureDetails.teams.away.id.toString(),
-                last = "6",
-            )
+                viewModel.fetchFormAndPredictions(
+                    fixtureId = fixtureId,
+
+                    )
+                viewModel.fetchFixtureStats(
+                    fixtureId = fixtureId,
+                    homeTeamId = homeTeamId,
+                    awayTeamId = awayTeamId
+                )
+                viewModel.fetchFixtureEvents(
+                    fixtureId = fixtureId
+                )
+                viewModel.fetchHeadToHead(
+                    homeTeamId = homeTeamId,
+                    awayTeamId = awayTeamId,
+                )
+                viewModel.fetchLineups(
+                    fixtureId = fixtureId
+                )
+
+                sharedViewModel.fetchStandings(
+                    leagueId = leagueId,
+                    season = season
+                )
+                sharedViewModel.fetchFixtures(
+                    season = season,
+                    homeTeamId = homeTeamId,
+                    awayTeamId = awayTeamId,
+                    last = last,
+                )
+            }
         }
     }
 
@@ -178,9 +162,15 @@ fun FixtureDetailsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    val fixtureDetails = (uiState as? UiState.Success<ResponseData>)?.data
-                    fixtureDetails?.let {
-                        FixtureTopBarContent(showFixtureScore, it)
+                    val fixtureDetails = (uiState as? FixtureDetailsUiState.Success)?.fixtureDetails
+                    if (fixtureDetails != null) {
+                        FixtureTopBarContent(showFixtureScore, fixtureDetails)
+                    } else {
+                        // Handle the null case, e.g., show a placeholder or an error message
+                        Text(
+                            text = "Fixture Details",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 },
                 navigationIcon = {
@@ -199,31 +189,28 @@ fun FixtureDetailsScreen(
         }
     ) { paddingValues ->
         when (uiState) {
-            is UiState.Loading -> LoadingScreen(paddingValues)
-            is UiState.Success -> DataScreen(
+            is FixtureDetailsUiState.Loading -> LoadingScreen(paddingValues)
+            is FixtureDetailsUiState.Success -> DataScreen(
                 paddingValues,
                 scrollState,
                 showFixtureScore,
                 viewModel,
+                sharedViewModel,
                 pages,
-                fixtureStatsState,
-                fixtureEventsState,
-                fixturePredictionsState,
                 formState,
-                headToHeadState,
-                lineupsState,
-                standingsState,
-                (uiState as UiState.Success<ResponseData>).data,
-                navController
+                (uiState as FixtureDetailsUiState.Success).fixtureDetails,
+                navController,
             )
 
-            is UiState.Error -> ErrorScreen(paddingValues)
-            UiState.Empty -> EmptyScreen(paddingValues)
-            else -> Unit
+            is FixtureDetailsUiState.Error -> ErrorScreen(
+                paddingValues,
+                (uiState as FixtureDetailsUiState.Error).message
+            )
+
         }
 
         // Display "No data available" message for each empty state
-        EmptyStateMessages(fixtureStatsState, fixtureEventsState, fixturePredictionsState)
+        EmptyStateMessages(uiState = uiState)
     }
 }
 
@@ -273,159 +260,15 @@ fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData
     }
 }
 
-@Composable
-fun LoadingScreen(paddingValues: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-        LoadingIndicator()
-    }
-}
-
-@Composable
-fun DataScreen(
-    paddingValues: PaddingValues,
-    scrollState: LazyListState,
-    showFixtureScore: Boolean,
-    viewModel: FixtureDetailsViewModel,
-    pages: Array<FixtureDetailsScreenPage>,
-    fixtureStatsState: UiState<List<Response>>,
-    fixtureEventsState: UiState<List<FixtureEvent>>,
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>,
-    formState: UiState<List<SharedViewModel.FixtureWithType>>,
-    headToHeadState: UiState<List<FixtureDetails>>,
-    lineupsState: UiState<List<TeamLineup>>,
-    standingsState: UiState<List<TeamStanding>>,
-    fixtureDetails: ResponseData,
-    navController: NavController
-) {
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        state = scrollState,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        item {
-            AnimatedVisibility(
-                visible = showFixtureScore,
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
-                FixtureScoreAndScorers(
-                    viewModel = viewModel,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .wrapContentHeight()
-                        .fillMaxWidth(),
-                    navController = navController,
-                    leagueId = fixtureDetails.league.id.toString(),
-                    season = fixtureDetails.league.season.toString(),
-                )
-            }
-        }
-
-        item {
-            FixtureDetailsTabs(
-                modifier = Modifier.fillMaxWidth(),
-                pages = pages,
-                fixtureStatsState = fixtureStatsState,
-                fixtureEventsState = fixtureEventsState,
-                fixturePredictionsState = fixturePredictionsState,
-                formState = formState,
-                headToHeadState = headToHeadState,
-                lineupsState = lineupsState,
-                standingsState = standingsState,
-                fixtureDetails = fixtureDetails,
-                navController = navController,
-            )
-        }
-    }
-}
-
-@Composable
-fun ErrorScreen(paddingValues: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "An unexpected error occurred....",
-            color = Color.Red,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
-@Composable
-fun EmptyScreen(paddingValues: PaddingValues, message: String = "No data available") {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = message,
-            color = Color.Gray,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
-@Composable
-fun EmptyStateMessages(
-    fixtureStatsState: UiState<List<Response>>,
-    fixtureEventsState: UiState<List<FixtureEvent>>,
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>
-) {
-    if (fixtureStatsState is UiState.Empty) {
-        Text(
-            text = "No fixture stats available",
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-    }
-
-    if (fixtureEventsState is UiState.Empty) {
-        Text(
-            text = "No fixture events available",
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-    }
-
-    if (fixturePredictionsState is UiState.Empty) {
-        Text(
-            text = "No fixture predictions available",
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun FixtureDetailsTabs(
     modifier: Modifier = Modifier,
     pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
     fixtureDetails: ResponseData,
-    fixtureStatsState: UiState<List<Response>>,
-    fixtureEventsState: UiState<List<FixtureEvent>>,
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>,
+    viewModel: FixtureDetailsViewModel,
+    sharedViewModel: SharedViewModel,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
-    headToHeadState: UiState<List<FixtureDetails>>,
-    lineupsState: UiState<List<TeamLineup>>,
-    standingsState: UiState<List<TeamStanding>>,
     navController: NavController,
 ) {
     val pagerState = rememberPagerState(pageCount = { pages.size })
@@ -481,22 +324,62 @@ fun FixtureDetailsTabs(
                 },
                 label = "Tab Transition"
             ) { targetPageIndex ->
+                // LaunchedEffect to fetch data when tab is selected
+                LaunchedEffect(targetPageIndex) {
+                    val fixtureId = fixtureDetails.fixture.id.toString()
+                    val homeTeamId = fixtureDetails.teams.home.id.toString()
+                    val awayTeamId = fixtureDetails.teams.away.id.toString()
+
+                    when (pages[targetPageIndex]) {
+
+
+                        FixtureDetailsScreenPage.STATISTICS -> {
+                            viewModel.fetchFixtureStats(fixtureId, homeTeamId, awayTeamId)
+                        }
+
+                        FixtureDetailsScreenPage.HEAD_TO_HEAD -> {
+                            viewModel.fetchHeadToHead(homeTeamId, awayTeamId)
+
+                        }
+
+                        FixtureDetailsScreenPage.LINEUPS -> {
+                            viewModel.fetchLineups(fixtureId)
+                        }
+
+                        FixtureDetailsScreenPage.STANDINGS -> {
+
+                            viewModel.fetchLineups(fixtureId)
+
+                        }
+
+                        FixtureDetailsScreenPage.SUMMARY -> {
+
+                            viewModel.fetchFixtureEvents(fixtureId)
+
+                        }
+
+                        else -> {}// Do nothing
+                    }
+                }
+                // Collect states and render content
                 when (pages[targetPageIndex]) {
                     FixtureDetailsScreenPage.MATCH_DETAILS -> {
+                        val predictionsState by viewModel.predictionsState.collectAsState()
                         FixtureMatchDetailsTab(
                             formState = formState,
-                            fixturePredictionsState = fixturePredictionsState,
+                            fixturePredictionsState = predictionsState,
                             fixtureDetails = fixtureDetails,
                             navController = navController
                         )
-
                     }
 
                     FixtureDetailsScreenPage.STATISTICS -> {
+                        val fixtureStatsState by viewModel.fixtureStatsState.collectAsState()
                         FixtureStatisticsTab(fixtureStatsState = fixtureStatsState)
                     }
 
                     FixtureDetailsScreenPage.HEAD_TO_HEAD -> {
+                        val headToHeadState by viewModel.headToHeadState.collectAsState()
                         FixtureHeadToHeadTab(
                             headToHeadState = headToHeadState,
                             navController = navController
@@ -504,17 +387,20 @@ fun FixtureDetailsTabs(
                     }
 
                     FixtureDetailsScreenPage.LINEUPS -> {
+                        val lineupsState by viewModel.lineupsState.collectAsState()
                         FixtureLineupsTab(lineupsState = lineupsState)
                     }
 
                     FixtureDetailsScreenPage.STANDINGS -> {
+                        val standingsState by sharedViewModel.standingsState.collectAsState()
                         FixtureStandingsTab(
                             standingsState = standingsState,
-                            fixtureDetails = fixtureDetails,
+                            fixtureDetails = fixtureDetails
                         )
                     }
 
                     FixtureDetailsScreenPage.SUMMARY -> {
+                        val fixtureEventsState by viewModel.fixtureEventsState.collectAsState()
                         FixtureSummaryTab(
                             fixtureEventsState = fixtureEventsState,
                             fixtureDetails = fixtureDetails
@@ -523,365 +409,6 @@ fun FixtureDetailsTabs(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun FixtureMatchDetailsTab(
-    fixturePredictionsState: UiState<List<com.soccertips.predcompose.data.model.prediction.Response>>,
-    fixtureDetails: ResponseData,
-    formState: UiState<List<SharedViewModel.FixtureWithType>>,
-    navController: NavController,
-) {
-    when {
-        formState is UiState.Loading || fixturePredictionsState is UiState.Loading -> {
-            LoadingIndicator()
-        }
-
-        formState is UiState.Success && fixturePredictionsState is UiState.Success -> {
-            FixtureMatchDetailsScreen(
-                fixtures = formState.data,
-                predictions = fixturePredictionsState.data[0].predictions,
-                fixtureDetails = fixtureDetails,
-                homeTeamId = fixtureDetails.teams.home.id.toString(),
-                awayTeamId = fixtureDetails.teams.away.id.toString(),
-                navController = navController
-            )
-            Timber.tag("FixtureMatchDetailsTab").d("FixtureMatchDetailsTab: ${formState.data} ")
-        }
-
-        formState is UiState.Error -> {
-            ErrorMessage(
-                message = formState.message,
-                onRetry = { /* Handle retry */ },
-            )
-        }
-
-        else -> {
-            Text(text = "😞 Error loading match details", color = Color.Red)
-        }
-    }
-}
-
-@Composable
-fun FixtureStatisticsTab(fixtureStatsState: UiState<List<Response>>) {
-    when (fixtureStatsState) {
-        is UiState.Success -> {
-            FixtureStatisticsScreen(statistics = fixtureStatsState.data)
-        }
-
-        is UiState.Loading -> {
-            LoadingIndicator()
-        }
-
-        is UiState.Error -> {
-            ErrorMessage(
-                message = fixtureStatsState.message,
-                onRetry = { /* Handle retry */ },
-            )
-        }
-
-        else -> {
-            Text(text = "No data available", color = Color.Gray)
-        }
-    }
-}
-
-@Composable
-fun FixtureHeadToHeadTab(
-    headToHeadState: UiState<List<FixtureDetails>>,
-    navController: NavController
-) {
-    when (headToHeadState) {
-        is UiState.Success -> {
-            FixtureHeadToHeadScreen(
-                headToHead = headToHeadState.data,
-                navController = navController
-            )
-            Timber.tag("FixtureHeadToHeadTab").d("FixtureHeadToHeadTab: ${headToHeadState.data}")
-        }
-
-        is UiState.Loading -> {
-            LoadingIndicator()
-        }
-
-        is UiState.Error -> {
-            ErrorMessage(
-                message = headToHeadState.message,
-                onRetry = { /* Handle retry */ },
-            )
-        }
-
-        else -> {
-            Text(text = "No data available", color = Color.Gray)
-        }
-    }
-}
-
-@Composable
-fun FixtureLineupsTab(lineupsState: UiState<List<TeamLineup>>) {
-    when (lineupsState) {
-        is UiState.Success -> {
-            FixtureLineupsScreen(
-                lineups = Pair(lineupsState.data[0], lineupsState.data[1])
-            )
-        }
-
-        is UiState.Loading -> {
-            LoadingIndicator()
-        }
-
-        is UiState.Error -> {
-            ErrorMessage(
-                message = lineupsState.message,
-                onRetry = { /* Handle retry */ },
-            )
-        }
-
-        else -> {
-            Text(text = "No data available", color = Color.Gray)
-        }
-    }
-}
-
-@Composable
-fun FixtureStandingsTab(
-    standingsState: UiState<List<TeamStanding>>,
-    fixtureDetails: ResponseData,
-) {
-    when (standingsState) {
-        is UiState.Success -> {
-            FixtureStandingsScreen(
-                standings = standingsState.data,
-                teamId1 = fixtureDetails.teams.home.id,
-                teamId2 = fixtureDetails.teams.away.id,
-            )
-            Timber.tag("FixtureStandingsTab").d("FixtureStandingsTab: ${standingsState.data}")
-        }
-
-        is UiState.Loading -> {
-            LoadingIndicator()
-        }
-
-        is UiState.Error -> {
-            ErrorMessage(
-                message = standingsState.message,
-                onRetry = { /* Handle retry */ },
-            )
-        }
-
-        else -> {
-            Text(text = "No standings available", color = Color.Gray)
-        }
-    }
-}
-
-@Composable
-fun FixtureSummaryTab(
-    fixtureEventsState: UiState<List<FixtureEvent>>,
-    fixtureDetails: ResponseData
-) {
-    when (fixtureEventsState) {
-        is UiState.Success -> {
-            FixtureSummaryScreen(
-                events = fixtureEventsState.data,
-                homeTeamId = fixtureDetails.teams.home.id,
-                awayTeamId = fixtureDetails.teams.away.id
-            )
-            Timber.tag("FixtureSummaryTab").d("FixtureSummaryTab: ${fixtureEventsState.data}")
-        }
-
-        is UiState.Loading -> {
-            LoadingIndicator()
-        }
-
-        is UiState.Error -> {
-            ErrorMessage(
-                message = fixtureEventsState.message,
-                onRetry = { /* Handle retry */ },
-            )
-        }
-
-        else -> {
-            Text(text = "No events available", color = Color.Gray)
-        }
-    }
-}
-
-@Composable
-fun FixtureScoreAndScorers(
-    viewModel: FixtureDetailsViewModel,
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    leagueId: String,
-    season: String,
-) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    when (uiState) {
-        is UiState.Loading -> {
-            Text(
-                text = "Loading...",
-                modifier = Modifier.padding(16.dp),
-                color = Color.Gray,
-            )
-        }
-
-        is UiState.Success -> {
-            val response = (uiState as UiState.Success<ResponseData>).data
-            val homeTeamId = response.teams.home.id
-            val awayTeamId = response.teams.away.id
-            val homeGoalScorers = viewModel.getHomeGoalScorers(response.events, homeTeamId)
-            val awayGoalScorers = viewModel.getAwayGoalScorers(response.events, awayTeamId)
-            viewModel.formatTimestamp(response.fixture.timestamp)
-            val matchStatusText =
-                viewModel.getMatchStatusText(
-                    response.fixture.status.short,
-                    response.fixture.status.elapsed,
-                    response.fixture.timestamp,
-                )
-            val cardColors = LocalCardColors.current
-            val cardElevation = LocalCardElevation.current
-
-            Card(
-                modifier
-                    .wrapContentHeight()
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                colors = cardColors,
-                elevation = cardElevation
-            ) {
-                Column(
-                    modifier
-                        .padding(8.dp)
-                        .wrapContentHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Row(
-                        modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            response.teams.home.let { homeTeam ->
-                                TeamColumn(
-                                    team = homeTeam,
-                                    leagueId = leagueId,
-                                    season = season,
-                                    navController = navController
-                                )
-                            }
-                        }
-                        Column(
-                            modifier =
-                            Modifier
-                                .weight(1f)
-                                .wrapContentHeight()
-                                .padding(horizontal = 8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(text = response.fixture.status.short)
-                            Row(
-                                modifier =
-                                Modifier
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterHorizontally),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                            ) {
-                                response.score.let {
-                                    Text(
-                                        text = response.goals.home.toString(),
-                                        fontSize = 20.sp
-                                    )
-                                    Text(
-                                        text = "-",
-                                        fontSize = 16.sp,
-                                        modifier = Modifier.padding(horizontal = 4.dp),
-                                    )
-                                    Text(
-                                        text = response.goals.away.toString(),
-                                        fontSize = 20.sp
-                                    )
-                                }
-                            }
-                            if (matchStatusText.isNotEmpty()) {
-                                Text(
-                                    text = matchStatusText,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF6200EE),
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    textAlign = TextAlign.Center,
-                                )
-                            }
-
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            response.teams.away.let { awayTeam ->
-                                TeamColumn(
-                                    team = awayTeam,
-                                    leagueId = leagueId,
-                                    season = season,
-                                    navController = navController
-                                )
-                            }
-                        }
-                    }
-                    Row(
-                        modifier =
-                        Modifier
-                            .wrapContentWidth()
-                            .wrapContentHeight()
-                            .padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            homeGoalScorers.forEach { (playerName, elapsed) ->
-                                Scorers(
-                                    playerName = playerName,
-                                    elapsed = elapsed,
-                                )
-                            }
-                        }
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (homeGoalScorers.isNotEmpty() || awayGoalScorers.isNotEmpty()) {
-                                Icon(
-                                    imageVector = Icons.Default.SportsSoccer,
-                                    contentDescription = "Soccer Ball",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(24.dp),
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            awayGoalScorers.forEach { (playerName, elapsed) ->
-                                Scorers(
-                                    playerName = playerName,
-                                    elapsed = elapsed,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        is UiState.Error -> {
-            ErrorScreen(paddingValues = PaddingValues(0.dp))
-        }
-
-
-        UiState.Empty ->
-            EmptyScreen(paddingValues = PaddingValues(0.dp))
-        else -> Unit
     }
 }
 
@@ -897,7 +424,7 @@ fun Scorers(
     )
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
+
 @Composable
 fun TeamColumn(
     team: Team,
@@ -921,9 +448,8 @@ fun TeamColumn(
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        GlideImage(
-            model = team.logo,
-            failure = placeholder(R.drawable.placeholder),
+        Image(
+            painter = rememberAsyncImagePainter(team.logo),
             contentDescription = "Team Logo",
             modifier = Modifier.size(42.dp),
             contentScale = ContentScale.Fit,

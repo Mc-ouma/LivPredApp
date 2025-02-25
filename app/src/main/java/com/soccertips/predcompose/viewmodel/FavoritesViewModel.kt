@@ -6,15 +6,20 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Data
+import androidx.work.PeriodicWorkRequestBuilder
 import com.soccertips.predcompose.data.local.dao.FavoriteDao
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
+import com.soccertips.predcompose.notification.NotificationBuilder
 import com.soccertips.predcompose.notification.NotificationScheduler
+import com.soccertips.predcompose.notification.UpdateMatchNotificationWorker
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.util.WorkManagerWrapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -23,7 +28,9 @@ class FavoritesViewModel @Inject constructor(
     application: Application,
     private val favoriteItemDao: FavoriteDao,
     private val workManagerWrapper: WorkManagerWrapper,
-    private val context: Context
+    context: Context,
+    private val notificationScheduler: NotificationScheduler,
+    private val notificationBuilder: NotificationBuilder,
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<UiState<List<FavoriteItem>>>(UiState.Loading)
@@ -34,8 +41,6 @@ class FavoritesViewModel @Inject constructor(
     // Use MutableSharedFlow for snackbar events
     private val _snackbarFlow = MutableStateFlow<SnackbarData?>(null)
     val snackbarFlow: StateFlow<SnackbarData?> = _snackbarFlow
-
-    private val notificationScheduler = NotificationScheduler(context)
 
     fun showSnackbar(
         message: String,
@@ -60,6 +65,34 @@ class FavoritesViewModel @Inject constructor(
 
     init {
         loadFavorites()
+    }
+    private fun scheduleNotificationUpdates(item: FavoriteItem) {
+        val updateData = Data.Builder()
+            .putString("fixtureId", item.fixtureId)
+            .build()
+
+        val updateWork = PeriodicWorkRequestBuilder<UpdateMatchNotificationWorker>(
+            15, // Repeat interval
+            TimeUnit.MINUTES
+        )
+            .setInputData(updateData)
+            .addTag("update_notification_${item.fixtureId}")
+            .build()
+
+        workManagerWrapper.enqueueUniquePeriodicWork("update_notification_${item.fixtureId}", updateWork)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun scheduleNotification(items: List<FavoriteItem>) {
+        items.forEach { item ->
+            notificationScheduler.scheduleMatchNotification(item)
+            scheduleNotificationUpdates(item) // Schedule updates
+        }
+    }
+
+    internal fun cancelNotification(fixtureId: String) {
+        workManagerWrapper.cancelUniqueWork("checkDueItems_$fixtureId")
+        workManagerWrapper.cancelUniqueWork("update_notification_$fixtureId") // Cancel update worker
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -128,14 +161,4 @@ class FavoritesViewModel @Inject constructor(
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun scheduleNotification(items: List<FavoriteItem>) {
-        items.forEach { item ->
-            notificationScheduler.scheduleMatchNotification(item)
-        }
-    }
-
-    internal fun cancelNotification(fixtureId: String) {
-        workManagerWrapper.cancelUniqueWork("checkDueItems_$fixtureId")
-    }
 }

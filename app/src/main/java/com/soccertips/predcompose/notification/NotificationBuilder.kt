@@ -9,6 +9,7 @@ import com.bumptech.glide.Glide
 import com.soccertips.predcompose.MainActivity
 import com.soccertips.predcompose.R
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
+import com.soccertips.predcompose.data.model.FixtureResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -35,6 +36,20 @@ class NotificationBuilder(private val context: Context) {
                 "View Match Details",
                 createPendingIntent(item)
             )
+    }
+
+    //New function
+    fun buildMatchUpdateNotification(fixtureResponse: FixtureResponse): NotificationCompat.Builder {
+        val fixture = fixtureResponse.response.first()
+        return NotificationCompat.Builder(context, NotificationHelper.MATCH_UPDATES_CHANNEL_ID)
+            .setContentTitle("${fixture.teams?.home?.name} vs ${fixture.teams.away.name}")
+            .setContentText("Score: ${fixture.goals?.home} - ${fixture.goals?.away}") //Example of updated content
+            .setSmallIcon(R.drawable.launcher)
+            .setAutoCancel(true)
+            .setContentIntent(createPendingIntent(fixture.fixture.id.toString()))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
     }
 
     private suspend fun loadTeamLogo(logoUrl: String?): Bitmap? = withContext(Dispatchers.IO) {
@@ -73,6 +88,22 @@ class NotificationBuilder(private val context: Context) {
         return PendingIntent.getActivity(
             context,
             item.fixtureId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    //New function
+    private fun createPendingIntent(fixtureId: String): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("fixtureId", fixtureId)
+            putExtra("notification_opened", true)
+        }
+
+        return PendingIntent.getActivity(
+            context,
+            fixtureId.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

@@ -13,6 +13,8 @@ import com.soccertips.predcompose.data.local.AppDatabase
 import com.soccertips.predcompose.notification.NotificationScheduler
 import kotlinx.coroutines.guava.await
 import timber.log.Timber
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import kotlin.collections.forEach
 
@@ -65,11 +67,14 @@ class RescheduleWorker(
 
     override suspend fun doWork(): Result {
         return try {
+            val now = LocalDateTime.now()
+            val currentDate = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val currentTime = now.format(DateTimeFormatter.ofPattern("HH:mm"))
             val tasks = AppDatabase.getDatabase(applicationContext)
                 .favoriteDao()
                 .getDueItem(
-                    mTime = System.currentTimeMillis().toString(),
-                    mDate = System.currentTimeMillis().toString()
+                    mTime = currentTime,
+                    mDate = currentDate
                 )
 
             tasks.forEach { favoriteItem ->

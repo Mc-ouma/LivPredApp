@@ -8,6 +8,7 @@ import com.soccertips.predcompose.network.ApiService
 import com.soccertips.predcompose.network.Constants
 import com.soccertips.predcompose.network.FixtureDetailsService
 import com.soccertips.predcompose.network.NetworkUtils
+import com.soccertips.predcompose.notification.NotificationBuilder
 import com.soccertips.predcompose.repository.PredictionRepository
 import dagger.Module
 import dagger.Provides
@@ -88,13 +89,6 @@ object AppModule {
             .addNetworkInterceptor(cacheInterceptor)
             .build()
     }
-
-    // Configuration for WorkManager
-    /* @Provides
-     @Singleton
-     fun provideWorkManager(context: Context): WorkManager {
-         return WorkManager.getInstance(context)
-     }*/
 
 
     // Configuration for AppDatabase and FavoriteItemDao
@@ -233,5 +227,11 @@ object AppModule {
     fun provideFixtureDetailsService(@Named("fixtureDetailsRetrofit") retrofit: Retrofit): FixtureDetailsService {
         return retrofit.create(FixtureDetailsService::class.java)
     }
+
+    @Provides
+        @Singleton
+        fun provideNotificationBuilder(@ApplicationContext context: Context): NotificationBuilder {
+            return NotificationBuilder(context)
+        }
 
 }

@@ -11,10 +11,12 @@ import com.soccertips.predcompose.data.model.ServerResponse
 import com.soccertips.predcompose.repository.PredictionRepository
 import com.soccertips.predcompose.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -68,13 +70,19 @@ class ItemsListViewModel @Inject constructor(
             _uiState.value = UiState.Loading
             try {
                 val response = repository.getCategoryData(categoryEndpoint)
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                val items = response.serverResponse
-                    .filter { serverResponse ->
+
+                val items = withContext(Dispatchers.IO) {
+                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                    response.serverResponse.filter { serverResponse ->
                         val mDate = serverResponse.mDate ?: ""
-                        mDate != "0000-00-00" && LocalDate.parse(mDate, formatter) == date
-                    }
-                    .map { serverResponse ->
+                        mDate != "0000-00-00" &&
+                                try {
+                                    LocalDate.parse(mDate, formatter) == date
+                                } catch (e: Exception) {
+                                    Timber.e(e, "Error parsing date: $mDate")
+                                    false // Ignore items with invalid dates
+                                }
+                    }.map { serverResponse ->
                         val color = when (serverResponse.outcome) {
                             "win" -> Color.Green
                             "lose" -> Color.Red
@@ -99,6 +107,7 @@ class ItemsListViewModel @Inject constructor(
                             color = color,
                         )
                     }
+                }
 
                 cachedData.put(cacheKey, System.currentTimeMillis() to items)
                 _uiState.value = UiState.Success(items)

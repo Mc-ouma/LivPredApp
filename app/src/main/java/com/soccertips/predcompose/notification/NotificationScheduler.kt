@@ -11,13 +11,15 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
 import com.soccertips.predcompose.util.RescheduleWorker
+import dagger.hilt.android.qualifiers.ApplicationContext
+import jakarta.inject.Inject
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-class NotificationScheduler(private val context: Context) {
+class NotificationScheduler @Inject constructor(@ApplicationContext private val context: Context) {
 
     fun scheduleMatchNotification(item: FavoriteItem) {
         try {

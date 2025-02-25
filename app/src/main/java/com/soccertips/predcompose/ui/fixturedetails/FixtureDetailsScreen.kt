@@ -96,48 +96,59 @@ fun FixtureDetailsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val formState by sharedViewModel.fixturesState.collectAsState()
 
-    // FixtureDetailsScreen.kt
+
     LaunchedEffect(fixtureId) {
         viewModel.fetchFixtureDetails(fixtureId)
         viewModel.uiState.collect { uiState ->
-            if (uiState is FixtureDetailsUiState.Success) {
-                val fixtureDetails = uiState.fixtureDetails
-                val season = fixtureDetails.league.season.toString()
-                val homeTeamId = fixtureDetails.teams.home.id.toString()
-                val awayTeamId = fixtureDetails.teams.away.id.toString()
-                val leagueId = fixtureDetails.league.id.toString()
-                val last = "10"
+            when (uiState) {
+                is FixtureDetailsUiState.Success -> {
+                    val fixtureDetails = uiState.fixtureDetails
+                    val season = fixtureDetails.league.season.toString()
+                    val homeTeamId = fixtureDetails.teams.home.id.toString()
+                    val awayTeamId = fixtureDetails.teams.away.id.toString()
+                    val leagueId = fixtureDetails.league.id.toString()
+                    val last = "10"
 
-                viewModel.fetchFormAndPredictions(
-                    fixtureId = fixtureId,
-
+                    viewModel.fetchFormAndPredictions(
+                        fixtureId = fixtureId,
                     )
-                viewModel.fetchFixtureStats(
-                    fixtureId = fixtureId,
-                    homeTeamId = homeTeamId,
-                    awayTeamId = awayTeamId
-                )
-                viewModel.fetchFixtureEvents(
-                    fixtureId = fixtureId
-                )
-                viewModel.fetchHeadToHead(
-                    homeTeamId = homeTeamId,
-                    awayTeamId = awayTeamId,
-                )
-                viewModel.fetchLineups(
-                    fixtureId = fixtureId
-                )
+                    viewModel.fetchFixtureStats(
+                        fixtureId = fixtureId,
+                        homeTeamId = homeTeamId,
+                        awayTeamId = awayTeamId
+                    )
+                    viewModel.fetchFixtureEvents(
+                        fixtureId = fixtureId
+                    )
+                    viewModel.fetchHeadToHead(
+                        homeTeamId = homeTeamId,
+                        awayTeamId = awayTeamId,
+                    )
+                    viewModel.fetchLineups(
+                        fixtureId = fixtureId
+                    )
 
-                sharedViewModel.fetchStandings(
-                    leagueId = leagueId,
-                    season = season
-                )
-                sharedViewModel.fetchFixtures(
-                    season = season,
-                    homeTeamId = homeTeamId,
-                    awayTeamId = awayTeamId,
-                    last = last,
-                )
+                    sharedViewModel.fetchStandings(
+                        leagueId = leagueId,
+                        season = season
+                    )
+                    sharedViewModel.fetchFixtures(
+                        season = season,
+                        homeTeamId = homeTeamId,
+                        awayTeamId = awayTeamId,
+                        last = last,
+                    )
+                }
+
+                is FixtureDetailsUiState.Loading -> {
+                    // Handle loading state, e.g., show a progress indicator
+                    println("Loading fixture details...")
+                }
+
+                is FixtureDetailsUiState.Error -> {
+                    // Handle error state, e.g., show an error message
+                    println("Error: ${uiState.message}")
+                }
             }
         }
     }

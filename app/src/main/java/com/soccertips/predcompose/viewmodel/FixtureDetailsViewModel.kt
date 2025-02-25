@@ -95,16 +95,22 @@ class FixtureDetailsViewModel @Inject constructor(
         }
     }
 
-    fun fetchFixtureDetails(fixtureId: String) {
-        viewModelScope.launch {
-            fetchData(
-                cache = fixtureDetailsCache as LruCache<String, CachedData<UiState<FixtureDetailsUiState>>>,
-                cacheKey = "fixture_details_$fixtureId",
-                dataFetcher = {
-                    try {
-                        val fixtureDetails = fixtureDetailsRepository.getFixtureDetails(fixtureId)
-                        UiState.Success(
-                            FixtureDetailsUiState.Success(
+
+            fun fetchFixtureDetails(fixtureId: String) {
+                viewModelScope.launch {
+                    val cachedData = fixtureDetailsCache.get(fixtureId)
+                    val currentTime = System.currentTimeMillis()
+
+                    if (cachedData != null && cachedData.expiryTime > currentTime) {
+                        // Use cached data if it's not expired
+                        _uiState.value = cachedData.data
+                        Timber.d("Fixture details fetched from cache for fixtureId: $fixtureId")
+                    } else {
+                        // Fetch new data
+                        _uiState.value = FixtureDetailsUiState.Loading
+                        try {
+                            val fixtureDetails = fixtureDetailsRepository.getFixtureDetails(fixtureId)
+                            val successState = FixtureDetailsUiState.Success(
                                 fixtureDetails = fixtureDetails,
                                 predictions = null,
                                 fixtureStats = null,
@@ -112,15 +118,20 @@ class FixtureDetailsViewModel @Inject constructor(
                                 lineups = null,
                                 fixtureEvents = null
                             )
-                        )
-                    } catch (e: Exception) {
-                        UiState.Error(e.message ?: "Failed to fetch fixture details")
+                            fixtureDetailsCache.put(
+                                fixtureId,
+                                CachedData(successState, currentTime + cacheDuration)
+                            )
+                            _uiState.value = successState
+                            Timber.d("Fixture details fetched successfully for fixtureId: $fixtureId")
+                        } catch (e: Exception) {
+                            _uiState.value =
+                                FixtureDetailsUiState.Error(e.message ?: "Failed to fetch fixture details")
+                            Timber.e(e, "Failed to fetch fixture details for fixtureId: $fixtureId")
+                        }
                     }
-                },
-                stateFlow = _uiState as MutableStateFlow<UiState<FixtureDetailsUiState>>
-            )
-        }
-    }
+                }
+            }
 
     fun fetchFixtureStats(fixtureId: String, homeTeamId: String, awayTeamId: String) {
         viewModelScope.launch {

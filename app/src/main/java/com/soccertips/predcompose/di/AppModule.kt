@@ -2,12 +2,14 @@ package com.soccertips.predcompose.di
 
 import android.app.Application
 import android.content.Context
+import androidx.work.WorkerFactory
 import com.soccertips.predcompose.data.local.AppDatabase
 import com.soccertips.predcompose.data.local.dao.FavoriteDao
 import com.soccertips.predcompose.network.ApiService
 import com.soccertips.predcompose.network.Constants
 import com.soccertips.predcompose.network.FixtureDetailsService
 import com.soccertips.predcompose.network.NetworkUtils
+import com.soccertips.predcompose.notification.HiltWorkerFactory
 import com.soccertips.predcompose.notification.NotificationBuilder
 import com.soccertips.predcompose.repository.PredictionRepository
 import dagger.Module
@@ -229,9 +231,15 @@ object AppModule {
     }
 
     @Provides
-        @Singleton
-        fun provideNotificationBuilder(@ApplicationContext context: Context): NotificationBuilder {
-            return NotificationBuilder(context)
-        }
+    @Singleton
+    fun provideNotificationBuilder(@ApplicationContext context: Context): NotificationBuilder {
+        return NotificationBuilder(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWorkerFactory(hiltWorkerFactory: HiltWorkerFactory): WorkerFactory {
+        return hiltWorkerFactory
+    }
 
 }

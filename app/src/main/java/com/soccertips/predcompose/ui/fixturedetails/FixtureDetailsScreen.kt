@@ -147,7 +147,7 @@ fun FixtureDetailsScreen(
 
                 is FixtureDetailsUiState.Error -> {
                     // Handle error state, e.g., show an error message
-                    println("Error: ${uiState.message}")
+                    println("Error: Try Again Later")
                 }
             }
         }

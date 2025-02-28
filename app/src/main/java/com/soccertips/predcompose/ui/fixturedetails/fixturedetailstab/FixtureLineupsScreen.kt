@@ -26,12 +26,18 @@ import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.data.model.lineups.PlayerInfo
 import com.soccertips.predcompose.data.model.lineups.TeamColors
 import com.soccertips.predcompose.data.model.lineups.TeamLineup
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 
 
 @Composable
 fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     // Display the home and away teams' lineups side by side in a Row
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),

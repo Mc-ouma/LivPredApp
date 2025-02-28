@@ -1,8 +1,9 @@
 package com.soccertips.predcompose.ui.favorites
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -76,10 +77,8 @@ import com.soccertips.predcompose.ui.theme.LocalCardColors
 import com.soccertips.predcompose.viewmodel.FavoritesViewModel
 
 
-@OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,
-    ExperimentalMaterial3ExpressiveApi::class
-)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun FavoritesScreen(
     navController: NavController,
@@ -94,7 +93,7 @@ fun FavoritesScreen(
 
     // Observe SnackbarState changes and show Snackbar
     LaunchedEffect(snackbarData) {
-        snackbarData?.let {data ->
+        snackbarData?.let { data ->
             val result = snackbarHostState.showSnackbar(
                 message = data.message,
                 actionLabel = data.actionLabel,
@@ -187,6 +186,7 @@ fun FavoritesScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FavoritesScreen(

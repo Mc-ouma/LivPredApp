@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.data.model.statistics.Response
 import com.soccertips.predcompose.data.model.statistics.Team
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 
 @Composable
 fun FixtureStatisticsScreen(statistics: List<Response>) {
@@ -32,7 +34,12 @@ fun FixtureStatisticsScreen(statistics: List<Response>) {
     val team1 = statistics[0]
     val team2 = statistics[1]
 
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
+
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth(),

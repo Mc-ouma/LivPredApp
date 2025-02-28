@@ -6,21 +6,30 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.soccertips.predcompose.data.model.FixtureResponse
 import com.soccertips.predcompose.network.FixtureDetailsService
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.EntryPoint
 import dagger.hilt.EntryPoints
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import javax.inject.Inject
 
-class UpdateMatchNotificationWorker @Inject constructor(
-    @ApplicationContext context: Context,
-    params: WorkerParameters,
+class UpdateMatchNotificationWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
     private val notificationBuilder: NotificationBuilder
 ) : CoroutineWorker(context, params) {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            context: Context,
+            workerParams: WorkerParameters
+        ): UpdateMatchNotificationWorker
+    }
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -34,7 +43,10 @@ class UpdateMatchNotificationWorker @Inject constructor(
         return try {
             // Fetch updated match data from the API
             val entryPoint =
-                EntryPoints.get(applicationContext, UpdateMatchNotificationWorkerEntryPoint::class.java)
+                EntryPoints.get(
+                    applicationContext,
+                    UpdateMatchNotificationWorkerEntryPoint::class.java
+                )
             val apiService = entryPoint.fixtureDetailsService()
             val fixtureResponse: FixtureResponse? = withContext(Dispatchers.IO) {
                 try {
@@ -48,10 +60,10 @@ class UpdateMatchNotificationWorker @Inject constructor(
             // Update the notification
             if (fixtureResponse != null && fixtureResponse.response.isNotEmpty()) {
                 updateNotification(fixtureId, fixtureResponse)
-                 Result.success()
+                Result.success()
             } else {
                 Timber.Forest.e("Failed to fetch fixture details for fixture $fixtureId")
-                 Result.failure()
+                Result.failure()
             }
 
 

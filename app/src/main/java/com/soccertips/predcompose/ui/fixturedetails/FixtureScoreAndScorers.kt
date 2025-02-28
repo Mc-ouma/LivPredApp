@@ -14,10 +14,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +33,10 @@ import com.soccertips.predcompose.ui.FixtureDetailsUiState
 import com.soccertips.predcompose.ui.theme.LocalCardColors
 import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import com.soccertips.predcompose.viewmodel.FixtureDetailsViewModel
+import kotlinx.coroutines.delay
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.util.Locale
 
 @Composable
 fun FixtureScoreAndScorers(
@@ -56,7 +64,7 @@ fun FixtureScoreAndScorers(
             val homeGoalScorers = viewModel.getHomeGoalScorers(response.events, homeTeamId)
             val awayGoalScorers = viewModel.getAwayGoalScorers(response.events, awayTeamId)
             viewModel.formatTimestamp(response.fixture.timestamp)
-            val matchStatusText =
+            val initialMatchStatusText =
                 viewModel.getMatchStatusText(
                     response.fixture.status.short,
                     response.fixture.status.elapsed,
@@ -64,6 +72,24 @@ fun FixtureScoreAndScorers(
                 )
             val cardColors = LocalCardColors.current
             val cardElevation = LocalCardElevation.current
+
+            var matchStatusText by remember { mutableStateOf(initialMatchStatusText) }
+            val timestamp = response.fixture.timestamp
+
+            LaunchedEffect(key1 = timestamp) {
+                while (true) {
+                    val currentTime = ZonedDateTime.now(ZoneId.systemDefault()).toEpochSecond()
+                    val timeDifference = timestamp - currentTime
+                    if (timeDifference > 0 && timeDifference <= 3600) {
+                        val minutes = timeDifference / 60
+                        val seconds = timeDifference % 60
+                        matchStatusText = String.format(Locale.getDefault(), "%02d:%02d remaining", minutes, seconds)
+                    } else {
+                        matchStatusText = initialMatchStatusText
+                    }
+                    delay(60000) // Update every minute
+                }
+            }
 
             Card(
                 modifier
@@ -107,35 +133,16 @@ fun FixtureScoreAndScorers(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Text(text = response.fixture.status.short)
-                            Row(
-                                modifier =
-                                Modifier.Companion
-                                    .wrapContentHeight()
-                                    .align(Alignment.Companion.CenterHorizontally),
-                                verticalAlignment = Alignment.Companion.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                            ) {
-                                response.score.let {
-                                    Text(
-                                        text = response.goals.home.toString(),
-                                        fontSize = 20.sp
-                                    )
-                                    Text(
-                                        text = "-",
-                                        fontSize = 16.sp,
-                                        modifier = Modifier.Companion.padding(horizontal = 4.dp),
-                                    )
-                                    Text(
-                                        text = response.goals.away.toString(),
-                                        fontSize = 20.sp
-                                    )
-                                }
-                            }
+                            Text(
+                                text = "${response.goals.home} - ${response.goals.away}",
+                                fontSize = 20.sp
+                            )
+
                             if (matchStatusText.isNotEmpty()) {
                                 Text(
                                     text = matchStatusText,
                                     fontSize = 14.sp,
-                                    color = Color(0xFF6200EE),
+                                    color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.Companion.padding(top = 4.dp),
                                     textAlign = TextAlign.Companion.Center,
                                 )

@@ -96,42 +96,42 @@ class FixtureDetailsViewModel @Inject constructor(
     }
 
 
-            fun fetchFixtureDetails(fixtureId: String) {
-                viewModelScope.launch {
-                    val cachedData = fixtureDetailsCache.get(fixtureId)
-                    val currentTime = System.currentTimeMillis()
+    fun fetchFixtureDetails(fixtureId: String) {
+        viewModelScope.launch {
+            val cachedData = fixtureDetailsCache.get(fixtureId)
+            val currentTime = System.currentTimeMillis()
 
-                    if (cachedData != null && cachedData.expiryTime > currentTime) {
-                        // Use cached data if it's not expired
-                        _uiState.value = cachedData.data
-                        Timber.d("Fixture details fetched from cache for fixtureId: $fixtureId")
-                    } else {
-                        // Fetch new data
-                        _uiState.value = FixtureDetailsUiState.Loading
-                        try {
-                            val fixtureDetails = fixtureDetailsRepository.getFixtureDetails(fixtureId)
-                            val successState = FixtureDetailsUiState.Success(
-                                fixtureDetails = fixtureDetails,
-                                predictions = null,
-                                fixtureStats = null,
-                                headToHead = null,
-                                lineups = null,
-                                fixtureEvents = null
-                            )
-                            fixtureDetailsCache.put(
-                                fixtureId,
-                                CachedData(successState, currentTime + cacheDuration)
-                            )
-                            _uiState.value = successState
-                            Timber.d("Fixture details fetched successfully for fixtureId: $fixtureId")
-                        } catch (e: Exception) {
-                            _uiState.value =
-                                FixtureDetailsUiState.Error(e.message ?: "Failed to fetch fixture details")
-                            Timber.e(e, "Failed to fetch fixture details for fixtureId: $fixtureId")
-                        }
-                    }
+            if (cachedData != null && cachedData.expiryTime > currentTime) {
+                // Use cached data if it's not expired
+                _uiState.value = cachedData.data
+                Timber.d("Fixture details fetched from cache for fixtureId: $fixtureId")
+            } else {
+                // Fetch new data
+                _uiState.value = FixtureDetailsUiState.Loading
+                try {
+                    val fixtureDetails = fixtureDetailsRepository.getFixtureDetails(fixtureId)
+                    val successState = FixtureDetailsUiState.Success(
+                        fixtureDetails = fixtureDetails,
+                        predictions = null,
+                        fixtureStats = null,
+                        headToHead = null,
+                        lineups = null,
+                        fixtureEvents = null
+                    )
+                    fixtureDetailsCache.put(
+                        fixtureId,
+                        CachedData(successState, currentTime + cacheDuration)
+                    )
+                    _uiState.value = successState
+                    Timber.d("Fixture details fetched successfully for fixtureId: $fixtureId")
+                } catch (e: Exception) {
+                    _uiState.value =
+                        FixtureDetailsUiState.Error(e.message ?: "Failed to fetch fixture details")
+                    Timber.e(e, "Failed to fetch fixture details for fixtureId: $fixtureId")
                 }
             }
+        }
+    }
 
     fun fetchFixtureStats(fixtureId: String, homeTeamId: String, awayTeamId: String) {
         viewModelScope.launch {
@@ -262,7 +262,7 @@ class FixtureDetailsViewModel @Inject constructor(
             .filter { it.type == "Goal" && it.team.id == homeTeamId }
             .mapNotNull {
                 val playerName = it.player.name
-                if (playerName.isBlank()) {
+                if (playerName == null || playerName.isBlank()) {
                     null
                 } else {
                     val lastName = playerName.split(" ").lastOrNull() ?: ""
@@ -279,7 +279,7 @@ class FixtureDetailsViewModel @Inject constructor(
             .filter { it.type == "Goal" && it.team.id == awayTeamId }
             .mapNotNull {
                 val playerName = it.player.name
-                if (playerName.isBlank()) {
+                if (playerName == null || playerName.isBlank()) {
                     null
                 } else {
                     val lastName = playerName.split(" ").lastOrNull() ?: ""

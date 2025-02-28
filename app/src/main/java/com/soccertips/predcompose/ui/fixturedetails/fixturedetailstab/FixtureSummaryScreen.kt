@@ -15,9 +15,9 @@ import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Square
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.twotone.SwapHoriz
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,13 +34,19 @@ import com.soccertips.predcompose.data.model.events.EventTime
 import com.soccertips.predcompose.data.model.events.FixtureEvent
 import com.soccertips.predcompose.data.model.events.PlayerInfo
 import com.soccertips.predcompose.data.model.events.TeamInfo
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 
 @Composable
 fun FixtureSummaryScreen(events: List<FixtureEvent>, homeTeamId: Int, awayTeamId: Int) {
     // Sort events by descending elapsed time
     val reversedEvents = events.sortedByDescending { it.time.elapsed }
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
 
-    OutlinedCard(
+    Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth()
@@ -88,6 +95,7 @@ fun EventCard(event: FixtureEvent, homeTeamId: Int, awayTeamId: Int, drawLine: B
                 .align(Alignment.Center)
                 .padding(8.dp)
         ) {
+
             Canvas(modifier = Modifier.size(40.dp)) {
                 drawCircle(
                     color = Color.Gray,
@@ -104,125 +112,46 @@ fun EventCard(event: FixtureEvent, homeTeamId: Int, awayTeamId: Int, drawLine: B
 
         // Draw a vertical line connecting the event times
         if (drawLine) {
-            Canvas(modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .align(Alignment.Center)) {
+            val circleRadius = 12.dp // Radius of the circles
+            val strokeWidth = 2.dp // Width of the line
+            val offsetY = 4.dp // Offset to center the circles vertically
+
+            val homeEvent = event.team.id == homeTeamId
+            val awayEvent = event.team.id == awayTeamId
+
+            val startOffset = if (homeEvent) {
+                Offset(x = 0f, y = with(LocalDensity.current) { offsetY.toPx() + circleRadius.toPx() })
+            } else {
+                Offset(x = 0f, y = with(LocalDensity.current) { offsetY.toPx() - circleRadius.toPx() })
+            }
+
+            val endOffset = if (awayEvent) {
+                Offset(x = 0f, y = with(LocalDensity.current) { offsetY.toPx() - circleRadius.toPx() })
+            } else {
+                Offset(x = 0f, y = with(LocalDensity.current) { offsetY.toPx() + circleRadius.toPx() })
+            }
+
+            Canvas(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                val centerOffset = Offset(x = size.width / 2, y = size.height / 2)
+
+                val startY = centerOffset.y + startOffset.y
+                val endY = centerOffset.y + endOffset.y
+
                 drawLine(
-                    color = Color.Gray,
-                    start = Offset(size.width / 2, size.height),
-                    end = Offset(size.width / 2, size.height * 2),
-                    strokeWidth = 2.dp.toPx()
+                    color = Color.LightGray,
+                    start = Offset(centerOffset.x, startY),
+                    end = Offset(centerOffset.x, endY),
+                    strokeWidth = strokeWidth.toPx()
                 )
             }
         }
     }
 }
-
-/*
-@Composable
-fun FixtureSummaryScreen(events: List<FixtureEvent>, homeTeamId: Int, awayTeamId: Int) {
-    // Sort events by descending elapsed time
-    val reversedEvents = events.sortedByDescending { it.time.elapsed }
-
-    OutlinedCard(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            // Iterate over the sorted events and display them
-            reversedEvents.forEachIndexed { index, event ->
-                EventCard(event, homeTeamId, awayTeamId, index < reversedEvents.size - 1)
-            }
-        }
-    }
-}
-
-
-
-@Composable
-fun EventCard(event: FixtureEvent, homeTeamId: Int, awayTeamId: Int, drawLine: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        // Home team events on the left
-        if (event.team.id == homeTeamId) {
-            EventDetails(event = event, alignment = Alignment.Start)
-        }
-
-        // Away team events on the right
-        if (event.team.id == awayTeamId) {
-            EventDetails(event = event, alignment = Alignment.End)
-        }
-
-        // Event Time in the center of the card
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(8.dp)
-        ) {
-            Canvas(modifier = Modifier.size(40.dp)) {
-                drawCircle(
-                    color = Color.Gray,
-                    style = Stroke(width = 2.dp.toPx())
-                )
-            }
-            Text(
-                text = "${event.time.elapsed}${event.time.extra?.let { "+$it" } ?: ""}’",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-
-        // Draw a vertical line connecting the event times
-        if (drawLine) {
-            Canvas(modifier = Modifier.fillMaxWidth().height(40.dp).align(Alignment.Center)) {
-                drawLine(
-                    color = Color.Gray,
-                    start = Offset(size.width / 2, size.height),
-                    end = Offset(size.width / 2, size.height * 2),
-                    strokeWidth = 2.dp.toPx()
-                )
-            }
-        }
-    }
-}*/
-/*
-@Composable
-fun EventCard(event: FixtureEvent, homeTeamId: Int, awayTeamId: Int) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        // Home team events on the left
-        if (event.team.id == homeTeamId) {
-            EventDetails(event = event, alignment = Alignment.Start)
-        }
-
-        // Away team events on the right
-        if (event.team.id == awayTeamId) {
-            EventDetails(event = event, alignment = Alignment.End)
-        }
-
-        // Event Time in the center of the card
-        Text(
-            text = "${event.time.elapsed}${event.time.extra?.let { "+$it" } ?: ""}’",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.Center) // Ensure this stays centered
-        )
-    }
-}
-*/
 
 @Composable
 fun EventDetails(event: FixtureEvent, alignment: Alignment.Horizontal) {

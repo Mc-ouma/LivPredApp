@@ -690,7 +690,7 @@ fun Table(headers: List<String>, rows: List<List<String>>) {
                 Text(
                     text = header,
                     modifier = Modifier.weight(1f),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
@@ -702,7 +702,7 @@ fun Table(headers: List<String>, rows: List<List<String>>) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(if (index % 2 == 0) Color.LightGray else Color.Transparent),
+                    .background(if (index % 2 == 0) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 row.forEach { cell ->
@@ -710,6 +710,7 @@ fun Table(headers: List<String>, rows: List<List<String>>) {
                         text = cell,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
                     )
                 }

@@ -27,6 +27,8 @@ import com.soccertips.predcompose.data.model.standings.HomeAwayRecord
 import com.soccertips.predcompose.data.model.standings.OverallRecord
 import com.soccertips.predcompose.data.model.standings.TeamInfo
 import com.soccertips.predcompose.data.model.standings.TeamStanding
+import com.soccertips.predcompose.ui.theme.LocalCardColors
+import com.soccertips.predcompose.ui.theme.LocalCardElevation
 import kotlin.collections.List
 
 @Composable
@@ -35,7 +37,11 @@ fun FixtureStandingsScreen(
     teamId1: Int,
     teamId2: Int,
 ) {
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
     Card(
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
@@ -57,7 +63,6 @@ fun FixtureStandingsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp)
                 ) {
                     // Display group header as the card title
                     Text(
@@ -105,13 +110,15 @@ fun FixtureStandingsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+
                                 .background(
                                     color = if (teamStanding.team.id == teamId1 || teamStanding.team.id == teamId2)
                                         MaterialTheme.colorScheme.primaryContainer
                                     else
-                                        Color.Transparent
-                                ),
+                                        Color.Transparent,
+                                    shape = MaterialTheme.shapes.medium
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Rank column

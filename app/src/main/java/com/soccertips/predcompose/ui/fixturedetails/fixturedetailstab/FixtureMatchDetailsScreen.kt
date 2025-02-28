@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -68,6 +70,7 @@ fun FixtureMatchDetailsScreen(
             combinedFormData = fixtures,
             homeTeamIdInt = homeTeamIdInt,
             awayTeamIdInt = awayTeamIdInt,
+            fixtureDetails = fixtureDetails,
             navController = navController
         )
 
@@ -88,13 +91,9 @@ fun FixtureListScreen(
     combinedFormData: List<SharedViewModel.FixtureWithType>,
     homeTeamIdInt: Int,
     awayTeamIdInt: Int,
+    fixtureDetails: ResponseData,
     navController: NavController
 ) {
-    OutlinedCard(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxHeight()
-    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -102,7 +101,7 @@ fun FixtureListScreen(
         ) {
             FixtureColumn(
                 fixturesWithType = combinedFormData.filter { it.isHome },
-                columnTitle = "Home Fixtures",
+                columnTitle = "${fixtureDetails.teams.home.name} Last Fixtures",
                 homeTeamIdInt = homeTeamIdInt,
                 awayTeamIdInt = awayTeamIdInt,
                 modifier = Modifier.weight(1f),
@@ -111,16 +110,15 @@ fun FixtureListScreen(
 
             FixtureColumn(
                 fixturesWithType = combinedFormData.filter { !it.isHome },
-                columnTitle = "Away Fixtures",
+                columnTitle = "${fixtureDetails.teams.away.name} Last Fixtures",
                 homeTeamIdInt = homeTeamIdInt,
                 awayTeamIdInt = awayTeamIdInt,
                 modifier = Modifier.weight(1f),
                 navController = navController
             )
         }
-    }
-}
 
+}
 
 @Composable
 fun FixtureColumn(
@@ -140,6 +138,7 @@ fun FixtureColumn(
         Text(
             text = columnTitle,
             style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
             modifier = Modifier.padding(8.dp)
         )
 
@@ -147,25 +146,26 @@ fun FixtureColumn(
             Text(
                 text = "No fixtures available",
                 style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(8.dp)
             )
         } else {
-            fixturesWithType.forEachIndexed { index, fixtureWithType ->
-                FixtureCard(
-                    fixture = fixtureWithType.fixture,
-                    isHome = fixtureWithType.isHome,
-                    teamId = TeamId(homeTeamIdInt, awayTeamIdInt),
-                    navController = navController
-                )
-
-                if (index < fixturesWithType.size - 1) {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 400.dp) // Adjust the max height as needed
+            ) {
+                items(fixturesWithType.take(4)) { fixtureWithType -> // Display only the first 4 items
+                    FixtureCard(
+                        fixture = fixtureWithType.fixture,
+                        isHome = fixtureWithType.isHome,
+                        teamId = TeamId(homeTeamIdInt, awayTeamIdInt),
+                        navController = navController
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
     }
 }
-
 
 data class TeamId(val homeTeamId: Int, val awayTeamId: Int)
 
@@ -426,7 +426,8 @@ fun PredictionCard(predictions: Predictions) {
         ) {
             predictions.winner.name?.let { winnerName ->
                 Text(
-                    text = "Winner: $winnerName (${predictions.winner.comment})"
+                    text = "Winner: $winnerName (${predictions.winner.comment})",
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
 

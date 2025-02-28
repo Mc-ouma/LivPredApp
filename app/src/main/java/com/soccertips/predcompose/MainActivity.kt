@@ -249,6 +249,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun AppNavigation(fixtureId: String? = null) {
     val navController = rememberNavController()

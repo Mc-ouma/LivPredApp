@@ -10,7 +10,6 @@ import androidx.work.Data
 import androidx.work.PeriodicWorkRequestBuilder
 import com.soccertips.predcompose.data.local.dao.FavoriteDao
 import com.soccertips.predcompose.data.local.entities.FavoriteItem
-import com.soccertips.predcompose.notification.NotificationBuilder
 import com.soccertips.predcompose.notification.NotificationScheduler
 import com.soccertips.predcompose.notification.UpdateMatchNotificationWorker
 import com.soccertips.predcompose.ui.UiState
@@ -30,7 +29,6 @@ class FavoritesViewModel @Inject constructor(
     private val workManagerWrapper: WorkManagerWrapper,
     context: Context,
     private val notificationScheduler: NotificationScheduler,
-    private val notificationBuilder: NotificationBuilder,
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<UiState<List<FavoriteItem>>>(UiState.Loading)
@@ -66,6 +64,7 @@ class FavoritesViewModel @Inject constructor(
     init {
         loadFavorites()
     }
+
     private fun scheduleNotificationUpdates(item: FavoriteItem) {
         val updateData = Data.Builder()
             .putString("fixtureId", item.fixtureId)
@@ -79,7 +78,10 @@ class FavoritesViewModel @Inject constructor(
             .addTag("update_notification_${item.fixtureId}")
             .build()
 
-        workManagerWrapper.enqueueUniquePeriodicWork("update_notification_${item.fixtureId}", updateWork)
+        workManagerWrapper.enqueueUniquePeriodicWork(
+            "update_notification_${item.fixtureId}",
+            updateWork
+        )
     }
 
     @RequiresApi(Build.VERSION_CODES.S)

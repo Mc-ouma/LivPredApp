@@ -140,8 +140,15 @@ class ItemsListViewModel @Inject constructor(
                 )
             if (isFavorite(item)) {
                 favoriteDao.deleteFavoriteItem(favoriteItem.fixtureId)
+                _uiState.value = UiState.Success(
+                    (_uiState.value as? UiState.Success)?.data?.filter { it.fixtureId != item.fixtureId }
+                        ?: emptyList()
+                )
             } else {
                 favoriteDao.insertFavoriteItem(favoriteItem)
+                _uiState.value = UiState.Success(
+                    (_uiState.value as? UiState.Success)?.data?.plus(item) ?: listOf(item)
+                )
             }
         }
     }

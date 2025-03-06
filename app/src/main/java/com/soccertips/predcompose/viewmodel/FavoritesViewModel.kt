@@ -15,7 +15,10 @@ import com.soccertips.predcompose.notification.UpdateMatchNotificationWorker
 import com.soccertips.predcompose.ui.UiState
 import com.soccertips.predcompose.util.WorkManagerWrapper
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
@@ -100,19 +103,17 @@ class FavoritesViewModel @Inject constructor(
     @RequiresApi(Build.VERSION_CODES.S)
     fun loadFavorites() {
         viewModelScope.launch {
-            _uiState.value = UiState.Loading
-            try {
-                val favoriteItems = favoriteItemDao.getAllFavorites()
-                val sortedItems = favoriteItems.sortedBy { item ->
-                    val date = item.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
-                    date
+
+            favoriteItemDao.getAllFavoritesFlow()
+                .distinctUntilChanged()
+                .collect { favoriteItems ->
+                    val sortedItems = favoriteItems.sortedBy { item ->
+                        val date = item.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
+                        date
+                    }
+                    _uiState.value = UiState.Success(sortedItems)
+                    scheduleNotification(sortedItems)
                 }
-                _uiState.value = UiState.Success(sortedItems)
-                scheduleNotification(sortedItems)
-            } catch (e: Exception) {
-                _uiState.value =
-                    UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
-            }
         }
     }
 
@@ -122,7 +123,8 @@ class FavoritesViewModel @Inject constructor(
             try {
                 favoriteItemDao.insertFavoriteItem(item)
                 val currentFavorites =
-                    (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
+                    (uiState.value as? UiState.Success)?.data?.toMutableList()
+                        ?: mutableListOf()
                 currentFavorites.add(item)
                 _uiState.value = UiState.Success(currentFavorites.sortedBy {
                     it.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN
@@ -142,7 +144,8 @@ class FavoritesViewModel @Inject constructor(
                 favoriteItemDao.deleteFavoriteItem(fixtureId = item.fixtureId.toString())
                 notificationScheduler.cancelNotification(item.fixtureId.toString())
                 val currentFavorites =
-                    (uiState.value as? UiState.Success)?.data?.toMutableList() ?: mutableListOf()
+                    (uiState.value as? UiState.Success)?.data?.toMutableList()
+                        ?: mutableListOf()
                 currentFavorites.removeAll { it.fixtureId == item.fixtureId }
                 _uiState.value = UiState.Success(currentFavorites.sortedBy {
                     it.mDate?.let { LocalDate.parse(it) } ?: LocalDate.MIN

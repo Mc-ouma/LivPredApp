@@ -50,6 +50,8 @@ class ItemsListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<UiState<List<ServerResponse>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<ServerResponse>>> = _uiState.asStateFlow()
 
+
+
     // Fetch data only if not already cached for the given date
     fun fetchItems(categoryEndpoint: String, date: LocalDate?) {
         val cacheKey = "${categoryEndpoint}_$date"
@@ -140,15 +142,15 @@ class ItemsListViewModel @Inject constructor(
                 )
             if (isFavorite(item)) {
                 favoriteDao.deleteFavoriteItem(favoriteItem.fixtureId)
-                _uiState.value = UiState.Success(
+                /*_uiState.value = UiState.Success(
                     (_uiState.value as? UiState.Success)?.data?.filter { it.fixtureId != item.fixtureId }
                         ?: emptyList()
-                )
+                )*/
             } else {
                 favoriteDao.insertFavoriteItem(favoriteItem)
-                _uiState.value = UiState.Success(
+               /* _uiState.value = UiState.Success(
                     (_uiState.value as? UiState.Success)?.data?.plus(item) ?: listOf(item)
-                )
+                )*/
             }
         }
     }

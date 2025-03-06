@@ -240,7 +240,7 @@ fun ItemCard(
 }
 
 @Composable
-private fun MatchHeader(
+ fun MatchHeader(
     league: String,
     leagueLogo: String?,
     date: String,
@@ -307,7 +307,7 @@ private fun MatchHeader(
 }
 
 @Composable
-private fun TeamsRow(
+ fun TeamsRow(
     homeTeam: TeamDetails,
     awayTeam: TeamDetails,
     matchTime: String,
@@ -351,7 +351,7 @@ private fun TeamsRow(
 }
 
 @Composable
-private fun EnhancedTeamInfo(
+ fun EnhancedTeamInfo(
     teamDetails: TeamDetails,
     alignment: Alignment.Horizontal,
     modifier: Modifier = Modifier
@@ -399,7 +399,7 @@ private fun EnhancedTeamInfo(
 }
 
 @Composable
-private fun MatchStatusRow(
+ fun MatchStatusRow(
     pick: String?,
     status: String?,
     statusColor: Color

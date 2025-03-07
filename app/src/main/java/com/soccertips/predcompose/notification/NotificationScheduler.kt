@@ -55,6 +55,18 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
         if (alarmManager.canScheduleExactAlarms()) {
             val intent = Intent(context, NotificationReceiver::class.java).apply {
                 putExtra("fixtureId", item.fixtureId)
+                putExtra("homeTeam", item.homeTeam)
+                putExtra("awayTeam", item.awayTeam)
+                putExtra("mDate", item.mDate)
+                putExtra("mTime", item.mTime)
+                putExtra("hLogoPath", item.hLogoPath)
+                putExtra("aLogoPath", item.aLogoPath)
+                putExtra("league", item.league)
+                putExtra("mStatus", item.mStatus)
+                putExtra("outcome", item.outcome)
+                putExtra("pick", item.pick)
+                putExtra("color", item.color)
+                putExtra("leagueLogo", item.leagueLogo)
                 putExtra("notification_type", "match_reminder")
             }
 
@@ -85,6 +97,12 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
             .putString("mTime", item.mTime)
             .putString("mDate", item.mDate)
             .putString("league", item.league)
+            .putString("mStatus", item.mStatus)
+            .putString("outcome", item.outcome)
+            .putString("pick", item.pick)
+            .putString("hLogoPath", item.hLogoPath)
+            .putString("aLogoPath", item.aLogoPath)
+            .putString("leagueLogo", item.leagueLogo)
             .build()
 
         val notificationWork = OneTimeWorkRequestBuilder<RescheduleWorker>()

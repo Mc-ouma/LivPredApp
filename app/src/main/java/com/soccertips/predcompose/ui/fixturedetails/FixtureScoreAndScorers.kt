@@ -16,12 +16,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,7 +42,7 @@ import java.util.Locale
 @Composable
 fun FixtureScoreAndScorers(
     viewModel: FixtureDetailsViewModel,
-    modifier: Modifier = Modifier.Companion,
+    modifier: Modifier = Modifier,
     navController: NavController,
     leagueId: String,
     season: String,
@@ -52,8 +53,8 @@ fun FixtureScoreAndScorers(
         is FixtureDetailsUiState.Loading -> {
             Text(
                 text = "Loading...",
-                modifier = Modifier.Companion.padding(16.dp),
-                color = Color.Companion.Gray,
+                modifier = Modifier.padding(16.dp),
+                color = Color.Gray,
             )
         }
 
@@ -103,17 +104,17 @@ fun FixtureScoreAndScorers(
                     modifier
                         .padding(8.dp)
                         .wrapContentHeight(),
-                    horizontalAlignment = Alignment.Companion.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Row(
                         modifier =
-                        Modifier.Companion
+                        Modifier
                             .fillMaxWidth()
                             .padding(8.dp),
-                        verticalAlignment = Alignment.Companion.CenterVertically,
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Column(modifier = Modifier.Companion.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f)) {
                             response.teams.home.let { homeTeam ->
                                 TeamColumn(
                                     team = homeTeam,
@@ -125,11 +126,11 @@ fun FixtureScoreAndScorers(
                         }
                         Column(
                             modifier =
-                            Modifier.Companion
+                            Modifier
                                 .weight(1f)
                                 .wrapContentHeight()
                                 .padding(horizontal = 8.dp),
-                            horizontalAlignment = Alignment.Companion.CenterHorizontally,
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
                         ) {
                             Text(text = response.fixture.status.short)
@@ -143,13 +144,13 @@ fun FixtureScoreAndScorers(
                                     text = matchStatusText,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.Companion.padding(top = 4.dp),
-                                    textAlign = TextAlign.Companion.Center,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                    textAlign = TextAlign.Center,
                                 )
                             }
 
                         }
-                        Column(modifier = Modifier.Companion.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f)) {
                             response.teams.away.let { awayTeam ->
                                 TeamColumn(
                                     team = awayTeam,
@@ -162,14 +163,14 @@ fun FixtureScoreAndScorers(
                     }
                     Row(
                         modifier =
-                        Modifier.Companion
+                        Modifier
                             .wrapContentWidth()
                             .wrapContentHeight()
                             .padding(top = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Companion.CenterVertically,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Column(modifier = Modifier.Companion.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f)) {
                             homeGoalScorers.forEach { (playerName, elapsed) ->
                                 Scorers(
                                     playerName = playerName,
@@ -178,19 +179,19 @@ fun FixtureScoreAndScorers(
                             }
                         }
                         Box(
-                            modifier = Modifier.Companion.weight(1f),
-                            contentAlignment = Alignment.Companion.Center,
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center,
                         ) {
                             if (homeGoalScorers.isNotEmpty() || awayGoalScorers.isNotEmpty()) {
                                 Icon(
                                     imageVector = Icons.Default.SportsSoccer,
                                     contentDescription = "Soccer Ball",
-                                    tint = Color.Companion.Gray,
-                                    modifier = Modifier.Companion.size(24.dp),
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(24.dp),
                                 )
                             }
                         }
-                        Column(modifier = Modifier.Companion.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f)) {
                             awayGoalScorers.forEach { (playerName, elapsed) ->
                                 Scorers(
                                     playerName = playerName,

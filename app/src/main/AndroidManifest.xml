@@ -30,7 +30,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.PredCompose">
+            android:theme="@style/Theme.PredCompose.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -3,23 +3,37 @@ package com.soccertips.predcompose.ui.fixturedetails.fixturedetailstab
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Sports
 import androidx.compose.material.icons.filled.Stadium
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -27,7 +41,39 @@ import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predcompose.data.model.Fixture
 import com.soccertips.predcompose.data.model.ResponseData
 import com.soccertips.predcompose.data.model.lastfixtures.FixtureDetails
+import com.soccertips.predcompose.data.model.prediction.Biggest
+import com.soccertips.predcompose.data.model.prediction.BiggestGoals
+import com.soccertips.predcompose.data.model.prediction.CleanSheet
+import com.soccertips.predcompose.data.model.prediction.Comparison
+import com.soccertips.predcompose.data.model.prediction.ComparisonData
+import com.soccertips.predcompose.data.model.prediction.FailedToScore
+import com.soccertips.predcompose.data.model.prediction.FixtureDetail
+import com.soccertips.predcompose.data.model.prediction.Fixtures
+import com.soccertips.predcompose.data.model.prediction.GoalAverage
+import com.soccertips.predcompose.data.model.prediction.GoalData
+import com.soccertips.predcompose.data.model.prediction.GoalStats
+import com.soccertips.predcompose.data.model.prediction.GoalTotal
+import com.soccertips.predcompose.data.model.prediction.Goals
+import com.soccertips.predcompose.data.model.prediction.H2H
+import com.soccertips.predcompose.data.model.prediction.HomeAway
+import com.soccertips.predcompose.data.model.prediction.Last5
+import com.soccertips.predcompose.data.model.prediction.Last5Goals
+import com.soccertips.predcompose.data.model.prediction.League
+import com.soccertips.predcompose.data.model.prediction.Percent
+import com.soccertips.predcompose.data.model.prediction.Periods
 import com.soccertips.predcompose.data.model.prediction.Predictions
+import com.soccertips.predcompose.data.model.prediction.Score
+import com.soccertips.predcompose.data.model.prediction.Status
+import com.soccertips.predcompose.data.model.prediction.Streak
+import com.soccertips.predcompose.data.model.prediction.Team
+import com.soccertips.predcompose.data.model.prediction.TeamGoals
+import com.soccertips.predcompose.data.model.prediction.TeamLeague
+import com.soccertips.predcompose.data.model.prediction.TeamShort
+import com.soccertips.predcompose.data.model.prediction.Teams
+import com.soccertips.predcompose.data.model.prediction.TeamsShort
+import com.soccertips.predcompose.data.model.prediction.Venue
+import com.soccertips.predcompose.data.model.prediction.WinLoss
+import com.soccertips.predcompose.data.model.prediction.Winner
 import com.soccertips.predcompose.navigation.Routes
 import com.soccertips.predcompose.ui.theme.LocalCardColors
 import com.soccertips.predcompose.ui.theme.LocalCardElevation
@@ -39,6 +85,9 @@ import java.time.format.DateTimeFormatter
 fun FixtureMatchDetailsScreen(
     fixtures: List<SharedViewModel.FixtureWithType>,
     predictions: Predictions?,
+    comparison: Comparison,
+    teams: Teams,
+    h2h: List<H2H>,
     fixtureDetails: ResponseData,
     homeTeamId: String,
     awayTeamId: String,
@@ -47,6 +96,7 @@ fun FixtureMatchDetailsScreen(
     // Safely convert team IDs to integers, defaulting to 0 if invalid or empty
     val homeTeamIdInt = homeTeamId.toIntOrNull() ?: 0
     val awayTeamIdInt = awayTeamId.toIntOrNull() ?: 0
+
 
     // Check for invalid team IDs and display an error message if necessary
     if (homeTeamIdInt == 0 || awayTeamIdInt == 0) {
@@ -81,7 +131,7 @@ fun FixtureMatchDetailsScreen(
         if (predictions == null) {
             Text("No predictions available.", modifier = Modifier.padding(16.dp))
         } else {
-            PredictionCard(predictions = predictions)
+            PredictionCarousel(predictions, comparison, teams, h2h)
         }
     }
 }
@@ -94,29 +144,29 @@ fun FixtureListScreen(
     fixtureDetails: ResponseData,
     navController: NavController
 ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.Top
-        ) {
-            FixtureColumn(
-                fixturesWithType = combinedFormData.filter { it.isHome },
-                columnTitle = "${fixtureDetails.teams.home.name} Last Fixtures",
-                homeTeamIdInt = homeTeamIdInt,
-                awayTeamIdInt = awayTeamIdInt,
-                modifier = Modifier.weight(1f),
-                navController = navController
-            )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Top
+    ) {
+        FixtureColumn(
+            fixturesWithType = combinedFormData.filter { it.isHome },
+            columnTitle = "${fixtureDetails.teams.home.name} Last Fixtures",
+            homeTeamIdInt = homeTeamIdInt,
+            awayTeamIdInt = awayTeamIdInt,
+            modifier = Modifier.weight(1f),
+            navController = navController
+        )
 
-            FixtureColumn(
-                fixturesWithType = combinedFormData.filter { !it.isHome },
-                columnTitle = "${fixtureDetails.teams.away.name} Last Fixtures",
-                homeTeamIdInt = homeTeamIdInt,
-                awayTeamIdInt = awayTeamIdInt,
-                modifier = Modifier.weight(1f),
-                navController = navController
-            )
-        }
+        FixtureColumn(
+            fixturesWithType = combinedFormData.filter { !it.isHome },
+            columnTitle = "${fixtureDetails.teams.away.name} Last Fixtures",
+            homeTeamIdInt = homeTeamIdInt,
+            awayTeamIdInt = awayTeamIdInt,
+            modifier = Modifier.weight(1f),
+            navController = navController
+        )
+    }
 
 }
 
@@ -328,13 +378,13 @@ fun FixtureDetailCard(fixture: Fixture) {
         colors = cardColors,
         elevation = cardElevation,
         modifier =
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp),
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
     ) {
         Column(
             modifier =
-            Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -347,9 +397,9 @@ fun FixtureDetailCard(fixture: Fixture) {
                 Text(
                     text = date,
                     modifier =
-                    Modifier
-                        .padding(start = 8.dp, end = 8.dp)
-                        .align(Alignment.CenterVertically),
+                        Modifier
+                            .padding(start = 8.dp, end = 8.dp)
+                            .align(Alignment.CenterVertically),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 16.sp,
@@ -366,9 +416,9 @@ fun FixtureDetailCard(fixture: Fixture) {
                 Text(
                     text = referee,
                     modifier =
-                    Modifier
-                        .padding(start = 8.dp, end = 8.dp)
-                        .align(Alignment.CenterVertically),
+                        Modifier
+                            .padding(start = 8.dp, end = 8.dp)
+                            .align(Alignment.CenterVertically),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 16.sp,
@@ -378,10 +428,10 @@ fun FixtureDetailCard(fixture: Fixture) {
 
             Row(
                 modifier =
-                Modifier
-                    .wrapContentWidth()
-                    .wrapContentHeight()
-                    .align(Alignment.CenterHorizontally),
+                    Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .align(Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
@@ -392,9 +442,9 @@ fun FixtureDetailCard(fixture: Fixture) {
                 Text(
                     text = "$venueName, $venueCity",
                     modifier =
-                    Modifier
-                        .padding(start = 8.dp, end = 8.dp)
-                        .align(Alignment.CenterVertically),
+                        Modifier
+                            .padding(start = 8.dp, end = 8.dp)
+                            .align(Alignment.CenterVertically),
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 16.sp,
                 )
@@ -403,121 +453,162 @@ fun FixtureDetailCard(fixture: Fixture) {
     }
 }
 
+
+// Additional cards would be implemented similarly
+
+@Preview
 @Composable
-fun PredictionCard(predictions: Predictions) {
-    val underOverText =
-        predictions.under_over?.let {
-            when {
-                it.startsWith("-") -> "Under ${it.removePrefix("-")}"
-                it.startsWith("+") -> "Over ${it.removePrefix("+")}"
-                else -> it
-            }
-        } ?: ""
+private fun PredictionCarouselPreview() {
+    val predictions = Predictions(
+        winner = Winner(23, "Arsenal", "Home team is likely to win"),
+        under_over = "+2.5",
+        percent = Percent("50%", "25%", "25%"),
+        advice = "Home team is likely to win",
+        win_or_draw = true,
+        goals = Goals("1", "2"),
+    )
+    val comparison = Comparison(
+        form = ComparisonData("50", "50"),
+        att = ComparisonData("50", "50"),
+        def = ComparisonData("50", "50"),
+        h2h = ComparisonData("50", "50"),
+        total = ComparisonData("50", "50"),
+        poisson_distribution = ComparisonData("50", "50"),
+        goals = ComparisonData("50", "50")
 
-    OutlinedCard(
-        modifier =
-        Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            predictions.winner.name?.let { winnerName ->
-                Text(
-                    text = "Winner: $winnerName (${predictions.winner.comment})",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            underOverText?.let {
-                Text(
-                    text = "Goals: $it",
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
-            predictions.advice?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(top = 8.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            Column(
-                modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                Row {
-                    Text(text = "Home: ${predictions.percent.home}")
-                    LinearProgressIndicator(
-                        progress = {
-                            predictions.percent.home
-                                .removeSuffix("%")
-                                .toFloat() / 100
-                        },
-                        modifier =
-                        Modifier
-                            .align(Alignment.CenterVertically)
-                            .wrapContentHeight()
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = ProgressIndicatorDefaults.linearColor,
-                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+    )
+    val teams = Teams(
+        home = Team(
+            1,
+            "Arsenal",
+            "https://media.api-sports.io/football/teams/57.png",
+            last_5 = Last5(
+                "60%",
+                "70",
+                "0%",
+                goals = Last5Goals(`for` = GoalData(18, 3.6), against = GoalData(10, 2.0))
+            ),
+            league = TeamLeague(
+                form = "60%",
+                fixtures = Fixtures(
+                    played = FixtureDetail(1, 1, 1),
+                    wins = FixtureDetail(1, 1, 1),
+                    draws = FixtureDetail(1, 1, 1),
+                    loses = FixtureDetail(1, 1, 1),
+                ),
+                goals = TeamGoals(
+                    `for` = GoalStats(
+                        total = GoalTotal(1, 1, 1),
+                        average = GoalAverage(1.0, 1.0, 1.0)
+                    ),
+                    against = GoalStats(
+                        total = GoalTotal(1, 1, 1),
+                        average = GoalAverage(1.0, 1.0, 1.0)
                     )
-
-                }
-
-                Row {
-
-                    Text(text = "Draw: ${predictions.percent.draw}")
-                    LinearProgressIndicator(
-                        progress = {
-                            predictions.percent.draw
-                                .removeSuffix("%")
-                                .toFloat() / 100
-                        },
-                        modifier =
-                        Modifier
-                            .align(Alignment.CenterVertically)
-                            .wrapContentHeight()
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = ProgressIndicatorDefaults.linearColor,
-                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                ),
+                biggest = Biggest(
+                    streak = Streak(1, 1, 1),
+                    wins = WinLoss("1", "1"),
+                    loses = WinLoss("1", "1"),
+                    goals = BiggestGoals(
+                        `for` = HomeAway(1, 1), against = HomeAway(1, 1)
                     )
-                }
-
-                Row {
-
-                    Text(text = "Away: ${predictions.percent.away}")
-                    LinearProgressIndicator(
-                        progress = {
-                            predictions.percent.away
-                                .removeSuffix("%")
-                                .toFloat() / 100
-                        },
-                        modifier =
-                        Modifier
-                            .align(Alignment.CenterVertically)
-                            .wrapContentHeight()
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = ProgressIndicatorDefaults.linearColor,
-                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                ),
+                clean_sheet = CleanSheet(23, 23, 46),
+                failed_to_score = FailedToScore(9, 9, 18)
+            )
+        ),
+        away = Team(
+            2, "Chelsea", "https://media.api-sports.io/football/teams/61.png",
+            last_5 = Last5(
+                "40%",
+                "50",
+                "0%",
+                goals = Last5Goals(`for` = GoalData(15, 3.0), against = GoalData(5, 1.0))
+            ),
+            league = TeamLeague(
+                form = "40%",
+                fixtures = Fixtures(
+                    played = FixtureDetail(1, 1, 1),
+                    wins = FixtureDetail(1, 1, 1),
+                    draws = FixtureDetail(1, 1, 1),
+                    loses = FixtureDetail(1, 1, 1),
+                ),
+                goals = TeamGoals(
+                    `for` = GoalStats(
+                        total = GoalTotal(1, 1, 1),
+                        average = GoalAverage(1.0, 1.0, 1.0)
+                    ),
+                    against = GoalStats(
+                        total = GoalTotal(1, 1, 1),
+                        average = GoalAverage(1.0, 1.0, 1.0)
                     )
-                }
-            }
-        }
-    }
+                ),
+                biggest = Biggest(
+                    streak = Streak(1, 1, 1),
+                    wins = WinLoss("1", "1"),
+                    loses = WinLoss("1", "1"),
+                    goals = BiggestGoals(
+                        `for` = HomeAway(1, 1), against = HomeAway(1, 1)
+                    )
+                ),
+                clean_sheet = CleanSheet(23, 23, 46),
+                failed_to_score = FailedToScore(9, 9, 18)
+            )
+        )
+    )
+
+    val h2h = listOf(
+        H2H(
+            fixture = com.soccertips.predcompose.data.model.prediction.Fixture(
+                id = 1,
+                date = "2022-12-25T12:00:00+00:00",
+                referee = "John Doe",
+                venue = Venue(22, "Emirates Stadium", "London"),
+                timezone = "UTC",
+                periods = Periods(1, 2),
+                status = Status("Match Finished", "FT", 90, null),
+                timestamp = 2
+            ),
+            goals = HomeAway(1, 2),
+            league = League(
+                1,
+                "Premier League",
+                "England",
+                "https://media.api-sports.io/football/leagues/1.png",
+                "https://media.api-sports.io/flags/gb.svg",
+                2022
+            ),
+            teams = TeamsShort(
+                home = TeamShort(
+                    1,
+                    "Arsenal",
+                    "https://media.api-sports.io/football/teams/57.png",
+                    winner = true
+                ),
+                away = TeamShort(
+                    2,
+                    "Chelsea",
+                    "https://media.api-sports.io/football/teams/61.png",
+                    winner = false
+                )
+            ),
+            score = Score(
+                halftime = HomeAway(1, 2),
+                fulltime = HomeAway(1, 2),
+                extratime = HomeAway(1, 2),
+                penalty = HomeAway(1, 2)
+            ),
+
+            )
+    )
+
+
+    PredictionCarousel(
+        predictions = predictions,
+        comparison = comparison,
+        teams = teams,
+        h2h = h2h
+    )
+
 }
-
-
-
-

@@ -42,6 +42,9 @@ fun FixtureMatchDetailsTab(
             FixtureMatchDetailsScreen(
                 fixtures = formState.data,
                 predictions = fixturePredictionsState.data[0].predictions,
+                comparison = fixturePredictionsState.data[0].comparison,
+                teams = fixturePredictionsState.data[0].teams,
+                h2h = fixturePredictionsState.data[0].h2h,
                 fixtureDetails = fixtureDetails,
                 homeTeamId = fixtureDetails.teams.home.id.toString(),
                 awayTeamId = fixtureDetails.teams.away.id.toString(),
@@ -59,7 +62,7 @@ fun FixtureMatchDetailsTab(
         }
 
         else -> {
-            Text(text = "😞 Error loading match details", color = Color.Companion.Red)
+            Text(text = "😞 Error loading match details", color = Color.Red)
         }
     }
 }
@@ -83,7 +86,7 @@ fun FixtureStatisticsTab(fixtureStatsState: UiState<List<com.soccertips.predcomp
         }
 
         else -> {
-            Text(text = "No data available", color = Color.Companion.Gray)
+            Text(text = "No data available", color = Color.Gray)
         }
     }
 }
@@ -115,7 +118,7 @@ fun FixtureHeadToHeadTab(
         }
 
         else -> {
-            Text(text = "No data available", color = Color.Companion.Gray)
+            Text(text = "No data available", color = Color.Gray)
         }
     }
 }
@@ -129,7 +132,7 @@ fun FixtureLineupsTab(lineupsState: UiState<List<TeamLineup>>) {
                     lineups = Pair(lineupsState.data[0], lineupsState.data[1])
                 )
             } else {
-                Text(text = "No data available", color = Color.Companion.Gray, modifier = Modifier.Companion.padding(16.dp), textAlign = TextAlign.Center)
+                Text(text = "No data available", color = Color.Gray, modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
             }
         }
 
@@ -145,7 +148,7 @@ fun FixtureLineupsTab(lineupsState: UiState<List<TeamLineup>>) {
         }
 
         else -> {
-            Text(text = "No data available", color = Color.Companion.Gray)
+            Text(text = "No data available", color = Color.Gray)
         }
     }
 }
@@ -178,7 +181,7 @@ fun FixtureStandingsTab(
         }
 
         else -> {
-            Text(text = "No standings available", color = Color.Companion.Gray)
+            Text(text = "No standings available", color = Color.Gray)
         }
     }
 }
@@ -211,7 +214,7 @@ fun FixtureSummaryTab(
         }
 
         else -> {
-            Text(text = "No events available", color = Color.Companion.Gray)
+            Text(text = "No events available", color = Color.Gray)
         }
     }
 }

@@ -265,9 +265,9 @@ class FixtureDetailsViewModel @Inject constructor(
                 if (playerName == null || playerName.isBlank()) {
                     null
                 } else {
-                    val lastName = playerName.split(" ").lastOrNull() ?: ""
+                    //val lastName = playerName.split(" ").lastOrNull() ?: ""
                     val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}’"
-                    lastName to elapsed
+                    playerName to elapsed
                 }
             }
 
@@ -282,9 +282,9 @@ class FixtureDetailsViewModel @Inject constructor(
                 if (playerName == null || playerName.isBlank()) {
                     null
                 } else {
-                    val lastName = playerName.split(" ").lastOrNull() ?: ""
+                    //val lastName = playerName.split(" ").lastOrNull() ?: ""
                     val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}’"
-                    lastName to elapsed
+                    playerName to elapsed
                 }
             }
 

@@ -257,17 +257,12 @@ fun AppNavigation(fixtureId: String? = null) {
     val uiState by categoriesViewModel.uiState.collectAsState()
     val sharedViewModel: SharedViewModel = hiltViewModel()
 
-    /* LaunchedEffect(fixtureId) {
-         fixtureId?.let {
-             navController.navigate(Routes.FixtureDetails.createRoute(fixtureId))
-         }
-     }*/
 
     NavHost(
         navController = navController,
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
-        startDestination = Routes.Home.route
+        startDestination = Routes.Splash.route
     ) {
         // Splash Screen
         composable(Routes.Splash.route) {

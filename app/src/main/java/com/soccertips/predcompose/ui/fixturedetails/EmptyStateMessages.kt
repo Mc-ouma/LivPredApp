@@ -18,10 +18,10 @@ import com.soccertips.predcompose.ui.components.LoadingIndicator
 @Composable
 fun LoadingScreen(paddingValues: PaddingValues) {
     Box(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
-        contentAlignment = Alignment.Companion.Center,
+        contentAlignment = Alignment.Center,
     ) {
         LoadingIndicator()
     }
@@ -30,14 +30,14 @@ fun LoadingScreen(paddingValues: PaddingValues) {
 @Composable
 fun ErrorScreen(paddingValues: PaddingValues, message: String) {
     Box(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
-        contentAlignment = Alignment.Companion.Center,
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = message,
-            color = Color.Companion.Red,
+            color = Color.Red,
             style = MaterialTheme.typography.bodyLarge
         )
     }
@@ -46,14 +46,14 @@ fun ErrorScreen(paddingValues: PaddingValues, message: String) {
 @Composable
 fun EmptyScreen(paddingValues: PaddingValues, message: String = "No data available") {
     Box(
-        modifier = Modifier.Companion
+        modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
-        contentAlignment = Alignment.Companion.Center,
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = message,
-            color = Color.Companion.Gray,
+            color = Color.Gray,
             style = MaterialTheme.typography.bodyLarge
         )
     }
@@ -65,26 +65,26 @@ fun EmptyStateMessages(
 ) {
     if (uiState is FixtureDetailsUiState.Success) {
         val successState = uiState
-        Column(modifier = Modifier.Companion.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             if (successState.fixtureStats.isNullOrEmpty()) {
                 Text(
                     "No fixture stats available",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Companion.Gray
+                    color = Color.Gray
                 )
             }
             if (successState.fixtureEvents.isNullOrEmpty()) {
                 Text(
                     "No fixture events available",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Companion.Gray
+                    color = Color.Gray
                 )
             }
             if (successState.predictions.isNullOrEmpty()) {
                 Text(
                     "No fixture predictions available",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Companion.Gray
+                    color = Color.Gray
                 )
             }
         }

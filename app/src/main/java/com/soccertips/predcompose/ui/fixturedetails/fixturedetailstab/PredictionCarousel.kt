@@ -73,6 +73,20 @@ fun PredictionCarousel(
     val pagerState = rememberPagerState(pageCount = { 4 })
 
     Column {
+
+        // Horizontal pager for cards
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            when (page) {
+                0 -> PredictionOverviewCard(predictions)
+                1 -> TeamFormComparisonCard(comparison, teams)
+                2 -> GoalsAnalysisCard(teams)
+                3 -> HeadToHeadCard(h2h)
+            }
+        }
+
         // Page indicator
         Row(
             Modifier
@@ -81,6 +95,7 @@ fun PredictionCarousel(
             horizontalArrangement = Arrangement.Center
         ) {
             repeat(4) { page ->
+                Spacer(Modifier.width(4.dp))
                 Box(
                     Modifier
                         .align(Alignment.CenterVertically)
@@ -94,20 +109,6 @@ fun PredictionCarousel(
                             CircleShape
                         )
                 )
-                Spacer(Modifier.width(4.dp))
-            }
-        }
-
-        // Horizontal pager for cards
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth()
-        ) { page ->
-            when (page) {
-                0 -> PredictionOverviewCard(predictions)
-                1 -> TeamFormComparisonCard(comparison, teams)
-                2 -> GoalsAnalysisCard(teams)
-                3 -> HeadToHeadCard(h2h)
             }
         }
     }

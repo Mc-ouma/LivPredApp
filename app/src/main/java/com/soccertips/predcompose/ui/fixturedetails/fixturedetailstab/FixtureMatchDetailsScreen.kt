@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -151,7 +153,7 @@ fun FixtureListScreen(
     ) {
         FixtureColumn(
             fixturesWithType = combinedFormData.filter { it.isHome },
-            columnTitle = "${fixtureDetails.teams.home.name} Last Fixtures",
+            columnTitle = fixtureDetails.teams.home.name,
             homeTeamIdInt = homeTeamIdInt,
             awayTeamIdInt = awayTeamIdInt,
             modifier = Modifier.weight(1f),
@@ -160,7 +162,7 @@ fun FixtureListScreen(
 
         FixtureColumn(
             fixturesWithType = combinedFormData.filter { !it.isHome },
-            columnTitle = "${fixtureDetails.teams.away.name} Last Fixtures",
+            columnTitle = fixtureDetails.teams.away.name,
             homeTeamIdInt = homeTeamIdInt,
             awayTeamIdInt = awayTeamIdInt,
             modifier = Modifier.weight(1f),
@@ -185,12 +187,21 @@ fun FixtureColumn(
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = columnTitle,
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(8.dp)
-        )
+        Box(
+            modifier = Modifier
+                .height(48.dp)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
+                .padding(8.dp)
+        ){
+            Text(
+                text = columnTitle,
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
 
         if (fixturesWithType.isEmpty()) {
             Text(

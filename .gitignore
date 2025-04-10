@@ -13,6 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
-app/src/main/java/com/soccertips/predcompose/network/Constants.kt
+app/src/main/java/com/soccertips/predictx/network/Constants.kt
 app/assets/env
 Constants.kt

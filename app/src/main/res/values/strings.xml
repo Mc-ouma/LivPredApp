@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Pred Compose</string>
+    <string name="app_name">AI ScoreCast</string>
     <string name="match_details">Info</string>
     <string name="result">Result</string>
     <string name="statistics">Stats</string>

@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.soccertips.predcompose"
+    namespace = "com.soccertips.predictx"
     compileSdk =
         libs.versions.compileSdk
             .get()
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.soccertips.predcompose"
+        applicationId = "com.soccertips.predictx"
         minSdk =
             libs.versions.minSdk
                 .get()
@@ -112,9 +112,9 @@ android {
         }
     }
 
-    composeOptions {
+    /*composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.androidxComposeCompiler.get()
-    }
+    }*/
 }
 
 /*

@@ -42,10 +42,7 @@ fun FixtureStandings(
     teamId1: Int,
     lazyListState: LazyListState,
 ) {
-
-
     val groupedStandings = standings.groupBy { it.group }
-
 
     LazyColumn(
         state = lazyListState,
@@ -53,9 +50,22 @@ fun FixtureStandings(
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        groupedStandings.forEach { (groupName, groupStandings) ->
+        // Define colors inside the composable context
+        val primaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        val secondaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+
+        groupedStandings.toList().forEachIndexed { index, (groupName, groupStandings) ->
+            val backgroundColor = if (index % 2 == 0) primaryBackground else secondaryBackground
+
             item {
-                GroupHeader(groupName = groupName)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color = backgroundColor)
+                        .padding(8.dp)
+                ) {
+                    GroupHeader(groupName = groupName)
+                }
             }
             items(groupStandings) { teamStanding ->
                 TeamRow(
@@ -64,7 +74,7 @@ fun FixtureStandings(
                 )
             }
             item {
-                Spacer(modifier = Modifier.height(200.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -173,89 +183,116 @@ fun TeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
 @Preview(showBackground = true)
 @Composable
 private fun LeagueCardPreview() {
-    val sampleStandings =
-        listOf(
-            TeamStanding(
-                rank = 1,
-                team =
-                TeamInfo(
-                    id = 33,
-                    name = "Manchester City",
-                    logo = "https://media.api-sports.io/football/teams/50.png",
-                ),
-                points = 23,
-                goalsDiff = 11,
-                group = "Premier League",
-                form = "WWWDD",
-                status = "same",
-                description = "Champions League",
-                all =
-                OverallRecord(
-                    played = 9,
-                    win = 7,
-                    draw = 2,
-                    lose = 0,
-                    goals = Goals(`for` = 20, against = 9),
-                ),
-                home =
-                HomeAwayRecord(
-                    played = 5,
-                    win = 4,
-                    draw = 1,
-                    lose = 0,
-                    goals = Goals(`for` = 12, against = 6),
-                ),
-                away =
-                HomeAwayRecord(
-                    played = 4,
-                    win = 3,
-                    draw = 1,
-                    lose = 0,
-                    goals = Goals(`for` = 8, against = 3),
-                ),
-                update = "2024-10-28T00:00:00+00:00",
+    val sampleStandings = listOf(
+        TeamStanding(
+            rank = 1,
+            team = TeamInfo(
+                id = 33,
+                name = "Manchester City",
+                logo = "https://media.api-sports.io/football/teams/50.png",
             ),
-            TeamStanding(
-                rank = 10,
-                team =
-                TeamInfo(
-                    id = 40,
-                    name = "Liverpool",
-                    logo = "https://media.api-sports.io/football/teams/40.png",
-                ),
-                points = 22,
-                goalsDiff = 12,
-                group = "Premier League",
-                form = "DWLWW",
-                status = "same",
-                description = "Champions League",
-                all =
-                OverallRecord(
-                    played = 9,
-                    win = 7,
-                    draw = 1,
-                    lose = 1,
-                    goals = Goals(`for` = 17, against = 5),
-                ),
-                home =
-                HomeAwayRecord(
-                    played = 4,
-                    win = 3,
-                    draw = 0,
-                    lose = 1,
-                    goals = Goals(`for` = 7, against = 2),
-                ),
-                away =
-                HomeAwayRecord(
-                    played = 5,
-                    win = 4,
-                    draw = 1,
-                    lose = 0,
-                    goals = Goals(`for` = 10, against = 3),
-                ),
-                update = "2024-10-28T00:00:00+00:00",
+            points = 23,
+            goalsDiff = 11,
+            group = "Premier League - Group A",
+            form = "WWWDD",
+            status = "same",
+            description = "Champions League",
+            all = OverallRecord(
+                played = 9,
+                win = 7,
+                draw = 2,
+                lose = 0,
+                goals = Goals(`for` = 20, against = 9),
             ),
+            home = HomeAwayRecord(
+                played = 5,
+                win = 4,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 12, against = 6),
+            ),
+            away = HomeAwayRecord(
+                played = 4,
+                win = 3,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 8, against = 3),
+            ),
+            update = "2024-10-28T00:00:00+00:00",
+        ),
+        TeamStanding(
+            rank = 2,
+            team = TeamInfo(
+                id = 40,
+                name = "Liverpool",
+                logo = "https://media.api-sports.io/football/teams/40.png",
+            ),
+            points = 22,
+            goalsDiff = 12,
+            group = "Premier League - Group A",
+            form = "DWLWW",
+            status = "same",
+            description = "Champions League",
+            all = OverallRecord(
+                played = 9,
+                win = 7,
+                draw = 1,
+                lose = 1,
+                goals = Goals(`for` = 17, against = 5),
+            ),
+            home = HomeAwayRecord(
+                played = 4,
+                win = 3,
+                draw = 0,
+                lose = 1,
+                goals = Goals(`for` = 7, against = 2),
+            ),
+            away = HomeAwayRecord(
+                played = 5,
+                win = 4,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 10, against = 3),
+            ),
+            update = "2024-10-28T00:00:00+00:00",
+        ),
+        TeamStanding(
+            rank = 1,
+            team = TeamInfo(
+                id = 50,
+                name = "Chelsea",
+                logo = "https://media.api-sports.io/football/teams/49.png",
+            ),
+            points = 20,
+            goalsDiff = 8,
+            group = "Premier League - Group B",
+            form = "WWLWD",
+            status = "same",
+            description = "Champions League",
+            all = OverallRecord(
+                played = 9,
+                win = 6,
+                draw = 2,
+                lose = 1,
+                goals = Goals(`for` = 15, against = 7),
+            ),
+            home = HomeAwayRecord(
+                played = 5,
+                win = 3,
+                draw = 1,
+                lose = 1,
+                goals = Goals(`for` = 9, against = 4),
+            ),
+            away = HomeAwayRecord(
+                played = 4,
+                win = 3,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 6, against = 3),
+            ),
+            update = "2024-10-28T00:00:00+00:00",
         )
+    )
     PredictXTheme {
         FixtureStandings(
             standings = sampleStandings,
@@ -263,5 +300,4 @@ private fun LeagueCardPreview() {
             lazyListState = rememberLazyListState()
         )
     }
-//
 }

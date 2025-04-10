@@ -84,7 +84,12 @@ fun FixtureScoreAndScorers(
                     if (timeDifference > 0 && timeDifference <= 3600) {
                         val minutes = timeDifference / 60
                         val seconds = timeDifference % 60
-                        matchStatusText = String.format(Locale.getDefault(), "%02d:%02d remaining", minutes, seconds)
+                        matchStatusText = String.format(
+                            Locale.getDefault(),
+                            "%02d:%02d remaining",
+                            minutes,
+                            seconds
+                        )
                     } else {
                         matchStatusText = initialMatchStatusText
                     }
@@ -96,7 +101,7 @@ fun FixtureScoreAndScorers(
                 modifier
                     .wrapContentHeight()
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 colors = cardColors,
                 elevation = cardElevation
             ) {
@@ -108,9 +113,9 @@ fun FixtureScoreAndScorers(
                 ) {
                     Row(
                         modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
@@ -126,17 +131,20 @@ fun FixtureScoreAndScorers(
                         }
                         Column(
                             modifier =
-                            Modifier
-                                .weight(1f)
-                                .wrapContentHeight()
-                                .padding(horizontal = 8.dp),
+                                Modifier
+                                    .weight(1f)
+                                    .wrapContentHeight()
+                                    .padding(horizontal = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
                         ) {
-                            Text(text = response.fixture.status.short)
+                            Text(
+                                text = response.fixture.status.short,
+                                fontSize = 18.sp,
+                            )
                             Text(
                                 text = "${response.goals.home} - ${response.goals.away}",
-                                fontSize = 20.sp
+                                fontSize = 16.sp
                             )
 
                             if (matchStatusText.isNotEmpty()) {
@@ -163,10 +171,10 @@ fun FixtureScoreAndScorers(
                     }
                     Row(
                         modifier =
-                        Modifier
-                            .wrapContentWidth()
-                            .wrapContentHeight()
-                            .padding(top = 4.dp),
+                            Modifier
+                                .wrapContentWidth()
+                                .wrapContentHeight()
+                                .padding(top = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

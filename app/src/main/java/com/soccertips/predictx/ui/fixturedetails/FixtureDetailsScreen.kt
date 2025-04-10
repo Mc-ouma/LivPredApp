@@ -55,7 +55,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -430,7 +432,7 @@ fun Scorers(
 ) {
     Text(
         text = "$playerName $elapsed",
-        fontSize = 14.sp,
+        fontSize = 10.sp,
         color = Color.Gray,
     )
 }
@@ -458,6 +460,7 @@ fun TeamColumn(
                 )
             },
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
         Image(
             painter = rememberAsyncImagePainter(team.logo),
@@ -468,9 +471,30 @@ fun TeamColumn(
         Text(
             text = team.name,
             modifier = Modifier.padding(top = 4.dp),
-            maxLines = 1,
-            fontSize = 16.sp,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            textAlign = TextAlign.Center,
         )
     }
+}
+
+@Preview
+@Composable
+private fun TeamColumnPrev(
+
+) {
+    TeamColumn(
+        team = Team(
+            id = 1,
+            name = "Team A saiofieidiiei sjfwooetododreoo shisihdiriidiierd srierudiifd s" ,
+            logo = "https://example.com/logo.png",
+            winner = true
+        ),
+        leagueId = "123",
+        season = "2023",
+        navController = NavController(LocalContext.current),
+    )
+    
 }
 

@@ -401,7 +401,7 @@ fun FixtureDetailCard(fixture: Fixture) {
             Row {
                 Icon(
                     imageVector = Icons.Default.CalendarMonth,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(16.dp),
                     contentDescription = null,
                 )
                 Text(
@@ -412,7 +412,8 @@ fun FixtureDetailCard(fixture: Fixture) {
                             .align(Alignment.CenterVertically),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = 16.sp,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -420,7 +421,7 @@ fun FixtureDetailCard(fixture: Fixture) {
             Row {
                 Icon(
                     imageVector = Icons.Default.Sports,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(16.dp),
                     contentDescription = null,
                 )
                 Text(
@@ -431,7 +432,8 @@ fun FixtureDetailCard(fixture: Fixture) {
                             .align(Alignment.CenterVertically),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = 16.sp,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -446,7 +448,7 @@ fun FixtureDetailCard(fixture: Fixture) {
             ) {
                 Icon(
                     imageVector = Icons.Default.Stadium,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(16.dp),
                     contentDescription = null,
                 )
                 Text(
@@ -456,7 +458,8 @@ fun FixtureDetailCard(fixture: Fixture) {
                             .padding(start = 8.dp, end = 8.dp)
                             .align(Alignment.CenterVertically),
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = 16.sp,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 )
             }
         }
@@ -619,6 +622,24 @@ private fun PredictionCarouselPreview() {
         comparison = comparison,
         teams = teams,
         h2h = h2h
+    )
+
+
+}
+@Preview
+@Composable
+private fun FixtureDetailPrev() {
+    FixtureDetailCard(
+        fixture = Fixture(
+            id = 1,
+            date = "2022-12-25T12:00:00+00:00",
+            referee = "John Doe",
+            venue = com.soccertips.predictx.data.model.Venue(22, "Emirates Stadium", "London"),
+            timezone = "UTC",
+            periods = com.soccertips.predictx.data.model.Periods(1, 2),
+            status = com.soccertips.predictx.data.model.Status("Match Finished", "FT", 90, null),
+            timestamp = 2
+        )
     )
 
 }

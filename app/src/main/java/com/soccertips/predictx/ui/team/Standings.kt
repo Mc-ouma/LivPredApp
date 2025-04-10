@@ -44,15 +44,17 @@ fun FixtureStandings(
 ) {
     val groupedStandings = standings.groupBy { it.group }
 
+    // Define colors inside the composable context
+    val primaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    val secondaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+
     LazyColumn(
         state = lazyListState,
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        // Define colors inside the composable context
-        val primaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        val secondaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+
 
         groupedStandings.toList().forEachIndexed { index, (groupName, groupStandings) ->
             val backgroundColor = if (index % 2 == 0) primaryBackground else secondaryBackground

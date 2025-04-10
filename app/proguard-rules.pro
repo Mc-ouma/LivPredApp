@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# If you need to keep the original class names, uncomment this
+# to prevent ProGuard from renaming the classes.
+#keep models classes
+-keep class com.soccertips.predictx.data.**{*;}

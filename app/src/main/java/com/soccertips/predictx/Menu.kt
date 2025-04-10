@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 
 @Composable
 fun Menu() {
@@ -278,7 +279,7 @@ fun Feedback(onDismiss: () -> Unit) {
                 val appVersion =
                     context.packageManager.getPackageInfo(context.packageName, 0).versionName
                 val intent = Intent(Intent.ACTION_SEND).apply {
-                    data = Uri.parse("mailto:mail@soccertips.com")
+                    data = "mailto:ouma.monicasales@gmail.com".toUri()
                     putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
                     putExtra(Intent.EXTRA_SUBJECT, "PredictX Feedback")
                     putExtra(

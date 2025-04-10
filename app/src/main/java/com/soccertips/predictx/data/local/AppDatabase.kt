@@ -17,6 +17,12 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // No changes needed for this migration
+            }
+        }
+
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
@@ -69,8 +75,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                   // .addMigrations(MIGRATION_1_2)
-                    .fallbackToDestructiveMigration()
+                   .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    //.fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

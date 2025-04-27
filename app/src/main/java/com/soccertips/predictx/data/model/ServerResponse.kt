@@ -21,4 +21,5 @@ data class ServerResponse(
     @SerializedName("fixture_id") var fixtureId: String? = null,
     @SerializedName("m_status") var mStatus: String? = null,
     val color: Color = Color.Unspecified,
+    val completedTimestamp: Long = 0L,
 )

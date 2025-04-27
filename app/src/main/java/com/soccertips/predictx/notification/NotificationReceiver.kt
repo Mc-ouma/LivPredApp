@@ -30,7 +30,8 @@ class NotificationReceiver : BroadcastReceiver() {
                     outcome = intent.getStringExtra("outcome"),
                     pick = intent.getStringExtra("pick"),
                     color = intent.getIntExtra("color", 0),
-                    leagueLogo = intent.getStringExtra("leagueLogo")
+                    leagueLogo = intent.getStringExtra("leagueLogo"),
+                    completedTimestamp = intent.getLongExtra("completedTimestamp", 0L)
                 )
 
                 showNotification(context, favoriteItem)

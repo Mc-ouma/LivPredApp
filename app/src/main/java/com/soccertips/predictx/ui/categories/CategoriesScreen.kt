@@ -73,13 +73,14 @@ fun CategoriesContent(navController: NavController, categories: List<Category>) 
     ) {
         items(
             count = categories.size,
-            key = { index -> categories[index].endpoint },
+            key = { index -> categories[index].url },
         ) { index ->
             val category = categories[index]
             CategoryCard(
                 category = category,
                 onClick = {
-                    navController.navigate(Routes.ItemsList.createRoute(category.endpoint))
+                    val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
+                    navController.navigate(Routes.ItemsList.createRoute(encodedUrl))
 
                 },
             )

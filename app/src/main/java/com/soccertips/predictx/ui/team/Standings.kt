@@ -63,7 +63,7 @@ fun FixtureStandings(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(color = backgroundColor)
+                        .background(color = backgroundColor, shape = MaterialTheme.shapes.medium)
                         .padding(8.dp)
                 ) {
                     GroupHeader(groupName = groupName)
@@ -133,10 +133,11 @@ fun TeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
             .background(
-                color = if (isHighlighted) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-            ),
+                color = if (isHighlighted) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                shape = MaterialTheme.shapes.medium
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -182,7 +183,7 @@ fun TeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
 
 
 @RequiresApi(Build.VERSION_CODES.S)
-@Preview(showBackground = true)
+@Preview(showBackground = true, )
 @Composable
 private fun LeagueCardPreview() {
     val sampleStandings = listOf(

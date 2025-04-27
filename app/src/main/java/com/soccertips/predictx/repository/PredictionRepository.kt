@@ -2,23 +2,23 @@ package com.soccertips.predictx.repository
 
 import com.soccertips.predictx.data.model.RootResponse
 import com.soccertips.predictx.network.ApiService
-import com.soccertips.predictx.network.Constants
 import javax.inject.Inject
 
 class PredictionRepository
 @Inject
 constructor(
     private val apiService: ApiService,
+    private val preloadRepository: Lazy<PreloadRepository>
 ) {
-    suspend fun getCategoryData(endpoint: String, usesAlternativeUrl: Boolean= false): RootResponse {
-        val baseUrl = if(usesAlternativeUrl) {
-            Constants.DAILY_BONUS_BASE_URL
-        }else {  Constants.DEFAULT_BASE_URL
+    suspend fun getCategoryData(url: String): RootResponse {
+        /// Check if the URL is a valid endpoint
+        preloadRepository.value.getPreloadedData(url)?.let {
+            return it
         }
-        val url = baseUrl + endpoint
+
+        /// If not found in preloaded data, fetch from API
         return apiService.getServerResponses(url)
     }
-
 
 
 }

@@ -262,7 +262,7 @@ class FixtureDetailsViewModel @Inject constructor(
             .filter { it.type == "Goal" && it.team.id == homeTeamId }
             .mapNotNull {
                 val playerName = it.player.name
-                if (playerName == null || playerName.isBlank()) {
+                if (playerName.isBlank()) {
                     null
                 } else {
                     //val lastName = playerName.split(" ").lastOrNull() ?: ""
@@ -279,7 +279,7 @@ class FixtureDetailsViewModel @Inject constructor(
             .filter { it.type == "Goal" && it.team.id == awayTeamId }
             .mapNotNull {
                 val playerName = it.player.name
-                if (playerName == null || playerName.isBlank()) {
+                if (playerName.isBlank()) {
                     null
                 } else {
                     //val lastName = playerName.split(" ").lastOrNull() ?: ""

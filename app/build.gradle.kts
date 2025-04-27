@@ -6,14 +6,13 @@ plugins {
     alias(libs.plugins.hilt)
     id("org.jetbrains.compose") version "1.8.0-dev1875"
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.google.firebase.crashlytics)
 }
 
 android {
     namespace = "com.soccertips.predictx"
-    compileSdk =
-        libs.versions.compileSdk
-            .get()
-            .toInt()
+    compileSdk = 36
 
     buildFeatures {
         buildConfig = true
@@ -30,8 +29,8 @@ android {
             libs.versions.targetSdk
                 .get()
                 .toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner =
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
@@ -111,6 +110,7 @@ android {
             excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1")
         }
     }
+    buildToolsVersion = "36.0.0"
 
     /*composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.androidxComposeCompiler.get()
@@ -122,11 +122,12 @@ android {
  all versions in a single place. This improves readability and helps managing project complexity.
  */
 dependencies {
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.database)
+    implementation(libs.firebase.analytics)
     // Unit testing dependencies
     testImplementation(libs.junit)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.inline)
-    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.core.testing)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.turbine)
@@ -141,7 +142,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     implementation(libs.androidx.annotation)
-    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.timber)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.activity.ktx)
@@ -191,7 +191,6 @@ dependencies {
     implementation(libs.gson)
 
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.coil.kt.coil.compose.v240)
     implementation(libs.androidx.compiler)
@@ -217,7 +216,6 @@ dependencies {
     implementation(libs.work.runtime)
 
     testImplementation(libs.androidx.work.testing)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.kotlinx.coroutines.test)
 
     //Splash Screen

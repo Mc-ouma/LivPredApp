@@ -11,7 +11,9 @@ import com.soccertips.predictx.network.FixtureDetailsService
 import com.soccertips.predictx.network.NetworkUtils
 import com.soccertips.predictx.notification.HiltWorkerFactory
 import com.soccertips.predictx.notification.NotificationBuilder
+import com.soccertips.predictx.repository.FirebaseRepository
 import com.soccertips.predictx.repository.PredictionRepository
+import com.soccertips.predictx.repository.PreloadRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,11 +39,10 @@ object AppModule {
     fun provideContext(application: Application): Context {
         return application.applicationContext
     }
+
     @Named("defaultBaseUrl")
     @Provides
     fun provideDefaultBaseUrl() = Constants.DEFAULT_BASE_URL
-
-    private const val BASE_URL = "https://dailypredictz.com/scripts/pscripts/"
     private const val CACHE_SIZE = 10 * 1024 * 1024 // 10 MB
     private const val CACHE_MAX_AGE = 2 * 60 * 60 // 2 hours
 
@@ -134,7 +135,17 @@ object AppModule {
     fun providePredictionRepository(
         apiService: ApiService,
     ): PredictionRepository =
-        PredictionRepository(apiService)
+        PredictionRepository(apiService, lazy {  PreloadRepository.getInstance() })
+
+    @Provides
+    @Singleton
+    fun providePreloadRepository(
+        firebaseRepository: FirebaseRepository
+    ): PreloadRepository {
+        return PreloadRepository.createInstance(
+            firebaseRepository
+        )
+    }
 
 
     // Configuration for FixtureDetailsService and FixtureDetailsRepository

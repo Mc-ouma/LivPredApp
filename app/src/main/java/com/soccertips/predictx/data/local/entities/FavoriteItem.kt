@@ -17,7 +17,7 @@ data class FavoriteItem(
     val color: Int,
     val hLogoPath: String?,
     val aLogoPath: String?,
-    val leagueLogo: String?
-
+    val leagueLogo: String?,
+    val completedTimestamp: Long,
     )
 

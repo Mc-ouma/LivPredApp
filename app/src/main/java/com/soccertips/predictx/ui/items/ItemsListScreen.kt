@@ -73,7 +73,7 @@ fun ItemsListScreen(
     viewModel: ItemsListViewModel = hiltViewModel(),
 ) {
     val category = remember(categoryId) {
-        categories.find { it.endpoint == categoryId }
+        categories.find { it.url == categoryId }
     } ?: categories.first()
 
     val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
@@ -84,7 +84,7 @@ fun ItemsListScreen(
 
     // Fetch items when the category or selected date changes
     LaunchedEffect(key1 = category, key2 = selectedDate) {
-        viewModel.fetchItems(category.endpoint, selectedDate, category.usesAlternativeUrl)
+        viewModel.fetchItems(category.url, selectedDate)
     }
 
     Scaffold(Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -126,7 +126,7 @@ fun ItemsListScreen(
                 is UiState.Error -> {
                     ErrorMessage(
                         message = "Failed to fetch games, please try again later.",
-                        onRetry = { viewModel.fetchItems(category.endpoint, selectedDate) },
+                        onRetry = { viewModel.fetchItems(category.url, selectedDate) },
                         modifier = Modifier.align(Alignment.Center),
                     )
                 }
@@ -136,7 +136,7 @@ fun ItemsListScreen(
                     if (items.isEmpty()) {
                         ErrorMessage(
                             message = "No games found for the selected date.",
-                            onRetry = { viewModel.fetchItems(category.endpoint, selectedDate) },
+                            onRetry = { viewModel.fetchItems(category.url, selectedDate) },
                             modifier = Modifier.align(Alignment.Center),
                         )
                     } else {

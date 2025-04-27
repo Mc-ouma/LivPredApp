@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.soccertips.predictx.data.local.entities.FavoriteItem
 import kotlinx.coroutines.flow.Flow
 
@@ -27,4 +28,7 @@ interface FavoriteDao {
 
     @Query("SELECT * FROM favorites WHERE mTime = :mTime AND mDate = :mDate")
     suspend fun getDueItem(mTime: String, mDate: String): List<FavoriteItem>
+
+    @Update
+    suspend fun updateFavoriteItem(favoriteItem: FavoriteItem)
 }

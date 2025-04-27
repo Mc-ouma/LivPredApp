@@ -25,6 +25,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Pred Compose"
+rootProject.name = "AI ScoreCast"
 include(":app")
-include(":shared-test")

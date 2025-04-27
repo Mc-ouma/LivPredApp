@@ -13,6 +13,7 @@ import com.soccertips.predictx.data.local.entities.FavoriteItem
 import com.soccertips.predictx.notification.NotificationScheduler
 import com.soccertips.predictx.notification.UpdateMatchNotificationWorker
 import com.soccertips.predictx.ui.UiState
+import com.soccertips.predictx.util.FavoriteCleanupWorker
 import com.soccertips.predictx.util.WorkManagerWrapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,6 +67,49 @@ class FavoritesViewModel @Inject constructor(
 
     init {
         loadFavorites()
+        scheduleCleanupCheck()
+    }
+
+    private fun scheduleCleanupCheck() {
+        val cleanupWorkRequest = PeriodicWorkRequestBuilder<FavoriteCleanupWorker>(
+            6, // Check every 6 hours
+            TimeUnit.HOURS
+        )
+            .addTag("favorite_cleanup")
+            .build()
+
+        workManagerWrapper.enqueueUniquePeriodicWork(
+            "favorite_cleanup",
+            cleanupWorkRequest
+        )
+
+        // Also run an immediate check
+        viewModelScope.launch {
+            cleanupOldCompletedMatches()
+        }
+    }
+
+    suspend fun cleanupOldCompletedMatches() {
+        val currentTime = System.currentTimeMillis()
+        val retentionPeriod = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+
+        // Get favorites with completion status
+        val favorites = favoriteItemDao.getAllFavorites()
+
+        favorites.forEach { item ->
+            // Check if match is completed and has completion timestamp
+            if ((item.mStatus == "Match Finished" || item.mStatus == "FT") && item.completedTimestamp != null) {
+                // If completed more than 24 hours ago, remove it
+                if (currentTime - item.completedTimestamp > retentionPeriod) {
+                    favoriteItemDao.deleteFavoriteItem(item.fixtureId)
+                    cancelNotification(item.fixtureId)
+                }
+            } else if (item.mStatus == "Match Finished" || item.mStatus == "FT") {
+                // Match is completed but doesn't have timestamp - update it
+                val updatedItem = item.copy(completedTimestamp = currentTime)
+                favoriteItemDao.updateFavoriteItem(updatedItem)
+            }
+        }
     }
 
     private fun scheduleNotificationUpdates(item: FavoriteItem) {

@@ -53,7 +53,7 @@ class ItemsListViewModel @Inject constructor(
 
 
     // Fetch data only if not already cached for the given date
-    fun fetchItems(categoryEndpoint: String, date: LocalDate?, usesAlternativeUrl: Boolean = false) {
+    fun fetchItems(categoryEndpoint: String, date: LocalDate?) {
         val cacheKey = "${categoryEndpoint}_$date"
         val cachedItems = cachedData.get(cacheKey)
 
@@ -71,7 +71,7 @@ class ItemsListViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
-                val response = repository.getCategoryData(categoryEndpoint, usesAlternativeUrl)
+                val response = repository.getCategoryData(categoryEndpoint)
 
                 val items = withContext(Dispatchers.IO) {
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -138,6 +138,7 @@ class ItemsListViewModel @Inject constructor(
                 pick = item.pick,
                 outcome = item.outcome,
                 color = item.color.toArgb(),
+                completedTimestamp = item.completedTimestamp
 
                 )
             if (isFavorite(item)) {

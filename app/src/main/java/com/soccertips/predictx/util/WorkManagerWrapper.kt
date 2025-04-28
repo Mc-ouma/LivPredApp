@@ -81,7 +81,10 @@ class RescheduleWorker(
                 try {
                     notificationScheduler.scheduleMatchNotification(favoriteItem)
                 } catch (e: Exception) {
-                    Timber.e(e, "Failed to reschedule notification for match ${favoriteItem.fixtureId}")
+                    Timber.e(
+                        e,
+                        "Failed to reschedule notification for match ${favoriteItem.fixtureId}"
+                    )
                 }
             }
 
@@ -92,4 +95,6 @@ class RescheduleWorker(
         }
     }
 }
+
+
 

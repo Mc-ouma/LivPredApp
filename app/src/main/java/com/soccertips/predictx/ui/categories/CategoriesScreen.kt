@@ -20,6 +20,7 @@ import com.soccertips.predictx.ui.UiState
 import com.soccertips.predictx.ui.components.ErrorMessage
 import com.soccertips.predictx.ui.components.LoadingIndicator
 import com.soccertips.predictx.ui.fixturedetails.EmptyScreen
+import com.soccertips.predictx.ui.fixturedetails.ErrorScreen
 import com.soccertips.predictx.viewmodel.CategoriesViewModel
 
 
@@ -37,10 +38,10 @@ fun CategoriesScreen(
         }
 
         is UiState.Error -> {
-            ErrorMessage(
-                (uiState as UiState.Error).message,
-                onRetry = { viewModel.retryLoadCategories() },
-                modifier = Modifier.fillMaxSize(),
+            ErrorScreen(
+                paddingValues = PaddingValues(16.dp),
+                message = "No internet connection. Please check your network.",
+                onRetry = { viewModel.retryLoadCategories() }
             )
         }
 
@@ -54,7 +55,7 @@ fun CategoriesScreen(
 
         UiState.Empty -> EmptyScreen(
             paddingValues = PaddingValues(16.dp),
-            message = "Error, Try Restarting App"
+            message = "No categories available. Join our Telegram channel for updates and support.",
         )
 
         else -> Unit

@@ -34,5 +34,6 @@ sealed class FixtureDetailsUiState {
         val lineups: List<TeamLineup>?,
         val fixtureEvents: List<FixtureEvent>?
     ) : FixtureDetailsUiState()
+
     data class Error(val message: String) : FixtureDetailsUiState()
 }

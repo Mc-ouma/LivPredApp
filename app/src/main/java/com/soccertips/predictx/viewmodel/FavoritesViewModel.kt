@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -176,7 +177,8 @@ class FavoritesViewModel @Inject constructor(
                 scheduleNotification(currentFavorites)
             } catch (e: Exception) {
                 _uiState.value =
-                    UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
+                    UiState.Error("An unexpected error occurred.")
+                Timber.e("Error restoring favorites: ${e.localizedMessage}")
             }
         }
     }

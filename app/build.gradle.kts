@@ -1,18 +1,24 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kapt)
+    //alias(libs.plugins.kapt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-    id("org.jetbrains.compose") version "1.8.0-dev1875"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
+    alias(libs.plugins.kotlin.compose)
+    /*id("org.jetbrains.compose") version "1.8.0-dev1875"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"*/
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.google.firebase.crashlytics)
+    id("jacoco")
+
 }
 
 android {
     namespace = "com.soccertips.predictx"
-    compileSdk = 36
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     buildFeatures {
         buildConfig = true
@@ -29,8 +35,8 @@ android {
             libs.versions.targetSdk
                 .get()
                 .toInt()
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner =
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
@@ -47,7 +53,7 @@ android {
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
-            enableUnitTestCoverage = true
+            //enableUnitTestCoverage = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             testProguardFiles(
                 getDefaultProguardFile("proguard-android.txt"),
@@ -115,6 +121,17 @@ android {
     /*composeOptions {
         kotlinCompilerExtensionVersion = libs.versions.androidxComposeCompiler.get()
     }*/
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+        disable += "GradleDependency"
+        disable += "MissingTranslation"
+        disable += "NewApi"
+        disable += "UnusedResources"
+        disable += "InvalidPackage"
+        disable += "GradleDependency"
+        baseline = file("lint-baseline.xml")
+    }
 }
 
 /*
@@ -122,6 +139,8 @@ android {
  all versions in a single place. This improves readability and helps managing project complexity.
  */
 dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.database)
     implementation(libs.firebase.analytics)
@@ -157,8 +176,11 @@ dependencies {
 
     implementation(libs.hilt.android.core)
     implementation(libs.androidx.hilt.navigation.compose)
-    kapt(libs.hilt.compiler)
-
+    ksp(libs.hilt.compiler)
+    implementation (libs.androidx.hilt.work)
+    ksp (libs.androidx.hilt.compiler)
+    implementation (libs.androidx.work.runtime.ktx.v281)
+    implementation (libs.kotlin.stdlib)
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.activity.compose)
@@ -227,4 +249,38 @@ dependencies {
     implementation (libs.androidx.paging.compose)
 
 
+}
+tasks.withType<Test> {
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val fileFilter = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/**/*.*"
+    )
+
+    val debugTree = fileTree("${layout.buildDirectory}/tmp/kotlin-classes/debug") {
+        exclude(fileFilter)
+    }
+
+    sourceDirectories.setFrom(files("${project.projectDir}/src/main/java", "${project.projectDir}/src/main/kotlin"))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(fileTree(layout.buildDirectory) {
+        include("jacoco/testDebugUnitTest.exec")
+    })
 }

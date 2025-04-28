@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,11 +22,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -34,7 +38,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -360,7 +366,39 @@ fun AppNavigation(fixtureId: String? = null) {
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()
     val uiState by categoriesViewModel.uiState.collectAsState()
     val sharedViewModel: SharedViewModel = hiltViewModel()
+    val context = LocalContext.current
 
+    if (uiState is UiState.Error) {
+        val errorMessage = (uiState as UiState.Error).message
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { categoriesViewModel.retryLoadCategories() },
+            title = { Text("Information") },
+            text = { Text(errorMessage) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Open Telegram channel
+                        val telegramUrl =
+                            "https://t.me/+SlbFLBrgmVJiMQiG" // Replace with your actual channel
+                        val intent = Intent(Intent.ACTION_VIEW, telegramUrl.toUri())
+                        try {
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Could not open link", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                    }
+                ) {
+                    Text("Join Our Telegram Channel")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { categoriesViewModel.retryLoadCategories() }) {
+                    Text("Retry")
+                }
+            }
+        )
+    }
 
     NavHost(
         navController = navController,

@@ -215,12 +215,10 @@ fun FixtureScoreAndScorers(
         is FixtureDetailsUiState.Error -> {
             ErrorScreen(
                 paddingValues = PaddingValues(0.dp),
-                message = (uiState as FixtureDetailsUiState.Error).message
+                message = "An error occurred. Please check your internet or check again later",
+                //(uiState as FixtureDetailsUiState.Error).message
+                onRetry = { }
             )
-        }
-
-        else -> {
-            EmptyScreen(paddingValues = PaddingValues(0.dp), message = "No data available")
         }
 
 

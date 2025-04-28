@@ -286,7 +286,19 @@ fun TeamScreen(
 
 
                 is UiState.Error ->
-                    ErrorScreen(paddingValues, (teamDataState as UiState.Error).message)
+                    ErrorScreen(paddingValues,
+                        "An error occurred. Please check your internet or check again later",
+                        //(teamDataState as UiState.Error).message
+                        onRetry = {
+                            viewModel.getTeams(leagueId, season, teamId)
+                            viewModel.getTeamData(teamId.toInt())
+                            viewModel.getPlayers(teamId)
+                            viewModel.getTransfers(teamId)
+                            viewModel.getNextFixtures(season, teamId, "10")
+                            sharedViewModel.fetchStandings(leagueId, season)
+                            sharedViewModel.fetchFixtures(season, teamId, teamId, "10")
+                        }
+                    )
 
 
                 UiState.Empty ->
@@ -452,7 +464,13 @@ fun <T> ShowDataOrLoading(
         }
 
         is UiState.Error ->
-            ErrorScreen(paddingValues = PaddingValues(0.dp), message = state.message)
+            ErrorScreen(paddingValues = PaddingValues(0.dp),
+                message = "An error occurred. Please check your internet or check again later",
+                //state.message
+                onRetry = {
+
+                }
+                )
 
 
         UiState.Empty ->

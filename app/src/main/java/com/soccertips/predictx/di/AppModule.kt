@@ -2,6 +2,7 @@ package com.soccertips.predictx.di
 
 import android.app.Application
 import android.content.Context
+import androidx.work.Configuration
 import androidx.work.WorkerFactory
 import com.soccertips.predictx.data.local.AppDatabase
 import com.soccertips.predictx.data.local.dao.FavoriteDao
@@ -39,6 +40,17 @@ object AppModule {
     fun provideContext(application: Application): Context {
         return application.applicationContext
     }
+
+    @Provides
+    @Singleton
+    fun provideWorkManagerConfiguration(
+        workerFactory: HiltWorkerFactory
+    ): Configuration {
+        return Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+    }
+
 
     @Named("defaultBaseUrl")
     @Provides
@@ -135,15 +147,17 @@ object AppModule {
     fun providePredictionRepository(
         apiService: ApiService,
     ): PredictionRepository =
-        PredictionRepository(apiService, lazy {  PreloadRepository.getInstance() })
+        PredictionRepository(apiService, lazy { PreloadRepository.getInstance() })
 
     @Provides
     @Singleton
     fun providePreloadRepository(
-        firebaseRepository: FirebaseRepository
+        firebaseRepository: FirebaseRepository,
+        networkUtils: com.soccertips.predictx.util.NetworkUtils
     ): PreloadRepository {
         return PreloadRepository.createInstance(
-            firebaseRepository
+            firebaseRepository,
+            networkUtils
         )
     }
 

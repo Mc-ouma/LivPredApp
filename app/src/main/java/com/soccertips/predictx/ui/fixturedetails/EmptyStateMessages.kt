@@ -1,17 +1,25 @@
 package com.soccertips.predictx.ui.fixturedetails
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.components.LoadingIndicator
 
@@ -28,18 +36,33 @@ fun LoadingScreen(paddingValues: PaddingValues) {
 }
 
 @Composable
-fun ErrorScreen(paddingValues: PaddingValues, message: String) {
+fun ErrorScreen(paddingValues: PaddingValues, message: String, onRetry: () -> Unit) {
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentAlignment = Alignment.Center,
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = message,
-            color = Color.Red,
-            style = MaterialTheme.typography.bodyLarge
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "😕",
+                fontSize = 64.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = message,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onRetry) {
+                Text("Retry")
+            }
+
+        }
     }
 }
 
@@ -89,4 +112,23 @@ fun EmptyStateMessages(
             }
         }
     }
+}
+
+@Preview(uiMode = 1)
+@Composable
+private fun ErrorScreenPreview() {
+    ErrorScreen(
+        paddingValues = PaddingValues(16.dp),
+        message = "An error occurred while fetching data.",
+        onRetry = {}
+    )
+    
+}
+@Preview(uiMode = 1)
+@Composable
+private fun EmptyScreenPreview() {
+    EmptyScreen(
+        paddingValues = PaddingValues(16.dp),
+        message = "No data available"
+    )
 }

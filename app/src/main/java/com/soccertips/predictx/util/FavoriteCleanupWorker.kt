@@ -1,14 +1,18 @@
 package com.soccertips.predictx.util
 
 import android.content.Context
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.soccertips.predictx.data.local.dao.FavoriteDao
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import timber.log.Timber
 
-class FavoriteCleanupWorker(
-    context: Context,
-    params: WorkerParameters,
+@HiltWorker
+class FavoriteCleanupWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
     private val favoriteDao: FavoriteDao
 ) : CoroutineWorker(context, params) {
 

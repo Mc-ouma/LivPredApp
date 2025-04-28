@@ -18,7 +18,7 @@ appUpdateKtx = "2.1.0"
 coilComposeVersion = "2.7.0"
 compiler = "1.5.15"
 compose = "1.0.0-beta01"
-compileSdk = "35"
+compileSdk = "36"
 converterGson = "2.11.0"
 coreSplashscreen = "1.0.1"
 dotenvKotlin = "6.5.1"
@@ -27,10 +27,12 @@ core = "1.6.1"
 coreTesting = "2.2.0"
 gson = "2.13.1"
 hilt = "2.56.2"
+hiltCompiler = "1.2.0"
+hiltWork = "1.2.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 kotlin = "2.1.10"
-kotlinxCoroutines = "1.10.2"
+kotlinStdlib = "2.1.20"
 kotlinxCoroutinesCore = "1.10.2"
 kotlinxCoroutinesGuava = "1.10.2"
 kotlinxCoroutinesTest = "1.10.2"
@@ -42,7 +44,6 @@ material3 = "1.3.2"
 material3WindowSizeClass = "1.3.2"
 material3AdaptiveNavigationSuite = "1.4.0-alpha13"
 minSdk = "26"
-mockitoCore = "5.17.0"
 mockitoInline = "5.2.0"
 mockitoKotlin = "5.4.0"
 okhttpVersion = "4.12.0"
@@ -60,6 +61,7 @@ timber = "5.0.1"
 targetSdk = "34"
 turbine = "1.2.0"
 work = "2.10.1"
+workRuntimeKtx = "2.10.1"
 workTesting = "2.10.1"
 firebaseCrashlytics = "19.4.3"
 googleGmsGoogleServices = "4.4.2"
@@ -89,7 +91,9 @@ androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", versi
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }
 androidx-core = { module = "androidx.test:core", version.ref = "core" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltCompiler" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "androidxHiltNavigationCompose" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
 androidx-junit = { module = "androidx.test.ext:junit", version.ref = "junitVersion" }
 androidx-lifecycle-runtimeCompose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-viewModelCompose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
@@ -101,6 +105,7 @@ androidx-paging-compose = { module = "androidx.paging:paging-compose", version.r
 androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "pagingRuntime" }
 androidx-rules = { module = "androidx.test:rules", version.ref = "rules" }
 androidx-runner = { module = "androidx.test:runner", version.ref = "runner" }
+androidx-work-runtime-ktx-v281 = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "workTesting" }
 app-update = { module = "com.google.android.play:app-update", version.ref = "appUpdate" }
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdateKtx" }
@@ -112,6 +117,8 @@ gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android-core = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 junit = { module = "junit:junit", version.ref = "junit" }
+
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlinStdlib" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinxCoroutinesGuava" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
@@ -139,8 +146,10 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
 android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 google-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "googleFirebaseCrashlytics" }
+
+

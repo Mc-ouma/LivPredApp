@@ -29,6 +29,7 @@ class SharedViewModel @Inject constructor(
     fun markSplashCompleted() {
         isSplashCompleted = true
     }
+
     // Cache duration in milliseconds (e.g., 5 minutes)
     private val cacheDuration = 15 * 60 * 1000L
 

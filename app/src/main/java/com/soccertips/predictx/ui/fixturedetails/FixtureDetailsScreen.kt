@@ -217,7 +217,10 @@ fun FixtureDetailsScreen(
 
             is FixtureDetailsUiState.Error -> ErrorScreen(
                 paddingValues,
-                (uiState as FixtureDetailsUiState.Error).message
+                "An error occurred. Please check your internet or try again later",
+                onRetry = {
+                    viewModel.fetchFixtureDetails(fixtureId)
+                }
             )
 
         }

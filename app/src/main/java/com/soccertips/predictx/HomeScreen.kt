@@ -21,10 +21,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -35,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -42,6 +48,7 @@ import androidx.navigation.compose.rememberNavController
 import com.soccertips.predictx.ui.categories.CategoriesScreen
 import com.soccertips.predictx.ui.favorites.FavoritesScreen
 import com.soccertips.predictx.viewmodel.FavoritesViewModel
+import com.soccertips.predictx.viewmodel.MainViewModel
 
 sealed class BottomNavScreens(
     open val route: String,
@@ -71,6 +78,10 @@ fun HomeScreen(navController: NavController) {
     rememberNavController()
     val favoritesViewModel: FavoritesViewModel = hiltViewModel()
     val favoriteCount by favoritesViewModel.favoriteCount.collectAsStateWithLifecycle(initialValue = 0)
+    val mainViewModel: MainViewModel = hiltViewModel()
+    val networkUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val items = listOf(
         BottomNavScreens.Categories,
         BottomNavScreens.Favorite(badgeCount = favoriteCount),
@@ -99,7 +110,27 @@ fun HomeScreen(navController: NavController) {
         }
     }
 
-    Scaffold(modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    LaunchedEffect(networkUiState) {
+        if (networkUiState is MainViewModel.UiState.NetworkError) {
+            val result = snackbarHostState.showSnackbar(
+                message = "No internet connection",
+                actionLabel = "Retry",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                mainViewModel.retryNetworkOperation()
+            }
+        }
+    }
+
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(16.dp)
+            )
+        },
         topBar = {
             HomeTopBar(
                 selectedItemIndex = selectedItemIndex,

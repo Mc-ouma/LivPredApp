@@ -1,6 +1,5 @@
 package com.soccertips.predictx.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.soccertips.predictx.data.model.Category
@@ -18,6 +17,9 @@ import javax.inject.Inject
 class CategoriesViewModel
 @Inject
 constructor(private val firebaseRepository: FirebaseRepository) : ViewModel() {
+
+    private val telegramMessage =
+        "No categories available. Join our Telegram channel for updates and support."
     // Private mutable state that holds the UI state (loading, success, error)
     private val _uiState = MutableStateFlow<UiState<List<Category>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Category>>> = _uiState.asStateFlow()
@@ -38,7 +40,7 @@ constructor(private val firebaseRepository: FirebaseRepository) : ViewModel() {
                             if (categories.isEmpty()) {
                                 Timber.tag("Categories").d("loadCategories: No categories found")
                                 _uiState.value =
-                                    UiState.Success(categories)//(getFallbackCategories())
+                                    UiState.Error(telegramMessage)//(getFallbackCategories())
                             } else {
                                 Timber.tag("Categories")
                                     .d("loadCategories: Categories loaded successfully")
@@ -48,13 +50,13 @@ constructor(private val firebaseRepository: FirebaseRepository) : ViewModel() {
                         onFailure = { error ->
                             Timber.tag("Categories")
                                 .e(error, "loadCategories: Error loading categories")
-                            _uiState.value = UiState.Error("Failed to load categories")
+                            _uiState.value = UiState.Error(telegramMessage)
                             // _uiState.value = UiState.Success(getFallbackCategories())
                         }
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = UiState.Error("Failed to load categories")
+                _uiState.value = UiState.Error(telegramMessage)
 
             }
         }

@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.soccertips.predictx.data.local.dao.FavoriteDao
 import com.soccertips.predictx.data.local.entities.FavoriteItem
 
-@Database(entities = [FavoriteItem::class], version = 2, exportSchema = false)
+@Database(entities = [FavoriteItem::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun favoriteDao(): FavoriteDao
 
@@ -19,7 +19,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // No changes needed for this migration
+                database.execSQL("ALTER TABLE favorites ADD COLUMN completedTimestamp INTEGER DEFAULT 0 NOT NULL")
             }
         }
 

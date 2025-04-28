@@ -2,6 +2,7 @@ package com.soccertips.predictx.notification
 
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.soccertips.predictx.data.model.FixtureResponse
@@ -17,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
+@HiltWorker
 class UpdateMatchNotificationWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
@@ -73,7 +75,7 @@ class UpdateMatchNotificationWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun updateNotification(fixtureId: String, fixtureResponse: FixtureResponse) {
+    private fun updateNotification(fixtureId: String, fixtureResponse: FixtureResponse) {
         val notificationManager = NotificationManagerCompat.from(applicationContext)
 
         // Customize the notification content based on the updated match details

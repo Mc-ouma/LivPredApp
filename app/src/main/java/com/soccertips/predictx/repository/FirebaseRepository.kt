@@ -4,6 +4,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.Category
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -26,8 +27,15 @@ class FirebaseRepository @Inject constructor() {
                     for (categorySnapshot in snapshot.children) {
                         val url = categorySnapshot.child("url").getValue(String::class.java) ?: ""
                         val name = categorySnapshot.child("name").getValue(String::class.java) ?: ""
+                        val iconResIdString = categorySnapshot.child("iconResId")
+                            .getValue(String::class.java)
+                        val colorHex = categorySnapshot.child("colorHex")
+                            .getValue(String::class.java)
 
-                        categories.add(Category(url, name))
+                        val iconResId = getIconResourceId(iconResIdString)
+
+
+                        categories.add(Category(url, name, iconResId, colorHex))
                     }
                     trySend(Result.success(categories))
                 } catch (e: Exception) {
@@ -44,5 +52,22 @@ class FirebaseRepository @Inject constructor() {
 
         categoriesRef.addValueEventListener(listener)
         awaitClose { categoriesRef.removeEventListener(listener) }
+    }
+
+    private fun getIconResourceId(iconName: String?): Int {
+        if (iconName == null) return R.drawable.outline_add_circle_outline_24 // Default icon
+
+        return when (iconName) {
+            "ic_trending_up_24" -> R.drawable.ic_trending_up_24
+            "ic_compare_arrows_24" -> R.drawable.ic_compare_arrows_24
+            "ic_filter_2_24" -> R.drawable.ic_filter_2_24
+            "ic_star_24" -> R.drawable.ic_star_24
+            "ic_dashboard_customize_24" -> R.drawable.ic_dashboard_customize_24
+            "ic_hourglass_split_24" -> R.drawable.ic_hourglass_split_24
+            "ic_house_24" -> R.drawable.ic_house_24
+            "ic_add_circle_24" -> R.drawable.outline_add_circle_outline_24
+            // Add more mappings as needed
+            else -> R.drawable.outline_add_circle_outline_24 // Default icon
+        }
     }
 }

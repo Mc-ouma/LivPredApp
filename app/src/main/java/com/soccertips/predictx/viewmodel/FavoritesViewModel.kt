@@ -25,6 +25,7 @@ import timber.log.Timber
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import androidx.core.content.edit
 
 @RequiresApi(Build.VERSION_CODES.S)
 @HiltViewModel
@@ -99,7 +100,7 @@ class FavoritesViewModel @Inject constructor(
 
         favorites.forEach { item ->
             // Check if match is completed and has completion timestamp
-            if ((item.mStatus == "Match Finished" || item.mStatus == "FT") && item.completedTimestamp != null) {
+            if (item.mStatus == "Match Finished" || item.mStatus == "FT") {
                 // If completed more than 24 hours ago, remove it
                 if (currentTime - item.completedTimestamp > retentionPeriod) {
                     favoriteItemDao.deleteFavoriteItem(item.fixtureId)
@@ -149,6 +150,11 @@ class FavoritesViewModel @Inject constructor(
     fun loadFavorites() {
         viewModelScope.launch {
 
+            //use a flag to check if the notification is already scheduled in this session
+            val sharedPrefs = getApplication<Application>()
+                .getSharedPreferences("notification_tracking", Context.MODE_PRIVATE)
+            val isNotificationScheduled = sharedPrefs.getBoolean("is_notification_scheduled", false)
+
             favoriteItemDao.getAllFavoritesFlow()
                 .distinctUntilChanged()
                 .collect { favoriteItems ->
@@ -157,7 +163,13 @@ class FavoritesViewModel @Inject constructor(
                         date
                     }
                     _uiState.value = UiState.Success(sortedItems)
-                    scheduleNotification(sortedItems)
+
+                    // Schedule notifications only if not already scheduled
+                    if (!isNotificationScheduled) {
+                        scheduleNotification(sortedItems)
+                        // Update the flag to indicate that notifications have been scheduled
+                        sharedPrefs.edit() { putBoolean("is_notification_scheduled", true) }
+                    }
                 }
         }
     }

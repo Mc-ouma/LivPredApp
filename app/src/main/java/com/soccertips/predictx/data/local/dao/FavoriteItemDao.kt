@@ -31,4 +31,7 @@ interface FavoriteDao {
 
     @Update
     suspend fun updateFavoriteItem(favoriteItem: FavoriteItem)
+
+    @Query("SELECT * FROM favorites WHERE fixtureId = :fixtureId")
+    fun getFavoriteItemByFixtureId(fixtureId: String): FavoriteItem
 }

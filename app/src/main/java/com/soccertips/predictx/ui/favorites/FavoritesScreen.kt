@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -256,8 +257,8 @@ fun FavoriteItemCard(
                 indication = ripple()
             )
             .padding(4.dp),
-        colors = cardColors,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+         colors = cardColors,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -278,7 +279,7 @@ fun FavoriteItemCard(
                 homeTeam = homeTeamDetails,
                 awayTeam = awayTeamDetails,
                 matchTime = item.mTime ?: "TBD",
-                score = null // We likely don't have score in FavoriteItem
+                score = item.outcome // We likely don't have score in FavoriteItem
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -291,4 +292,31 @@ fun FavoriteItemCard(
             )
         }
     }
+}
+
+@Preview
+@Composable
+private fun FavoriteItemPrev() {
+    val item = FavoriteItem(
+        fixtureId = "12345",
+        homeTeam = "Home Team",
+        awayTeam = "Away Team",
+        league = "Premier League",
+        mDate = "2023-10-01",
+        mTime = "15:00",
+        mStatus = "Scheduled",
+        outcome = "2-0",
+        pick = null,
+        color = Color.Red.toArgb(),
+        hLogoPath = null,
+        aLogoPath = null,
+        leagueLogo = null,
+        completedTimestamp = 0L
+    )
+
+    FavoriteItemCard(
+        item = item,
+        isFavorite = true,
+        onClick = {},
+    )
 }

@@ -29,6 +29,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 
@@ -65,7 +67,7 @@ fun Menu() {
                 tint = MaterialTheme.colorScheme.primary
             )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(expanded = expanded, shape = MaterialTheme.shapes.small, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
                 text = { Text("Share") },
                 onClick = {
@@ -362,4 +364,10 @@ fun OtherFeedbackDialog(onDismiss: () -> Unit, onSubmit: (String, String) -> Uni
             })
         }
     )
+}
+
+@Preview
+@Composable
+private fun MenuPreview() {
+    Menu()
 }

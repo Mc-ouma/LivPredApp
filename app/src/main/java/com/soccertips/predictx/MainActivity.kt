@@ -44,10 +44,12 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
+import androidx.navigation.NavDeepLink
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -130,19 +132,20 @@ class MainActivity : ComponentActivity() {
 
         prefetchReviewInfo()
 
+        // Handle notification intent
+        val initialFixtureId = intent?.getStringExtra("fixtureId")
+        fixtureId.value = initialFixtureId
+
         setContent {
             PredictXTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
-                    AppNavigation(fixtureId.value)
-
+                    AppNavigation(fixtureId = fixtureId.value)
                 }
             }
         }
-        // Handle notification intent
-        handleNotificationIntent(intent, fixtureId)
 
         // Initialize Firebase Analytics
         analytics = FirebaseAnalytics.getInstance(this)
@@ -314,14 +317,24 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleNotificationIntent(intent, null)
+        handleNotificationIntent(intent, fixtureId)
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    private fun handleNotificationIntent(intent: Intent?, fixtureId: MutableState<String?>?) {
-        val id = intent?.getStringExtra("fixtureId")
-        if (!id.isNullOrEmpty()) {
-            fixtureId?.value = id
+    private fun handleNotificationIntent(intent: Intent?, mutableFixtureId: MutableState<String?>?) {
+        val idFromIntent = intent?.getStringExtra("fixtureId")
+        if (!idFromIntent.isNullOrEmpty()) {
+            mutableFixtureId?.value = idFromIntent
+            setContent {
+                PredictXTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        AppNavigation(fixtureId = idFromIntent)
+                    }
+                }
+            }
         }
     }
 
@@ -467,6 +480,10 @@ fun AppNavigation(fixtureId: String? = null) {
         composable(
             Routes.FixtureDetails.route,
             arguments = listOf(navArgument("fixtureId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink {
+                uriPattern = "app://com.soccertips.predictx/fixture/{fixtureId}"
+                action = Intent.ACTION_VIEW
+            }),
             enterTransition = {
                 fadeIn(
                     animationSpec = tween(
@@ -488,11 +505,11 @@ fun AppNavigation(fixtureId: String? = null) {
                 )
             },
         ) { backStackEntry ->
-            val fixtureId = backStackEntry.arguments?.getString("fixtureId") ?: ""
+            val fixtureIdArgument = backStackEntry.arguments?.getString("fixtureId") ?: ""
 
             FixtureDetailsScreen(
                 navController = navController,
-                fixtureId = fixtureId,
+                fixtureId = fixtureIdArgument,
             )
         }
         composable(
@@ -519,10 +536,18 @@ fun AppNavigation(fixtureId: String? = null) {
         }
     }
     // Handle deep links after splash screen
-    LaunchedEffect(fixtureId) {
+    LaunchedEffect(fixtureId, sharedViewModel.isSplashCompleted) {
         if (sharedViewModel.isSplashCompleted) {
             fixtureId?.let { id ->
-                navController.navigate(Routes.FixtureDetails.createRoute(id))
+                if (id.isNotEmpty() && navController.currentDestination?.route != Routes.FixtureDetails.createRoute(id)) {
+                    navController.navigate(Routes.FixtureDetails.createRoute(id)) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
             }
         }
     }

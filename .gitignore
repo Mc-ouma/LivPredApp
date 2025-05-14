@@ -1,6 +1,8 @@
 *.iml
 .gradle
 /local.properties
+/.idea
+/.idea/misc.xml
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -10,9 +12,12 @@
 .DS_Store
 /build
 /captures
-.externalNativeBuild
+/.externalNativeBuild
 .cxx
 local.properties
 app/src/main/java/com/soccertips/predictx/network/Constants.kt
 app/assets/env
+/app/google-services.json
+/app/lint-baseline.xml
 Constants.kt
+/app/release/

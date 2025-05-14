@@ -80,94 +80,89 @@ class UpdateMatchNotificationWorker @AssistedInject constructor(
         }
     }
 
-private suspend fun updateNotification(fixtureId: String, fixtureResponse: FixtureResponse) {
-    val notificationManager = NotificationManagerCompat.from(applicationContext)
-    val sharedPrefs = applicationContext.getSharedPreferences("match_notifications", Context.MODE_PRIVATE)
-    val entryPoint = EntryPoints.get(applicationContext, UpdateMatchNotificationWorkerEntryPoint::class.java)
-    val favoriteDao = entryPoint.favoriteDao()
+    private suspend fun updateNotification(fixtureId: String, fixtureResponse: FixtureResponse) {
+        val notificationManager = NotificationManagerCompat.from(applicationContext)
+        val sharedPrefs = applicationContext.getSharedPreferences("match_notifications", Context.MODE_PRIVATE)
+        val entryPoint = EntryPoints.get(applicationContext, UpdateMatchNotificationWorkerEntryPoint::class.java)
+        val favoriteDao = entryPoint.favoriteDao()
 
-    // Check if the fixture status is valid for displaying notifications
-    val fixture = fixtureResponse.response.firstOrNull() ?: return
-    val homeGoals = fixture.goals?.home ?: 0
-    val awayGoals = fixture.goals?.away ?: 0
-    val matchStatus = fixture.fixture.status.short
+        val fixture = fixtureResponse.response.firstOrNull() ?: return
+        val homeGoals = fixture.goals?.home ?: 0
+        val awayGoals = fixture.goals?.away ?: 0
+        val matchStatus = fixture.fixture.status.short // API's short status code, e.g., "NS", "1H", "FT", "PST"
 
-    // Create score key to track this fixture's last score
-    val scoreKey = "score_${fixtureId}"
-    val lastScore = sharedPrefs.getString(scoreKey, null)
-    val currentScore = "$homeGoals-$awayGoals"
+        val scoreKey = "score_${fixtureId}"
+        val lastScore = sharedPrefs.getString(scoreKey, null)
+        val currentScore = "$homeGoals-$awayGoals"
 
-    // Fetch current favorite item from the database
-    val favoriteItem = withContext(Dispatchers.IO) {
-        favoriteDao.getFavoriteItemByFixtureId(fixtureId)
-    } ?: return
+        val favoriteItem = withContext(Dispatchers.IO) {
+            favoriteDao.getFavoriteItemByFixtureId(fixtureId)
+        } ?: return
 
-    // Update match status and outcome based on fixture status
-    val updatedFavoriteItem = when (matchStatus) {
-        "FT", "PEN", "AET" -> {
+        // Define status categories
+        val finishedStatuses = setOf("FT", "PEN", "AET")
+        val inactiveCancelStatuses = setOf("PST", "CANC", "SUSP", "ABD", "AWD", "WO", "INT") // Postponed, Cancelled, Suspended, Abandoned, Technical Loss, WalkOver, Interrupted
+        val activeOngoingStatuses = setOf("1H", "2H", "HT") // Add other live statuses like "LIVE" if your API uses them
 
-            // For finished matches, set score as outcome and update status
-            val scoreOutcome = "$homeGoals - $awayGoals"
-            // Also determine match result for easier filtering/display
-            val matchResult = when {
-                homeGoals > awayGoals -> "HOME_WIN"
-                awayGoals > homeGoals -> "AWAY_WIN"
-                else -> "DRAW"
+        // Update FavoriteItem: mStatus, outcome, and completedTimestamp
+        val updatedFavoriteItem = favoriteItem.copy(
+            mStatus = when (matchStatus) { // Update our internal mStatus representation
+                "1H" -> "1st Half"
+                "2H" -> "2nd Half"
+                "HT" -> "Half Time"
+                // For other statuses (finished, inactive, NS, etc.), use the direct short status from the API.
+                // This ensures mStatus in DB reflects the latest from API if not specially mapped.
+                else -> matchStatus
+            },
+            outcome = if (matchStatus in finishedStatuses) {
+                "$homeGoals - $awayGoals"
+            } else {
+                favoriteItem.outcome // Keep existing outcome if not finished
+            },
+            completedTimestamp = if (matchStatus in finishedStatuses && favoriteItem.completedTimestamp == null) {
+                System.currentTimeMillis() // Set completion timestamp once when finished
+            } else {
+                favoriteItem.completedTimestamp // Keep existing or null
             }
+        )
 
-            favoriteItem.copy(
-                mStatus = matchStatus,
-                outcome = scoreOutcome,
-                completedTimestamp = System.currentTimeMillis()
-            )
+        withContext(Dispatchers.IO) {
+            favoriteDao.updateFavoriteItem(updatedFavoriteItem)
         }
-        "1H", "2H", "HT" -> {
-            favoriteItem.copy(
-                mStatus = when (matchStatus) {
-                    "1H" -> "1st Half"
-                    "2H" -> "2nd Half"
-                    "HT" -> "Half Time"
-                    else -> matchStatus
-                }
-            )
-        }
-        else -> favoriteItem
-    }
 
-    // Update the item in database
-    withContext(Dispatchers.IO) {
-        favoriteDao.updateFavoriteItem(updatedFavoriteItem)
-    }
-
-    // Handle match completion - CRITICAL: Cancel worker outside string assignment
-    if (matchStatus == "FT") {
-        // Cancel the periodic worker when match is finished
         val workerName = "update_notification_${fixtureId}"
-        workManagerWrapper.cancelUniqueWork(workerName)
-        Timber.Forest.d("Cancelled update notifications for finished match: $fixtureId")
-    }
 
-    // Only show notification if score has changed or match has finished
-    if (lastScore != currentScore || matchStatus == "FT") {
-        val notificationText = if (matchStatus == "FT") {
-            "Final Score: ${fixture.goals?.home} - ${fixture.goals?.away}"
+        // Handle terminal states: finished, or cancelled/postponed etc.
+        if (matchStatus in finishedStatuses || matchStatus in inactiveCancelStatuses) {
+            workManagerWrapper.cancelUniqueWork(workerName)
+            notificationManager.cancel(fixtureId.hashCode()) // Remove notification from tray
+            sharedPrefs.edit { remove(scoreKey) } // Clean up stored score for this fixture
+            Timber.Forest.d("Worker and notification cancelled for fixture $fixtureId due to terminal status: $matchStatus")
+            return // Stop further processing for these states
+        }
+
+        // Handle active, ongoing matches for notifications
+        if (matchStatus in activeOngoingStatuses) {
+            if (lastScore != currentScore) {
+                val notificationText = "Score: $homeGoals - $awayGoals"
+                val notification = notificationBuilder.buildMatchUpdateNotification(fixtureResponse)
+                    .setContentText(notificationText)
+                    .build()
+                try {
+                    notificationManager.notify(fixtureId.hashCode(), notification)
+                    sharedPrefs.edit { putString(scoreKey, currentScore) } // Save the new score
+                } catch (e: SecurityException) {
+                    Timber.Forest.e(e, "Notification permission not granted for $fixtureId")
+                }
+            } else {
+                Timber.Forest.i("Score unchanged for active match $fixtureId ($currentScore). No notification update.")
+            }
         } else {
-            "Score: ${fixture.goals?.home} - ${fixture.goals?.away}"
+            // For other statuses not explicitly handled for notification (e.g., "NS" - Not Started),
+            // do nothing regarding notifications. The worker will continue for future updates.
+            // This prevents initial "Score: 0-0" notifications for "NS" matches.
+            Timber.Forest.i("Match $fixtureId status '$matchStatus' is not an active ongoing status for notifications, or no score change if it were. No notification action.")
         }
-
-        val updatedNotification = notificationBuilder.buildMatchUpdateNotification(fixtureResponse)
-            .setContentText(notificationText)
-            .build()
-
-        try {
-            notificationManager.notify(fixtureId.hashCode(), updatedNotification)
-            // Save the new score
-            sharedPrefs.edit { putString(scoreKey, currentScore) }
-        } catch (e: SecurityException) {
-            Timber.Forest.e(e, "Notification permission not granted")
-        }
-    } else {
-        Timber.Forest.i("Skipping notification for $fixtureId - score unchanged: $currentScore")
     }
-}}
+}
 

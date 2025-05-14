@@ -35,8 +35,8 @@ android {
             libs.versions.targetSdk
                 .get()
                 .toInt()
-        versionCode = 3
-        versionName = "1.0.2"
+        versionCode = 4
+        versionName = "1.0.3"
 
         testInstrumentationRunner =
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
@@ -235,7 +235,7 @@ dependencies {
     implementation(libs.accompanist.navigation.material)
 
     // WorkManager
-    implementation(libs.work.runtime)
+    //implementation(libs.work.runtime)
 
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.kotlinx.coroutines.test)

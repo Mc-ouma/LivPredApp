@@ -24,7 +24,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PredictX"
         tools:targetApi="31">
-        <receiver android:name=".notification.NotificationReceiver" />
+        <receiver android:name=".notification.NotificationReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_MATCH_REMINDER" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.startup.InitializationProvider"
@@ -57,3 +61,4 @@
     </application>
 
 </manifest>
+

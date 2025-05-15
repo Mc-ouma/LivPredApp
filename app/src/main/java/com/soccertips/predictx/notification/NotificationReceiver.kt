@@ -10,9 +10,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+/**
+ * BroadcastReceiver for handling match reminder notifications.
+ *
+ * This receiver listens for the custom action "com.soccertips.predictx.ACTION_MATCH_REMINDER"
+ * to comply with Android 15's requirement that intents must have actions that match intent-filters.
+ */
 class NotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        // First check if the action matches what we expect
+        if (intent.action != "com.soccertips.predictx.ACTION_MATCH_REMINDER") {
+            Timber.w("Received intent with unexpected action: ${intent.action}")
+            return
+        }
+
         val fixtureId = intent.getStringExtra("fixtureId") ?: return
 
         CoroutineScope(Dispatchers.Default).launch {
@@ -54,7 +66,4 @@ class NotificationReceiver : BroadcastReceiver() {
         }
     }
 }
-
-
-
 

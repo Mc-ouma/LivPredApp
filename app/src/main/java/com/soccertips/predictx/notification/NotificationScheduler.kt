@@ -54,6 +54,8 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
 
         if (alarmManager.canScheduleExactAlarms()) {
             val intent = Intent(context, NotificationReceiver::class.java).apply {
+                // Adding action to comply with Android 15 intent security requirements
+                action = "com.soccertips.predictx.ACTION_MATCH_REMINDER"
                 putExtra("fixtureId", item.fixtureId)
                 putExtra("homeTeam", item.homeTeam)
                 putExtra("awayTeam", item.awayTeam)
@@ -117,7 +119,9 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
 
     fun cancelNotification(fixtureId: String) {
         // Cancel AlarmManager notification
-        val intent = Intent(context, NotificationReceiver::class.java)
+        val intent = Intent(context, NotificationReceiver::class.java).apply {
+            action = "com.soccertips.predictx.ACTION_MATCH_REMINDER"
+        }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             fixtureId.hashCode(),
@@ -133,5 +137,4 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
             .cancelAllWorkByTag("match_notification_$fixtureId")
     }
 }
-
 

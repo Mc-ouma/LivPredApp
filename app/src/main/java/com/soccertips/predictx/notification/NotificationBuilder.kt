@@ -38,7 +38,6 @@ class NotificationBuilder(private val context: Context) {
             )
     }
 
-    //New function
     fun buildMatchUpdateNotification(fixtureResponse: FixtureResponse): NotificationCompat.Builder {
         val fixture = fixtureResponse.response.first()
         return NotificationCompat.Builder(context, NotificationHelper.MATCH_UPDATES_CHANNEL_ID)
@@ -80,7 +79,10 @@ class NotificationBuilder(private val context: Context) {
 
     private fun createPendingIntent(item: FavoriteItem): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            action = Intent.ACTION_VIEW
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                   Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                   Intent.FLAG_ACTIVITY_NEW_TASK
             putExtra("fixtureId", item.fixtureId)
             putExtra("notification_opened", true)
         }
@@ -93,10 +95,12 @@ class NotificationBuilder(private val context: Context) {
         )
     }
 
-    //New function
     private fun createPendingIntent(fixtureId: String): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+            action = Intent.ACTION_VIEW
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                   Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                   Intent.FLAG_ACTIVITY_NEW_TASK
             putExtra("fixtureId", fixtureId)
             putExtra("notification_opened", true)
         }

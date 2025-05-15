@@ -5,8 +5,8 @@
 
     <style name="Theme.PredictX.Splash" parent="Theme.PredictX">
         <item name="android:windowBackground">@color/splash_background</item>
-        <item name="android:navigationBarColor">@color/splash_background</item>
-        <item name="android:statusBarColor">@color/splash_background</item>
+        <!-- Removing deprecated status and navigation bar colors for Android 15 compatibility -->
     </style>
 
 </resources>
+

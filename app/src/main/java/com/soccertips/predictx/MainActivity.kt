@@ -41,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import androidx.core.net.toUri
-import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.NavDeepLink
@@ -108,8 +107,14 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Use the modern edge-to-edge API
         enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Note: setDecorFitsSystemWindows is deprecated in Android 15
+        // WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Instead, let the Activity handle edge-to-edge automatically
 
         // Initialize AppUpdateManager
         if (UPDATE_TYPE == AppUpdateType.FLEXIBLE) {
@@ -569,3 +574,4 @@ fun ShowSnackbarForCompleteUpdate(appUpdateManager: AppUpdateManager) {
         }
     }
 }
+

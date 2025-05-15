@@ -8,13 +8,16 @@ import com.soccertips.predictx.data.local.AppDatabase
 import com.soccertips.predictx.data.local.dao.FavoriteDao
 import com.soccertips.predictx.network.ApiService
 import com.soccertips.predictx.network.Constants
+import com.soccertips.predictx.network.DnsFailureInterceptor
 import com.soccertips.predictx.network.FixtureDetailsService
 import com.soccertips.predictx.network.NetworkUtils
+import com.soccertips.predictx.network.SocketTaggingInterceptor
 import com.soccertips.predictx.notification.HiltWorkerFactory
 import com.soccertips.predictx.notification.NotificationBuilder
 import com.soccertips.predictx.repository.FirebaseRepository
 import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.repository.PreloadRepository
+import com.soccertips.predictx.util.NetworkTaggingInitializer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -99,12 +102,20 @@ object AppModule {
     fun provideDefaultOkHttpClient(
         context: Context,
         loggingInterceptor: HttpLoggingInterceptor,
-        @Named("cacheInterceptor") cacheInterceptor: Interceptor
+        @Named("cacheInterceptor") cacheInterceptor: Interceptor,
+        socketTaggingInterceptor: SocketTaggingInterceptor,
+        dnsFailureInterceptor: DnsFailureInterceptor,
+        fallbackDns: DnsFailureInterceptor.FallbackDns
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .dns(fallbackDns) // Use custom DNS with fallback mechanism
             .cache(provideCache(context))
+            .addInterceptor(dnsFailureInterceptor) // Add DNS failure handling
+            .addInterceptor(socketTaggingInterceptor)
             .addInterceptor(loggingInterceptor)
             .addNetworkInterceptor(cacheInterceptor)
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .build()
     }
 
@@ -182,15 +193,16 @@ object AppModule {
     fun provideOkHttpClient(
         context: Context,
         loggingInterceptor: HttpLoggingInterceptor,
-        @Named("fixtureDetailsHeaderInterceptor") headerInterceptor: Interceptor
+        @Named("fixtureDetailsHeaderInterceptor") headerInterceptor: Interceptor,
+        socketTaggingInterceptor: SocketTaggingInterceptor,
+        dnsFailureInterceptor: DnsFailureInterceptor,
+        fallbackDns: DnsFailureInterceptor.FallbackDns
     ): OkHttpClient {
         val cacheDir = File(context.cacheDir, "http_cache")
         val cache = Cache(cacheDir, CACHE_SIZE.toLong())
 
         val customCacheInterceptor = Interceptor { chain ->
             var request = chain.request()
-
-            // Get the request URL to determine which cache time to apply
             val url: HttpUrl = request.url
             val requestBuilder = request.newBuilder()
 
@@ -233,10 +245,15 @@ object AppModule {
         }
 
         return OkHttpClient.Builder()
+            .dns(fallbackDns) // Use custom DNS with fallback mechanism
+            .addInterceptor(dnsFailureInterceptor) // Add DNS failure handling
+            .addInterceptor(socketTaggingInterceptor)
             .addInterceptor(loggingInterceptor)
             .addInterceptor(headerInterceptor)
-            .addInterceptor(customCacheInterceptor) // Add custom cache interceptor
-            .cache(cache) // Apply cache to the client
+            .addInterceptor(customCacheInterceptor)
+            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .cache(cache)
             .build()
     }
 
@@ -271,4 +288,30 @@ object AppModule {
         return hiltWorkerFactory
     }
 
+    @Provides
+    @Singleton
+    fun provideSocketTaggingInterceptor(): SocketTaggingInterceptor {
+        return SocketTaggingInterceptor()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkTaggingInitializer(): NetworkTaggingInitializer {
+        return NetworkTaggingInitializer()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDnsFailureInterceptor(context: Context): DnsFailureInterceptor {
+        return DnsFailureInterceptor(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFallbackDns(): DnsFailureInterceptor.FallbackDns {
+        return DnsFailureInterceptor.FallbackDns()
+    }
+
 }
+
+

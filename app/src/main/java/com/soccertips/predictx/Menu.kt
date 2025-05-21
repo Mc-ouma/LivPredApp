@@ -53,6 +53,7 @@ fun Menu() {
     var showAboutUs by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var showShare by remember { mutableStateOf(false) }
+    var showRateus by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -81,7 +82,10 @@ fun Menu() {
             )
             DropdownMenuItem(
                 text = { Text("Rate Us") },
-                onClick = { },
+                onClick = {
+                    showRateus = true
+                    expanded = false
+                },
                 leadingIcon = {
                     Icon(
                         Icons.Outlined.RateReview,
@@ -134,6 +138,9 @@ fun Menu() {
     if (showFeedback) {
         Feedback(onDismiss = { showFeedback = false })
     }
+    if (showRateus) {
+        RateUs(onDismiss = { showRateus = false })
+    }
 
     if (showAboutUs) {
         AboutUs(onDismiss = { showAboutUs = false })
@@ -141,6 +148,29 @@ fun Menu() {
     if (showShare) {
         Share(text = "Check out AI ScoreCast, the best football prediction app. ", context = context)
     }
+}
+
+@Composable
+fun RateUs(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rate Us") },
+        text = {
+            Text(
+                "If you enjoy using our app, please take a moment to rate us. Your feedback helps us improve and provide you with the best experience."
+            )
+        },
+        confirmButton = {
+            Text("OK", modifier = Modifier.clickable {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = "https://play.google.com/store/apps/details?id=com.soccertips.predictx".toUri()
+                }
+                context.startActivity(intent)
+                onDismiss()
+             })
+        }
+    )
 }
 
 

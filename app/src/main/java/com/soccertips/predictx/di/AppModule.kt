@@ -14,6 +14,7 @@ import com.soccertips.predictx.network.NetworkUtils
 import com.soccertips.predictx.network.SocketTaggingInterceptor
 import com.soccertips.predictx.notification.HiltWorkerFactory
 import com.soccertips.predictx.notification.NotificationBuilder
+import com.soccertips.predictx.notification.NotificationScheduler
 import com.soccertips.predictx.repository.FirebaseRepository
 import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.repository.PreloadRepository
@@ -284,6 +285,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideNotificationScheduler(@ApplicationContext context: Context): NotificationScheduler {
+        return NotificationScheduler(context)
+    }
+
+    @Provides
+    @Singleton
     fun provideWorkerFactory(hiltWorkerFactory: HiltWorkerFactory): WorkerFactory {
         return hiltWorkerFactory
     }
@@ -313,5 +320,4 @@ object AppModule {
     }
 
 }
-
 

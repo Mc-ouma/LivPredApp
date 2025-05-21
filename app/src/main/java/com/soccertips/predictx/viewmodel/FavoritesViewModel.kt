@@ -26,6 +26,7 @@ import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import androidx.core.content.edit
+import androidx.work.OneTimeWorkRequestBuilder
 
 @RequiresApi(Build.VERSION_CODES.S)
 @HiltViewModel
@@ -33,7 +34,6 @@ class FavoritesViewModel @Inject constructor(
     application: Application,
     private val favoriteItemDao: FavoriteDao,
     private val workManagerWrapper: WorkManagerWrapper,
-    context: Context,
     private val notificationScheduler: NotificationScheduler,
 ) : AndroidViewModel(application) {
 
@@ -73,45 +73,27 @@ class FavoritesViewModel @Inject constructor(
     }
 
     private fun scheduleCleanupCheck() {
-        val cleanupWorkRequest = PeriodicWorkRequestBuilder<FavoriteCleanupWorker>(
+        // Schedule periodic cleanup
+        val periodicCleanupWorkRequest = PeriodicWorkRequestBuilder<FavoriteCleanupWorker>(
             6, // Check every 6 hours
             TimeUnit.HOURS
         )
-            .addTag("favorite_cleanup")
+            .addTag("favorite_cleanup_periodic") // This method is part of the Builder
             .build()
 
         workManagerWrapper.enqueueUniquePeriodicWork(
-            "favorite_cleanup",
-            cleanupWorkRequest
+            "favorite_cleanup_periodic",
+            periodicCleanupWorkRequest
         )
 
-        // Also run an immediate check
-        viewModelScope.launch {
-            cleanupOldCompletedMatches()
-        }
-    }
-
-    suspend fun cleanupOldCompletedMatches() {
-        val currentTime = System.currentTimeMillis()
-        val retentionPeriod = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
-
-        // Get favorites with completion status
-        val favorites = favoriteItemDao.getAllFavorites()
-
-        favorites.forEach { item ->
-            // Check if match is completed and has completion timestamp
-            if (item.mStatus == "Match Finished" || item.mStatus == "FT") {
-                // If completed more than 24 hours ago, remove it
-                if (currentTime - item.completedTimestamp > retentionPeriod) {
-                    favoriteItemDao.deleteFavoriteItem(item.fixtureId)
-                    cancelNotification(item.fixtureId)
-                }
-            } else if (item.mStatus == "Match Finished" || item.mStatus == "FT") {
-                // Match is completed but doesn't have timestamp - update it
-                val updatedItem = item.copy(completedTimestamp = currentTime)
-                favoriteItemDao.updateFavoriteItem(updatedItem)
-            }
-        }
+        // Enqueue an immediate cleanup task as well
+        val immediateCleanupWorkRequest = OneTimeWorkRequestBuilder<FavoriteCleanupWorker>()
+            .addTag("favorite_cleanup_immediate") // This method is part of the Builder
+            .build()
+        workManagerWrapper.enqueueUniqueOneTimeWork(
+            "favorite_cleanup_immediate",
+            immediateCleanupWorkRequest
+        )
     }
 
     private fun scheduleNotificationUpdates(item: FavoriteItem) {
@@ -120,7 +102,9 @@ class FavoritesViewModel @Inject constructor(
             .build()
 
         val updateWork = PeriodicWorkRequestBuilder<UpdateMatchNotificationWorker>(
-            15, // Repeat interval
+           // 15, // Repeat interval
+            //test
+            1, // Repeat interval
             TimeUnit.MINUTES
         )
             .setInputData(updateData)
@@ -153,6 +137,9 @@ class FavoritesViewModel @Inject constructor(
             //use a flag to check if the notification is already scheduled in this session
             val sharedPrefs = getApplication<Application>()
                 .getSharedPreferences("notification_tracking", Context.MODE_PRIVATE)
+
+            // For testing: Always reset the notification scheduled flag
+            sharedPrefs.edit { putBoolean("is_notification_scheduled", false) }
             val isNotificationScheduled = sharedPrefs.getBoolean("is_notification_scheduled", false)
 
             favoriteItemDao.getAllFavoritesFlow()
@@ -164,11 +151,12 @@ class FavoritesViewModel @Inject constructor(
                     }
                     _uiState.value = UiState.Success(sortedItems)
 
-                    // Schedule notifications only if not already scheduled
+                    // Schedule notifications since we reset the flag
                     if (!isNotificationScheduled) {
+                        Timber.d("Scheduling notifications for ${sortedItems.size} favorites")
                         scheduleNotification(sortedItems)
                         // Update the flag to indicate that notifications have been scheduled
-                        sharedPrefs.edit() { putBoolean("is_notification_scheduled", true) }
+                        sharedPrefs.edit { putBoolean("is_notification_scheduled", true) }
                     }
                 }
         }

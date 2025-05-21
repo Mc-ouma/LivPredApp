@@ -1,6 +1,7 @@
 package com.soccertips.predictx.util
 
 import android.content.Context
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
@@ -9,14 +10,16 @@ import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.soccertips.predictx.data.local.AppDatabase
+import com.soccertips.predictx.data.local.dao.FavoriteDao
 import com.soccertips.predictx.notification.NotificationScheduler
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.guava.await
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
-import kotlin.collections.forEach
 
 interface WorkManagerWrapper {
     fun enqueueUniquePeriodicWork(uniqueWorkName: String, workRequest: PeriodicWorkRequest)
@@ -58,24 +61,28 @@ class WorkManagerWrapperImpl @Inject constructor(private val workManager: WorkMa
     }
 }
 
-class RescheduleWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class RescheduleWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val favoriteDao: FavoriteDao,
+    private val notificationScheduler: NotificationScheduler
 ) : CoroutineWorker(context, params) {
 
-    private val notificationScheduler = NotificationScheduler(applicationContext)
+    @AssistedFactory
+    interface Factory {
+        fun create(context: Context, workerParameters: WorkerParameters): RescheduleWorker
+    }
 
     override suspend fun doWork(): Result {
         return try {
             val now = LocalDateTime.now()
             val currentDate = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
             val currentTime = now.format(DateTimeFormatter.ofPattern("HH:mm"))
-            val tasks = AppDatabase.getDatabase(applicationContext)
-                .favoriteDao()
-                .getDueItem(
-                    mTime = currentTime,
-                    mDate = currentDate
-                )
+            val tasks = favoriteDao.getDueItem(
+                mTime = currentTime,
+                mDate = currentDate
+            )
 
             tasks.forEach { favoriteItem ->
                 try {
@@ -95,6 +102,4 @@ class RescheduleWorker(
         }
     }
 }
-
-
 

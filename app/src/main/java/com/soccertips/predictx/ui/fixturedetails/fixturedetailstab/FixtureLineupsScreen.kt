@@ -28,7 +28,21 @@ import com.soccertips.predictx.data.model.lineups.TeamColors
 import com.soccertips.predictx.data.model.lineups.TeamLineup
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
+import androidx.core.graphics.toColorInt
 
+// Helper function to safely parse color strings
+private fun parseColorOrFallback(colorString: String?, fallback: Color): Color {
+    if (colorString == null) return fallback
+    return try {
+        if (colorString.startsWith("#")) {
+            Color(colorString.toColorInt())
+        } else {
+            Color("#$colorString".toColorInt())
+        }
+    } catch (_: Exception) {
+        fallback
+    }
+}
 
 @Composable
 fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
@@ -85,12 +99,12 @@ fun TeamLineupColumn(lineup: TeamLineup) {
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(
-                    text = lineup.team.name,
+                    text = lineup.team.name ?: "",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = lineup.formation,
+                    text = lineup.formation ?: "",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -156,8 +170,9 @@ fun PlayerRow(
 
     val playerColor = if (player.pos == "G") teamColors.goalkeeper else teamColors.player
 
-    val primaryColor = Color(android.graphics.Color.parseColor("#${playerColor.primary}"))
-    val numberColor = Color(android.graphics.Color.parseColor("#${playerColor.number}"))
+    // Use helper function instead of try-catch in composable
+    val primaryColor = parseColorOrFallback(playerColor.primary, MaterialTheme.colorScheme.primary)
+    val numberColor = parseColorOrFallback(playerColor.number, MaterialTheme.colorScheme.onPrimary)
 
     Row(
         modifier = Modifier
@@ -181,7 +196,7 @@ fun PlayerRow(
         // Player Name and Position
         Column {
             Text(
-                text = player.name?.take(20) ?: "Unknown Player",
+                text = player.name?.take(20) ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -194,6 +209,3 @@ fun PlayerRow(
         }
     }
 }
-
-
-

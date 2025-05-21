@@ -7,48 +7,22 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
-import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
-import androidx.navigation.NavDeepLink
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -60,17 +34,7 @@ import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.soccertips.predictx.data.model.Category
-import com.soccertips.predictx.navigation.Routes
-import com.soccertips.predictx.ui.UiState
-import com.soccertips.predictx.ui.categories.CategoriesScreen
-import com.soccertips.predictx.ui.favorites.FavoritesScreen
-import com.soccertips.predictx.ui.fixturedetails.FixtureDetailsScreen
-import com.soccertips.predictx.ui.items.ItemsListScreen
-import com.soccertips.predictx.ui.team.TeamScreen
 import com.soccertips.predictx.ui.theme.PredictXTheme
-import com.soccertips.predictx.viewmodel.CategoriesViewModel
-import com.soccertips.predictx.viewmodel.SharedViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -92,7 +56,7 @@ class MainActivity : ComponentActivity() {
     private var cachedReviewInfo: ReviewInfo? = null
 
     //Track update/review request status with preferences
-    private val sharedPrefs by lazy {
+     val sharedPrefs by lazy {
         getSharedPreferences("app_prefs", MODE_PRIVATE)
     }
 
@@ -120,12 +84,20 @@ class MainActivity : ComponentActivity() {
         if (UPDATE_TYPE == AppUpdateType.FLEXIBLE) {
             appUpdateManager.registerListener(installStateUpdatedListener)
         }
-        //Request exact alarm permission
-        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-        if (!alarmManager.canScheduleExactAlarms()) {
-            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-            showExactAlarmPermissionDialog()
+
+        //Request exact alarm permission - only on Android 12 (S) or higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+            try {
+                if (!alarmManager.canScheduleExactAlarms()) {
+                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    showExactAlarmPermissionDialog()
+                }
+            } catch (e: Exception) {
+                Timber.e("Error checking exact alarm permission: ${e.message}")
+            }
         }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
@@ -137,9 +109,8 @@ class MainActivity : ComponentActivity() {
 
         prefetchReviewInfo()
 
-        // Handle notification intent
-        val initialFixtureId = intent?.getStringExtra("fixtureId")
-        fixtureId.value = initialFixtureId
+        // Handle notification intent that launched the app
+        handleNotificationIntent(intent)
 
         setContent {
             PredictXTheme {
@@ -160,8 +131,8 @@ class MainActivity : ComponentActivity() {
         }
 
         // Check for app updates when the activity is created
-        // checkForAppUpdates()
-        // requestReview()
+         checkForAppUpdates()
+         requestReview()
     }
 
     private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
@@ -322,27 +293,67 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleNotificationIntent(intent, fixtureId)
-    }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun handleNotificationIntent(intent: Intent?, mutableFixtureId: MutableState<String?>?) {
-        val idFromIntent = intent?.getStringExtra("fixtureId")
-        if (!idFromIntent.isNullOrEmpty()) {
-            mutableFixtureId?.value = idFromIntent
-            setContent {
-                PredictXTheme {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        AppNavigation(fixtureId = idFromIntent)
+        // Set the new intent
+        setIntent(intent)
+
+        // Process the notification intent
+        if (intent.action == "com.soccertips.predictx.ACTION_VIEW_MATCH" ||
+            intent.getBooleanExtra("fromNotification", false)) {
+
+            // Get the fixture ID from the intent
+            val idFromIntent = intent.getStringExtra("fixtureId")
+
+            if (!idFromIntent.isNullOrEmpty()) {
+                // Update the fixture ID state
+                fixtureId.value = idFromIntent
+
+                // Store the ID for navigation handling
+                sharedPrefs.edit {
+                    putString("pending_navigation_fixture_id", idFromIntent)
+                    putLong("notification_open_timestamp", System.currentTimeMillis())
+                    // Flag specifically for foreground navigation
+                    putBoolean("force_navigate_from_foreground", true)
+                }
+
+                Timber.d("Foreground notification click for fixture ID: $idFromIntent - triggering immediate navigation")
+
+                // Force immediate navigation by recreating the content
+                setContent {
+                    PredictXTheme {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            AppNavigation(fixtureId = idFromIntent, forceNavigate = true)
+                        }
                     }
                 }
             }
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun handleNotificationIntent(intent: Intent?) {
+        if (intent?.action == "com.soccertips.predictx.ACTION_VIEW_MATCH" || intent?.getBooleanExtra("fromNotification", false) == true) {
+            val idFromIntent = intent.getStringExtra("fixtureId")
+
+            if (!idFromIntent.isNullOrEmpty()) {
+                // Set the fixture ID that should be displayed
+                fixtureId.value = idFromIntent
+
+                // Store the ID for navigation handling
+                sharedPrefs.edit {
+                    putString("pending_navigation_fixture_id", idFromIntent)
+                    putLong("notification_open_timestamp", System.currentTimeMillis())
+                    // Mark that this came from a notification for special handling
+                    putBoolean("from_notification_click", true)
+                }
+
+                Timber.d("Notification click detected for fixture ID: $idFromIntent")
+            }
+        }
+    }
 
     @Composable
     fun ShowSnackbarForCompleteUpdateWrapper(appUpdateManager: AppUpdateManager) {
@@ -373,187 +384,6 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         if (UPDATE_TYPE == AppUpdateType.FLEXIBLE) {
             appUpdateManager.unregisterListener(installStateUpdatedListener)
-        }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.S)
-@Composable
-fun AppNavigation(fixtureId: String? = null) {
-    val navController = rememberNavController()
-    val categoriesViewModel: CategoriesViewModel = hiltViewModel()
-    val uiState by categoriesViewModel.uiState.collectAsState()
-    val sharedViewModel: SharedViewModel = hiltViewModel()
-    val context = LocalContext.current
-
-    if (uiState is UiState.Error) {
-        val errorMessage = (uiState as UiState.Error).message
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { categoriesViewModel.retryLoadCategories() },
-            title = { Text("Information") },
-            text = { Text(errorMessage) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Open Telegram channel
-                        val telegramUrl =
-                            "https://t.me/+SlbFLBrgmVJiMQiG" // Replace with your actual channel
-                        val intent = Intent(Intent.ACTION_VIEW, telegramUrl.toUri())
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Could not open link", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                    }
-                ) {
-                    Text("Join Our Telegram Channel")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { categoriesViewModel.retryLoadCategories() }) {
-                    Text("Retry")
-                }
-            }
-        )
-    }
-
-    NavHost(
-        navController = navController,
-        enterTransition = { EnterTransition.None },
-        exitTransition = { ExitTransition.None },
-        startDestination = Routes.Splash.route
-    ) {
-        // Splash Screen
-        composable(Routes.Splash.route) {
-            SplashScreen(
-                navController = navController,
-                initialFixtureId = fixtureId,
-                onSplashCompleted = { sharedViewModel.markSplashCompleted() }
-            )
-        }
-
-        composable(Routes.Home.route) {
-            HomeScreen(navController = navController)
-        }
-        composable(Routes.Categories.route) {
-            CategoriesScreen(navController = navController)
-        }
-        composable(
-            Routes.Favorites.route
-        ) {
-            FavoritesScreen(navController = navController)
-        }
-
-        composable(
-            Routes.ItemsList.route,
-            arguments = listOf(navArgument("categoryId") { type = NavType.StringType }),
-            enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
-            },
-            exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
-            },
-
-            ) { backStackEntry ->
-
-            val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
-            val decodeUrl = java.net.URLDecoder.decode(categoryId, "UTF-8")
-            if (uiState is UiState.Success) {
-                val categories = (uiState as UiState.Success<List<Category>>).data
-                ItemsListScreen(
-                    navController = navController,
-                    categoryId = decodeUrl,
-                    categories = categories,
-                )
-            }
-        }
-        composable(
-            Routes.FixtureDetails.route,
-            arguments = listOf(navArgument("fixtureId") { type = NavType.StringType }),
-            deepLinks = listOf(navDeepLink {
-                uriPattern = "app://com.soccertips.predictx/fixture/{fixtureId}"
-                action = Intent.ACTION_VIEW
-            }),
-            enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
-            },
-            exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
-            },
-        ) { backStackEntry ->
-            val fixtureIdArgument = backStackEntry.arguments?.getString("fixtureId") ?: ""
-
-            FixtureDetailsScreen(
-                navController = navController,
-                fixtureId = fixtureIdArgument,
-            )
-        }
-        composable(
-            Routes.TeamDetails.route,
-            arguments = listOf(
-                navArgument("teamId") { type = NavType.StringType },
-                navArgument("leagueId") { type = NavType.StringType },
-                navArgument("season") { type = NavType.StringType }),
-
-            )
-        { backStackEntry ->
-            val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
-            val leagueId = backStackEntry.arguments?.getString("leagueId") ?: ""
-            val season = backStackEntry.arguments?.getString("season") ?: ""
-
-            TeamScreen(
-                navController = navController,
-                teamId = teamId,
-                leagueId = leagueId,
-                season = season,
-
-
-                )
-        }
-    }
-    // Handle deep links after splash screen
-    LaunchedEffect(fixtureId, sharedViewModel.isSplashCompleted) {
-        if (sharedViewModel.isSplashCompleted) {
-            fixtureId?.let { id ->
-                if (id.isNotEmpty() && navController.currentDestination?.route != Routes.FixtureDetails.createRoute(id)) {
-                    navController.navigate(Routes.FixtureDetails.createRoute(id)) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            }
         }
     }
 }

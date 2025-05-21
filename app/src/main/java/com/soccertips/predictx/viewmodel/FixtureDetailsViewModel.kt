@@ -12,14 +12,19 @@ import com.soccertips.predictx.repository.FixtureDetailsRepository
 import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import timber.log.Timber
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import com.soccertips.predictx.data.model.statistics.Response as StatsResponse
 
@@ -52,62 +57,128 @@ class FixtureDetailsViewModel @Inject constructor(
     private val _predictionsState = MutableStateFlow<UiState<List<Response>>>(UiState.Loading)
     val predictionsState: StateFlow<UiState<List<Response>>> = _predictionsState.asStateFlow()
 
-    // Cache duration in milliseconds (e.g., 15 minutes)
-    private val cacheDuration = 15 * 60 * 1000L
+    // Cache duration in milliseconds (e.g., 30 minutes for less frequent updates)
+    private val cacheDuration = 30 * 60 * 1000L
+    // Use shorter cache duration for live matches data (5 minutes)
+    private val liveCacheDuration = 5 * 60 * 1000L
 
-    // Define a data class to hold cached data and its expiry timestamp
-    data class CachedData<T>(val data: T, val expiryTime: Long)
+    // Define a data class to hold cached data and its expiry timestamp with statistics
+    data class CachedData<T>(
+        val data: T,
+        val expiryTime: Long,
+        val timestamp: Long = System.currentTimeMillis(),
+        var hitCount: Int = 0
+    )
 
-    // Create a cache for each data type
-    private val fixtureDetailsCache = LruCache<String, CachedData<FixtureDetailsUiState>>(10)
-    private val headToHeadCache = LruCache<String, CachedData<UiState<List<FixtureDetails>>>>(10)
-    private val lineupsCache = LruCache<String, CachedData<UiState<List<TeamLineup>>>>(10)
-    private val fixtureStatsCache = LruCache<String, CachedData<UiState<List<StatsResponse>>>>(10)
-    private val fixtureEventsCache = LruCache<String, CachedData<UiState<List<FixtureEvent>>>>(10)
-    private val predictionsCache = LruCache<String, CachedData<UiState<List<Response>>>>(10)
+    // Cache statistics
+    private val cacheHits = AtomicInteger(0)
+    private val cacheMisses = AtomicInteger(0)
 
-    // Generic function to fetch data and use cache
+    // Create a cache for each data type with optimized sizes
+    private val fixtureDetailsCache = LruCache<String, CachedData<FixtureDetailsUiState>>(30)
+    private val headToHeadCache = LruCache<String, CachedData<UiState<List<FixtureDetails>>>>(20)
+    private val lineupsCache = LruCache<String, CachedData<UiState<List<TeamLineup>>>>(20)
+    private val fixtureStatsCache = LruCache<String, CachedData<UiState<List<StatsResponse>>>>(20)
+    private val fixtureEventsCache = LruCache<String, CachedData<UiState<List<FixtureEvent>>>>(20)
+    private val predictionsCache = LruCache<String, CachedData<UiState<List<Response>>>>(20)
+
+    // Track active fetch jobs to prevent duplicate requests
+    private val activeJobs = mutableMapOf<String, Job>()
+
+    // Generic function to fetch data and use cache with improved concurrency handling
     private suspend fun <T> fetchData(
         cache: LruCache<String, CachedData<UiState<T>>>,
         cacheKey: String,
         dataFetcher: suspend () -> UiState<T>,
-        stateFlow: MutableStateFlow<UiState<T>>
+        stateFlow: MutableStateFlow<UiState<T>>,
+        isLiveData: Boolean = false
     ) {
+        // Check for an active job with this key and return if already running
+        synchronized(activeJobs) {
+            if (activeJobs[cacheKey]?.isActive == true) {
+                Timber.d("Skipping duplicate fetch for key: $cacheKey - already in progress")
+                return
+            }
+        }
+
         val cachedData = cache.get(cacheKey)
         val currentTime = System.currentTimeMillis()
+        val cachePeriod = if (isLiveData) liveCacheDuration else cacheDuration
 
         if (cachedData != null && cachedData.expiryTime > currentTime) {
             // Use cached data if it's not expired
+            cachedData.hitCount++
+            cacheHits.incrementAndGet()
             stateFlow.value = cachedData.data
-            Timber.d("Data fetched from cache for key: $cacheKey")
-        } else {
-            // Fetch new data
-            stateFlow.value = UiState.Loading
+            Timber.d("Data fetched from cache for key: $cacheKey (hit #${cachedData.hitCount})")
+            return
+        }
+
+        // Record cache miss
+        cacheMisses.incrementAndGet()
+
+        // Create and track a new job
+        val fetchJob = viewModelScope.launch {
             try {
+                // Set loading state
+                stateFlow.value = UiState.Loading
+
+                // Fetch new data
                 val result = dataFetcher()
-                cache.put(cacheKey, CachedData(result, currentTime + cacheDuration))
+
+                // Cache successful results
+                if (result is UiState.Success) {
+                    cache.put(cacheKey, CachedData(result, currentTime + cachePeriod))
+                    Timber.d("Data fetched from network and cached for key: $cacheKey")
+                }
+
                 stateFlow.value = result
-                Timber.d("Data fetched from network for key: $cacheKey")
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 stateFlow.value = UiState.Error(e.message ?: "Failed to fetch data")
                 Timber.e(e, "Error fetching data for key: $cacheKey")
+            } finally {
+                // Remove job from active jobs when complete
+                synchronized(activeJobs) {
+                    activeJobs.remove(cacheKey)
+                }
             }
+        }
+
+        // Store the job
+        synchronized(activeJobs) {
+            activeJobs[cacheKey] = fetchJob
         }
     }
 
-
     fun fetchFixtureDetails(fixtureId: String) {
         viewModelScope.launch {
-            val cachedData = fixtureDetailsCache.get(fixtureId)
+            val cacheKey = "fixture_details_$fixtureId"
+
+            // Check for active job
+            synchronized(activeJobs) {
+                if (activeJobs[cacheKey]?.isActive == true) {
+                    Timber.d("Skipping duplicate fixture details fetch - already in progress")
+                    return@launch
+                }
+            }
+
+            val cachedData = fixtureDetailsCache.get(cacheKey)
             val currentTime = System.currentTimeMillis()
 
             if (cachedData != null && cachedData.expiryTime > currentTime) {
                 // Use cached data if it's not expired
+                cachedData.hitCount++
+                cacheHits.incrementAndGet()
                 _uiState.value = cachedData.data
-                Timber.d("Fixture details fetched from cache for fixtureId: $fixtureId")
-            } else {
-                // Fetch new data
-                _uiState.value = FixtureDetailsUiState.Loading
+                Timber.d("Fixture details fetched from cache (hit #${cachedData.hitCount})")
+                return@launch
+            }
+
+            cacheMisses.incrementAndGet()
+            _uiState.value = FixtureDetailsUiState.Loading
+
+            val fetchJob = viewModelScope.launch {
                 try {
                     val fixtureDetails = fixtureDetailsRepository.getFixtureDetails(fixtureId)
                     val successState = FixtureDetailsUiState.Success(
@@ -119,16 +190,46 @@ class FixtureDetailsViewModel @Inject constructor(
                         fixtureEvents = null
                     )
                     fixtureDetailsCache.put(
-                        fixtureId,
+                        cacheKey,
                         CachedData(successState, currentTime + cacheDuration)
                     )
                     _uiState.value = successState
-                    Timber.d("Fixture details fetched successfully for fixtureId: $fixtureId")
+                    Timber.d("Fixture details fetched successfully: $fixtureId")
+
+                    // Prefetch related data in parallel after getting fixture details
+                    prefetchRelatedData(fixtureId, fixtureDetails.teams.home.id.toString(),
+                                      fixtureDetails.teams.away.id.toString())
+
                 } catch (e: Exception) {
-                    _uiState.value =
-                        FixtureDetailsUiState.Error(e.message ?: "Failed to fetch fixture details")
-                    Timber.e(e, "Failed to fetch fixture details for fixtureId: $fixtureId")
+                    if (e is CancellationException) throw e
+                    _uiState.value = FixtureDetailsUiState.Error(
+                        e.message ?: "Failed to fetch fixture details"
+                    )
+                    Timber.e(e, "Failed to fetch fixture details: $fixtureId")
+                } finally {
+                    synchronized(activeJobs) {
+                        activeJobs.remove(cacheKey)
+                    }
                 }
+            }
+
+            synchronized(activeJobs) {
+                activeJobs[cacheKey] = fetchJob
+            }
+        }
+    }
+
+    // Prefetch related data in parallel to improve perceived performance
+    private fun prefetchRelatedData(fixtureId: String, homeTeamId: String, awayTeamId: String) {
+        viewModelScope.launch {
+            supervisorScope {
+                // Use async to launch parallel requests but don't await results
+                // They will be loaded into cache for fast access when user navigates to those tabs
+                async { fetchFixtureStats(fixtureId, homeTeamId, awayTeamId) }
+                async { fetchFixtureEvents(fixtureId) }
+                async { fetchFormAndPredictions(fixtureId) }
+                async { fetchHeadToHead(homeTeamId, awayTeamId) }
+                async { fetchLineups(fixtureId) }
             }
         }
     }
@@ -139,24 +240,34 @@ class FixtureDetailsViewModel @Inject constructor(
                 cache = fixtureStatsCache,
                 cacheKey = "fixture_stats_$fixtureId",
                 dataFetcher = {
-                    try {
-                        val homeTeamStats =
-                            fixtureDetailsRepository.getFixtureStats(fixtureId, homeTeamId).response
-                        val awayTeamStats =
-                            fixtureDetailsRepository.getFixtureStats(fixtureId, awayTeamId).response
+                    supervisorScope {
+                        try {
+                            // Launch both requests in parallel
+                            val homeStatsDeferred = async {
+                                fixtureDetailsRepository.getFixtureStats(fixtureId, homeTeamId).response
+                            }
+                            val awayStatsDeferred = async {
+                                fixtureDetailsRepository.getFixtureStats(fixtureId, awayTeamId).response
+                            }
 
-                        val combinedStats = homeTeamStats + awayTeamStats
-                        if (combinedStats.isNotEmpty()) {
-                            UiState.Success(combinedStats)
-                        } else {
-                            UiState.Error("No fixture stats available yet")
+                            // Await both results
+                            val homeTeamStats = homeStatsDeferred.await()
+                            val awayTeamStats = awayStatsDeferred.await()
+
+                            val combinedStats = homeTeamStats + awayTeamStats
+                            if (combinedStats.isNotEmpty()) {
+                                UiState.Success(combinedStats)
+                            } else {
+                                UiState.Error("No fixture stats available yet")
+                            }
+                        } catch (e: Exception) {
+                            if (e is CancellationException) throw e
+                            UiState.Error("Failed to fetch fixture stats: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        UiState.Error("Failed to fetch fixture stats")
-
                     }
                 },
-                stateFlow = _fixtureStatsState
+                stateFlow = _fixtureStatsState,
+                isLiveData = true // Stats can change during a match
             )
         }
     }
@@ -176,10 +287,12 @@ class FixtureDetailsViewModel @Inject constructor(
                             UiState.Error("No fixture events available yet")
                         }
                     } catch (e: Exception) {
-                        UiState.Error("Failed to fetch fixture events")
+                        if (e is CancellationException) throw e
+                        UiState.Error("Failed to fetch fixture events: ${e.message}")
                     }
                 },
-                stateFlow = _fixtureEventsState
+                stateFlow = _fixtureEventsState,
+                isLiveData = true // Events change during a match
             )
         }
     }
@@ -201,10 +314,12 @@ class FixtureDetailsViewModel @Inject constructor(
                             UiState.Error("No head to head data available yet")
                         }
                     } catch (e: Exception) {
-                        UiState.Error("Failed to fetch head to head")
+                        if (e is CancellationException) throw e
+                        UiState.Error("Failed to fetch head to head: ${e.message}")
                     }
                 },
                 stateFlow = _headToHeadState
+                // Not live data - head-to-head history doesn't change during a match
             )
         }
     }
@@ -223,10 +338,12 @@ class FixtureDetailsViewModel @Inject constructor(
                             UiState.Error("No lineups available yet")
                         }
                     } catch (e: Exception) {
-                        UiState.Error("Failed to fetch lineups")
+                        if (e is CancellationException) throw e
+                        UiState.Error("Failed to fetch lineups: ${e.message}")
                     }
                 },
-                stateFlow = _lineupsState
+                stateFlow = _lineupsState,
+                isLiveData = false // Lineups don't change frequently after announced
             )
         }
     }
@@ -246,12 +363,31 @@ class FixtureDetailsViewModel @Inject constructor(
                             UiState.Error("No predictions available yet")
                         }
                     } catch (e: Exception) {
-                        UiState.Error("Failed to fetch predictions")
+                        if (e is CancellationException) throw e
+                        UiState.Error("Failed to fetch predictions: ${e.message}")
                     }
                 },
                 stateFlow = _predictionsState
+                // Not live data - predictions don't change during the match
             )
         }
+    }
+
+    // Get cache statistics for debugging/analytics
+    fun getCacheStatistics(): Map<String, Any> {
+        return mapOf(
+            "hits" to cacheHits.get(),
+            "misses" to cacheMisses.get(),
+            "hitRatio" to if (cacheHits.get() + cacheMisses.get() > 0) {
+                cacheHits.get().toFloat() / (cacheHits.get() + cacheMisses.get())
+            } else 0f,
+            "fixtureDetailsCacheSize" to fixtureDetailsCache.size(),
+            "headToHeadCacheSize" to headToHeadCache.size(),
+            "lineupsCacheSize" to lineupsCache.size(),
+            "fixtureStatsCacheSize" to fixtureStatsCache.size(),
+            "fixtureEventsCacheSize" to fixtureEventsCache.size(),
+            "predictionsCacheSize" to predictionsCache.size()
+        )
     }
 
     fun getHomeGoalScorers(
@@ -265,8 +401,7 @@ class FixtureDetailsViewModel @Inject constructor(
                 if (playerName.isBlank()) {
                     null
                 } else {
-                    //val lastName = playerName.split(" ").lastOrNull() ?: ""
-                    val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}’"
+                    val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}'"
                     playerName to elapsed
                 }
             }
@@ -282,13 +417,14 @@ class FixtureDetailsViewModel @Inject constructor(
                 if (playerName.isBlank()) {
                     null
                 } else {
-                    //val lastName = playerName.split(" ").lastOrNull() ?: ""
-                    val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}’"
+                    val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}'"
                     playerName to elapsed
                 }
             }
 
     fun formatTimestamp(timestamp: Long): String {
+        if (timestamp <= 0) return "TBD" // Return a default value for invalid timestamps
+
         val formatter =
             DateTimeFormatter
                 .ofPattern("yyyy-MM-dd HH:mm")
@@ -297,18 +433,33 @@ class FixtureDetailsViewModel @Inject constructor(
     }
 
     fun getMatchStatusText(
-        status: String,
+        status: String?,
         elapsed: Int,
         timestamp: Long,
     ): String =
         when (status) {
+            null -> "TBD" // Handle null status
             "Match Finished", "FT" -> ""
             else -> {
                 if (elapsed > 0) {
-                    "$elapsed’"
-                } else {
+                    "$elapsed'"
+                } else if (timestamp > 0) {
                     formatTimestamp(timestamp)
+                } else {
+                    "TBD" // Fallback for invalid timestamps
                 }
             }
         }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Cancel any active jobs when the ViewModel is cleared to prevent memory leaks
+        synchronized(activeJobs) {
+            activeJobs.values.forEach { it.cancel() }
+            activeJobs.clear()
+        }
+
+        // Log cache statistics
+        Timber.d("Cache statistics: ${getCacheStatistics()}")
+    }
 }

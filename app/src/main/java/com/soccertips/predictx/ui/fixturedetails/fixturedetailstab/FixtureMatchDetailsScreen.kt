@@ -385,7 +385,7 @@ fun getCardColor(
 
 @Composable
 fun FixtureDetailCard(fixture: Fixture) {
-    val date = fixture.date.let {
+    val date = fixture.date?.let {
         try {
             val inputDate = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
             val outputDate = DateTimeFormatter.ofPattern("dd-MM-yyyy")
@@ -395,9 +395,9 @@ fun FixtureDetailCard(fixture: Fixture) {
         }
     } ?: "Date unavailable"
 
-    val referee = fixture.referee.takeIf { it.isNotBlank() } ?: "Referee not assigned"
-    val venueName = fixture.venue.name.takeIf { it.isNotBlank() } ?: "Venue unknown"
-    val venueCity = fixture.venue.city.takeIf { it.isNotBlank() } ?: "City unknown"
+    val referee = fixture.referee?.takeIf { it.isNotBlank() } ?: "Referee not known"
+    val venueName = fixture.venue?.name?.takeIf { it.isNotBlank() } ?: "Venue unknown"
+    val venueCity = fixture.venue?.city?.takeIf { it.isNotBlank() } ?: "City unknown"
 
    /* val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current*/

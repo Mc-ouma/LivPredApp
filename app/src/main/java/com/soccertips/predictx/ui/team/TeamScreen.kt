@@ -191,26 +191,78 @@ fun TeamScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    val countryName = when (val state = teamDataState) {
+                    when (val state = teamDataState) {
                         is UiState.Success<*> -> {
                             val data = state.data
                             if (data is Response) {
-                                data.team.country
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    // Team Logo
+                                    Image(
+                                        painter = rememberAsyncImagePainter(model = data.team.logo),
+                                        contentDescription = "Team Logo",
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    // Team Name and Country
+                                    Column {
+                                        Text(
+                                            text = data.team.name,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = data.team.country,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
                             } else {
-                                "Team Info"
+                                Text(
+                                    text = "Team Info",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
                             }
                         }
-
-                        is UiState.Loading -> if (isTeamDataLoading) "Loading Team Info..." else "Team Info"
-                        is UiState.Error -> "Error"
-                        UiState.Empty -> "No Data"
-                        is UiState.ShowSnackbar -> TODO()
+                        is UiState.Loading -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isTeamDataLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Loading Team Info...",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Team Info",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                            }
+                        }
+                        is UiState.Error -> Text(
+                            text = "Error Loading Team",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        UiState.Empty -> Text(
+                            text = "No Team Data",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        is UiState.ShowSnackbar -> Text(
+                            text = "Team Info",
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
-                    Text(
-                        text = countryName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(16.dp)
-                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {

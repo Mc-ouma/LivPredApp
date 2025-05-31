@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,8 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -71,20 +74,26 @@ fun PredictionCarousel(
     h2h: List<H2H>
 ) {
     val pagerState = rememberPagerState(pageCount = { 4 })
+    val cardHeight = 480.dp // Adjust height as needed
 
     Column {
 
         // Horizontal pager for cards
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(cardHeight),
+            beyondViewportPageCount = 1
         ) { page ->
+
             when (page) {
                 0 -> PredictionOverviewCard(predictions)
                 1 -> TeamFormComparisonCard(comparison, teams)
                 2 -> GoalsAnalysisCard(teams)
                 3 -> HeadToHeadCard(h2h)
             }
+
         }
 
         // Page indicator
@@ -95,10 +104,8 @@ fun PredictionCarousel(
             horizontalArrangement = Arrangement.Center
         ) {
             repeat(4) { page ->
-                Spacer(Modifier.width(4.dp))
                 Box(
                     Modifier
-                        .align(Alignment.CenterVertically)
                         .size(if (pagerState.currentPage == page) 20.dp else 14.dp)
                         .padding(4.dp)
                         .background(
@@ -119,11 +126,15 @@ fun GoalsAnalysisCard(teams: Teams) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
+            .fillMaxHeight()
             .padding(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -418,11 +429,15 @@ fun HeadToHeadCard(h2h: List<H2H>) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
+            .fillMaxHeight()
             .padding(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -513,7 +528,7 @@ fun HeadToHeadCard(h2h: List<H2H>) {
 
                 // Recent matches list
                 Text(
-                    "Recent Matches",
+                    "Last 5 Matches",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Start)
@@ -623,13 +638,15 @@ fun PredictionOverviewCard(predictions: Predictions) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
+            .fillMaxHeight()
             .padding(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -690,10 +707,14 @@ fun PredictionOverviewCard(predictions: Predictions) {
                 )
             }
 
-            Text(
-                text = "Goals Under/Over: ${predictions.under_over}",
-                style = MaterialTheme.typography.bodySmall
-            )
+
+            predictions.under_over?.let {
+
+                Text(
+                    text = "Goals Under/Over: ${predictions.under_over}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
@@ -777,11 +798,15 @@ fun TeamFormComparisonCard(comparison: Comparison, teams: Teams) {
     OutlinedCard(
         modifier = Modifier
             .fillMaxWidth()
+            .fillMaxHeight()
             .padding(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

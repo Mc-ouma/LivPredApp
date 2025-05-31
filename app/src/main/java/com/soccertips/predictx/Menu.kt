@@ -2,16 +2,23 @@ package com.soccertips.predictx
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Message
 import androidx.compose.material.icons.filled.MoreVert
@@ -21,6 +28,8 @@ import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -40,15 +50,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 
 @Composable
 fun Menu() {
     var expanded by remember { mutableStateOf(false) }
-    var showPrivacyPolicy by remember { mutableStateOf(false) }
     var showFeedback by remember { mutableStateOf(false) }
     var showAboutUs by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -66,7 +80,11 @@ fun Menu() {
                 tint = MaterialTheme.colorScheme.primary
             )
         }
-        DropdownMenu(expanded = expanded, shape = MaterialTheme.shapes.small, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            shape = MaterialTheme.shapes.small,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
                 text = { Text("Share") },
                 onClick = {
@@ -96,7 +114,10 @@ fun Menu() {
             )
             DropdownMenuItem(
                 text = { Text("Privacy Policy") },
-                onClick = { showPrivacyPolicy = true },
+                onClick = {
+                    openPrivacyPolicy(context)
+                    expanded = false
+                },
                 leadingIcon = {
                     Icon(
                         Icons.Outlined.Policy,
@@ -131,9 +152,103 @@ fun Menu() {
         }
     }
 
-    if (showPrivacyPolicy) {
-        PrivacyPolicy(onDismiss = { showPrivacyPolicy = false })
+    if (showFeedback) {
+        Feedback(onDismiss = { showFeedback = false })
     }
+    if (showRateus) {
+        RateUs(onDismiss = { showRateus = false })
+    }
+
+    if (showAboutUs) {
+        AboutUs(onDismiss = { showAboutUs = false })
+    }
+    if (showShare) {
+        Share(
+            text = "Check out AI ScoreCast, the best football prediction app. ",
+            context = context
+        )
+    }
+}
+
+@Composable
+fun Menu2() {
+    var expanded by remember { mutableStateOf(false) }
+    var showFeedback by remember { mutableStateOf(false) }
+    var showAboutUs by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var showShare by remember { mutableStateOf(false) }
+    var showRateus by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .wrapContentSize(Alignment.TopEnd)
+    ) {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                Icons.Default.MoreVert,
+                contentDescription = "Localized description",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            shape = MaterialTheme.shapes.small,
+            onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text("Rate Us") },
+                onClick = {
+                    showRateus = true
+                    expanded = false
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.RateReview,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Privacy Policy") },
+                onClick = {
+                    openPrivacyPolicy(context)
+                    expanded = false
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Policy,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text("Send Feedback") },
+                onClick = { showFeedback = true },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Email,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("About Us") },
+                onClick = { showAboutUs = true },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Groups,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+            )
+        }
+    }
+
 
     if (showFeedback) {
         Feedback(onDismiss = { showFeedback = false })
@@ -146,7 +261,10 @@ fun Menu() {
         AboutUs(onDismiss = { showAboutUs = false })
     }
     if (showShare) {
-        Share(text = "Check out AI ScoreCast, the best football prediction app. ", context = context)
+        Share(
+            text = "Check out AI ScoreCast, the best football prediction app. ",
+            context = context
+        )
     }
 }
 
@@ -164,11 +282,12 @@ fun RateUs(onDismiss: () -> Unit) {
         confirmButton = {
             Text("OK", modifier = Modifier.clickable {
                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                    data = "https://play.google.com/store/apps/details?id=com.soccertips.predictx".toUri()
+                    data =
+                        "https://play.google.com/store/apps/details?id=com.soccertips.predictx".toUri()
                 }
                 context.startActivity(intent)
                 onDismiss()
-             })
+            })
         }
     )
 }
@@ -176,46 +295,162 @@ fun RateUs(onDismiss: () -> Unit) {
 
 @Composable
 fun AboutUs(onDismiss: () -> Unit) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("About Us") },
-        icon = {
-            Icon(
-                Icons.Outlined.Groups,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.medium,
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
+        title = {
+            Text(
+                "About AI ScoreCast",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
         },
         text = {
-            Text(
-                "AI ScoreCast is a football prediction app that provides daily betting tips and predictions for football matches. " +
-                        "Our team of experts analyze football matches to provide you with the best betting tips and predictions. " +
-                        "We provide tips for various markets including Over/Under, BTTS, Daily 2 Odds, Combo, HT/FT, Home/Away, Daily Bonus, and Extra Picks."
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.launcher),
+                    contentDescription = "App Icon",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .clip(CircleShape)
+                )
+
+                Text(
+                    "AI ScoreCast is your premier football prediction app, providing accurate betting tips and predictions for matches worldwide.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
+                Text(
+                    "Our Features:",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FeatureChip("Daily Tips")
+                    FeatureChip("Over/Under")
+                    FeatureChip("BTTS")
+                    FeatureChip("Daily 2 Odds")
+                    FeatureChip("Combo")
+                    FeatureChip("HT/FT")
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            "Version",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = BuildConfig.VERSION_NAME.toString(),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Email,
+                            contentDescription = "Contact us",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable {
+                                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                        data = "mailto:ouma.monicasales@gmail.com".toUri()
+                                    }
+                                    context.startActivity(intent)
+                                    onDismiss()
+                                }
+                        )
+                        Icon(
+                            Icons.Outlined.Policy,
+                            contentDescription = "Privacy Policy",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable {
+                                    openPrivacyPolicy(context)
+                                    onDismiss()
+                                }
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
-            Text("OK", modifier = Modifier.clickable { onDismiss() })
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = MaterialTheme.shapes.small
+            ) {
+                Text("Close")
+            }
         }
     )
 }
 
 @Composable
-fun PrivacyPolicy(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Privacy Policy") },
-        text = {
-            Text(
-                "AI ScoreCast is a football prediction app that provides daily betting tips and predictions for football matches. " +
-                        "Our team of experts analyze football matches to provide you with the best betting tips and predictions. " +
-                        "We provide tips for various markets including Over/Under, BTTS, Daily 2 Odds, Combo, HT/FT, Home/Away, Daily Bonus, and Extra Picks."
-            )
-        },
-        confirmButton = {
-            Text("OK", modifier = Modifier.clickable { onDismiss() }
-            )
-        }
-    )
+private fun FeatureChip(text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.padding(end = 4.dp, bottom = 4.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+fun openPrivacyPolicy(context: Context) {
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        data =
+            "https://predictd.blogspot.com/2025/04/data-custom-classbody-data-custom.html".toUri()
+    }
+    context.startActivity(intent)
 }
 
 @Composable
@@ -243,20 +478,23 @@ fun ExpandableList(items: List<ExpandableItem>, onOtherSelected: () -> Unit) {
             val item = items[index]
             var isExpanded = expandedIndex == index
 
-            Column(modifier = Modifier
-                .animateContentSize(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessLow
+            Column(
+                modifier = Modifier
+                    .animateContentSize(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
                     )
-                )
-                .fillMaxWidth()
-                .clickable {
-                    expandedIndex = if (isExpanded) -1 else index
-                    if (item.title == "Other" && isExpanded) {
-                        onOtherSelected()
+                    .fillMaxWidth()
+                    .clickable {
+                        if (item.title == "Other") {
+                            onOtherSelected() // Call the function with parentheses
+                        } else {
+                            expandedIndex = if (isExpanded) -1 else index
+                        }
                     }
-                }) {
+            ) {
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -390,8 +628,18 @@ fun OtherFeedbackDialog(onDismiss: () -> Unit, onSubmit: (String, String) -> Uni
                     onDismiss()
                 }
             })
+        },
+        dismissButton = {
+            Text("Cancel", modifier = Modifier.clickable { onDismiss() })
         }
     )
+}
+
+@Preview
+@Composable
+private fun AboutUsPreview() {
+    AboutUs(onDismiss = {})
+
 }
 
 @Preview

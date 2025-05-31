@@ -242,58 +242,59 @@ fun AppNavigation(fixtureId: String? = null, forceNavigate: Boolean = false) {
             val idToNavigate = targetFixtureId.value!!
 
             // Make sure we're not already on this screen
-            if (navController.currentDestination?.route != Routes.FixtureDetails.createRoute(
-                    idToNavigate
-                )
-            ) {
-                navController.navigate(Routes.FixtureDetails.createRoute(idToNavigate)) {
-                    // Save the current state so back navigation works
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
+            if (navController.currentDestination?.route != Routes.FixtureDetails.createRoute(idToNavigate)) {
+                // First navigate to Home to set it as the back destination
+                navController.navigate(Routes.Home.route) {
+                    // Clear the back stack
+                    popUpTo(navController.graph.id) {
+                        inclusive = true
                     }
                     launchSingleTop = true
-                    restoreState = true
                 }
 
-                // Clear any pending navigation IDs to prevent duplicate navigation
+                // Then navigate to FixtureDetails
+                navController.navigate(Routes.FixtureDetails.createRoute(idToNavigate, true)) {
+                    launchSingleTop = true
+                }
+
+                // Clear any pending navigation IDs
                 activity.sharedPrefs.edit {
                     remove("pending_navigation_fixture_id")
                 }
                 pendingFixtureId.value = null
             }
 
-            // Reset the force flag after navigation is complete
             shouldForceNavigate.value = false
         }
     }
 
-    // Original LaunchedEffect for handling navigation after splash
+    // In AppNavigation.kt - Update the second LaunchedEffect block (after splash)
     LaunchedEffect(sharedViewModel.isSplashCompleted) {
-        // Only do this if we're not already forcing navigation
         if (!shouldForceNavigate.value && sharedViewModel.isSplashCompleted) {
             val idToNavigate = targetFixtureId.value
 
             if (!idToNavigate.isNullOrEmpty() &&
-                navController.currentDestination?.route != Routes.FixtureDetails.createRoute(
-                    idToNavigate
-                )
+                navController.currentDestination?.route != Routes.FixtureDetails.createRoute(idToNavigate)
             ) {
-                // Navigate to the fixture details with proper back stack handling
-                navController.navigate(Routes.FixtureDetails.createRoute(idToNavigate)) {
-                    // Save the current state so back navigation works
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
+                // First navigate to Home to set it as the back destination
+                navController.navigate(Routes.Home.route) {
+                    // Clear the back stack
+                    popUpTo(navController.graph.id) {
+                        inclusive = true
                     }
                     launchSingleTop = true
-                    restoreState = true
                 }
 
-                // Clear the pending navigation to prevent duplicate navigation
+                // Then navigate to FixtureDetails
+                navController.navigate(Routes.FixtureDetails.createRoute(idToNavigate, true)) {
+                    launchSingleTop = true
+                }
+
+                // Clear the pending navigation
                 if (pendingFixtureId.value != null) {
                     activity.sharedPrefs.edit {
                         remove("pending_navigation_fixture_id")
                     }
-                    // Reset the stored value
                     pendingFixtureId.value = null
                 }
             }

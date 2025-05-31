@@ -32,6 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,7 +43,15 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predictx.data.model.Fixture
 import com.soccertips.predictx.data.model.ResponseData
+import com.soccertips.predictx.data.model.lastfixtures.ExtraTimeScore
 import com.soccertips.predictx.data.model.lastfixtures.FixtureDetails
+import com.soccertips.predictx.data.model.lastfixtures.FixtureInfo
+import com.soccertips.predictx.data.model.lastfixtures.FulltimeScore
+import com.soccertips.predictx.data.model.lastfixtures.HalftimeScore
+import com.soccertips.predictx.data.model.lastfixtures.LeagueInfo
+import com.soccertips.predictx.data.model.lastfixtures.PenaltyScore
+import com.soccertips.predictx.data.model.lastfixtures.TeamInfo
+import com.soccertips.predictx.data.model.lastfixtures.TeamsInfo
 import com.soccertips.predictx.data.model.prediction.Biggest
 import com.soccertips.predictx.data.model.prediction.BiggestGoals
 import com.soccertips.predictx.data.model.prediction.CleanSheet
@@ -125,9 +135,6 @@ fun FixtureMatchDetailsScreen(
             navController = navController
         )
 
-        // Spacer between sections
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Prediction card section
         if (predictions == null) {
             Text("No predictions available.", modifier = Modifier.padding(16.dp))
@@ -189,12 +196,14 @@ fun FixtureColumn(
         Box(
             modifier = Modifier
                 .height(48.dp)
-                .fillMaxWidth()
+                .fillMaxWidth() // This already makes the Box match the Column's width
                 .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
-                .padding(8.dp)
-        ){
+                .padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
                 text = columnTitle,
+                color = MaterialTheme.colorScheme.onPrimary,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -207,11 +216,15 @@ fun FixtureColumn(
                 text = "No fixtures available",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth() // Added to make Text match Column's width
+                    .padding(8.dp)
             )
         } else {
             LazyColumn(
-                modifier = Modifier.heightIn(max = 400.dp) // Adjust the max height as needed
+                modifier = Modifier
+                    .heightIn(max = 400.dp) // Adjust the max height as needed
+                    .fillMaxWidth() // LazyColumn already matches Column's width
             ) {
                 items(fixturesWithType.take(4)) { fixtureWithType -> // Display only the first 4 items
                     FixtureCard(
@@ -249,7 +262,7 @@ fun FixtureCard(
         elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(4.dp)
             .clickable {
                 navController.navigate(
                     Routes.FixtureDetails.createRoute(fixture.fixture.id.toString())
@@ -372,91 +385,64 @@ fun getCardColor(
 
 @Composable
 fun FixtureDetailCard(fixture: Fixture) {
-    val date =
-        fixture.date?.let {
+    val date = fixture.date.let {
+        try {
             val inputDate = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
             val outputDate = DateTimeFormatter.ofPattern("dd-MM-yyyy")
             LocalDateTime.parse(it, inputDate).format(outputDate)
-        } ?: ""
-    val referee = fixture.referee ?: ""
-    val venueName = fixture.venue.name ?: ""
-    val venueCity = fixture.venue.city ?: ""
+        } catch (e: Exception) {
+            "Date unavailable"
+        }
+    } ?: "Date unavailable"
 
-    val cardColors = LocalCardColors.current
-    val cardElevation = LocalCardElevation.current
+    val referee = fixture.referee.takeIf { it.isNotBlank() } ?: "Referee not assigned"
+    val venueName = fixture.venue.name.takeIf { it.isNotBlank() } ?: "Venue unknown"
+    val venueCity = fixture.venue.city.takeIf { it.isNotBlank() } ?: "City unknown"
+
+   /* val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current*/
     Card(
-        colors = cardColors,
-        elevation = cardElevation,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+        /*colors = cardColors,
+        elevation = cardElevation,*/
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
     ) {
         Column(
-            modifier =
-                Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 0.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Row {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    modifier = Modifier.size(16.dp),
-                    contentDescription = null,
-                )
-                Text(
-                    text = date,
-                    modifier =
-                        Modifier
-                            .padding(start = 8.dp, end = 8.dp)
-                            .align(Alignment.CenterVertically),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                )
-            }
+            // Date info
+            FixtureDetailRow(
+                icon = Icons.Default.CalendarMonth,
+                text = date
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row {
-                Icon(
-                    imageVector = Icons.Default.Sports,
-                    modifier = Modifier.size(16.dp),
-                    contentDescription = null,
-                )
-                Text(
-                    text = referee,
-                    modifier =
-                        Modifier
-                            .padding(start = 8.dp, end = 8.dp)
-                            .align(Alignment.CenterVertically),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                )
-            }
+            // Referee info
+            FixtureDetailRow(
+                icon = Icons.Default.Sports,
+                text = referee
+            )
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier =
-                    Modifier
-                        .wrapContentWidth()
-                        .wrapContentHeight()
+            // Venue info
+            FixtureDetailRow(
+                icon = Icons.Default.Stadium,
+                text = venueName
+            )
+
+            // Only show city if different from venue name to avoid redundancy
+            if (!venueName.contains(venueCity, ignoreCase = true)) {
+                Text(
+                    text = venueCity,
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp)
                         .align(Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Stadium,
-                    modifier = Modifier.size(16.dp),
-                    contentDescription = null,
-                )
-                Text(
-                    text = "$venueName, $venueCity",
-                    modifier =
-                        Modifier
-                            .padding(start = 8.dp, end = 8.dp)
-                            .align(Alignment.CenterVertically),
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
@@ -464,6 +450,134 @@ fun FixtureDetailCard(fixture: Fixture) {
             }
         }
     }
+}
+
+@Composable
+private fun FixtureDetailRow(
+    icon: ImageVector,
+    text: String
+) {
+    Row(
+        modifier = Modifier
+            .wrapContentWidth()
+            .wrapContentHeight(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            modifier = Modifier.size(16.dp),
+            contentDescription = null,
+        )
+        Text(
+            text = text,
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp)
+                .align(Alignment.CenterVertically),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun FixtureColumnPreview() {
+    val fixtures = listOf(
+        SharedViewModel.FixtureWithType(
+            fixture = FixtureDetails(
+                fixture = FixtureInfo(
+                    id = 1,
+                    date = "2022-12-25T12:00:00+00:00",
+                    referee = "John Doe",
+                    venue = com.soccertips.predictx.data.model.lastfixtures.Venue(
+                        22,
+                        "Emirates Stadium",
+                        "London"
+                    ),
+                    timezone = "UTC",
+                    status = com.soccertips.predictx.data.model.lastfixtures.Status(
+                        "Match Finished",
+                        "FT",
+                        90,
+                        null
+                    ),
+                    timestamp = 2
+                ),
+                teams = TeamsInfo(
+                    home = TeamInfo(
+                        1,
+                        "Arsenal",
+                        "https://media.api-sports.io/football/teams/57.png",
+                        true
+                    ),
+                    away = TeamInfo(
+                        2,
+                        "Chelsea",
+                        "https://media.api-sports.io/football/teams/61.png",
+                        false
+                    )
+                ),
+                goals = com.soccertips.predictx.data.model.lastfixtures.Goals(
+                    home = 1,
+                    away = 2
+                ),
+                league = LeagueInfo(
+                    id = 1,
+                    name = "Premier League",
+                    country = "England",
+                    logo = "https://media.api-sports.io/football/leagues/1.png",
+                    flag = "https://media.api-sports.io/flags/gb.svg",
+                    season = 2022,
+                    round = "Regular Season"
+                ),
+                score = com.soccertips.predictx.data.model.lastfixtures.Score(
+                    halftime = HalftimeScore(1, 2),
+                    fulltime = FulltimeScore(1, 2),
+                    extratime = ExtraTimeScore(1, 2),
+                    penalty = PenaltyScore(1, 2)
+                )
+            ),
+            isHome = true,
+            specialId = "home_fixture_1"
+        )
+    )
+
+    FixtureColumn(
+        fixturesWithType = fixtures,
+        columnTitle = "Home Fixtures",
+        homeTeamIdInt = 1,
+        awayTeamIdInt = 2,
+        modifier = Modifier.fillMaxWidth(),
+        navController = NavController(context = LocalContext.current)
+    )
+
+
+}
+
+@Preview
+@Composable
+private fun FixtureDetailCardPreview() {
+    FixtureDetailCard(
+        fixture = Fixture(
+            id = 1,
+            date = "2022-12-25T12:00:00+00:00",
+            referee = "John Doe",
+            venue = com.soccertips.predictx.data.model.Venue(
+                22,
+                "Emirates Arenal Manchester ahhdgsgggdgdg ",
+                "London"
+            ),//suggest very long name to test overflow
+            timezone = "UTC",
+            periods = com.soccertips.predictx.data.model.Periods(1, 2),
+            status = com.soccertips.predictx.data.model.Status("Match Finished", "FT", 90, null),
+            timestamp = 2
+        )
+    )
+    // This preview will show the FixtureDetailCard with sample data
+
+
 }
 
 
@@ -626,6 +740,7 @@ private fun PredictionCarouselPreview() {
 
 
 }
+
 @Preview
 @Composable
 private fun FixtureDetailPrev() {
@@ -640,6 +755,225 @@ private fun FixtureDetailPrev() {
             status = com.soccertips.predictx.data.model.Status("Match Finished", "FT", 90, null),
             timestamp = 2
         )
+    )
+
+}
+
+@Preview
+@Composable
+private fun FixtureMatchDetailsScreenPreview() {
+    val fixtureDetails = ResponseData(
+        fixture = Fixture(
+            id = 1,
+            date = "2022-12-25T12:00:00+00:00",
+            referee = "John Doe",
+            venue = com.soccertips.predictx.data.model.Venue(22, "Emirates Stadium", "London"),
+            timezone = "UTC",
+            periods = com.soccertips.predictx.data.model.Periods(1, 2),
+            status = com.soccertips.predictx.data.model.Status("Match Finished", "FT", 90, null),
+            timestamp = 2
+        ),
+        league = com.soccertips.predictx.data.model.League(
+            id = 1,
+            name = "Premier League",
+            country = "England",
+            logo = "https://media.api-sports.io/football/leagues/1.png",
+            flag = "https://media.api-sports.io/flags/gb.svg",
+            season = 2022,
+            round = "Regular Season"
+        ),
+        teams = com.soccertips.predictx.data.model.Teams(
+            home = com.soccertips.predictx.data.model.Team(
+                id = 1,
+                name = "Arsenal",
+                logo = "https://media.api-sports.io/football/teams/57.png",
+                winner = true
+            ),
+            away = com.soccertips.predictx.data.model.Team(
+                id = 2,
+                name = "Chelsea",
+                logo = "https://media.api-sports.io/football/teams/61.png",
+                winner = false
+            )
+        ),
+        goals = com.soccertips.predictx.data.model.Goals(
+            home = 1,
+            away = 2
+        ),
+        score = com.soccertips.predictx.data.model.Score(
+            halftime = com.soccertips.predictx.data.model.HalfTime(1, 2),
+            fulltime = com.soccertips.predictx.data.model.FullTime(1, 2),
+            extratime = "ODO()",
+            penalty = "TODO()"
+        ),
+        events = emptyList(),
+        lineups = emptyList(),
+        statistics = emptyList(),
+        players = emptyList()
+    )
+
+    FixtureMatchDetailsScreen(
+        fixtures = listOf(
+            SharedViewModel.FixtureWithType(
+                fixture = FixtureDetails(
+                    fixture = FixtureInfo(
+                        id = 1,
+                        date = "2022-12-25T12:00:00+00:00",
+                        referee = "John Doe",
+                        venue = com.soccertips.predictx.data.model.lastfixtures.Venue(
+                            22,
+                            "Emirates Stadium",
+                            "London"
+                        ),
+                        timezone = "UTC",
+                        status = com.soccertips.predictx.data.model.lastfixtures.Status(
+                            "Match Finished",
+                            "FT",
+                            90,
+                            null
+                        ),
+                        timestamp = 2
+                    ),
+                    teams = TeamsInfo(
+                        home = TeamInfo(
+                            1,
+                            "Arsenal",
+                            "https://media.api-sports.io/football/teams/57.png",
+                            true
+                        ),
+                        away = TeamInfo(
+                            2,
+                            "Chelsea",
+                            "https://media.api-sports.io/football/teams/61.png",
+                            false
+                        )
+                    ),
+                    goals = com.soccertips.predictx.data.model.lastfixtures.Goals(
+                        home = 1,
+                        away = 2
+                    ),
+                    league = LeagueInfo(
+                        id = 1,
+                        name = "Premier League",
+                        country = "England",
+                        logo = "https://media.api-sports.io/football/leagues/1.png",
+                        flag = "https://media.api-sports.io/flags/gb.svg",
+                        season = 2022,
+                        round = "Regular Season"
+                    ),
+                    score = com.soccertips.predictx.data.model.lastfixtures.Score(
+                        halftime = HalftimeScore(1, 2),
+                        fulltime = FulltimeScore(1, 2),
+                        extratime = ExtraTimeScore(1, 2),
+                        penalty = PenaltyScore(1, 2)
+                    )
+                ),
+                isHome = true,
+                specialId = "fixture_1"
+            )
+        ),
+        predictions = Predictions(
+            winner = Winner(1, "Arsenal", "Home team is likely to win"),
+            under_over = "+2.5",
+            percent = Percent("50%", "25%", "25%"),
+            advice = "Home team is likely to win",
+            win_or_draw = true,
+            goals = Goals("1", "2")
+        ),
+        comparison = Comparison(
+            form = ComparisonData("50", "50"),
+            att = ComparisonData("50", "50"),
+            def = ComparisonData("50", "50"),
+            h2h = ComparisonData("50", "50"),
+            total = ComparisonData("50", "50"),
+            poisson_distribution = ComparisonData("50", "50"),
+            goals = ComparisonData("50", "50")
+        ),
+        teams = Teams(
+            home = Team(
+                1, "Arsenal", "https://media.api-sports.io/football/teams/57.png",
+                last_5 = Last5(
+                    "60%",
+                    "70",
+                    "0%",
+                    goals = Last5Goals(`for` = GoalData(18, 3.6), against = GoalData(10, 2.0))
+                ),
+                league = TeamLeague(
+                    form = "60%",
+                    fixtures = Fixtures(
+                        played = FixtureDetail(1, 1, 1),
+                        wins = FixtureDetail(1, 1, 1),
+                        draws = FixtureDetail(1, 1, 1),
+                        loses = FixtureDetail(1, 1, 1)
+                    ),
+                    goals = TeamGoals(
+                        `for` = GoalStats(
+                            total = GoalTotal(1, 1, 1),
+                            average = GoalAverage(1.0, 1.0, 1.0)
+                        ),
+                        against = GoalStats(
+                            total = GoalTotal(1, 1, 1),
+                            average = GoalAverage(1.0, 1.0, 1.0)
+                        )
+                    ),
+                    biggest = Biggest(
+                        streak = Streak(1, 1, 1),
+                        wins = WinLoss("1", "1"),
+                        loses = WinLoss("1", "1"),
+                        goals = BiggestGoals(
+                            `for` = HomeAway(1, 1), against = HomeAway(1, 1)
+                        )
+                    ),
+                    clean_sheet = CleanSheet(23, 23, 46),
+                    failed_to_score = FailedToScore(9, 9, 18)
+                )
+            ),
+            away = Team(
+                2, "Chelsea", "https://media.api-sports.io/football/teams/61.png",
+                last_5 = Last5(
+                    "40%",
+                    "50",
+                    "0%",
+                    goals = Last5Goals(`for` = GoalData(15, 3.0), against = GoalData(5, 1.0))
+                ),
+                league = TeamLeague(
+                    form = "40%",
+                    fixtures = Fixtures(
+                        played = FixtureDetail(1, 1, 1),
+                        wins = FixtureDetail(1, 1, 1),
+                        draws = FixtureDetail(1, 1, 1),
+                        loses = FixtureDetail(1, 1, 1)
+                    ),
+                    goals = TeamGoals(
+                        `for` = GoalStats(
+                            total = GoalTotal(1, 1, 1),
+                            average = GoalAverage(1.0, 1.0, 1.0)
+                        ),
+                        against = GoalStats(
+                            total = GoalTotal(1, 1, 1),
+                            average = GoalAverage(1.0, 1.0, 1.0)
+                        )
+                    ),
+                    biggest = Biggest(
+                        streak = Streak(1, 1, 1),
+                        wins = WinLoss("1", "1"),
+                        loses = WinLoss("1", "1"),
+                        goals = BiggestGoals(
+                            `for` = HomeAway(1, 1), against = HomeAway(1, 1)
+                        )
+                    ),
+                    clean_sheet = CleanSheet(23, 23, 46),
+                    failed_to_score = FailedToScore(9, 9, 18),
+                ),
+            ),
+        ),
+
+
+        h2h = emptyList(),
+        fixtureDetails = fixtureDetails,
+        homeTeamId = "1",
+        awayTeamId = "2",
+        navController = NavController(context = LocalContext.current)
     )
 
 }

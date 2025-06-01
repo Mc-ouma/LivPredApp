@@ -11,14 +11,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Sports
@@ -29,6 +27,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,56 +37,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.soccertips.predictx.data.model.Fixture
 import com.soccertips.predictx.data.model.ResponseData
-import com.soccertips.predictx.data.model.lastfixtures.ExtraTimeScore
-import com.soccertips.predictx.data.model.lastfixtures.FixtureDetails
-import com.soccertips.predictx.data.model.lastfixtures.FixtureInfo
-import com.soccertips.predictx.data.model.lastfixtures.FulltimeScore
-import com.soccertips.predictx.data.model.lastfixtures.HalftimeScore
-import com.soccertips.predictx.data.model.lastfixtures.LeagueInfo
-import com.soccertips.predictx.data.model.lastfixtures.PenaltyScore
-import com.soccertips.predictx.data.model.lastfixtures.TeamInfo
-import com.soccertips.predictx.data.model.lastfixtures.TeamsInfo
-import com.soccertips.predictx.data.model.prediction.Biggest
-import com.soccertips.predictx.data.model.prediction.BiggestGoals
-import com.soccertips.predictx.data.model.prediction.CleanSheet
 import com.soccertips.predictx.data.model.prediction.Comparison
-import com.soccertips.predictx.data.model.prediction.ComparisonData
-import com.soccertips.predictx.data.model.prediction.FailedToScore
-import com.soccertips.predictx.data.model.prediction.FixtureDetail
-import com.soccertips.predictx.data.model.prediction.Fixtures
-import com.soccertips.predictx.data.model.prediction.GoalAverage
-import com.soccertips.predictx.data.model.prediction.GoalData
-import com.soccertips.predictx.data.model.prediction.GoalStats
-import com.soccertips.predictx.data.model.prediction.GoalTotal
-import com.soccertips.predictx.data.model.prediction.Goals
 import com.soccertips.predictx.data.model.prediction.H2H
-import com.soccertips.predictx.data.model.prediction.HomeAway
-import com.soccertips.predictx.data.model.prediction.Last5
-import com.soccertips.predictx.data.model.prediction.Last5Goals
-import com.soccertips.predictx.data.model.prediction.League
-import com.soccertips.predictx.data.model.prediction.Percent
-import com.soccertips.predictx.data.model.prediction.Periods
 import com.soccertips.predictx.data.model.prediction.Predictions
-import com.soccertips.predictx.data.model.prediction.Score
-import com.soccertips.predictx.data.model.prediction.Status
-import com.soccertips.predictx.data.model.prediction.Streak
-import com.soccertips.predictx.data.model.prediction.Team
-import com.soccertips.predictx.data.model.prediction.TeamGoals
-import com.soccertips.predictx.data.model.prediction.TeamLeague
-import com.soccertips.predictx.data.model.prediction.TeamShort
 import com.soccertips.predictx.data.model.prediction.Teams
-import com.soccertips.predictx.data.model.prediction.TeamsShort
-import com.soccertips.predictx.data.model.prediction.Venue
-import com.soccertips.predictx.data.model.prediction.WinLoss
-import com.soccertips.predictx.data.model.prediction.Winner
 import com.soccertips.predictx.navigation.Routes
+import com.soccertips.predictx.ui.components.ErrorMessage
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.viewmodel.SharedViewModel
@@ -108,13 +73,16 @@ fun FixtureMatchDetailsScreen(
     val homeTeamIdInt = homeTeamId.toIntOrNull() ?: 0
     val awayTeamIdInt = awayTeamId.toIntOrNull() ?: 0
 
-
-    // Check for invalid team IDs and display an error message if necessary
+    // Check for invalid team IDs
     if (homeTeamIdInt == 0 || awayTeamIdInt == 0) {
-        Text("Invalid team ID(s). Please check your input.", modifier = Modifier.padding(16.dp))
+        ErrorMessage(
+            message = "Invalid team ID(s). Please check your input.",
+            onRetry = {}
+        )
         return
     }
 
+    // Use regular Column instead of LazyColumn to avoid nested scrolling issues
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -122,8 +90,6 @@ fun FixtureMatchDetailsScreen(
     ) {
         // Fixture detail card
         FixtureDetailCard(fixture = fixtureDetails.fixture)
-
-        // Spacer between sections
         Spacer(modifier = Modifier.height(16.dp))
 
         // Home and away fixtures section
@@ -134,10 +100,22 @@ fun FixtureMatchDetailsScreen(
             fixtureDetails = fixtureDetails,
             navController = navController
         )
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Prediction card section
         if (predictions == null) {
-            Text("No predictions available.", modifier = Modifier.padding(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "No predictions available.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
         } else {
             PredictionCarousel(predictions, comparison, teams, h2h)
         }
@@ -152,13 +130,22 @@ fun FixtureListScreen(
     fixtureDetails: ResponseData,
     navController: NavController
 ) {
+    // Derive filtered lists only once to improve performance
+    val homeTeamFixtures by remember(combinedFormData) {
+        derivedStateOf { combinedFormData.filter { it.isHome }.take(4) }
+    }
+
+    val awayTeamFixtures by remember(combinedFormData) {
+        derivedStateOf { combinedFormData.filter { !it.isHome }.take(4) }
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.Top
     ) {
         FixtureColumn(
-            fixturesWithType = combinedFormData.filter { it.isHome },
+            fixturesWithType = homeTeamFixtures,
             columnTitle = fixtureDetails.teams.home.name,
             homeTeamIdInt = homeTeamIdInt,
             awayTeamIdInt = awayTeamIdInt,
@@ -167,7 +154,7 @@ fun FixtureListScreen(
         )
 
         FixtureColumn(
-            fixturesWithType = combinedFormData.filter { !it.isHome },
+            fixturesWithType = awayTeamFixtures,
             columnTitle = fixtureDetails.teams.away.name,
             homeTeamIdInt = homeTeamIdInt,
             awayTeamIdInt = awayTeamIdInt,
@@ -175,7 +162,6 @@ fun FixtureListScreen(
             navController = navController
         )
     }
-
 }
 
 @Composable
@@ -196,14 +182,12 @@ fun FixtureColumn(
         Box(
             modifier = Modifier
                 .height(48.dp)
-                .fillMaxWidth() // This already makes the Box match the Column's width
-                .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
+                .fillMaxWidth()
                 .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = columnTitle,
-                color = MaterialTheme.colorScheme.onPrimary,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -216,17 +200,16 @@ fun FixtureColumn(
                 text = "No fixtures available",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
+                color = Color.Gray,
                 modifier = Modifier
-                    .fillMaxWidth() // Added to make Text match Column's width
+                    .fillMaxWidth()
                     .padding(8.dp)
             )
         } else {
-            LazyColumn(
-                modifier = Modifier
-                    .heightIn(max = 400.dp) // Adjust the max height as needed
-                    .fillMaxWidth() // LazyColumn already matches Column's width
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                items(fixturesWithType.take(4)) { fixtureWithType -> // Display only the first 4 items
+                fixturesWithType.forEach { fixtureWithType ->
                     FixtureCard(
                         fixture = fixtureWithType.fixture,
                         isHome = fixtureWithType.isHome,
@@ -242,10 +225,9 @@ fun FixtureColumn(
 
 data class TeamId(val homeTeamId: Int, val awayTeamId: Int)
 
-
 @Composable
 fun FixtureCard(
-    fixture: FixtureDetails,
+    fixture: com.soccertips.predictx.data.model.lastfixtures.FixtureDetails,
     isHome: Boolean,
     teamId: TeamId,
     navController: NavController
@@ -257,6 +239,7 @@ fun FixtureCard(
     )
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
+
     Card(
         colors = cardColors,
         elevation = cardElevation,
@@ -268,19 +251,22 @@ fun FixtureCard(
                     Routes.FixtureDetails.createRoute(fixture.fixture.id.toString())
                 )
             },
-
-        ) {
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
         ) {
             Column(modifier = Modifier.weight(5f)) {
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
                     Image(
-                        painter = rememberAsyncImagePainter(model = fixture.teams.home.logo),
+                        painter = rememberAsyncImagePainter(
+                            ImageRequest.Builder(LocalContext.current)
+                                .data(fixture.teams.home.logo)
+                                .crossfade(true)
+                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                .build()
+                        ),
                         contentDescription = "Home Team Logo",
                         modifier = Modifier.size(24.dp)
                     )
@@ -294,13 +280,17 @@ fun FixtureCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
                     Image(
-                        painter = rememberAsyncImagePainter(model = fixture.teams.away.logo),
+                        painter = rememberAsyncImagePainter(
+                            ImageRequest.Builder(LocalContext.current)
+                                .data(fixture.teams.away.logo)
+                                .crossfade(true)
+                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                .build()
+                        ),
                         contentDescription = "Away Team Logo",
                         modifier = Modifier.size(24.dp)
                     )
-
                     Text(
                         text = fixture.teams.away.name,
                         style = MaterialTheme.typography.bodyMedium,
@@ -326,6 +316,7 @@ fun FixtureCard(
                 modifier = Modifier
                     .weight(1f)
                     .background(cardColor)
+                    .padding(4.dp)
             ) {
                 Text(
                     text = fixture.score.fulltime.home.toString(),
@@ -340,29 +331,28 @@ fun FixtureCard(
                 )
             }
         }
-
     }
 }
 
 @Composable
 fun getCardColor(
-    fixture: FixtureDetails,
+    fixture: com.soccertips.predictx.data.model.lastfixtures.FixtureDetails,
     isHome: Boolean,
-    teamId: TeamId
+    teamId: TeamId,
 ): Color {
-
     return when {
         // Match is a draw
-        fixture.score.fulltime.home == fixture.score.fulltime.away -> Color.Gray.copy(alpha = 0.5f)
+        fixture.score.fulltime.home == fixture.score.fulltime.away ->
+            MaterialTheme.colorScheme.surfaceVariant
 
         // Home team logic
         isHome -> {
             if ((fixture.teams.home.winner == true && fixture.teams.home.id == teamId.homeTeamId) ||
                 (fixture.teams.away.winner == true && fixture.teams.away.id == teamId.homeTeamId)
             ) {
-                Color.Green
+                Color.Green.copy(alpha = 0.3f)
             } else {
-                Color.Red
+                Color.Red.copy(alpha = 0.3f)
             }
         }
 
@@ -371,39 +361,40 @@ fun getCardColor(
             if ((fixture.teams.away.winner == true && fixture.teams.away.id == teamId.awayTeamId) ||
                 (fixture.teams.home.winner == true && fixture.teams.home.id == teamId.awayTeamId)
             ) {
-                Color.Green
+                Color.Green.copy(alpha = 0.3f)
             } else {
-                Color.Red
+                Color.Red.copy(alpha = 0.3f)
             }
         }
 
         // Default fallback
-        else -> Color.Gray.copy(alpha = 0.3f)
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
 }
 
-
 @Composable
 fun FixtureDetailCard(fixture: Fixture) {
-    val date = fixture.date?.let {
+    // Format the fixture date safely
+    val date = remember(fixture.date) {
         try {
             val inputDate = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
             val outputDate = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-            LocalDateTime.parse(it, inputDate).format(outputDate)
+            LocalDateTime.parse(fixture.date, inputDate).format(outputDate)
         } catch (e: Exception) {
             "Date unavailable"
         }
-    } ?: "Date unavailable"
+    }
 
-    val referee = fixture.referee?.takeIf { it.isNotBlank() } ?: "Referee not known"
+    // Handle potentially missing information
+    val referee = fixture.referee?.takeIf { it.isNotBlank() } ?: "Referee not assigned"
     val venueName = fixture.venue?.name?.takeIf { it.isNotBlank() } ?: "Venue unknown"
     val venueCity = fixture.venue?.city?.takeIf { it.isNotBlank() } ?: "City unknown"
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
 
-   /* val cardColors = LocalCardColors.current
-    val cardElevation = LocalCardElevation.current*/
     Card(
-        /*colors = cardColors,
-        elevation = cardElevation,*/
+        colors = cardColors,
+        elevation = cardElevation,
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp),
@@ -459,14 +450,16 @@ private fun FixtureDetailRow(
 ) {
     Row(
         modifier = Modifier
-            .wrapContentWidth()
-            .wrapContentHeight(),
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = icon,
             modifier = Modifier.size(16.dp),
             contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
         )
         Text(
             text = text,
@@ -476,11 +469,12 @@ private fun FixtureDetailRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
         )
     }
 }
 
+/*
 @Preview
 @Composable
 private fun FixtureColumnPreview() {
@@ -580,9 +574,11 @@ private fun FixtureDetailCardPreview() {
 
 }
 
+*/
 
 // Additional cards would be implemented similarly
 
+/*
 @Preview
 @Composable
 private fun PredictionCarouselPreview() {
@@ -592,7 +588,7 @@ private fun PredictionCarouselPreview() {
         percent = Percent("50%", "25%", "25%"),
         advice = "Home team is likely to win",
         win_or_draw = true,
-        goals = Goals("1", "2"),
+        goals = com.soccertips.predictx.data.model.prediction.Goals("1", "2"),
     )
     val comparison = Comparison(
         form = ComparisonData("50", "50"),
@@ -976,4 +972,4 @@ private fun FixtureMatchDetailsScreenPreview() {
         navController = NavController(context = LocalContext.current)
     )
 
-}
+}*/

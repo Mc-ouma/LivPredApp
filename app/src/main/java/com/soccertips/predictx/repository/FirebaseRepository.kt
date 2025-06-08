@@ -18,6 +18,7 @@ import javax.inject.Singleton
 class FirebaseRepository @Inject constructor() {
     private val database = FirebaseDatabase.getInstance()
     private val categoriesRef = database.getReference("categories")
+    private val apiConfig = database.getReference("api-config") // Updated to use hyphen instead of underscore
 
     fun getCategories(): Flow<Result<List<Category>>> = callbackFlow {
         val listener = object : ValueEventListener {
@@ -52,6 +53,46 @@ class FirebaseRepository @Inject constructor() {
 
         categoriesRef.addValueEventListener(listener)
         awaitClose { categoriesRef.removeEventListener(listener) }
+    }
+    fun getApiConfig(): Flow<Result<Map<String, String>>> = callbackFlow {
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                try {
+                    val configMap = mutableMapOf<String, String>()
+
+                    // Get values with hypen keys and convert to underscore keys for app consistency
+                    val apiKey = snapshot.child("API-KEY").getValue(String::class.java)
+                    val apiHost = snapshot.child("API-HOST").getValue(String::class.java)
+
+                    if (apiKey != null) {
+                        configMap["API_KEY"] = apiKey
+                        Timber.d("Found API key in Firebase: $apiKey")
+                    } else {
+                        Timber.w("API-KEY not found in Firebase")
+                    }
+
+                    if (apiHost != null) {
+                        configMap["API_HOST"] = apiHost
+                        Timber.d("Found API host in Firebase: $apiHost")
+                    } else {
+                        Timber.w("API-HOST not found in Firebase")
+                    }
+
+                    trySend(Result.success(configMap))
+                } catch (e: Exception) {
+                    Timber.e(e, "Error parsing API config from Firebase")
+                    trySend(Result.failure(e))
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Timber.e("Firebase Database error: ${error.message}")
+                trySend(Result.failure(error.toException()))
+            }
+        }
+
+        apiConfig.addValueEventListener(listener)
+        awaitClose { apiConfig.removeEventListener(listener) }
     }
 
     private fun getIconResourceId(iconName: String?): Int {

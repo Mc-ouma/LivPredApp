@@ -21,3 +21,4 @@ app/assets/env
 /app/lint-baseline.xml
 Constants.kt
 /app/release/
+.env

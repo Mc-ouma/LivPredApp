@@ -126,6 +126,23 @@ fun Menu() {
                     )
                 }
             )
+            DropdownMenuItem(
+                text = { Text("Telegram") },
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = "https://t.me/+SlbFLBrgmVJiMQiG".toUri()
+                    }
+                    context.startActivity(intent)
+                    expanded = false
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Groups,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
             HorizontalDivider()
             DropdownMenuItem(
                 text = { Text("Send Feedback") },
@@ -162,6 +179,7 @@ fun Menu() {
     if (showAboutUs) {
         AboutUs(onDismiss = { showAboutUs = false })
     }
+
     if (showShare) {
         Share(
             text = "Check out AI ScoreCast, the best football prediction app. ",
@@ -218,6 +236,23 @@ fun Menu2() {
                 leadingIcon = {
                     Icon(
                         Icons.Outlined.Policy,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Telegram") },
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        data = "https://t.me/+SlbFLBrgmVJiMQiG".toUri()
+                    }
+                    context.startActivity(intent)
+                    expanded = false
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Outlined.Groups,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -378,7 +413,11 @@ fun AboutUs(onDismiss: () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = BuildConfig.VERSION_NAME.toString(),
+                            text = try {
+                                context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                            } catch (e: Exception) {
+                                "Unknown"
+                            }.toString(),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

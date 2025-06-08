@@ -20,6 +20,7 @@ import javax.inject.Inject
 @HiltAndroidApp
 class App : Application(), Configuration.Provider {
 
+
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -30,18 +31,26 @@ class App : Application(), Configuration.Provider {
     lateinit var predictionRepository: PredictionRepository
 
     @Inject
+    lateinit var firebaseRepository: com.soccertips.predictx.repository.FirebaseRepository
+
+    @Inject
+    lateinit var apiConfigProvider: com.soccertips.predictx.repository.ApiConfigProvider
+
+    @Inject
     lateinit var networkTaggingInitializer: NetworkTaggingInitializer
 
-   override val workManagerConfiguration: Configuration
-           get() = Configuration.Builder()
-               .setWorkerFactory(workerFactory)
-               .build()
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     override fun onCreate() {
         super.onCreate()
 
         // Initialize network tagging early to prevent socket violations
         networkTaggingInitializer.initialize()
+
+        initApiConfig()
 
         preloadRepository.setPredictionRepository(predictionRepository)
 
@@ -64,6 +73,25 @@ class App : Application(), Configuration.Provider {
 
         CoroutineScope(Dispatchers.IO).launch {
             preloadRepository.preloadCategoryData()
+        }
+    }
+
+    private fun initApiConfig() {
+        CoroutineScope(Dispatchers.IO).launch {
+            Timber.d("Starting to fetch API config from Firebase...")
+            firebaseRepository.getApiConfig().collect { result ->
+                result.onSuccess { configMap ->
+                    Timber.d("API config successfully fetched from Firebase: $configMap")
+                    // Log the specific keys we're looking for
+                    Timber.d("API_KEY value from Firebase: ${configMap["API_KEY"]}")
+                    Timber.d("API_HOST value from Firebase: ${configMap["API_HOST"]}")
+
+                    apiConfigProvider.updateConfig(configMap)
+                    Timber.d("ApiConfigProvider updated - API Key: ${apiConfigProvider.getApiKey()}, Host: ${apiConfigProvider.getApiHost()}")
+                }.onFailure { error ->
+                    Timber.e(error, "Failed to fetch API config from Firebase")
+                }
+            }
         }
     }
 }

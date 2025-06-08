@@ -15,6 +15,7 @@ import com.soccertips.predictx.network.SocketTaggingInterceptor
 import com.soccertips.predictx.notification.HiltWorkerFactory
 import com.soccertips.predictx.notification.NotificationBuilder
 import com.soccertips.predictx.notification.NotificationScheduler
+import com.soccertips.predictx.repository.ApiConfigProvider
 import com.soccertips.predictx.repository.FirebaseRepository
 import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.repository.PreloadRepository
@@ -31,6 +32,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import timber.log.Timber
 import java.io.File
 import javax.inject.Named
 import javax.inject.Singleton
@@ -40,6 +42,13 @@ import javax.inject.Singleton
 object AppModule {
 
     @Provides
+    @Singleton
+    fun provideApiConfigProvider(): ApiConfigProvider {
+        return ApiConfigProvider()
+    }
+
+
+        @Provides
     @Singleton
     fun provideContext(application: Application): Context {
         return application.applicationContext
@@ -58,7 +67,7 @@ object AppModule {
 
     @Named("defaultBaseUrl")
     @Provides
-    fun provideDefaultBaseUrl() = Constants.DEFAULT_BASE_URL
+    fun provideDefaultBaseUrl() = Constants.API_BASE_URL
     private const val CACHE_SIZE = 10 * 1024 * 1024 // 10 MB
     private const val CACHE_MAX_AGE = 2 * 60 * 60 // 2 hours
 
@@ -175,14 +184,20 @@ object AppModule {
 
 
     // Configuration for FixtureDetailsService and FixtureDetailsRepository
+
     @Provides
     @Singleton
     @Named("fixtureDetailsHeaderInterceptor")
-    fun provideHeaderInterceptor(): Interceptor {
+    fun provideHeaderInterceptor(apiConfigProvider: ApiConfigProvider): Interceptor {
         return Interceptor { chain ->
+            val apiKey = apiConfigProvider.getApiKey()
+            val apiHost = apiConfigProvider.getApiHost()
+
+            Timber.d("Using API Key: $apiKey, Host: $apiHost")
+
             val request = chain.request().newBuilder()
-                .addHeader("x-apisports-key", Constants.API_KEY)
-                .addHeader("x-apisports-host", Constants.API_HOST)
+                .addHeader("x-apisports-key", apiKey)
+                .addHeader("x-apisports-host", apiHost)
                 .build()
             chain.proceed(request)
         }
@@ -264,7 +279,7 @@ object AppModule {
     @Named("fixtureDetailsRetrofit")
     fun provideRetrofit(@Named("fixtureDetailsOkHttpClient") client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL)
+            .baseUrl(Constants.API_BASE_URL_VALUE)
             .client(client) // Use the OkHttp client with cache
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -318,6 +333,8 @@ object AppModule {
     fun provideFallbackDns(): DnsFailureInterceptor.FallbackDns {
         return DnsFailureInterceptor.FallbackDns()
     }
+
+
 
 }
 

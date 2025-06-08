@@ -174,10 +174,10 @@ dependencies {
     implementation(libs.hilt.android.core)
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
-    implementation (libs.androidx.hilt.work)
-    ksp (libs.androidx.hilt.compiler)
-    implementation (libs.androidx.work.runtime.ktx.v281)
-    implementation (libs.kotlin.stdlib)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.work.runtime.ktx.v281)
+    implementation(libs.kotlin.stdlib)
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.activity.compose)
@@ -242,8 +242,11 @@ dependencies {
     implementation(libs.dotenv.kotlin)
 
     //paging
-    implementation (libs.androidx.paging.runtime)
-    implementation (libs.androidx.paging.compose)
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
+    // Firebase remote config
+    implementation(libs.firebase.config)
 
 
 }
@@ -275,7 +278,12 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         exclude(fileFilter)
     }
 
-    sourceDirectories.setFrom(files("${project.projectDir}/src/main/java", "${project.projectDir}/src/main/kotlin"))
+    sourceDirectories.setFrom(
+        files(
+            "${project.projectDir}/src/main/java",
+            "${project.projectDir}/src/main/kotlin"
+        )
+    )
     classDirectories.setFrom(files(debugTree))
     executionData.setFrom(fileTree(layout.buildDirectory) {
         include("jacoco/testDebugUnitTest.exec")

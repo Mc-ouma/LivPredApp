@@ -11,4 +11,18 @@
     <string name="fixtures">Fixtures</string>
     <string name="transfers">Transfers</string>
     <string name="overview">Overview</string>
+
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="unknown_date">Unknown Date</string>
+    <string name="type">Type</string>
+    <string name="home">Home</string>
+    <string name="away">Away</string>
+    <string name="total">Total</string>
+    <string name="for_">For</string>
+    <string name="against">Against</string>
+    <string name="minute">Minute</string>
+    <string name="percentage">Percentage</string>
+    <string name="category">Category</string>
 </resources>

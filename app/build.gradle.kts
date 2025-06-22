@@ -35,8 +35,8 @@ android {
             libs.versions.targetSdk
                 .get()
                 .toInt()
-        versionCode = 8
-        versionName = "1.0.8"
+        versionCode = 9
+        versionName = "1.0.9"
 
         testInstrumentationRunner =
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
@@ -247,6 +247,9 @@ dependencies {
 
     // Firebase remote config
     implementation(libs.firebase.config)
+
+    //Admob
+    implementation(libs.play.services.ads)
 
 
 }

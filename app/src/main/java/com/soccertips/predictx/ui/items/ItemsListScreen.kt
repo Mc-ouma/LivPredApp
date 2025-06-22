@@ -1,6 +1,7 @@
 package com.soccertips.predictx.ui.items
 
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -41,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predictx.Menu
+import com.soccertips.predictx.admob.BannerAdView
+import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.UiState
@@ -71,6 +74,7 @@ fun ItemsListScreen(
     categoryId: String,
     categories: List<Category>,
     viewModel: ItemsListViewModel = hiltViewModel(),
+    interstitialAdManager: InterstitialAdManager
 ) {
     val category = remember(categoryId) {
         categories.find { it.url == categoryId }
@@ -87,7 +91,8 @@ fun ItemsListScreen(
         viewModel.fetchItems(category.url, selectedDate)
     }
 
-    Scaffold(Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    Scaffold(
+        Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -95,8 +100,26 @@ fun ItemsListScreen(
                         text = formattedDate,
                     )
                 },
+                //show  interstitial ad when the back button is pressed
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+
+                    IconButton(onClick = {
+                        if (interstitialAdManager.isAdLoaded()) {
+                            try {
+                                val activity = navController.context as? Activity
+                                activity?.let {
+                                    interstitialAdManager.showInterstialAd(it)
+                                    navController.popBackStack()
+
+                                } ?: navController.popBackStack()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                navController.popBackStack()
+                            }
+                        }
+                        navController.popBackStack()
+                    }
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
                             contentDescription = "Back"
@@ -116,6 +139,9 @@ fun ItemsListScreen(
                 scrollBehavior = scrollBehavior,
             )
         },
+        bottomBar = {
+            BannerAdView()
+        }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val uiState = viewModel.uiState.collectAsState().value) {

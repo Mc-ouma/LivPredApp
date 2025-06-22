@@ -34,15 +34,25 @@ import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.soccertips.predictx.admob.InterstitialAdManager
+import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    //Admob
+    @Inject
+    lateinit var interstitialAdManager: InterstitialAdManager
+    @Inject
+    lateinit var rewardedAdManager: RewardedAdManager
+
+    // Initialize Firebase Analytics
     private lateinit var analytics: FirebaseAnalytics
 
     // In-app update manager
@@ -56,7 +66,7 @@ class MainActivity : ComponentActivity() {
     private var cachedReviewInfo: ReviewInfo? = null
 
     //Track update/review request status with preferences
-     val sharedPrefs by lazy {
+    val sharedPrefs by lazy {
         getSharedPreferences("app_prefs", MODE_PRIVATE)
     }
 
@@ -75,6 +85,9 @@ class MainActivity : ComponentActivity() {
         // Use the modern edge-to-edge API
         enableEdgeToEdge()
 
+        //Initialize Ad Managers
+        interstitialAdManager = InterstitialAdManager(this)
+        rewardedAdManager = RewardedAdManager(this)
         // Note: setDecorFitsSystemWindows is deprecated in Android 15
         // WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -118,7 +131,12 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.surface
                 ) {
-                    AppNavigation(fixtureId = fixtureId.value)
+                    AppNavigation(
+                        fixtureId = fixtureId.value,
+                        interstitialAdManager = interstitialAdManager,
+                        rewardedAdManager = rewardedAdManager,
+
+                    )
                 }
             }
         }
@@ -131,8 +149,8 @@ class MainActivity : ComponentActivity() {
         }
 
         // Check for app updates when the activity is created
-         checkForAppUpdates()
-         requestReview()
+        checkForAppUpdates()
+        requestReview()
     }
 
     private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
@@ -299,7 +317,8 @@ class MainActivity : ComponentActivity() {
 
         // Process the notification intent
         if (intent.action == "com.soccertips.predictx.ACTION_VIEW_MATCH" ||
-            intent.getBooleanExtra("fromNotification", false)) {
+            intent.getBooleanExtra("fromNotification", false)
+        ) {
 
             // Get the fixture ID from the intent
             val idFromIntent = intent.getStringExtra("fixtureId")
@@ -325,7 +344,12 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.surface
                         ) {
-                            AppNavigation(fixtureId = idFromIntent, forceNavigate = true)
+                            AppNavigation(
+                                fixtureId = idFromIntent,
+                                forceNavigate = true,
+                                interstitialAdManager,
+                                rewardedAdManager
+                            )
                         }
                     }
                 }
@@ -335,7 +359,11 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     private fun handleNotificationIntent(intent: Intent?) {
-        if (intent?.action == "com.soccertips.predictx.ACTION_VIEW_MATCH" || intent?.getBooleanExtra("fromNotification", false) == true) {
+        if (intent?.action == "com.soccertips.predictx.ACTION_VIEW_MATCH" || intent?.getBooleanExtra(
+                "fromNotification",
+                false
+            ) == true
+        ) {
             val idFromIntent = intent.getStringExtra("fixtureId")
 
             if (!idFromIntent.isNullOrEmpty()) {
@@ -404,4 +432,3 @@ fun ShowSnackbarForCompleteUpdate(appUpdateManager: AppUpdateManager) {
         }
     }
 }
-

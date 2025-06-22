@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import androidx.work.Configuration
 import androidx.work.WorkerFactory
+import com.soccertips.predictx.admob.InterstitialAdManager
+import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.local.AppDatabase
 import com.soccertips.predictx.data.local.dao.FavoriteDao
 import com.soccertips.predictx.network.ApiService
@@ -23,7 +25,9 @@ import com.soccertips.predictx.util.NetworkTaggingInitializer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.scopes.ActivityRetainedScoped
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Cache
 import okhttp3.HttpUrl

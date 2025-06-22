@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.prediction.Biggest
 import com.soccertips.predictx.data.model.prediction.BiggestGoals
 import com.soccertips.predictx.data.model.prediction.CleanSheet
@@ -71,7 +72,8 @@ fun PredictionCarousel(
     predictions: Predictions,
     comparison: Comparison,
     teams: Teams,
-    h2h: List<H2H>
+    h2h: List<H2H>,
+    rewardedAdManager: RewardedAdManager? = null
 ) {
     val pagerState = rememberPagerState(pageCount = { 4 })
     val cardHeight = 480.dp // Adjust height as needed

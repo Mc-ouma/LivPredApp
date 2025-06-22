@@ -34,6 +34,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.soccertips.predictx.admob.AppOpenAdManager
+import com.soccertips.predictx.admob.InterstitialAdManager
+import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.UiState
@@ -48,7 +51,12 @@ import java.net.URLDecoder
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun AppNavigation(fixtureId: String? = null, forceNavigate: Boolean = false) {
+fun AppNavigation(
+    fixtureId: String? = null,
+    forceNavigate: Boolean = false,
+    interstitialAdManager: InterstitialAdManager,
+    rewardedAdManager: RewardedAdManager,
+) {
     val navController = rememberNavController()
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()
     val uiState by categoriesViewModel.uiState.collectAsState()
@@ -108,7 +116,9 @@ fun AppNavigation(fixtureId: String? = null, forceNavigate: Boolean = false) {
             SplashScreen(
                 navController = navController,
                 initialFixtureId = fixtureId,
-                onSplashCompleted = { sharedViewModel.markSplashCompleted() }
+                onSplashCompleted = { sharedViewModel.markSplashCompleted()
+                },
+
             )
         }
 
@@ -158,6 +168,7 @@ fun AppNavigation(fixtureId: String? = null, forceNavigate: Boolean = false) {
                     navController = navController,
                     categoryId = decodeUrl,
                     categories = categories,
+                    interstitialAdManager = interstitialAdManager,
                 )
             }
         }
@@ -194,6 +205,7 @@ fun AppNavigation(fixtureId: String? = null, forceNavigate: Boolean = false) {
             FixtureDetailsScreen(
                 navController = navController,
                 fixtureId = fixtureIdArgument,
+                rewardedAdManager = rewardedAdManager,
             )
         }
         composable(
@@ -242,7 +254,10 @@ fun AppNavigation(fixtureId: String? = null, forceNavigate: Boolean = false) {
             val idToNavigate = targetFixtureId.value!!
 
             // Make sure we're not already on this screen
-            if (navController.currentDestination?.route != Routes.FixtureDetails.createRoute(idToNavigate)) {
+            if (navController.currentDestination?.route != Routes.FixtureDetails.createRoute(
+                    idToNavigate
+                )
+            ) {
                 // First navigate to Home to set it as the back destination
                 navController.navigate(Routes.Home.route) {
                     // Clear the back stack
@@ -274,7 +289,9 @@ fun AppNavigation(fixtureId: String? = null, forceNavigate: Boolean = false) {
             val idToNavigate = targetFixtureId.value
 
             if (!idToNavigate.isNullOrEmpty() &&
-                navController.currentDestination?.route != Routes.FixtureDetails.createRoute(idToNavigate)
+                navController.currentDestination?.route != Routes.FixtureDetails.createRoute(
+                    idToNavigate
+                )
             ) {
                 // First navigate to Home to set it as the back destination
                 navController.navigate(Routes.Home.route) {

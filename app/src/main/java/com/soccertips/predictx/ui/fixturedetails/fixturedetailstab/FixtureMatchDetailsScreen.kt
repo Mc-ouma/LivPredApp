@@ -1,5 +1,6 @@
 package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 
+import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Sports
 import androidx.compose.material.icons.filled.Stadium
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +46,8 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.soccertips.predictx.admob.InlineBannerAdView
+import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.Fixture
 import com.soccertips.predictx.data.model.ResponseData
 import com.soccertips.predictx.data.model.prediction.Comparison
@@ -50,6 +55,7 @@ import com.soccertips.predictx.data.model.prediction.H2H
 import com.soccertips.predictx.data.model.prediction.Predictions
 import com.soccertips.predictx.data.model.prediction.Teams
 import com.soccertips.predictx.navigation.Routes
+import com.soccertips.predictx.ui.components.AnimatedButton
 import com.soccertips.predictx.ui.components.ErrorMessage
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
@@ -67,7 +73,8 @@ fun FixtureMatchDetailsScreen(
     fixtureDetails: ResponseData,
     homeTeamId: String,
     awayTeamId: String,
-    navController: NavController
+    navController: NavController,
+    rewardedAdManager: RewardedAdManager
 ) {
     // Safely convert team IDs to integers, defaulting to 0 if invalid or empty
     val homeTeamIdInt = homeTeamId.toIntOrNull() ?: 0
@@ -90,6 +97,8 @@ fun FixtureMatchDetailsScreen(
     ) {
         // Fixture detail card
         FixtureDetailCard(fixture = fixtureDetails.fixture)
+        Spacer(modifier = Modifier.height(16.dp))
+        InlineBannerAdView()
         Spacer(modifier = Modifier.height(16.dp))
 
         // Home and away fixtures section
@@ -117,7 +126,28 @@ fun FixtureMatchDetailsScreen(
                 )
             }
         } else {
-            PredictionCarousel(predictions, comparison, teams, h2h)
+            val context = LocalContext.current
+            val showPredictions = remember { androidx.compose.runtime.mutableStateOf(false) }
+
+            if (!showPredictions.value) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    AnimatedButton(
+                        onClick = {
+                            rewardedAdManager?.showRewardedAd(
+                                activity = context as Activity,
+                                onRewardEarned = { showPredictions.value = true }
+                            )
+                        },
+                        enabled = rewardedAdManager?.isAdLoaded() == true,
+                        text = "Watch Ad for Extra Predictions",
+                        pulseEnabled = true
+                    )
+                }
+            }
+
+            if (showPredictions.value) {
+                PredictionCarousel(predictions, comparison, teams, h2h)
+            }
         }
     }
 }
@@ -473,503 +503,3 @@ private fun FixtureDetailRow(
         )
     }
 }
-
-/*
-@Preview
-@Composable
-private fun FixtureColumnPreview() {
-    val fixtures = listOf(
-        SharedViewModel.FixtureWithType(
-            fixture = FixtureDetails(
-                fixture = FixtureInfo(
-                    id = 1,
-                    date = "2022-12-25T12:00:00+00:00",
-                    referee = "John Doe",
-                    venue = com.soccertips.predictx.data.model.lastfixtures.Venue(
-                        22,
-                        "Emirates Stadium",
-                        "London"
-                    ),
-                    timezone = "UTC",
-                    status = com.soccertips.predictx.data.model.lastfixtures.Status(
-                        "Match Finished",
-                        "FT",
-                        90,
-                        null
-                    ),
-                    timestamp = 2
-                ),
-                teams = TeamsInfo(
-                    home = TeamInfo(
-                        1,
-                        "Arsenal",
-                        "https://media.api-sports.io/football/teams/57.png",
-                        true
-                    ),
-                    away = TeamInfo(
-                        2,
-                        "Chelsea",
-                        "https://media.api-sports.io/football/teams/61.png",
-                        false
-                    )
-                ),
-                goals = com.soccertips.predictx.data.model.lastfixtures.Goals(
-                    home = 1,
-                    away = 2
-                ),
-                league = LeagueInfo(
-                    id = 1,
-                    name = "Premier League",
-                    country = "England",
-                    logo = "https://media.api-sports.io/football/leagues/1.png",
-                    flag = "https://media.api-sports.io/flags/gb.svg",
-                    season = 2022,
-                    round = "Regular Season"
-                ),
-                score = com.soccertips.predictx.data.model.lastfixtures.Score(
-                    halftime = HalftimeScore(1, 2),
-                    fulltime = FulltimeScore(1, 2),
-                    extratime = ExtraTimeScore(1, 2),
-                    penalty = PenaltyScore(1, 2)
-                )
-            ),
-            isHome = true,
-            specialId = "home_fixture_1"
-        )
-    )
-
-    FixtureColumn(
-        fixturesWithType = fixtures,
-        columnTitle = "Home Fixtures",
-        homeTeamIdInt = 1,
-        awayTeamIdInt = 2,
-        modifier = Modifier.fillMaxWidth(),
-        navController = NavController(context = LocalContext.current)
-    )
-
-
-}
-
-@Preview
-@Composable
-private fun FixtureDetailCardPreview() {
-    FixtureDetailCard(
-        fixture = Fixture(
-            id = 1,
-            date = "2022-12-25T12:00:00+00:00",
-            referee = "John Doe",
-            venue = com.soccertips.predictx.data.model.Venue(
-                22,
-                "Emirates Arenal Manchester ahhdgsgggdgdg ",
-                "London"
-            ),//suggest very long name to test overflow
-            timezone = "UTC",
-            periods = com.soccertips.predictx.data.model.Periods(1, 2),
-            status = com.soccertips.predictx.data.model.Status("Match Finished", "FT", 90, null),
-            timestamp = 2
-        )
-    )
-    // This preview will show the FixtureDetailCard with sample data
-
-
-}
-
-*/
-
-// Additional cards would be implemented similarly
-
-/*
-@Preview
-@Composable
-private fun PredictionCarouselPreview() {
-    val predictions = Predictions(
-        winner = Winner(23, "Arsenal", "Home team is likely to win"),
-        under_over = "+2.5",
-        percent = Percent("50%", "25%", "25%"),
-        advice = "Home team is likely to win",
-        win_or_draw = true,
-        goals = com.soccertips.predictx.data.model.prediction.Goals("1", "2"),
-    )
-    val comparison = Comparison(
-        form = ComparisonData("50", "50"),
-        att = ComparisonData("50", "50"),
-        def = ComparisonData("50", "50"),
-        h2h = ComparisonData("50", "50"),
-        total = ComparisonData("50", "50"),
-        poisson_distribution = ComparisonData("50", "50"),
-        goals = ComparisonData("50", "50")
-
-    )
-    val teams = Teams(
-        home = Team(
-            1,
-            "Arsenal",
-            "https://media.api-sports.io/football/teams/57.png",
-            last_5 = Last5(
-                "60%",
-                "70",
-                "0%",
-                goals = Last5Goals(`for` = GoalData(18, 3.6), against = GoalData(10, 2.0))
-            ),
-            league = TeamLeague(
-                form = "60%",
-                fixtures = Fixtures(
-                    played = FixtureDetail(1, 1, 1),
-                    wins = FixtureDetail(1, 1, 1),
-                    draws = FixtureDetail(1, 1, 1),
-                    loses = FixtureDetail(1, 1, 1),
-                ),
-                goals = TeamGoals(
-                    `for` = GoalStats(
-                        total = GoalTotal(1, 1, 1),
-                        average = GoalAverage(1.0, 1.0, 1.0)
-                    ),
-                    against = GoalStats(
-                        total = GoalTotal(1, 1, 1),
-                        average = GoalAverage(1.0, 1.0, 1.0)
-                    )
-                ),
-                biggest = Biggest(
-                    streak = Streak(1, 1, 1),
-                    wins = WinLoss("1", "1"),
-                    loses = WinLoss("1", "1"),
-                    goals = BiggestGoals(
-                        `for` = HomeAway(1, 1), against = HomeAway(1, 1)
-                    )
-                ),
-                clean_sheet = CleanSheet(23, 23, 46),
-                failed_to_score = FailedToScore(9, 9, 18)
-            )
-        ),
-        away = Team(
-            2, "Chelsea", "https://media.api-sports.io/football/teams/61.png",
-            last_5 = Last5(
-                "40%",
-                "50",
-                "0%",
-                goals = Last5Goals(`for` = GoalData(15, 3.0), against = GoalData(5, 1.0))
-            ),
-            league = TeamLeague(
-                form = "40%",
-                fixtures = Fixtures(
-                    played = FixtureDetail(1, 1, 1),
-                    wins = FixtureDetail(1, 1, 1),
-                    draws = FixtureDetail(1, 1, 1),
-                    loses = FixtureDetail(1, 1, 1),
-                ),
-                goals = TeamGoals(
-                    `for` = GoalStats(
-                        total = GoalTotal(1, 1, 1),
-                        average = GoalAverage(1.0, 1.0, 1.0)
-                    ),
-                    against = GoalStats(
-                        total = GoalTotal(1, 1, 1),
-                        average = GoalAverage(1.0, 1.0, 1.0)
-                    )
-                ),
-                biggest = Biggest(
-                    streak = Streak(1, 1, 1),
-                    wins = WinLoss("1", "1"),
-                    loses = WinLoss("1", "1"),
-                    goals = BiggestGoals(
-                        `for` = HomeAway(1, 1), against = HomeAway(1, 1)
-                    )
-                ),
-                clean_sheet = CleanSheet(23, 23, 46),
-                failed_to_score = FailedToScore(9, 9, 18)
-            )
-        )
-    )
-
-    val h2h = listOf(
-        H2H(
-            fixture = com.soccertips.predictx.data.model.prediction.Fixture(
-                id = 1,
-                date = "2022-12-25T12:00:00+00:00",
-                referee = "John Doe",
-                venue = Venue(22, "Emirates Stadium", "London"),
-                timezone = "UTC",
-                periods = Periods(1, 2),
-                status = Status("Match Finished", "FT", 90, null),
-                timestamp = 2
-            ),
-            goals = HomeAway(1, 2),
-            league = League(
-                1,
-                "Premier League",
-                "England",
-                "https://media.api-sports.io/football/leagues/1.png",
-                "https://media.api-sports.io/flags/gb.svg",
-                2022
-            ),
-            teams = TeamsShort(
-                home = TeamShort(
-                    1,
-                    "Arsenal",
-                    "https://media.api-sports.io/football/teams/57.png",
-                    winner = true
-                ),
-                away = TeamShort(
-                    2,
-                    "Chelsea",
-                    "https://media.api-sports.io/football/teams/61.png",
-                    winner = false
-                )
-            ),
-            score = Score(
-                halftime = HomeAway(1, 2),
-                fulltime = HomeAway(1, 2),
-                extratime = HomeAway(1, 2),
-                penalty = HomeAway(1, 2)
-            ),
-
-            )
-    )
-
-
-    PredictionCarousel(
-        predictions = predictions,
-        comparison = comparison,
-        teams = teams,
-        h2h = h2h
-    )
-
-
-}
-
-@Preview
-@Composable
-private fun FixtureDetailPrev() {
-    FixtureDetailCard(
-        fixture = Fixture(
-            id = 1,
-            date = "2022-12-25T12:00:00+00:00",
-            referee = "John Doe",
-            venue = com.soccertips.predictx.data.model.Venue(22, "Emirates Stadium", "London"),
-            timezone = "UTC",
-            periods = com.soccertips.predictx.data.model.Periods(1, 2),
-            status = com.soccertips.predictx.data.model.Status("Match Finished", "FT", 90, null),
-            timestamp = 2
-        )
-    )
-
-}
-
-@Preview
-@Composable
-private fun FixtureMatchDetailsScreenPreview() {
-    val fixtureDetails = ResponseData(
-        fixture = Fixture(
-            id = 1,
-            date = "2022-12-25T12:00:00+00:00",
-            referee = "John Doe",
-            venue = com.soccertips.predictx.data.model.Venue(22, "Emirates Stadium", "London"),
-            timezone = "UTC",
-            periods = com.soccertips.predictx.data.model.Periods(1, 2),
-            status = com.soccertips.predictx.data.model.Status("Match Finished", "FT", 90, null),
-            timestamp = 2
-        ),
-        league = com.soccertips.predictx.data.model.League(
-            id = 1,
-            name = "Premier League",
-            country = "England",
-            logo = "https://media.api-sports.io/football/leagues/1.png",
-            flag = "https://media.api-sports.io/flags/gb.svg",
-            season = 2022,
-            round = "Regular Season"
-        ),
-        teams = com.soccertips.predictx.data.model.Teams(
-            home = com.soccertips.predictx.data.model.Team(
-                id = 1,
-                name = "Arsenal",
-                logo = "https://media.api-sports.io/football/teams/57.png",
-                winner = true
-            ),
-            away = com.soccertips.predictx.data.model.Team(
-                id = 2,
-                name = "Chelsea",
-                logo = "https://media.api-sports.io/football/teams/61.png",
-                winner = false
-            )
-        ),
-        goals = com.soccertips.predictx.data.model.Goals(
-            home = 1,
-            away = 2
-        ),
-        score = com.soccertips.predictx.data.model.Score(
-            halftime = com.soccertips.predictx.data.model.HalfTime(1, 2),
-            fulltime = com.soccertips.predictx.data.model.FullTime(1, 2),
-            extratime = "ODO()",
-            penalty = "TODO()"
-        ),
-        events = emptyList(),
-        lineups = emptyList(),
-        statistics = emptyList(),
-        players = emptyList()
-    )
-
-    FixtureMatchDetailsScreen(
-        fixtures = listOf(
-            SharedViewModel.FixtureWithType(
-                fixture = FixtureDetails(
-                    fixture = FixtureInfo(
-                        id = 1,
-                        date = "2022-12-25T12:00:00+00:00",
-                        referee = "John Doe",
-                        venue = com.soccertips.predictx.data.model.lastfixtures.Venue(
-                            22,
-                            "Emirates Stadium",
-                            "London"
-                        ),
-                        timezone = "UTC",
-                        status = com.soccertips.predictx.data.model.lastfixtures.Status(
-                            "Match Finished",
-                            "FT",
-                            90,
-                            null
-                        ),
-                        timestamp = 2
-                    ),
-                    teams = TeamsInfo(
-                        home = TeamInfo(
-                            1,
-                            "Arsenal",
-                            "https://media.api-sports.io/football/teams/57.png",
-                            true
-                        ),
-                        away = TeamInfo(
-                            2,
-                            "Chelsea",
-                            "https://media.api-sports.io/football/teams/61.png",
-                            false
-                        )
-                    ),
-                    goals = com.soccertips.predictx.data.model.lastfixtures.Goals(
-                        home = 1,
-                        away = 2
-                    ),
-                    league = LeagueInfo(
-                        id = 1,
-                        name = "Premier League",
-                        country = "England",
-                        logo = "https://media.api-sports.io/football/leagues/1.png",
-                        flag = "https://media.api-sports.io/flags/gb.svg",
-                        season = 2022,
-                        round = "Regular Season"
-                    ),
-                    score = com.soccertips.predictx.data.model.lastfixtures.Score(
-                        halftime = HalftimeScore(1, 2),
-                        fulltime = FulltimeScore(1, 2),
-                        extratime = ExtraTimeScore(1, 2),
-                        penalty = PenaltyScore(1, 2)
-                    )
-                ),
-                isHome = true,
-                specialId = "fixture_1"
-            )
-        ),
-        predictions = Predictions(
-            winner = Winner(1, "Arsenal", "Home team is likely to win"),
-            under_over = "+2.5",
-            percent = Percent("50%", "25%", "25%"),
-            advice = "Home team is likely to win",
-            win_or_draw = true,
-            goals = Goals("1", "2")
-        ),
-        comparison = Comparison(
-            form = ComparisonData("50", "50"),
-            att = ComparisonData("50", "50"),
-            def = ComparisonData("50", "50"),
-            h2h = ComparisonData("50", "50"),
-            total = ComparisonData("50", "50"),
-            poisson_distribution = ComparisonData("50", "50"),
-            goals = ComparisonData("50", "50")
-        ),
-        teams = Teams(
-            home = Team(
-                1, "Arsenal", "https://media.api-sports.io/football/teams/57.png",
-                last_5 = Last5(
-                    "60%",
-                    "70",
-                    "0%",
-                    goals = Last5Goals(`for` = GoalData(18, 3.6), against = GoalData(10, 2.0))
-                ),
-                league = TeamLeague(
-                    form = "60%",
-                    fixtures = Fixtures(
-                        played = FixtureDetail(1, 1, 1),
-                        wins = FixtureDetail(1, 1, 1),
-                        draws = FixtureDetail(1, 1, 1),
-                        loses = FixtureDetail(1, 1, 1)
-                    ),
-                    goals = TeamGoals(
-                        `for` = GoalStats(
-                            total = GoalTotal(1, 1, 1),
-                            average = GoalAverage(1.0, 1.0, 1.0)
-                        ),
-                        against = GoalStats(
-                            total = GoalTotal(1, 1, 1),
-                            average = GoalAverage(1.0, 1.0, 1.0)
-                        )
-                    ),
-                    biggest = Biggest(
-                        streak = Streak(1, 1, 1),
-                        wins = WinLoss("1", "1"),
-                        loses = WinLoss("1", "1"),
-                        goals = BiggestGoals(
-                            `for` = HomeAway(1, 1), against = HomeAway(1, 1)
-                        )
-                    ),
-                    clean_sheet = CleanSheet(23, 23, 46),
-                    failed_to_score = FailedToScore(9, 9, 18)
-                )
-            ),
-            away = Team(
-                2, "Chelsea", "https://media.api-sports.io/football/teams/61.png",
-                last_5 = Last5(
-                    "40%",
-                    "50",
-                    "0%",
-                    goals = Last5Goals(`for` = GoalData(15, 3.0), against = GoalData(5, 1.0))
-                ),
-                league = TeamLeague(
-                    form = "40%",
-                    fixtures = Fixtures(
-                        played = FixtureDetail(1, 1, 1),
-                        wins = FixtureDetail(1, 1, 1),
-                        draws = FixtureDetail(1, 1, 1),
-                        loses = FixtureDetail(1, 1, 1)
-                    ),
-                    goals = TeamGoals(
-                        `for` = GoalStats(
-                            total = GoalTotal(1, 1, 1),
-                            average = GoalAverage(1.0, 1.0, 1.0)
-                        ),
-                        against = GoalStats(
-                            total = GoalTotal(1, 1, 1),
-                            average = GoalAverage(1.0, 1.0, 1.0)
-                        )
-                    ),
-                    biggest = Biggest(
-                        streak = Streak(1, 1, 1),
-                        wins = WinLoss("1", "1"),
-                        loses = WinLoss("1", "1"),
-                        goals = BiggestGoals(
-                            `for` = HomeAway(1, 1), against = HomeAway(1, 1)
-                        )
-                    ),
-                    clean_sheet = CleanSheet(23, 23, 46),
-                    failed_to_score = FailedToScore(9, 9, 18),
-                ),
-            ),
-        ),
-
-
-        h2h = emptyList(),
-        fixtureDetails = fixtureDetails,
-        homeTeamId = "1",
-        awayTeamId = "2",
-        navController = NavController(context = LocalContext.current)
-    )
-
-}*/

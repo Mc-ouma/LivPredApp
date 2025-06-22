@@ -74,6 +74,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.soccertips.predictx.Menu2
 import com.soccertips.predictx.R
+import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.ResponseData
 import com.soccertips.predictx.data.model.Team
 import com.soccertips.predictx.navigation.Routes
@@ -102,6 +103,7 @@ fun FixtureDetailsScreen(
     sharedViewModel: SharedViewModel = hiltViewModel(LocalContext.current as ViewModelStoreOwner),
     viewModel: FixtureDetailsViewModel = hiltViewModel(),
     pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
+    rewardedAdManager: RewardedAdManager
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val formState by sharedViewModel.fixturesState.collectAsState()
@@ -202,6 +204,7 @@ fun FixtureDetailsScreen(
                     formState = formState,
                     fixtureDetails = fixtureDetails,
                     navController = navController,
+                    rewardedAdManager = rewardedAdManager
                 )
             }
             is FixtureDetailsUiState.Error -> ErrorScreen(
@@ -300,6 +303,7 @@ fun FixtureDetailsTabs(
     sharedViewModel: SharedViewModel,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
     navController: NavController,
+    rewardedAdManager: RewardedAdManager
 ) {
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
@@ -406,7 +410,8 @@ fun FixtureDetailsTabs(
                             formState = formState,
                             fixturePredictionsState = predictionsState,
                             fixtureDetails = fixtureDetails,
-                            navController = navController
+                            navController = navController,
+                            rewardedAdManager = rewardedAdManager
                         )
                     }
                     FixtureDetailsScreenPage.STATISTICS -> {

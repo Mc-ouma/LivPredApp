@@ -1,6 +1,5 @@
 package com.soccertips.predictx.ui.items
 
-
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,10 +37,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predictx.Menu
+import com.soccertips.predictx.R
 import com.soccertips.predictx.admob.BannerAdView
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.data.model.Category
@@ -53,12 +55,11 @@ import com.soccertips.predictx.ui.components.LoadingIndicator
 import com.soccertips.predictx.viewmodel.ItemsListViewModel
 import java.time.LocalDate
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 object Last5DaysSelectableDates : SelectableDates {
     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
         val fiveDaysAgo =
-            System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000) // 5 days in milliseconds
+                System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000) // 5 days in milliseconds
         return utcTimeMillis >= fiveDaysAgo && utcTimeMillis <= System.currentTimeMillis()
     }
 
@@ -70,21 +71,21 @@ object Last5DaysSelectableDates : SelectableDates {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemsListScreen(
-    navController: NavController,
-    categoryId: String,
-    categories: List<Category>,
-    viewModel: ItemsListViewModel = hiltViewModel(),
-    interstitialAdManager: InterstitialAdManager
+        navController: NavController,
+        categoryId: String,
+        categories: List<Category>,
+        viewModel: ItemsListViewModel = hiltViewModel(),
+        interstitialAdManager: InterstitialAdManager
 ) {
-    val category = remember(categoryId) {
-        categories.find { it.url == categoryId }
-    } ?: categories.first()
+    val category =
+            remember(categoryId) { categories.find { it.url == categoryId } } ?: categories.first()
 
     val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
     val formattedDate = DateUtils.formatRelativeDate(selectedDate.toString())
     var scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val context = LocalContext.current
 
     // Fetch items when the category or selected date changes
     LaunchedEffect(key1 = category, key2 = selectedDate) {
@@ -92,113 +93,105 @@ fun ItemsListScreen(
     }
 
     Scaffold(
-        Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = formattedDate,
-                    )
-                },
-                //show  interstitial ad when the back button is pressed
-                navigationIcon = {
-
-                    IconButton(onClick = {
-                        if (interstitialAdManager.isAdLoaded()) {
-                            try {
-                                val activity = navController.context as? Activity
-                                activity?.let {
-                                    interstitialAdManager.showInterstialAd(it)
-                                    navController.popBackStack()
-
-                                } ?: navController.popBackStack()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                navController.popBackStack()
+            Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
+                CenterAlignedTopAppBar(
+                        title = {
+                            Text(
+                                    text = formattedDate,
+                            )
+                        },
+                        // show  interstitial ad when the back button is pressed
+                        navigationIcon = {
+                            IconButton(
+                                    onClick = {
+                                        if (interstitialAdManager.isAdLoaded()) {
+                                            try {
+                                                val activity = navController.context as? Activity
+                                                activity?.let {
+                                                    interstitialAdManager.showInterstialAd(it)
+                                                    navController.popBackStack()
+                                                }
+                                                        ?: navController.popBackStack()
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                                navController.popBackStack()
+                                            }
+                                        }
+                                        navController.popBackStack()
+                                    }
+                            ) {
+                                Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
+                                        contentDescription = "Back"
+                                )
                             }
-                        }
-                        navController.popBackStack()
-                    }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Today,
-                            contentDescription = "Select Date",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Menu()
-                },
-                scrollBehavior = scrollBehavior,
-            )
-        },
-        bottomBar = {
-            BannerAdView()
-        }
+                        },
+                        actions = {
+                            IconButton(onClick = { showDatePicker = true }) {
+                                Icon(
+                                        imageVector = Icons.Filled.Today,
+                                        contentDescription = "Select Date",
+                                        tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Menu()
+                        },
+                        scrollBehavior = scrollBehavior,
+                )
+            },
+            bottomBar = { BannerAdView() }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val uiState = viewModel.uiState.collectAsState().value) {
                 is UiState.Loading -> {
                     LoadingIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-
                 is UiState.Error -> {
                     ErrorMessage(
-                        message = "Failed to fetch games, please try again later.",
-                        onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                        modifier = Modifier.align(Alignment.Center),
+                            message = context.getString(R.string.failed_to_fetch_data),
+                            onRetry = { viewModel.fetchItems(category.url, selectedDate) },
+                            modifier = Modifier.align(Alignment.Center),
                     )
                 }
-
                 is UiState.Success -> {
                     val items = uiState.data
                     if (items.isEmpty()) {
                         ErrorMessage(
-                            message = "No games found for the selected date.",
-                            onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                            modifier = Modifier.align(Alignment.Center),
+                                message = "No games found for the selected date.",
+                                onRetry = { viewModel.fetchItems(category.url, selectedDate) },
+                                modifier = Modifier.align(Alignment.Center),
                         )
                     } else {
                         LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(16.dp),
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(items) { item ->
                                 // Check if the item is a favorite
                                 var isFavorite by remember { mutableStateOf(false) }
-                                LaunchedEffect(item) {
-                                    isFavorite = viewModel.isFavorite(item)
-                                }
+                                LaunchedEffect(item) { isFavorite = viewModel.isFavorite(item) }
 
                                 ItemCard(
-                                    item = item,
-                                    onClick = {
-                                        navController.navigate(
-                                            Routes.FixtureDetails.createRoute(
-                                                item.fixtureId ?: ""
-                                            ),
-                                        )
-                                    },
-                                    onFavoriteClick = {
-                                        viewModel.toggleFavorite(item)
-                                    },
-                                    viewModel = viewModel
+                                        item = item,
+                                        onClick = {
+                                            navController.navigate(
+                                                    Routes.FixtureDetails.createRoute(
+                                                            item.fixtureId ?: ""
+                                                    ),
+                                            )
+                                        },
+                                        onFavoriteClick = { viewModel.toggleFavorite(item) },
+                                        viewModel = viewModel
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
                 }
-
-                else -> { /* No Action */
+                else -> {
+                    /* No Action */
                 }
             }
         }
@@ -206,31 +199,27 @@ fun ItemsListScreen(
         // Date picker dialog
         if (showDatePicker) {
             DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val selectedDateMillis = datePickerState.selectedDateMillis
-                            if (selectedDateMillis != null) {
-                                selectedDate =
-                                    LocalDate.ofEpochDay(selectedDateMillis / (24 * 60 * 60 * 1000))
-                            }
-                            showDatePicker = false
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(
+                                onClick = {
+                                    val selectedDateMillis = datePickerState.selectedDateMillis
+                                    if (selectedDateMillis != null) {
+                                        selectedDate =
+                                                LocalDate.ofEpochDay(
+                                                        selectedDateMillis / (24 * 60 * 60 * 1000)
+                                                )
+                                    }
+                                    showDatePicker = false
+                                }
+                        ) { Text(stringResource(R.string.ok)) }
+                    },
+                    content = { DatePicker(state = datePickerState) },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) {
+                            Text(stringResource(R.string.cancel))
                         }
-                    ) {
-                        Text("OK")
-                    }
-                },
-                content = {
-                    DatePicker(state = datePickerState)
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showDatePicker = false }
-                    ) {
-                        Text("Cancel")
-                    }
-                },
+                    },
             )
         }
     }

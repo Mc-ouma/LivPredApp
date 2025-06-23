@@ -12,48 +12,43 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.soccertips.predictx.R
 
 @Composable
 fun AppUpdateAndReviewScreen(
-    showSnackbar: Boolean,
-    onDismissSnackbar: () -> Unit,
-    onCompleteUpdate: () -> Unit,
-    onRequestReview: () -> Unit
+        showSnackbar: Boolean,
+        onDismissSnackbar: () -> Unit,
+        onCompleteUpdate: () -> Unit,
+        onRequestReview: () -> Unit
 ) {
     LocalContext.current
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
         ) {
             Button(onClick = onRequestReview) {
-                Text("Request In-App Review")
+                Text(stringResource(R.string.request_in_app_review))
             }
         }
     }
 
     if (showSnackbar) {
         Snackbar(
-            action = {
-                Button(onClick = {
-                    onCompleteUpdate()
-                    onDismissSnackbar()
-                }) {
-                    Text("RESTART")
-                }
-            },
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text("Update downloaded. Restart to install.")
-        }
+                action = {
+                    Button(
+                            onClick = {
+                                onCompleteUpdate()
+                                onDismissSnackbar()
+                            }
+                    ) { Text(stringResource(R.string.restart)) }
+                },
+                modifier = Modifier.padding(16.dp)
+        ) { Text(stringResource(R.string.update_downloaded_restart)) }
     }
 }
 
@@ -61,10 +56,9 @@ fun AppUpdateAndReviewScreen(
 @Composable
 private fun AppUpdateAndReviewScreenPreview() {
     AppUpdateAndReviewScreen(
-        showSnackbar = true,
-        onDismissSnackbar = {},
-        onCompleteUpdate = {},
-        onRequestReview = {}
+            showSnackbar = true,
+            onDismissSnackbar = {},
+            onCompleteUpdate = {},
+            onRequestReview = {}
     )
-
 }

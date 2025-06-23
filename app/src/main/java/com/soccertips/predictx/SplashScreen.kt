@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,13 +50,11 @@ import com.soccertips.predictx.navigation.Routes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
-
 @Composable
 fun SplashScreen(
-    navController: NavController,
-    initialFixtureId: String?,
-    onSplashCompleted: () -> Unit
+        navController: NavController,
+        initialFixtureId: String?,
+        onSplashCompleted: () -> Unit
 ) {
     // Animation state management
     var animationState by remember { mutableStateOf(SplashAnimationState.Initial) }
@@ -64,91 +63,100 @@ fun SplashScreen(
     // Enhanced theming for better visual appeal
     val isDarkTheme = isSystemInDarkTheme()
     val primaryColor = MaterialTheme.colorScheme.primary
-    val backgroundColor = if (isDarkTheme) {
-        MaterialTheme.colorScheme.surfaceVariant
-    } else {
-        MaterialTheme.colorScheme.background
-    }
+    val backgroundColor =
+            if (isDarkTheme) {
+                MaterialTheme.colorScheme.surfaceVariant
+            } else {
+                MaterialTheme.colorScheme.background
+            }
 
     // More dynamic gradient background
-    val gradientColors = if (isDarkTheme) {
-        listOf(
-            backgroundColor,
-            primaryColor.copy(alpha = 0.2f),
-            backgroundColor
-        )
-    } else {
-        listOf(
-            MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-            backgroundColor
-        )
-    }
+    val gradientColors =
+            if (isDarkTheme) {
+                listOf(backgroundColor, primaryColor.copy(alpha = 0.2f), backgroundColor)
+            } else {
+                listOf(
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                        backgroundColor
+                )
+            }
 
     // Single source of truth for animation
     val logoAnimatable = remember { Animatable(0f) }
 
     // Create a subtle pulsing effect once logo appears
-    val pulseFactor by rememberInfiniteTransition(label = "logoPulse").animateFloat(
-        initialValue = 0.97f,
-        targetValue = 1.03f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = EaseInOutQuad),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulseAnimation"
-    )
+    val pulseFactor by
+            rememberInfiniteTransition(label = "logoPulse")
+                    .animateFloat(
+                            initialValue = 0.97f,
+                            targetValue = 1.03f,
+                            animationSpec =
+                                    infiniteRepeatable(
+                                            animation = tween(1000, easing = EaseInOutQuad),
+                                            repeatMode = RepeatMode.Reverse
+                                    ),
+                            label = "pulseAnimation"
+                    )
 
     // Derive scale and alpha from animation progress
-    val logoScale = if (logoAnimatable.value < 0.5f) {
-        0.8f + (logoAnimatable.value * 0.4f)
-    } else {
-        1f * if (animationState >= SplashAnimationState.ShowTagline) pulseFactor else 1f
-    }
+    val logoScale =
+            if (logoAnimatable.value < 0.5f) {
+                0.8f + (logoAnimatable.value * 0.4f)
+            } else {
+                1f * if (animationState >= SplashAnimationState.ShowTagline) pulseFactor else 1f
+            }
 
     val logoAlpha = (logoAnimatable.value * 2f).coerceIn(0f, 1f)
+    val context = LocalContext.current
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(colors = gradientColors))
-            .semantics { contentDescription = "Splash Screen" },
-        contentAlignment = Alignment.Center
+            modifier =
+                    Modifier.fillMaxSize()
+                            .background(Brush.verticalGradient(colors = gradientColors))
+                            .semantics {
+                                contentDescription = context.getString(R.string.splash_screen)
+                            },
+            contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(16.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(16.dp)
         ) {
             // Optimized logo animation
             Image(
-                painter = painterResource(id = R.drawable.launcher),
-                contentDescription = "App Logo",
-                modifier = Modifier
-                    .size(200.dp)
-                    .graphicsLayer(
-                        alpha = logoAlpha,
-                        scaleX = logoScale,
-                        scaleY = logoScale
-                    )
+                    painter = painterResource(id = R.drawable.launcher),
+                    contentDescription = context.getString(R.string.app_logo),
+                    modifier =
+                            Modifier.size(200.dp)
+                                    .graphicsLayer(
+                                            alpha = logoAlpha,
+                                            scaleX = logoScale,
+                                            scaleY = logoScale
+                                    )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Tagline with slide-in animation
             AnimatedVisibility(
-                visible = animationState >= SplashAnimationState.ShowTagline,
-                enter = fadeIn(tween(500)) + slideInVertically(
-                    initialOffsetY = { with(density) { 20.dp.roundToPx() } },
-                    animationSpec = tween(500)
-                )
+                    visible = animationState >= SplashAnimationState.ShowTagline,
+                    enter =
+                            fadeIn(tween(500)) +
+                                    slideInVertically(
+                                            initialOffsetY = {
+                                                with(density) { 20.dp.roundToPx() }
+                                            },
+                                            animationSpec = tween(500)
+                                    )
             ) {
                 Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
                 )
             }
 
@@ -156,13 +164,13 @@ fun SplashScreen(
 
             // Loading indicator with fade-in
             AnimatedVisibility(
-                visible = animationState >= SplashAnimationState.ShowLoading,
-                enter = fadeIn(tween(400))
+                    visible = animationState >= SplashAnimationState.ShowLoading,
+                    enter = fadeIn(tween(400))
             ) {
                 CircularProgressIndicator(
-                    color = primaryColor,
-                    modifier = Modifier.size(48.dp),
-                    strokeWidth = 3.dp
+                        color = primaryColor,
+                        modifier = Modifier.size(48.dp),
+                        strokeWidth = 3.dp
                 )
             }
         }
@@ -172,8 +180,8 @@ fun SplashScreen(
     LaunchedEffect(Unit) {
         launch {
             logoAnimatable.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(800, easing = EaseOutCubic)
+                    targetValue = 1f,
+                    animationSpec = tween(800, easing = EaseOutCubic)
             )
         }
 
@@ -185,15 +193,14 @@ fun SplashScreen(
         delay(1200)
         onSplashCompleted()
 
-        val destination = if (!initialFixtureId.isNullOrEmpty()) {
-            Routes.FixtureDetails.createRoute(initialFixtureId)
-        } else {
-            Routes.Home.route
-        }
+        val destination =
+                if (!initialFixtureId.isNullOrEmpty()) {
+                    Routes.FixtureDetails.createRoute(initialFixtureId)
+                } else {
+                    Routes.Home.route
+                }
 
-        navController.navigate(destination) {
-            popUpTo(Routes.Splash.route) { inclusive = true }
-        }
+        navController.navigate(destination) { popUpTo(Routes.Splash.route) { inclusive = true } }
     }
 }
 
@@ -207,8 +214,9 @@ enum class SplashAnimationState {
 @Composable
 private fun SplashScreenPreview() {
     SplashScreen(
-        navController = NavController(
-            context = androidx.compose.ui.platform.LocalContext.current
-        ), initialFixtureId = null, onSplashCompleted = {})
-
+            navController =
+                    NavController(context = androidx.compose.ui.platform.LocalContext.current),
+            initialFixtureId = null,
+            onSplashCompleted = {}
+    )
 }

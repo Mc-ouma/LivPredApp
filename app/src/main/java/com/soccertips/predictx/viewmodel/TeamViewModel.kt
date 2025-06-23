@@ -13,22 +13,22 @@ import com.soccertips.predictx.data.model.team.transfer.Response2
 import com.soccertips.predictx.repository.TeamsRepository
 import com.soccertips.predictx.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import javax.inject.Inject
 
 @HiltViewModel
 class TeamViewModel
 @Inject
 constructor(
-    private val repository: TeamsRepository,
+        private val repository: TeamsRepository,
 ) : ViewModel() {
     private val _team = MutableStateFlow<UiState<TeamStatistics>>(UiState.Loading)
     val team: StateFlow<UiState<TeamStatistics>> = _team.asStateFlow()
@@ -49,11 +49,13 @@ constructor(
     val isFixturesLoading: StateFlow<Boolean> = _isFixturesLoading.asStateFlow()
 
     private val _teamData =
-        MutableStateFlow<UiState<List<com.soccertips.predictx.data.model.team.teamscreen.Response>>>(
-            UiState.Loading
-        )
-    val teamData: StateFlow<UiState<List<com.soccertips.predictx.data.model.team.teamscreen.Response>>> =
-        _teamData.asStateFlow()
+            MutableStateFlow<
+                    UiState<List<com.soccertips.predictx.data.model.team.teamscreen.Response>>>(
+                    UiState.Loading
+            )
+    val teamData:
+            StateFlow<UiState<List<com.soccertips.predictx.data.model.team.teamscreen.Response>>> =
+            _teamData.asStateFlow()
     private val _isTeamDataLoading = MutableStateFlow(false)
     val isTeamDataLoading: StateFlow<Boolean> = _isTeamDataLoading.asStateFlow()
 
@@ -65,12 +67,12 @@ constructor(
     var isFixturesDataLoaded = false
 
     private inline fun <reified T> fetchData(
-        stateFlow: MutableStateFlow<UiState<T>>,
-        loadingStateFlow: MutableStateFlow<Boolean>,
-        cacheKey: String,
-        crossinline apiCall: suspend () -> T,
-        noinline onError: (Exception) -> Unit = {},
-        crossinline onSuccess: () -> Unit,
+            stateFlow: MutableStateFlow<UiState<T>>,
+            loadingStateFlow: MutableStateFlow<Boolean>,
+            cacheKey: String,
+            crossinline apiCall: suspend () -> T,
+            noinline onError: (Exception) -> Unit = {},
+            crossinline onSuccess: () -> Unit,
     ) {
         viewModelScope.launch {
             val cachedData = cache[cacheKey] as? T
@@ -99,26 +101,31 @@ constructor(
     }
 
     fun getTeamData(teamId: Int) {
-        fetchData(_teamData, _isTeamDataLoading, "teamData_$teamId", { repository.getTeamData(teamId).response }) {
-            isTeamDataLoaded = true
-        }
+        fetchData(
+                _teamData,
+                _isTeamDataLoading,
+                "teamData_$teamId",
+                { repository.getTeamData(teamId).response }
+        ) { isTeamDataLoaded = true }
     }
 
     fun getTeams(leagueId: String, season: String, teamId: String) {
         fetchData(
-            _team,
-            _isTeamLoading,
-            "team_$teamId",
-            { repository.getTeams(leagueId, season, teamId).response }) {
-            isTeamDataLoaded = true
-        }
+                _team,
+                _isTeamLoading,
+                "team_$teamId",
+                { repository.getTeams(leagueId, season, teamId).response }
+        ) { isTeamDataLoaded = true }
     }
 
     fun getPlayers(teamId: String) {
         if (!isPlayersDataLoaded) {
-            fetchData(_players, _isPlayersLoading, "players_$teamId", { repository.getPlayers(teamId).response }) {
-                isPlayersDataLoaded = true
-            }
+            fetchData(
+                    _players,
+                    _isPlayersLoading,
+                    "players_$teamId",
+                    { repository.getPlayers(teamId).response }
+            ) { isPlayersDataLoaded = true }
         }
     }
 
@@ -129,19 +136,15 @@ constructor(
     fun getNextFixtures(teamId: String, season: String, next: String) {
         if (!isFixturesDataLoaded) {
             fetchData(
-                _fixtures,
-                _isFixturesLoading,
-                "fixtures_$teamId",
-                { repository.getNextFixtures(teamId, season, next).response }) {
-                isFixturesDataLoaded = true
-            }
+                    _fixtures,
+                    _isFixturesLoading,
+                    "fixtures_$teamId",
+                    { repository.getNextFixtures(teamId, season, next).response }
+            ) { isFixturesDataLoaded = true }
         }
     }
 
-    data class FormattedDateTime(
-        val date: String,
-        val time: String
-    )
+    data class FormattedDateTime(val date: String, val time: String)
 
     fun formatDateTime(dateString: String, timezone: String): FormattedDateTime {
         val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
@@ -159,15 +162,13 @@ constructor(
             calendar.add(Calendar.DAY_OF_YEAR, 1)
             val tomorrow = calendar.time
 
-            val formattedDate = when {
-                isSameDay(date, today) -> "Today"
-                isSameDay(date, tomorrow) -> "Tomorrow"
-                else -> dateFormat.format(date!!)
-            }
-            FormattedDateTime(
-                date = formattedDate,
-                time = timeFormat.format(date)
-            )
+            val formattedDate =
+                    when {
+                        isSameDay(date, today) -> "Today"
+                        isSameDay(date, tomorrow) -> "Tomorrow"
+                        else -> dateFormat.format(date!!)
+                    }
+            FormattedDateTime(date = formattedDate, time = timeFormat.format(date))
         } catch (e: Exception) {
             FormattedDateTime(date = "Invalid Date", time = "Invalid Time")
         }

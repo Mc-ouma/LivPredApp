@@ -1,6 +1,5 @@
 package com.soccertips.predictx.ui.fixturedetails
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,52 +15,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.soccertips.predictx.R
 import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.components.LoadingIndicator
 
 @Composable
 fun LoadingScreen(paddingValues: PaddingValues) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-        LoadingIndicator()
-    }
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center,
+    ) { LoadingIndicator() }
 }
 
 @Composable
 fun ErrorScreen(paddingValues: PaddingValues, message: String, onRetry: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "😕",
-                fontSize = 64.sp
-            )
+            Text(text = "😕", fontSize = 64.sp)
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = message,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center
+                    text = message,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-
+            Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
         }
     }
 }
@@ -69,45 +56,35 @@ fun ErrorScreen(paddingValues: PaddingValues, message: String, onRetry: () -> Un
 @Composable
 fun EmptyScreen(paddingValues: PaddingValues, message: String = "No data available") {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = message,
-            color = Color.Gray,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center,
+    ) { Text(text = message, color = Color.Gray, style = MaterialTheme.typography.bodyLarge) }
 }
 
 @Composable
-fun EmptyStateMessages(
-    uiState: FixtureDetailsUiState
-) {
+fun EmptyStateMessages(uiState: FixtureDetailsUiState) {
     if (uiState is FixtureDetailsUiState.Success) {
         val successState = uiState
         Column(modifier = Modifier.padding(16.dp)) {
             if (successState.fixtureStats.isNullOrEmpty()) {
                 Text(
-                    "No fixture stats available",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                        "No fixture stats available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
                 )
             }
             if (successState.fixtureEvents.isNullOrEmpty()) {
                 Text(
-                    "No fixture events available",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                        "No fixture events available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
                 )
             }
             if (successState.predictions.isNullOrEmpty()) {
                 Text(
-                    "No fixture predictions available",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                        "No fixture predictions available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
                 )
             }
         }
@@ -118,17 +95,17 @@ fun EmptyStateMessages(
 @Composable
 private fun ErrorScreenPreview() {
     ErrorScreen(
-        paddingValues = PaddingValues(16.dp),
-        message = "An error occurred while fetching data.",
-        onRetry = {}
+            paddingValues = PaddingValues(16.dp),
+            message = stringResource(R.string.error_occurred_fetching_data),
+            onRetry = {}
     )
-    
 }
+
 @Preview(uiMode = 1)
 @Composable
 private fun EmptyScreenPreview() {
     EmptyScreen(
-        paddingValues = PaddingValues(16.dp),
-        message = "No data available"
+            paddingValues = PaddingValues(16.dp),
+            message = stringResource(R.string.no_data_available)
     )
 }

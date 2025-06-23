@@ -1,2 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+
+<resources>
+<string name="app_name">AI ScoreCast</string>
+<string name="match_details">Info</string>
+<string name="result">Result</string>
+<string name="statistics">Stats</string>
+<string name="head_to_head">H2H</string>
+<string name="lineups">LineUps</string>
+<string name="standings">Standing</string>
+<string name="summary">Summary</string>
+<string name="squad">Squad</string>
+<string name="fixtures">Fixtures</string>
+<string name="transfers">Transfers</string>
+<string name="overview">Overview</string>
+
+<string name="today">Today</string>
+<string name="tomorrow">Tomorrow</string>
+<string name="yesterday">Yesterday</string>
+<string name="unknown_date">Unknown Date</string>
+<string name="type">Type</string>
+<string name="home">Home</string>
+<string name="away">Away</string>
+<string name="total">Total</string>
+<string name="for_">For</string>
+<string name="against">Against</string>
+<string name="minute">Minute</string>
+<string name="percentage">Percentage</string>
+<string name="category">Category</string>
+
+<!-- Navigation and UI -->
+<string name="categories">Categories</string>
+<string name="favorites">Favorites</string>
+<string name="saved">Saved</string>
+<string name="information">Information</string>
+<string name="back">Back</string>
+<string name="close">Close</string>
+<string name="retry">Retry</string>
+<string name="ok">OK</string>
+<string name="cancel">Cancel</string>
+<string name="submit">Submit</string>
+
+<!-- Menu Items -->
+<string name="share">Share</string>
+<string name="rate_us">Rate Us</string>
+<string name="privacy_policy">Privacy Policy</string>
+<string name="telegram">Telegram</string>
+<string name="send_feedback">Send Feedback</string>
+<string name="about_us">About Us</string>
+
+<!-- Form Labels -->
+<string name="email_address">Email Address</string>
+<string name="message">Message</string>
+<string name="enter_email_placeholder">Enter your email address</string>
+<string name="other_feedback">Other Feedback</string>
+
+<!-- Prediction Categories -->
+<string name="over_under">Over/Under</string>
+<string name="btts">BTTS</string>
+<string name="daily_2_odds">Daily 2 Odds</string>
+<string name="combo">Combo</string>
+<string name="ht_ft">HT/FT</string>
+<string name="home_away">Home/Away</string>
+<string name="daily_bonus">Daily Bonus</string>
+<string name="extra_picks">Extra Picks</string>
+
+<!-- Prediction Carousel -->
+<string name="goals_for">Goals For:</string>
+<string name="goals_against">Goals Against:</string>
+<string name="failed_to_score">Failed to score:</string>
+<string name="scored">Scored:</string>
+<string name="conceded">Conceded:</string>
+<string name="clean_sheets">Clean sheets:</string>
+<string name="form">Form</string>
+<string name="attack">Attack</string>
+<string name="defense">Defense</string>
+<string name="h2h">h2h</string>
+<string name="overall">Overall</string>
+
+<!-- Team Details -->
+<string name="invalid_date">Invalid Date</string>
+<string name="invalid_time">Invalid Time</string>
+
+<!-- Error Messages -->
+<string name="press_back_again_to_exit">Press back again to exit</string>
+<string name="no_internet_connection">No internet connection</string>
+<string name="could_not_open_link">Could not open link</string>
+<string name="invalid_team_ids">Invalid team ID(s). Please check your input.</string>
+<string name="error_occurred_check_internet">An error occurred. Please check your internet or
+        check again later</string>
+<string name="error_occurred_fetching_data">An error occurred while fetching data.</string>
+<string name="no_data_available">No data available</string>
+<string name="removed_from_favorites">Removed from favorites</string>
+<string name="undo">Undo</string>
+<string name="no_categories_available">No categories available. Join our Telegram channel for
+        updates and support.</string>
+<string name="failed_to_fetch_data">Failed to fetch data</string>
+<string name="error_loading_categories">Error loading categories</string>
+<string name="no_standings_found">No standings found</string>
+<string name="failed_to_fetch_standings">Failed to fetch standings</string>
+<string name="an_error_occurred_while_fetching_fixtures">An error occurred while fetching
+        fixtures.</string>
+<string name="an_unexpected_error_occurred">An unexpected error occurred.</string>
+<string name="network_error_check_connection">Network error. Please check your connection and
+        try again.</string>
+
+<!-- Notification Messages -->
+<string name="match_starts_in_15_minutes">Match starts in 15 minutes!</string>
+<string name="upcoming_matches">Upcoming Matches</string>
+<string name="match_updates">Match Updates</string>
+<string name="matches_count">%d matches</string>
+<string name="final_score_format">Final Score: %d - %d</string>
+<string name="league_format">League: %s</string>
+<string name="date_format">Date: %s Time: %s</string>
+<string name="your_pick_format">Your Pick: %s</string>
+<string name="vs">VS</string>
+
+<!-- App Update -->
+<string name="an_update_has_been_downloaded">An update has just been downloaded.</string>
+<string name="restart">RESTART</string>
+<string name="update_downloaded_restart">Update downloaded. Restart to install.</string>
+<string name="request_in_app_review">Request In-App Review</string>
+
+<!-- Join Telegram -->
+<string name="join_our_telegram_channel">Join Our Telegram Channel</string>
+
+<!-- Content Descriptions -->
+<string name="localized_description">Localized description</string>
+<string name="app_icon">App Icon</string>
+<string name="app_logo">App Logo</string>
+<string name="splash_screen">Splash Screen</string>
+<string name="contact_us">Contact us</string>
+<string name="home_team_logo">Home Team Logo</string>
+<string name="away_team_logo">Away Team Logo</string>
+<string name="team_logo_format">%s logo</string>
+<string name="home_logo">Home Logo</string>
+<string name="away_logo">Away Logo</string>
+<string name="goal_icon">Goal Icon</string>
+<string name="card_icon">Card Icon</string>
+<string name="substitution_icon">Substitution Icon</string>
+<string name="var_icon">VAR Icon</string>
+<string name="event_icon">Event Icon</string>
+<string name="soccer_ball">Soccer Ball</string>
+
+<!-- Animation Labels -->
+<string name="logo_pulse">logoPulse</string>
+<string name="pulse_animation">pulseAnimation</string>
+<string name="tab_content_transition">Tab Content Transition</string>
+
+</resources>

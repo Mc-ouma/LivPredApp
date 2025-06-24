@@ -11,6 +11,8 @@ sealed class Routes(
 
     object Favorites : Routes("favorites")
 
+    object PrivacySettings : Routes("privacy_settings")
+
     object ItemsList : Routes("items_list/{categoryId}") {
         fun createRoute(categoryId: String) = "items_list/$categoryId"
     }

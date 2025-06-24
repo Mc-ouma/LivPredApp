@@ -9,6 +9,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.google.android.gms.ads.MobileAds
 import com.soccertips.predictx.admob.AppOpenAdManager
+import com.soccertips.predictx.consent.ConsentManager
 import com.soccertips.predictx.notification.NotificationHelper
 import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.repository.PreloadRepository
@@ -45,6 +46,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     @Inject
     lateinit var appOpenAdManager: AppOpenAdManager
+
+    @Inject
+    lateinit var consentManager: ConsentManager
     private var currentActivity: Activity? = null
 
     // Track app foreground status
@@ -108,7 +112,45 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             isInitialAppStart = false
             Timber.d("App has been initialized before, ready for ads")
         }
-        // Initialize Mobile Ads SYNCHRONOUSLY on main thread first
+
+        // First, request user consent
+        requestUserConsent()
+
+        // Register for activity lifecycle callbacks
+        registerActivityLifecycleCallbacks(this)
+
+        // Preload category data
+        CoroutineScope(Dispatchers.IO).launch {
+            preloadRepository.preloadCategoryData()
+        }
+    }
+
+    /**
+     * Request user consent for ads and analytics
+     */
+    private fun requestUserConsent() {
+        Timber.d("Requesting user consent for ads and analytics")
+        currentActivity?.let { activity ->
+
+
+            consentManager.requestConsentForm(activity) {
+                // After consent is gathered, initialize ads if consent was granted
+                if (consentManager.canShowAds()) {
+                    initializeMobileAds()
+                } else {
+                    Timber.d("User did not consent to ads, skipping ad initialization")
+                    // Still mark as initialized to avoid potential issues
+                    isMobileAdsInitialized = true
+                }
+            }
+        }
+    }
+
+    /**
+     * Initialize Mobile Ads SDK after consent is obtained
+     */
+    private fun initializeMobileAds() {
+        // Initialize Mobile Ads SYNCHRONOUSLY on main thread
         MobileAds.initialize(this) { initializationStatus ->
             Timber.d("MobileAds initialized with status: $initializationStatus")
 
@@ -119,18 +161,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             isMobileAdsInitialized = true
 
             // If this is not the first launch and app was previously initialized, allow ads
-            if (!isFirstLaunch() && !appInitialized) {
-                isInitialAppStart = false
+            if (!isFirstLaunch() && !isInitialAppStart) {
                 Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
             }
 
             Timber.d("AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart")
         }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            preloadRepository.preloadCategoryData()
-        }
-        registerActivityLifecycleCallbacks(this)
     }
 
     private fun setupAppOpenAdManager() {
@@ -171,6 +207,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         savedInstanceState: Bundle?
     ) {
         currentActivity = activity
+        if (currentActivity != null && !isMobileAdsInitialized) {
+            requestUserConsent()
+        }
     }
 
     override fun onActivityDestroyed(activity: Activity) {

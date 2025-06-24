@@ -198,6 +198,7 @@ dependencies {
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.permissions)
+    implementation(libs.androidx.preference.ktx)
 
     debugImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.tooling.core)
@@ -250,6 +251,7 @@ dependencies {
 
     //Admob
     implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
 
 
 }

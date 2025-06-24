@@ -47,8 +47,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideApiConfigProvider(): ApiConfigProvider {
-        return ApiConfigProvider()
+    fun provideApiConfigProvider(context: Context): ApiConfigProvider {
+        return ApiConfigProvider(context)
     }
 
 
@@ -341,4 +341,3 @@ object AppModule {
 
 
 }
-

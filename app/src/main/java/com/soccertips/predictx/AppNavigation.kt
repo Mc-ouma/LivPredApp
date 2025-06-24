@@ -127,6 +127,27 @@ fun AppNavigation(
         composable(Routes.Categories.route) { CategoriesScreen(navController = navController) }
         composable(Routes.Favorites.route) { FavoritesScreen(navController = navController) }
 
+        // Privacy Settings Screen
+        composable(
+            Routes.PrivacySettings.route,
+            enterTransition = {
+                fadeIn(animationSpec = tween(300, easing = LinearEasing)) +
+                        slideIntoContainer(
+                            animationSpec = tween(300, easing = EaseIn),
+                            towards = AnimatedContentTransitionScope.SlideDirection.Start
+                        )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(300, easing = LinearEasing)) +
+                        slideOutOfContainer(
+                            animationSpec = tween(300, easing = EaseOut),
+                            towards = AnimatedContentTransitionScope.SlideDirection.End
+                        )
+            }
+        ) {
+            com.soccertips.predictx.ui.privacy.PrivacySettingsScreen( navController = navController, activity = activity)
+        }
+
         composable(
                 Routes.ItemsList.route,
                 arguments =

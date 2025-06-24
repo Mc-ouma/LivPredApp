@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -247,6 +248,7 @@ fun FavoriteItemCard(
     val awayTeamDetails = TeamDetails(item.aLogoPath, item.awayTeam)
     val statusColor =
         if (item.color != Color.Unspecified.toArgb()) Color(item.color) else Color.Unspecified
+    val context = LocalContext.current
 
     Card(
         modifier = Modifier
@@ -267,7 +269,7 @@ fun FavoriteItemCard(
             MatchHeader(
                 league = item.league?.split(",")?.firstOrNull() ?: "Unknown League",
                 leagueLogo = item.leagueLogo,
-                date = DateUtils.formatRelativeDate(item.mDate),
+                date = DateUtils.formatRelativeDate(context ,item.mDate),
                 isFavorite = isFavorite,
                 onFavoriteClick = { onFavoriteClick(item) },
             )

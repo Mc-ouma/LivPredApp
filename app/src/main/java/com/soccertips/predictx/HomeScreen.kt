@@ -143,7 +143,7 @@ fun HomeScreen(navController: NavController) {
                 SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
             },
             topBar = {
-                HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior)
+                HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior, navController = navController)
             },
             bottomBar = {
                 NavigationBar {
@@ -205,7 +205,8 @@ fun HomeScreen(navController: NavController) {
 fun HomeTopBar(
         modifier: Modifier = Modifier,
         selectedItemIndex: Int,
-        scrollBehavior: TopAppBarScrollBehavior
+        scrollBehavior: TopAppBarScrollBehavior,
+        navController: NavController  // Added NavController parameter
 ) {
     CenterAlignedTopAppBar(
             title = {
@@ -214,7 +215,7 @@ fun HomeTopBar(
             },
             modifier = modifier,
             navigationIcon = {},
-            actions = { Menu() },
+            actions = { Menu(navController = navController) }, // Pass NavController to Menu
             scrollBehavior = scrollBehavior,
     )
 }

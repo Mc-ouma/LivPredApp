@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material.icons.outlined.RateReview
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -59,9 +60,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
+import com.soccertips.predictx.navigation.Routes
 
 @Composable
-fun Menu() {
+fun Menu(navController: androidx.navigation.NavController? = null) {
     var expanded by remember { mutableStateOf(false) }
     var showFeedback by remember { mutableStateOf(false) }
     var showAboutUs by remember { mutableStateOf(false) }
@@ -85,7 +87,10 @@ fun Menu() {
         ) {
             DropdownMenuItem(
                     text = { Text(stringResource(R.string.share)) },
-                    onClick = { showShare = true },
+                    onClick = {
+                        showShare = true
+                        expanded = false
+                    },
                     leadingIcon = {
                         Icon(
                                 Icons.Outlined.Share,
@@ -94,6 +99,23 @@ fun Menu() {
                         )
                     }
             )
+
+            // Privacy Settings Option
+            DropdownMenuItem(
+                    text = { Text("Privacy Settings") },
+                    onClick = {
+                        expanded = false
+                        navController?.navigate(Routes.PrivacySettings.route)
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Settings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+            )
+
             DropdownMenuItem(
                     text = { Text(stringResource(R.string.rate_us)) },
                     onClick = {
@@ -186,7 +208,7 @@ fun Menu() {
 }
 
 @Composable
-fun Menu2() {
+fun Menu2(navController: androidx.navigation.NavController? = null) {
     var expanded by remember { mutableStateOf(false) }
     var showFeedback by remember { mutableStateOf(false) }
     var showAboutUs by remember { mutableStateOf(false) }

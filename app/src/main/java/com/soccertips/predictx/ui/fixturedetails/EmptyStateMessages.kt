@@ -16,10 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.soccertips.predictx.R
 import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.components.LoadingIndicator
 
@@ -59,7 +61,7 @@ fun ErrorScreen(paddingValues: PaddingValues, message: String, onRetry: () -> Un
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = onRetry) {
-                Text("Retry")
+                Text(stringResource(R.string.retry))
             }
 
         }
@@ -67,7 +69,7 @@ fun ErrorScreen(paddingValues: PaddingValues, message: String, onRetry: () -> Un
 }
 
 @Composable
-fun EmptyScreen(paddingValues: PaddingValues, message: String = "No data available") {
+fun EmptyScreen(paddingValues: PaddingValues, message: String = stringResource(R.string.no_data_available)) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -90,22 +92,21 @@ fun EmptyStateMessages(
         val successState = uiState
         Column(modifier = Modifier.padding(16.dp)) {
             if (successState.fixtureStats.isNullOrEmpty()) {
-                Text(
-                    "No fixture stats available",
+                Text( stringResource(R.string.no_data_available),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
             }
             if (successState.fixtureEvents.isNullOrEmpty()) {
                 Text(
-                    "No fixture events available",
+                    stringResource(R.string.no_data_available),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
             }
             if (successState.predictions.isNullOrEmpty()) {
                 Text(
-                    "No fixture predictions available",
+                    stringResource(R.string.no_data_available),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )

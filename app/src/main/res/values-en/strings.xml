@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <resources>
     <string name="app_name">AI ScoreCast</string>
     <string name="match_details">Info</string>
@@ -61,6 +63,7 @@
     <string name="home_away">Home/Away</string>
     <string name="daily_bonus">Daily Bonus</string>
     <string name="extra_picks">Extra Picks</string>
+    <string name="last_5_matches_goals">Last 5 Matches Goals</string>
 
     <!-- Prediction Carousel -->
     <string name="goals_for">Goals For:</string>
@@ -74,7 +77,6 @@
     <string name="defense">Defense</string>
     <string name="h2h">h2h</string>
     <string name="overall">Overall</string>
-    <string name="last_5_matches_goals">Last 5 Matches Goals</string>
 
     <!-- Team Details -->
     <string name="invalid_date">Invalid Date</string>

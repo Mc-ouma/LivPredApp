@@ -12,8 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.soccertips.predictx.R
 
 @Composable
 fun AppUpdateAndReviewScreen(
@@ -35,7 +37,7 @@ fun AppUpdateAndReviewScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Button(onClick = onRequestReview) {
-                Text("Request In-App Review")
+                Text(stringResource(R.string.request_in_app_review))
             }
         }
     }
@@ -47,12 +49,12 @@ fun AppUpdateAndReviewScreen(
                     onCompleteUpdate()
                     onDismissSnackbar()
                 }) {
-                    Text("RESTART")
+                    Text(stringResource(R.string.restart))
                 }
             },
             modifier = Modifier.padding(16.dp)
         ) {
-            Text("Update downloaded. Restart to install.")
+            Text(stringResource(R.string.update_downloaded_restart))
         }
     }
 }

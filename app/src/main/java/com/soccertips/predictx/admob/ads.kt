@@ -104,7 +104,7 @@ class InterstitialAdManager
         )
     }
 
-    fun showInterstialAd(activity: Activity) {
+    fun showInterstitialAd(activity: Activity) {
         interstitialAd?.show(activity) ?: run {
             Timber.tag("InterstitialAd").e("The interstitial ad wasn't ready yet.")
             loadInterstitialAd() // Attempt to load a new ad if the current one is null

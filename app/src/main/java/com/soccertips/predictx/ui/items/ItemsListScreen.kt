@@ -38,10 +38,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predictx.Menu
+import com.soccertips.predictx.R
 import com.soccertips.predictx.admob.BannerAdView
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.data.model.Category
@@ -102,24 +104,26 @@ fun ItemsListScreen(
                 },
                 //show  interstitial ad when the back button is pressed
                 navigationIcon = {
-
                     IconButton(onClick = {
                         if (interstitialAdManager.isAdLoaded()) {
                             try {
                                 val activity = navController.context as? Activity
                                 activity?.let {
-                                    interstitialAdManager.showInterstialAd(it)
+                                    interstitialAdManager.showInterstitialAd(it)
+                                    // The navigation will happen after ad dismissal via the FullScreenContentCallback
+                                } ?: run {
+                                    // If activity casting fails, just navigate back
                                     navController.popBackStack()
-
-                                } ?: navController.popBackStack()
+                                }
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 navController.popBackStack()
                             }
+                        } else {
+                            // If no ad is loaded, just navigate back
+                            navController.popBackStack()
                         }
-                        navController.popBackStack()
-                    }
-                    ) {
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
                             contentDescription = "Back"
@@ -218,7 +222,7 @@ fun ItemsListScreen(
                             showDatePicker = false
                         }
                     ) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 content = {
@@ -228,7 +232,7 @@ fun ItemsListScreen(
                     TextButton(
                         onClick = { showDatePicker = false }
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 },
             )

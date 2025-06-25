@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -77,7 +78,7 @@ fun AppNavigation(
         val errorMessage = (uiState as UiState.Error).message
         AlertDialog(
             onDismissRequest = { categoriesViewModel.retryLoadCategories() },
-            title = { Text("Information") },
+            title = { Text(stringResource(R.string.information)) },
             text = { Text(errorMessage) },
             confirmButton = {
                 Button(
@@ -94,12 +95,12 @@ fun AppNavigation(
                         }
                     }
                 ) {
-                    Text("Join Our Telegram Channel")
+                    Text(stringResource(R.string.join_our_telegram_channel))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { categoriesViewModel.retryLoadCategories() }) {
-                    Text("Retry")
+                    Text(stringResource(R.string.retry))
                 }
             }
         )

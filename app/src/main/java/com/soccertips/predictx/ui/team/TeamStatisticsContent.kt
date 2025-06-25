@@ -35,9 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.team.teamscreen.TeamStatistics
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
@@ -94,7 +96,7 @@ fun TeamStatisticsContent(
         item {
             ExpandableStatisticCard(title = "Fixtures") {
                 TableComposable(
-                    headers = listOf("Category", "Home", "Away", "Total"),
+                    headers = listOf(stringResource(R.string.category), stringResource(R.string.home), stringResource(R.string.away), stringResource(R.string.total)),
                     rows = listOf(
                         listOf(
                             "Played",
@@ -128,16 +130,24 @@ fun TeamStatisticsContent(
         item {
             ExpandableStatisticCard(title = "Goals") {
                 TableComposable(
-                    headers = listOf("Type", "Home", "Away", "Total"),
+                    headers = listOf(
+                        stringResource(R.string.type),
+                        stringResource(R.string.home), stringResource(R.string.away),
+                        stringResource(
+                            R.string.total
+                        )
+                    ),
                     rows = listOf(
                         listOf(
-                            "For",
+                            stringResource(
+                                R.string.for_
+                            ),
                             "${statistics.goals.`for`.total.home}",
                             "${statistics.goals.`for`.total.away}",
                             "${statistics.goals.`for`.total.total}"
                         ),
                         listOf(
-                            "Against",
+                            stringResource(R.string.against),
                             "${statistics.goals.against.total.home}",
                             "${statistics.goals.against.total.away}",
                             "${statistics.goals.against.total.total}"
@@ -147,7 +157,11 @@ fun TeamStatisticsContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 // Goals For Minute table
                 TableComposable(
-                    headers = listOf("Minute", "Total", "Percentage"),
+                    headers = listOf(
+                        stringResource(R.string.minute),
+                        stringResource(R.string.total),
+                        stringResource(R.string.percentage)
+                    ),
                     rows = statistics.goals.`for`.minute.map { (minute, goalMinute) ->
                         listOf(minute, "${goalMinute.total ?: "-"}", goalMinute.percentage ?: "N/A")
                     }

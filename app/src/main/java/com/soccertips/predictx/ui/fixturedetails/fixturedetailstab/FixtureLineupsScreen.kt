@@ -1,6 +1,5 @@
 package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,16 +18,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import coil.compose.rememberAsyncImagePainter
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.lineups.PlayerInfo
 import com.soccertips.predictx.data.model.lineups.TeamColors
 import com.soccertips.predictx.data.model.lineups.TeamLineup
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
-import androidx.core.graphics.toColorInt
 
 // Helper function to safely parse color strings
 private fun parseColorOrFallback(colorString: String?, fallback: Color): Color {
@@ -50,17 +51,14 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
     val cardElevation = LocalCardElevation.current
     // Display the home and away teams' lineups side by side in a Row
     Card(
-        colors = cardColors,
-        elevation = cardElevation,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
+            colors = cardColors,
+            elevation = cardElevation,
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween // Ensures there's space between the two columns
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalArrangement =
+                        Arrangement.SpaceBetween // Ensures there's space between the two columns
         ) {
             // Home team lineup
             TeamLineupColumn(lineup = lineups.first)
@@ -77,35 +75,37 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
 @Composable
 fun TeamLineupColumn(lineup: TeamLineup) {
     Column(
-        modifier = Modifier
-            .width(180.dp) // Width for each team's lineup (can be adjusted)
-            .padding(horizontal = 8.dp)
+            modifier =
+                    Modifier.width(180.dp) // Width for each team's lineup (can be adjusted)
+                            .padding(horizontal = 8.dp)
     ) {
         // Team Header
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
         ) {
             Image(
-                painter = rememberAsyncImagePainter(
-                    model = lineup.team.logo,
-                    onError = {
-                        /* Handle error gracefully (show a default logo or icon) */
-                    }
-                ),
-                contentDescription = "${lineup.team.name?.take(20) ?: "Team logo"} ",
-                modifier = Modifier.size(40.dp),
+                    painter =
+                            rememberAsyncImagePainter(
+                                    model = lineup.team.logo,
+                                    onError = {
+                                        /* Handle error gracefully (show a default logo or icon) */
+                                    }
+                            ),
+                    contentDescription = lineup.team.name?.take(20)
+                                    ?: stringResource(R.string.team_logo),
+                    modifier = Modifier.size(40.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(
-                    text = lineup.team.name ?: "",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                        text = lineup.team.name ?: "",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = lineup.formation ?: "",
-                    style = MaterialTheme.typography.bodySmall,
+                        text = lineup.formation ?: "",
+                        style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
@@ -121,9 +121,9 @@ fun TeamLineupColumn(lineup: TeamLineup) {
 
         // Substitutes
         Text(
-            text = "Substitutes",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+                text = stringResource(R.string.substitutes),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
         )
         lineup.substitutes?.forEach { playerLineup ->
             PlayerRow(player = playerLineup.player, teamColors = lineup.team.colors)
@@ -134,19 +134,26 @@ fun TeamLineupColumn(lineup: TeamLineup) {
         // Coach
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Coach: ${lineup.coach.name?.take(20) ?: "Coach"}",
-                style = MaterialTheme.typography.bodySmall,
+                    text =
+                            stringResource(
+                                    R.string.coach_format,
+                                    lineup.coach.name?.take(20)
+                                            ?: stringResource(R.string.coach_default)
+                            ),
+                    style = MaterialTheme.typography.bodySmall,
             )
             Spacer(modifier = Modifier.width(8.dp))
             Image(
-                painter = rememberAsyncImagePainter(
-                    model = lineup.coach.photo,
-                    onError = {
-                        /* Handle coach photo error (fallback image) */
-                    }
-                ),
-                contentDescription = lineup.coach.name?.take(20) ?: "Coach photo",
-                modifier = Modifier.size(32.dp),
+                    painter =
+                            rememberAsyncImagePainter(
+                                    model = lineup.coach.photo,
+                                    onError = {
+                                        /* Handle coach photo error (fallback image) */
+                                    }
+                            ),
+                    contentDescription = lineup.coach.name?.take(20)
+                                    ?: stringResource(R.string.coach_photo),
+                    modifier = Modifier.size(32.dp),
             )
         }
     }
@@ -154,16 +161,16 @@ fun TeamLineupColumn(lineup: TeamLineup) {
 
 @Composable
 fun PlayerRow(
-    player: PlayerInfo,
-    teamColors: TeamColors?,
+        player: PlayerInfo,
+        teamColors: TeamColors?,
 ) {
     if (teamColors == null) {
         // Handle the case where teamColors is null
         Text(
-            text = player.name?.take(20) ?: "Unknown Player",
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+                text = player.name?.take(20) ?: stringResource(R.string.unknown_player),
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
         )
         return
     }
@@ -175,20 +182,16 @@ fun PlayerRow(
     val numberColor = parseColorOrFallback(playerColor.number, MaterialTheme.colorScheme.onPrimary)
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
     ) {
         // Player Number
         Text(
-            text = player.number?.toString() ?: "N/A",
-            modifier = Modifier
-                .background(primaryColor)
-                .padding(4.dp),
-            color = numberColor,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.bodySmall
+                text = player.number?.toString() ?: stringResource(R.string.na),
+                modifier = Modifier.background(primaryColor).padding(4.dp),
+                color = numberColor,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodySmall
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -196,15 +199,19 @@ fun PlayerRow(
         // Player Name and Position
         Column {
             Text(
-                text = player.name?.take(20) ?: "",
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                    text = player.name?.take(20) ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "(${player.pos?.take(20) ?: "N/A"})",
-                style = MaterialTheme.typography.bodySmall,
-                color = primaryColor,
+                    text =
+                            stringResource(
+                                    R.string.position_format,
+                                    player.pos?.take(20) ?: stringResource(R.string.na)
+                            ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = primaryColor,
             )
         }
     }

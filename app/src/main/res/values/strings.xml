@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AI ScoreCast</string>
+    <string name="app_name" translatable="false">AI ScoreCast</string>
     <string name="match_details">Info</string>
     <string name="result">Result</string>
     <string name="statistics">Stats</string>
@@ -25,6 +25,12 @@
     <string name="minute">Minute</string>
     <string name="percentage">Percentage</string>
     <string name="category">Category</string>
+
+    <!-- ads -->
+    <string name="banner_id" translatable="false">ca-app-pub-8504414839434291/2963426838</string>
+    <string name="interstitial_id" translatable="false">ca-app-pub-8504414839434291/8656802297</string>
+    <string name="reward" translatable="false">ca-app-pub-8504414839434291/1819931205</string>
+    <string name="appOpen_id" translatable="false">ca-app-pub-8504414839434291/1005542982</string>
 
     <!-- Navigation and UI -->
     <string name="categories">Categories</string>
@@ -77,7 +83,6 @@
     <string name="last_5_matches_goals">Last 5 Matches Goals</string>
 
     <!-- Team Details -->
-    <string name="invalid_date">Invalid Date</string>
     <string name="invalid_time">Invalid Time</string>
 
     <!-- Error Messages -->
@@ -145,11 +150,76 @@
     <string name="logo_pulse">logoPulse</string>
     <string name="pulse_animation">pulseAnimation</string>
     <string name="tab_content_transition">Tab Content Transition</string>
-    <string name="banner_id" translatable="false">ca-app-pub-8504414839434291/2963426838</string>
-    <string name="interstitial_id" translatable="false">ca-app-pub-8504414839434291/8656802297</string>
-    <string name="reward" translatable="false">ca-app-pub-8504414839434291/1819931205</string>
-    <string name="appOpen_id" translatable="false">ca-app-pub-8504414839434291/1005542982</string>
     <string name="home_categories">Home</string>
-    <string name="time_format">%02d:%02d</string>
 
+    <!-- Fixture Details Strings -->
+    <string name="loading">Loading...</string>
+    <string name="no_predictions_available">No predictions available.</string>
+    <string name="no_fixtures_available">No fixtures available</string>
+    <string name="no_head_to_head_data_available">No head-to-head data available</string>
+    <string name="no_events_available">No events available</string>
+    <string name="no_standings_available">No standings available</string>
+    <string name="date_unavailable">Date unavailable</string>
+    <string name="watch_ad_for_extra_predictions">Watch Ad for Extra Predictions</string>
+    <string name="stats">Stats</string>
+    <string name="na">N/A</string>
+    <string name="substitutes">Substitutes</string>
+    <string name="coach_format">Coach: %1$s</string>
+    <string name="coach_default">Coach</string>
+    <string name="coach_photo">Coach photo</string>
+    <string name="team_logo">Team logo</string>
+    <string name="position_format">(%1$s)</string>
+    <string name="goals_analysis">Goals Analysis</string>
+    <string name="error_check_internet">An error occurred. Please check your internet connection or
+        try again later.</string>
+    <string name="team_a">Team A</string>
+
+    <!-- Head to Head Screen -->
+    <string name="invalid_date">Invalid Date</string>
+
+    <!-- Standings Screen -->
+    <string name="team">Team</string>
+    <string name="played">P</string>
+    <string name="won">W</string>
+    <string name="drawn">D</string>
+    <string name="lost">L</string>
+    <string name="goals_for_against">+/-</string>
+    <string name="goal_difference">GD</string>
+    <string name="points">Pts</string>
+
+    <!-- Summary Screen -->
+    <string name="unknown_player">Unknown Player</string>
+    <string name="no_detail_available">No detail available</string>
+    <string name="unknown_event">Unknown Event</string>
+    <string name="goal_type_goal">Goal</string>
+    <string name="goal_type_normal">Goal</string>
+    <string name="goal_type_own">Own Goal</string>
+    <string name="goal_type_penalty">Penalty Goal</string>
+    <string name="goal_type_missed_penalty">Missed Penalty</string>
+    <string name="card_type_yellow">Yellow Card</string>
+    <string name="card_type_red">Red Card</string>
+
+    <!-- Prediction Carousel -->
+    <string name="season_performance">Season Performance</string>
+    <string name="head_to_head_history">Head-to-Head History</string>
+    <string name="no_head_to_head_history_available">No head to head history available</string>
+    <string name="draws_format">Draws: %d</string>
+    <string name="last_5_matches">Last 5 Matches</string>
+    <string name="match_prediction_overview">Match Prediction Overview</string>
+    <string name="team_wins_format">%s: %d</string>
+
+    <!-- Date Formats -->
+    <string name="date_pattern_input">yyyy-MM-dd\'T\'HH:mm:ssXXX</string>
+    <string name="date_pattern_output">dd-MM-yyyy</string>
+    <string name="date_pattern_display">dd MMM yyyy</string>
+
+    <!-- Number Formats -->
+    <string name="decimal_format">%.2f</string>
+    <string name="percent_suffix">%</string>
+    <string name="goal_cancelled">Goal Cancelled</string>
+    <string name="penalty_confirmed">Penalty Confirmed</string>
+    <string name="home__">Home: %1$s</string>
+    <string name="draw">Draw: %1$s</string>
+    <string name="away__">Away: %1$s</string>
+     <!-- Format for displaying time in minutes : seconds--> <string name="time_format">%1$d:%2$02d</string>
 </resources>

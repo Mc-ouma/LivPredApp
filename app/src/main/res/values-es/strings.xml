@@ -79,7 +79,6 @@
     <string name="last_5_matches_goals">Goles en los últimos 5 partidos</string>
 
     <!-- Team Details -->
-    <string name="invalid_date">Fecha inválida</string>
     <string name="invalid_time">Hora inválida</string>
 
     <!-- Error Messages -->
@@ -87,19 +86,23 @@
     <string name="no_internet_connection">Sin conexión a internet</string>
     <string name="could_not_open_link">No se pudo abrir el enlace</string>
     <string name="invalid_team_ids">ID(s) de equipo inválido(s). Verifica tu entrada.</string>
-    <string name="error_occurred_check_internet">Ocurrió un error. Verifica tu conexión a internet o intenta de nuevo más tarde</string>
+    <string name="error_occurred_check_internet">Ocurrió un error. Verifica tu conexión a internet o
+        intenta de nuevo más tarde</string>
     <string name="error_occurred_fetching_data">Ocurrió un error al obtener los datos.</string>
     <string name="no_data_available">No hay datos disponibles</string>
     <string name="removed_from_favorites">Eliminado de favoritos</string>
     <string name="undo">Deshacer</string>
-    <string name="no_categories_available">No hay categorías disponibles. Únete a nuestro canal de Telegram para actualizaciones y soporte.</string>
+    <string name="no_categories_available">No hay categorías disponibles. Únete a nuestro canal de
+        Telegram para actualizaciones y soporte.</string>
     <string name="failed_to_fetch_data">No se pudieron obtener los datos</string>
     <string name="error_loading_categories">Error al cargar categorías</string>
     <string name="no_standings_found">No se encontraron clasificaciones</string>
     <string name="failed_to_fetch_standings">No se pudieron obtener las clasificaciones</string>
-    <string name="an_error_occurred_while_fetching_fixtures">Ocurrió un error al obtener el calendario.</string>
+    <string name="an_error_occurred_while_fetching_fixtures">Ocurrió un error al obtener el
+        calendario.</string>
     <string name="an_unexpected_error_occurred">Ocurrió un error inesperado.</string>
-    <string name="network_error_check_connection">Error de red. Verifica tu conexión e intenta de nuevo.</string>
+    <string name="network_error_check_connection">Error de red. Verifica tu conexión e intenta de
+        nuevo.</string>
 
     <!-- Notification Messages -->
     <string name="match_starts_in_15_minutes">¡El partido comienza en 15 minutos!</string>
@@ -144,5 +147,71 @@
     <string name="pulse_animation">animaciónPulso</string>
     <string name="tab_content_transition">Transición de contenido de pestaña</string>
     <string name="home_categories">Inicio</string>
+
+    <!-- Fixture Details Strings -->
+    <string name="loading">Cargando...</string>
+    <string name="no_predictions_available">No hay predicciones disponibles.</string>
+    <string name="no_fixtures_available">No hay partidos disponibles</string>
+    <string name="no_head_to_head_data_available">No hay datos de enfrentamientos directos
+        disponibles</string>
+    <string name="no_events_available">No hay eventos disponibles</string>
+    <string name="no_standings_available">No hay clasificación disponible</string>
+    <string name="date_unavailable">Fecha no disponible</string>
+    <string name="watch_ad_for_extra_predictions">Ver anuncio para predicciones adicionales</string>
+    <string name="stats">Estadísticas</string>
+    <string name="na">N/D</string>
+    <string name="unknown_player">Jugador desconocido</string>
+    <string name="substitutes">Suplentes</string>
+    <string name="coach_format">Entrenador: %1$s</string>
+    <string name="coach_default">Entrenador</string>
+    <string name="coach_photo">Foto del entrenador</string>
+    <string name="team_logo">Logo del equipo</string>
+    <string name="position_format">(%1$s)</string>
+    <string name="goals_analysis">Análisis de goles</string>
+    <string name="error_check_internet">Se produjo un error. Verifica tu conexión a internet o
+        inténtalo de nuevo más tarde.</string>
+    <string name="team_a">Equipo A</string>
+
+    <!-- Head to Head Screen -->
+    <string name="invalid_date">Fecha inválida</string>
+
+    <!-- Standings Screen -->
+    <string name="team">Equipo</string>
+    <string name="played">PJ</string>
+    <string name="won">G</string>
+    <string name="drawn">E</string>
+    <string name="lost">P</string>
+    <string name="goals_for_against">+/-</string>
+    <string name="goal_difference">DG</string>
+    <string name="points">Pts</string>
+
+    <!-- Summary Screen -->
+    <string name="no_detail_available">Sin detalles disponibles</string>
+    <string name="unknown_event">Evento desconocido</string>
+    <string name="goal_type_goal">Gol</string>
+    <string name="goal_type_normal">Gol</string>
+    <string name="goal_type_own">Autogol</string>
+    <string name="goal_type_penalty">Gol de penalti</string>
+    <string name="goal_type_missed_penalty">Penalti fallado</string>
+    <string name="card_type_yellow">Tarjeta amarilla</string>
+    <string name="card_type_red">Tarjeta roja</string>
+
+    <!-- Prediction Carousel -->
+    <string name="season_performance">Rendimiento de temporada</string>
+    <string name="head_to_head_history">Historial de enfrentamientos</string>
+    <string name="no_head_to_head_history_available">No hay historial de enfrentamientos disponible</string>
+    <string name="draws_format">Empates: %d</string>
+    <string name="last_5_matches">Últimos 5 partidos</string>
+    <string name="match_prediction_overview">Resumen de predicción del partido</string>
+    <string name="team_wins_format">%s: %d</string>
+
+    <!-- Date Formats -->
+    <string name="date_pattern_input">yyyy-MM-dd\'T\'HH:mm:ssXXX</string>
+    <string name="date_pattern_output">dd-MM-yyyy</string>
+    <string name="date_pattern_display">dd MMM yyyy</string>
+
+    <!-- Number Formats -->
+    <string name="decimal_format">%.2f</string>
+    <string name="percent_suffix">%</string>
 
 </resources>

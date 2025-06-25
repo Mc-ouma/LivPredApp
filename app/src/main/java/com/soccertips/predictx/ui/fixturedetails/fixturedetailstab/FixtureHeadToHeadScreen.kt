@@ -17,11 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.headtohead.FixtureDetails
 import com.soccertips.predictx.data.model.headtohead.TeamInfo
 import com.soccertips.predictx.navigation.Routes
@@ -32,13 +34,9 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun FixtureHeadToHeadScreen(headToHead: List<FixtureDetails>, navController: NavController) {
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .fillMaxWidth()
-    ) {
+    Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
         if (headToHead.isEmpty()) {
-            Text(text = "No head-to-head data available")
+            Text(text = stringResource(R.string.no_head_to_head_data_available))
         } else {
             headToHead.forEach { fixture ->
                 FixtureCard(fixture = fixture, navController = navController)
@@ -49,99 +47,92 @@ fun FixtureHeadToHeadScreen(headToHead: List<FixtureDetails>, navController: Nav
 }
 
 @Composable
-fun FixtureCard(
-    fixture: FixtureDetails,
-    navController: NavController
-) {
+fun FixtureCard(fixture: FixtureDetails, navController: NavController) {
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
     Card(
-        colors = cardColors,
-        elevation = cardElevation,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable {
-                navController.navigate(Routes.FixtureDetails.createRoute(fixture.fixture.id.toString()))
-            },
+            colors = cardColors,
+            elevation = cardElevation,
+            modifier =
+                    Modifier.fillMaxWidth().padding(8.dp).clickable {
+                        navController.navigate(
+                                Routes.FixtureDetails.createRoute(fixture.fixture.id.toString())
+                        )
+                    },
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top,
         ) {
             // Parse and format the date
             val inputDate = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
             val outputDate = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-            val date = try {
-                LocalDateTime.parse(fixture.fixture.date, inputDate).format(outputDate)
-            } catch (e: Exception) {
-                // Handle parsing error gracefully
-                "Invalid Date"
-            }
+            val date =
+                    try {
+                        LocalDateTime.parse(fixture.fixture.date, inputDate).format(outputDate)
+                    } catch (e: Exception) {
+                        // Handle parsing error gracefully
+                        stringResource(R.string.invalid_date)
+                    }
 
             Text(
-                text = fixture.league.name,
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(8.dp),
-                fontWeight = FontWeight.Bold,
+                    text = fixture.league.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(8.dp),
+                    fontWeight = FontWeight.Bold,
             )
 
             Text(text = date, style = MaterialTheme.typography.labelSmall)
 
             // Teams and scores
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
             ) {
                 TeamSection(
-                    team = fixture.teams.home,
-                    isWinner = fixture.teams.home.winner == true,
-                    modifier = Modifier.weight(1f)
+                        team = fixture.teams.home,
+                        isWinner = fixture.teams.home.winner == true,
+                        modifier = Modifier.weight(1f)
                 )
                 // Scores (home vs away)
                 Text(
-                    text = " ${fixture.goals.home} - ${fixture.goals.away}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .weight(1f),
-                    textAlign = TextAlign.Center,
+                        text = " ${fixture.goals.home} - ${fixture.goals.away}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(horizontal = 8.dp).weight(1f),
+                        textAlign = TextAlign.Center,
                 )
                 TeamSection(
-                    team = fixture.teams.away,
-                    isWinner = fixture.teams.away.winner == true,
-                    modifier = Modifier.weight(1f)
+                        team = fixture.teams.away,
+                        isWinner = fixture.teams.away.winner == true,
+                        modifier = Modifier.weight(1f)
                 )
             }
-
-
         }
     }
 }
 
 @Composable
 fun TeamSection(
-    team: TeamInfo,
-    isWinner: Boolean,
-    modifier: Modifier = Modifier,
+        team: TeamInfo,
+        isWinner: Boolean,
+        modifier: Modifier = Modifier,
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = modifier.padding(8.dp),
     ) {
         Image(
-            painter = rememberAsyncImagePainter(model = team.logo),
-            contentDescription = "${team.name} logo",
-            modifier = Modifier.size(24.dp),
+                painter = rememberAsyncImagePainter(model = team.logo),
+                contentDescription = stringResource(R.string.team_logo_format, team.name),
+                modifier = Modifier.size(24.dp),
         )
         Text(
-            text = team.name,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (isWinner) Color.Green else Color.Unspecified,
-            modifier = Modifier.padding(top = 4.dp),
+                text = team.name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isWinner) Color.Green else Color.Unspecified,
+                modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
-

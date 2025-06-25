@@ -251,6 +251,9 @@ dependencies {
     //Admob
     implementation(libs.play.services.ads)
 
+    //User Messaging Platform (UMP) for consent management
+    implementation(libs.user.messaging.platform)
+
 
 }
 tasks.withType<Test> {

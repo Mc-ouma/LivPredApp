@@ -26,10 +26,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.soccertips.predictx.R
 import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
@@ -37,7 +40,6 @@ import com.soccertips.predictx.viewmodel.FixtureDetailsViewModel
 import kotlinx.coroutines.delay
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.Locale
 
 @Composable
 fun FixtureScoreAndScorers(
@@ -48,6 +50,7 @@ fun FixtureScoreAndScorers(
     season: String,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     when (uiState) {
         is FixtureDetailsUiState.Loading -> {
@@ -84,16 +87,12 @@ fun FixtureScoreAndScorers(
                     if (timeDifference > 0 && timeDifference <= 3600) {
                         val minutes = timeDifference / 60
                         val seconds = timeDifference % 60
-                        matchStatusText = String.format(
-                            Locale.getDefault(),
-                            "%02d:%02d remaining",
-                            minutes,
-                            seconds
-                        )
+                        matchStatusText =
+                            context.getString(R.string.time_format, minutes, seconds)
                     } else {
                         matchStatusText = initialMatchStatusText
                     }
-                    delay(60000) // Update every minute
+                    delay(1000) // Update every second
                 }
             }
 
@@ -215,7 +214,7 @@ fun FixtureScoreAndScorers(
         is FixtureDetailsUiState.Error -> {
             ErrorScreen(
                 paddingValues = PaddingValues(0.dp),
-                message = "An error occurred. Please check your internet or check again later",
+                message = stringResource(R.string.no_data_available),
                 //(uiState as FixtureDetailsUiState.Error).message
                 onRetry = { }
             )

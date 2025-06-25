@@ -76,7 +76,8 @@ fun ItemsListScreen(
     categoryId: String,
     categories: List<Category>,
     viewModel: ItemsListViewModel = hiltViewModel(),
-    interstitialAdManager: InterstitialAdManager
+    interstitialAdManager: InterstitialAdManager,
+    context: android.content.Context = navController.context,
 ) {
     val category = remember(categoryId) {
         categories.find { it.url == categoryId }
@@ -85,7 +86,7 @@ fun ItemsListScreen(
     val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
-    val formattedDate = DateUtils.formatRelativeDate(selectedDate.toString())
+    val formattedDate = DateUtils.formatRelativeDate(context, selectedDate.toString())
     var scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     // Fetch items when the category or selected date changes

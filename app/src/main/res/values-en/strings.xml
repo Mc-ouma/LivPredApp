@@ -147,5 +147,6 @@
     <string name="logo_pulse">logoPulse</string>
     <string name="pulse_animation">pulseAnimation</string>
     <string name="tab_content_transition">Tab Content Transition</string>
+    <string name="home_categories">Home</string>
 
 </resources>

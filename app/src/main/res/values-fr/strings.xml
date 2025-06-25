@@ -143,4 +143,5 @@
     <string name="logo_pulse">pulsationLogo</string>
     <string name="pulse_animation">animationPulsation</string>
     <string name="tab_content_transition">Transition de contenu d’onglet</string>
+    <string name="home_categories">Accueil</string>
 </resources>

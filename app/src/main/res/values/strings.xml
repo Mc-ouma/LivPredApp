@@ -145,5 +145,11 @@
     <string name="logo_pulse">logoPulse</string>
     <string name="pulse_animation">pulseAnimation</string>
     <string name="tab_content_transition">Tab Content Transition</string>
+    <string name="banner_id" translatable="false">ca-app-pub-8504414839434291/2963426838</string>
+    <string name="interstitial_id" translatable="false">ca-app-pub-8504414839434291/8656802297</string>
+    <string name="reward" translatable="false">ca-app-pub-8504414839434291/1819931205</string>
+    <string name="appOpen_id" translatable="false">ca-app-pub-8504414839434291/1005542982</string>
+    <string name="home_categories">Home</string>
+    <string name="time_format">%02d:%02d</string>
 
 </resources>

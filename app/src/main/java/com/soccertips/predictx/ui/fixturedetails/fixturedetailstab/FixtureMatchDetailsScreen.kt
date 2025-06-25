@@ -416,9 +416,9 @@ fun FixtureDetailCard(fixture: Fixture) {
     }
 
     // Handle potentially missing information
-    val referee = fixture.referee?.takeIf { it.isNotBlank() } ?: "Referee not assigned"
-    val venueName = fixture.venue?.name?.takeIf { it.isNotBlank() } ?: "Venue unknown"
-    val venueCity = fixture.venue?.city?.takeIf { it.isNotBlank() } ?: "City unknown"
+    val referee = fixture.referee?.takeIf { it.isNotBlank() } ?: "-"
+    val venueName = fixture.venue?.name?.takeIf { it.isNotBlank() } ?: "-"
+    val venueCity = fixture.venue?.city?.takeIf { it.isNotBlank() } ?: "-"
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
 

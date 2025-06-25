@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -20,13 +21,14 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardItem
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.soccertips.predictx.R
 import timber.log.Timber
 import javax.inject.Inject
 
 @Composable
 fun BannerAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = "ca-app-pub-3940256099942544/6300978111" // Test banner ID
+    adUnitId: String = stringResource(R.string.banner_id) // Test banner ID
 ) {
     val context = LocalContext.current
     AndroidView(
@@ -44,7 +46,7 @@ fun BannerAdView(
 @Composable
 fun InlineBannerAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = "ca-app-pub-3940256099942544/6300978111" // Test banner ID
+    adUnitId: String = stringResource(R.string.banner_id)
 ) {
     val context = LocalContext.current
     AndroidView(
@@ -62,7 +64,7 @@ fun InlineBannerAdView(
 class InterstitialAdManager
 @Inject constructor(private val context: Context) {
     private var interstitialAd: InterstitialAd? = null
-    private val adUnitId = "ca-app-pub-3940256099942544/1033173712" // Test interstitial ID
+    private val adUnitId = context.getString(R.string.interstitial_id) // Test interstitial ID
 
     init {
         loadInterstitialAd()
@@ -118,7 +120,7 @@ class InterstitialAdManager
 
 class RewardedAdManager @Inject constructor(private val context: Context) {
     private var rewardedAd: RewardedAd? = null
-    private val adUnitId = "ca-app-pub-3940256099942544/5224354917" // Test rewarded ad ID
+    private val adUnitId = context.getString(R.string.reward) // Test rewarded ad ID
 
     init {
         loadRewardedAd()
@@ -181,7 +183,7 @@ class AppOpenAdManager @Inject constructor(private val context: Context) {
     private var appOpenAd: AppOpenAd? = null
     private var isLoadingAd = false
     private var loadTime: Long = 0
-    private val adUnitId = "ca-app-pub-3940256099942544/9257395921" // Test App Open ID
+    private val adUnitId = context.getString(R.string.appOpen_id) // Test App Open ID
 
     // Track whether the app is in foreground to avoid showing ads when app is in background
     private var isAppInForeground = false

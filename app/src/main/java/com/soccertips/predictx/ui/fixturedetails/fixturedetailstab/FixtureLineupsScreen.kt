@@ -1,18 +1,14 @@
 package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,7 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predictx.R
@@ -75,7 +70,7 @@ object PlayerPositionLocalizer {
             else -> position ?: stringResource(R.string.na)
         }
     }
-    
+
     @Composable
     fun getShortLocalizedPosition(position: String?): String {
         return when (position?.uppercase()) {
@@ -210,7 +205,6 @@ fun TeamHeaderCompact(lineup: TeamLineup) {
         }
     }
 }
-
 
 @Composable
 fun TeamLineupDetails(lineup: TeamLineup, modifier: Modifier = Modifier) {
@@ -409,20 +403,20 @@ fun PlayerRow(
                             color = primaryColor.copy(alpha = 0.2f)
                     ) {
                         Text(
-                                text = PlayerPositionLocalizer.getShortLocalizedPosition(player.pos),
+                                text =
+                                        PlayerPositionLocalizer.getShortLocalizedPosition(
+                                                player.pos
+                                        ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = primaryColor,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                         )
                     }
-
                 }
             }
         }
     }
 }
-
-
 
 @Preview(locale = "es")
 @Composable

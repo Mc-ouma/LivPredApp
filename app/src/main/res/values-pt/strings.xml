@@ -169,7 +169,8 @@
     <string name="error_check_internet">Ocorreu um erro. Verifique sua conexão com a internet ou
         tente novamente mais tarde.</string>
     <string name="team_a">Equipe A</string>
-    <string name="no_head_to_head_data_available_for_teams_and">Nenhum dado de confrontos diretos disponível para os times %1$s e %2$s</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Nenhum dado de confrontos diretos
+        disponível para os times %1$s e %2$s</string>
 
     <!-- Head to Head Screen -->
     <string name="invalid_date">Data inválida</string>
@@ -235,7 +236,8 @@
     <string name="goals_prevented">Gols evitados</string>
 
     <!-- Team Events -->
-    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Ocorreu um erro. Verifique sua conexão com a internet ou tente novamente mais tarde.</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Ocorreu um
+        erro. Verifique sua conexão com a internet ou tente novamente mais tarde.</string>
     <string name="team_info">Informações do time</string>
     <string name="hide_stadium_details">Ocultar detalhes do estádio</string>
     <string name="show_stadium_details">Mostrar detalhes do estádio</string>

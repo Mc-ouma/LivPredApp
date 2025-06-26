@@ -221,8 +221,10 @@
     <string name="home__">Home: %1$s</string>
     <string name="draw">Draw: %1$s</string>
     <string name="away__">Away: %1$s</string>
-     <!-- Format for displaying time in minutes : seconds--> <string name="time_format">%1$d:%2$02d</string>
-    <string name="no_head_to_head_data_available_for_teams_and">No head-to-head data available for teams %1$s and %2$s</string>
+    <!-- Format for displaying time in minutes : seconds-->
+    <string name="time_format">%1$d:%2$02d</string>
+    <string name="no_head_to_head_data_available_for_teams_and">No head-to-head data available for
+        teams %1$s and %2$s</string>
 
     <!-- Statistics Types -->
 
@@ -247,7 +249,8 @@
 
     <!-- Team Events -->
 
-    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">An error occurred. Please check your internet or check again later</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">An error
+        occurred. Please check your internet or check again later</string>
     <string name="team_info">Team Info</string>
     <string name="hide_stadium_details">Hide Stadium Details</string>
     <string name="show_stadium_details">Show Stadium Details</string>
@@ -300,7 +303,7 @@
     <string name="age_years">Age: %1$s years</string>
     <string name="starting_eleven">Starting XI</string>
     <string name="coach_title">Coach</string>
-    
+
     <!-- Player Positions -->
     <string name="position_goalkeeper">Goalkeeper</string>
     <string name="position_defender">Defender</string>

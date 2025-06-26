@@ -169,7 +169,8 @@
     <string name="error_check_internet">An error occurred. Please check your internet connection or
         try again later.</string>
     <string name="team_a">Team A</string>
-    <string name="no_head_to_head_data_available_for_teams_and">No head-to-head data available for teams %1$s and %2$s</string>
+    <string name="no_head_to_head_data_available_for_teams_and">No head-to-head data available for
+        teams %1$s and %2$s</string>
 
     <!-- Head to Head Screen -->
     <string name="invalid_date">Invalid Date</string>
@@ -236,7 +237,8 @@
 
     <!-- Team Events -->
 
-    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">An error occurred. Please check your internet or check again later</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">An error
+        occurred. Please check your internet or check again later</string>
     <string name="team_info">Team Info</string>
     <string name="hide_stadium_details">Hide Stadium Details</string>
     <string name="show_stadium_details">Show Stadium Details</string>

@@ -162,7 +162,8 @@
     <string name="goals_for_against">+/-</string>
     <string name="goal_difference">DB</string>
     <string name="points">Pts</string>
-    <string name="no_head_to_head_data_available_for_teams_and">Aucune donnée d’historique d’affrontements disponible pour les équipes %1$s et %2$s</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Aucune donnée d’historique
+        d’affrontements disponible pour les équipes %1$s et %2$s</string>
 
     <!-- Summary Screen -->
 
@@ -218,7 +219,8 @@
     <string name="goals_prevented">Buts évités</string>
 
     <!-- Team Events -->
-    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Une erreur s’est produite. Vérifiez votre connexion internet ou réessayez plus tard.</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Une erreur
+        s’est produite. Vérifiez votre connexion internet ou réessayez plus tard.</string>
     <string name="team_info">Informations sur l’équipe</string>
     <string name="hide_stadium_details">Masquer les détails du stade</string>
     <string name="show_stadium_details">Afficher les détails du stade</string>

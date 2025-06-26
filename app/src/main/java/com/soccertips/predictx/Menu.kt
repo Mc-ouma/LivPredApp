@@ -85,7 +85,10 @@ fun Menu() {
         ) {
             DropdownMenuItem(
                     text = { Text(stringResource(R.string.share)) },
-                    onClick = { showShare = true },
+                    onClick = {
+                        showShare = true
+                        expanded = false
+                    },
                     leadingIcon = {
                         Icon(
                                 Icons.Outlined.Share,
@@ -94,6 +97,9 @@ fun Menu() {
                         )
                     }
             )
+
+
+
             DropdownMenuItem(
                     text = { Text(stringResource(R.string.rate_us)) },
                     onClick = {
@@ -186,7 +192,7 @@ fun Menu() {
 }
 
 @Composable
-fun Menu2() {
+fun Menu2(navController: androidx.navigation.NavController? = null) {
     var expanded by remember { mutableStateOf(false) }
     var showFeedback by remember { mutableStateOf(false) }
     var showAboutUs by remember { mutableStateOf(false) }

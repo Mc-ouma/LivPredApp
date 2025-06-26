@@ -62,6 +62,7 @@ timber = "5.0.1"
 # @keep
 targetSdk = "35"
 turbine = "1.2.0"
+userMessagingPlatform = "3.1.0"
 workRuntimeKtx = "2.10.1"
 workTesting = "2.10.1"
 firebaseCrashlytics = "19.4.3"
@@ -142,6 +143,7 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "firebaseCrashlytics" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version.ref = "firebaseAnalytics" }
+user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
 
 
 [plugins]

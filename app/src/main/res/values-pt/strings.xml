@@ -76,9 +76,9 @@
     <string name="defense">Defesa</string>
     <string name="h2h">H2H</string>
     <string name="overall">Geral</string>
+    <string name="last_5_matches_goals">Gols nos últimos 5 jogos</string>
 
     <!-- Team Details -->
-    <string name="invalid_date">Data inválida</string>
     <string name="invalid_time">Hora inválida</string>
 
     <!-- Error Messages -->
@@ -86,19 +86,22 @@
     <string name="no_internet_connection">Sem conexão com a internet</string>
     <string name="could_not_open_link">Não foi possível abrir o link</string>
     <string name="invalid_team_ids">ID(s) de equipe inválido(s). Verifique sua entrada.</string>
-    <string name="error_occurred_check_internet">Ocorreu um erro. Verifique sua conexão com a internet ou tente novamente mais tarde.</string>
+    <string name="error_occurred_check_internet">Ocorreu um erro. Verifique sua conexão com a
+        internet ou tente novamente mais tarde.</string>
     <string name="error_occurred_fetching_data">Ocorreu um erro ao buscar os dados.</string>
     <string name="no_data_available">Nenhum dado disponível</string>
     <string name="removed_from_favorites">Removido dos favoritos</string>
     <string name="undo">Desfazer</string>
-    <string name="no_categories_available">Nenhuma categoria disponível. Junte-se ao nosso canal do Telegram para atualizações e suporte.</string>
+    <string name="no_categories_available">Nenhuma categoria disponível. Junte-se ao nosso canal do
+        Telegram para atualizações e suporte.</string>
     <string name="failed_to_fetch_data">Falha ao buscar dados</string>
     <string name="error_loading_categories">Erro ao carregar categorias</string>
     <string name="no_standings_found">Nenhuma classificação encontrada</string>
     <string name="failed_to_fetch_standings">Falha ao buscar classificação</string>
     <string name="an_error_occurred_while_fetching_fixtures">Ocorreu um erro ao buscar os jogos.</string>
     <string name="an_unexpected_error_occurred">Ocorreu um erro inesperado.</string>
-    <string name="network_error_check_connection">Erro de rede. Verifique sua conexão e tente novamente.</string>
+    <string name="network_error_check_connection">Erro de rede. Verifique sua conexão e tente
+        novamente.</string>
 
     <!-- Notification Messages -->
     <string name="match_starts_in_15_minutes">O jogo começa em 15 minutos!</string>
@@ -142,4 +145,125 @@
     <string name="logo_pulse">pulsoLogo</string>
     <string name="pulse_animation">animaçãoPulso</string>
     <string name="tab_content_transition">Transição de conteúdo da aba</string>
+    <string name="home_categories">Inicio</string>
+
+    <!-- Fixture Details Strings -->
+    <string name="loading">Carregando...</string>
+    <string name="no_predictions_available">Nenhuma previsão disponível.</string>
+    <string name="no_fixtures_available">Nenhum jogo disponível</string>
+    <string name="no_head_to_head_data_available">Nenhum dado de confronto direto disponível</string>
+    <string name="no_events_available">Nenhum evento disponível</string>
+    <string name="no_standings_available">Nenhuma classificação disponível</string>
+    <string name="date_unavailable">Data indisponível</string>
+    <string name="watch_ad_for_extra_predictions">Assistir anúncio para previsões extras</string>
+    <string name="stats">Estatísticas</string>
+    <string name="na">N/D</string>
+    <string name="unknown_player">Jogador desconhecido</string>
+    <string name="substitutes">Reservas</string>
+    <string name="coach_format">Treinador: %1$s</string>
+    <string name="coach_default">Treinador</string>
+    <string name="coach_photo">Foto do treinador</string>
+    <string name="team_logo">Logo da equipe</string>
+    <string name="position_format">(%1$s)</string>
+    <string name="goals_analysis">Análise de gols</string>
+    <string name="error_check_internet">Ocorreu um erro. Verifique sua conexão com a internet ou
+        tente novamente mais tarde.</string>
+    <string name="team_a">Equipe A</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Nenhum dado de confrontos diretos disponível para os times %1$s e %2$s</string>
+
+    <!-- Head to Head Screen -->
+    <string name="invalid_date">Data inválida</string>
+
+    <!-- Standings Screen -->
+    <string name="team">Equipe</string>
+    <string name="played">J</string>
+    <string name="won">V</string>
+    <string name="drawn">E</string>
+    <string name="lost">D</string>
+    <string name="goals_for_against">+/-</string>
+    <string name="goal_difference">SG</string>
+    <string name="points">Pts</string>
+
+    <!-- Summary Screen -->
+    <string name="no_detail_available">Nenhum detalhe disponível</string>
+    <string name="unknown_event">Evento desconhecido</string>
+    <string name="goal_type_goal">Gol</string>
+    <string name="goal_type_normal">Gol</string>
+    <string name="goal_type_own">Gol contra</string>
+    <string name="goal_type_penalty">Gol de pênalti</string>
+    <string name="goal_type_missed_penalty">Pênalti perdido</string>
+    <string name="card_type_yellow">Cartão amarelo</string>
+    <string name="card_type_red">Cartão vermelho</string>
+
+    <!-- Prediction Carousel -->
+    <string name="season_performance">Desempenho da temporada</string>
+    <string name="head_to_head_history">Histórico de confrontos</string>
+    <string name="no_head_to_head_history_available">Nenhum histórico de confronto disponível</string>
+    <string name="draws_format">Empates: %d</string>
+    <string name="last_5_matches">Últimos 5 jogos</string>
+    <string name="match_prediction_overview">Resumo da previsão do jogo</string>
+    <string name="team_wins_format">%s: %d</string>
+
+    <!-- Date Formats -->
+    <string name="date_pattern_input">yyyy-MM-dd\'T\'HH:mm:ssXXX</string>
+    <string name="date_pattern_output">dd-MM-yyyy</string>
+    <string name="date_pattern_display">dd MMM yyyy</string>
+
+    <!-- Number Formats -->
+    <string name="decimal_format">%.2f</string>
+    <string name="percent_suffix">%</string>
+
+
+    <!-- Statistics Types -->
+    <string name="shots_on_goal">Chutes ao gol</string>
+    <string name="shots_off_goal">Chutes para fora</string>
+    <string name="total_shots">Chutes totais</string>
+    <string name="blocked_shots">Chutes bloqueados</string>
+    <string name="shots_insidebox">Chutes dentro da área</string>
+    <string name="shots_outsidebox">Chutes fora da área</string>
+    <string name="fouls">Faltas</string>
+    <string name="corner_kicks">Escanteios</string>
+    <string name="offsides">Impedimentos</string>
+    <string name="ball_possession">Posse de bola</string>
+    <string name="yellow_cards">Cartões amarelos</string>
+    <string name="red_cards">Cartões vermelhos</string>
+    <string name="goalkeeper_saves">Defesas do goleiro</string>
+    <string name="total_passes">Passes totais</string>
+    <string name="passes_accurate">Passes certos</string>
+    <string name="passes_percentage">Porcentagem de passes</string>
+    <string name="expected_goals">Gols esperados</string>
+    <string name="goals_prevented">Gols evitados</string>
+
+    <!-- Team Events -->
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Ocorreu um erro. Verifique sua conexão com a internet ou tente novamente mais tarde.</string>
+    <string name="team_info">Informações do time</string>
+    <string name="hide_stadium_details">Ocultar detalhes do estádio</string>
+    <string name="show_stadium_details">Mostrar detalhes do estádio</string>
+    <string name="founded">Fundado: %1$s</string>
+    <string name="country">País: %1$s</string>
+    <string name="age_years">Idade: %1$s anos</string>
+
+
+    <!-- Team Statistics -->
+    <string name="team_statistics">Estatísticas do time</string>
+    <string name="goals">Gols</string>
+    <string name="games_played">Jogos disputados</string>
+    <string name="wins">Vitórias</string>
+    <string name="draws">Empates</string>
+    <string name="losses">Derrotas</string>
+    <string name="average_goals">Média de gols</string>
+    <string name="goals_by_minute">Gols por minuto</string>
+    <string name="goals_under_over">Gols Acima/Abaixo</string>
+    <string name="biggest_streak">Maior sequência</string>
+    <string name="biggest_wins">Maiores vitórias</string>
+    <string name="biggest_losses">Maiores derrotas</string>
+    <string name="penalties">Pênaltis</string>
+    <string name="penalties_scored">Convertidos</string>
+    <string name="penalties_missed">Perdidos</string>
+    <string name="cards">Cartões</string>
+
+    <!-- Under/Over -->
+    <string name="over">Acima</string>
+    <string name="under">Abaixo</string>
+
 </resources>

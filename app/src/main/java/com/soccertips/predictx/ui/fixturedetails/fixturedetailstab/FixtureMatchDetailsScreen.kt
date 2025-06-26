@@ -16,14 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Sports
 import androidx.compose.material.icons.filled.Stadium
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,14 +34,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.soccertips.predictx.R
 import com.soccertips.predictx.admob.InlineBannerAdView
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.Fixture
@@ -82,10 +79,7 @@ fun FixtureMatchDetailsScreen(
 
     // Check for invalid team IDs
     if (homeTeamIdInt == 0 || awayTeamIdInt == 0) {
-        ErrorMessage(
-            message = "Invalid team ID(s). Please check your input.",
-            onRetry = {}
-        )
+        ErrorMessage(message = stringResource(R.string.invalid_team_ids), onRetry = {})
         return
     }
 
@@ -120,7 +114,7 @@ fun FixtureMatchDetailsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "No predictions available.",
+                    stringResource(R.string.no_predictions_available),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -139,7 +133,7 @@ fun FixtureMatchDetailsScreen(
                             )
                         },
                         enabled = rewardedAdManager?.isAdLoaded() == true,
-                        text = "Watch Ad for Extra Predictions",
+                        text = stringResource(R.string.watch_ad_for_extra_predictions),
                         pulseEnabled = true
                     )
                 }
@@ -161,11 +155,13 @@ fun FixtureListScreen(
     navController: NavController
 ) {
     // Derive filtered lists only once to improve performance
-    val homeTeamFixtures by remember(combinedFormData) {
+    val homeTeamFixtures by
+    remember(combinedFormData) {
         derivedStateOf { combinedFormData.filter { it.isHome }.take(4) }
     }
 
-    val awayTeamFixtures by remember(combinedFormData) {
+    val awayTeamFixtures by
+    remember(combinedFormData) {
         derivedStateOf { combinedFormData.filter { !it.isHome }.take(4) }
     }
 
@@ -227,7 +223,7 @@ fun FixtureColumn(
 
         if (fixturesWithType.isEmpty()) {
             Text(
-                text = "No fixtures available",
+                text = stringResource(R.string.no_fixtures_available),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = Color.Gray,
@@ -236,9 +232,7 @@ fun FixtureColumn(
                     .padding(8.dp)
             )
         } else {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 fixturesWithType.forEach { fixtureWithType ->
                     FixtureCard(
                         fixture = fixtureWithType.fixture,
@@ -262,25 +256,27 @@ fun FixtureCard(
     teamId: TeamId,
     navController: NavController
 ) {
-    val cardColor = getCardColor(
-        fixture,
-        isHome,
-        teamId,
-    )
+    val cardColor =
+        getCardColor(
+            fixture,
+            isHome,
+            teamId,
+        )
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
 
     Card(
         colors = cardColors,
         elevation = cardElevation,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp)
-            .clickable {
-                navController.navigate(
-                    Routes.FixtureDetails.createRoute(fixture.fixture.id.toString())
-                )
-            },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+                .clickable {
+                    navController.navigate(
+                        Routes.FixtureDetails.createRoute(fixture.fixture.id.toString())
+                    )
+                },
     ) {
         Row(
             Modifier
@@ -290,14 +286,14 @@ fun FixtureCard(
             Column(modifier = Modifier.weight(5f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
-                        painter = rememberAsyncImagePainter(
-                            ImageRequest.Builder(LocalContext.current)
-                                .data(fixture.teams.home.logo)
-                                .crossfade(true)
-                                .memoryCachePolicy(CachePolicy.ENABLED)
-                                .build()
-                        ),
-                        contentDescription = "Home Team Logo",
+                        painter =
+                            rememberAsyncImagePainter(
+                                ImageRequest.Builder(LocalContext.current)
+                                    .data(fixture.teams.home.logo)
+                                    .crossfade(true)
+                                    .build()
+                            ),
+                        contentDescription = stringResource(R.string.home_team_logo),
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
@@ -311,14 +307,14 @@ fun FixtureCard(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
-                        painter = rememberAsyncImagePainter(
-                            ImageRequest.Builder(LocalContext.current)
-                                .data(fixture.teams.away.logo)
-                                .crossfade(true)
-                                .memoryCachePolicy(CachePolicy.ENABLED)
-                                .build()
-                        ),
-                        contentDescription = "Away Team Logo",
+                        painter =
+                            rememberAsyncImagePainter(
+                                ImageRequest.Builder(LocalContext.current)
+                                    .data(fixture.teams.away.logo)
+                                    .crossfade(true)
+                                    .build()
+                            ),
+                        contentDescription = stringResource(R.string.away_team_logo),
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
@@ -332,10 +328,11 @@ fun FixtureCard(
             }
 
             VerticalDivider(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp)
-                    .padding(top = 8.dp, bottom = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(1.dp)
+                        .padding(top = 8.dp, bottom = 8.dp),
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
             )
@@ -378,7 +375,8 @@ fun getCardColor(
         // Home team logic
         isHome -> {
             if ((fixture.teams.home.winner == true && fixture.teams.home.id == teamId.homeTeamId) ||
-                (fixture.teams.away.winner == true && fixture.teams.away.id == teamId.homeTeamId)
+                (fixture.teams.away.winner == true &&
+                        fixture.teams.away.id == teamId.homeTeamId)
             ) {
                 Color.Green.copy(alpha = 0.3f)
             } else {
@@ -389,7 +387,8 @@ fun getCardColor(
         // Away team logic
         !isHome -> {
             if ((fixture.teams.away.winner == true && fixture.teams.away.id == teamId.awayTeamId) ||
-                (fixture.teams.home.winner == true && fixture.teams.home.id == teamId.awayTeamId)
+                (fixture.teams.home.winner == true &&
+                        fixture.teams.home.id == teamId.awayTeamId)
             ) {
                 Color.Green.copy(alpha = 0.3f)
             } else {
@@ -405,20 +404,22 @@ fun getCardColor(
 @Composable
 fun FixtureDetailCard(fixture: Fixture) {
     // Format the fixture date safely
-    val date = remember(fixture.date) {
-        try {
-            val inputDate = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
-            val outputDate = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-            LocalDateTime.parse(fixture.date, inputDate).format(outputDate)
-        } catch (e: Exception) {
-            "Date unavailable"
+    val dateUnavailable = stringResource(R.string.date_unavailable)
+    val date =
+        remember(fixture.date) {
+            try {
+                val inputDate = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+                val outputDate = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+                LocalDateTime.parse(fixture.date, inputDate).format(outputDate)
+            } catch (e: Exception) {
+                dateUnavailable
+            }
         }
-    }
 
     // Handle potentially missing information
-    val referee = fixture.referee?.takeIf { it.isNotBlank() } ?: "Referee not assigned"
-    val venueName = fixture.venue?.name?.takeIf { it.isNotBlank() } ?: "Venue unknown"
-    val venueCity = fixture.venue?.city?.takeIf { it.isNotBlank() } ?: "City unknown"
+    val referee = fixture.referee?.takeIf { it.isNotBlank() } ?: "-"
+    val venueName = fixture.venue?.name?.takeIf { it.isNotBlank() } ?: "-"
+    val venueCity = fixture.venue?.city?.takeIf { it.isNotBlank() } ?: "-"
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
 
@@ -437,32 +438,24 @@ fun FixtureDetailCard(fixture: Fixture) {
             verticalArrangement = Arrangement.Center,
         ) {
             // Date info
-            FixtureDetailRow(
-                icon = Icons.Default.CalendarMonth,
-                text = date
-            )
+            FixtureDetailRow(icon = Icons.Default.CalendarMonth, text = date)
             Spacer(modifier = Modifier.height(8.dp))
 
             // Referee info
-            FixtureDetailRow(
-                icon = Icons.Default.Sports,
-                text = referee
-            )
+            FixtureDetailRow(icon = Icons.Default.Sports, text = referee)
             Spacer(modifier = Modifier.height(8.dp))
 
             // Venue info
-            FixtureDetailRow(
-                icon = Icons.Default.Stadium,
-                text = venueName
-            )
+            FixtureDetailRow(icon = Icons.Default.Stadium, text = venueName)
 
             // Only show city if different from venue name to avoid redundancy
             if (!venueName.contains(venueCity, ignoreCase = true)) {
                 Text(
                     text = venueCity,
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp)
-                        .align(Alignment.CenterHorizontally),
+                    modifier =
+                        Modifier
+                            .padding(start = 8.dp, end = 8.dp)
+                            .align(Alignment.CenterHorizontally),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 12.sp,
@@ -474,10 +467,7 @@ fun FixtureDetailCard(fixture: Fixture) {
 }
 
 @Composable
-private fun FixtureDetailRow(
-    icon: ImageVector,
-    text: String
-) {
+private fun FixtureDetailRow(icon: ImageVector, text: String) {
     Row(
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -493,9 +483,10 @@ private fun FixtureDetailRow(
         )
         Text(
             text = text,
-            modifier = Modifier
-                .padding(start = 8.dp, end = 8.dp)
-                .align(Alignment.CenterVertically),
+            modifier =
+                Modifier
+                    .padding(start = 8.dp, end = 8.dp)
+                    .align(Alignment.CenterVertically),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             fontSize = 12.sp,

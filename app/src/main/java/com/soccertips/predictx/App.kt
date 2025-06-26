@@ -5,9 +5,13 @@ import android.app.Application
 import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
+import androidx.core.content.edit
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentForm
+import com.google.android.ump.ConsentInformation
+import com.google.firebase.analytics.FirebaseAnalytics.ConsentStatus
 import com.soccertips.predictx.admob.AppOpenAdManager
 import com.soccertips.predictx.notification.NotificationHelper
 import com.soccertips.predictx.repository.PredictionRepository
@@ -20,7 +24,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
-import androidx.core.content.edit
 
 @HiltAndroidApp
 class App : Application(), Configuration.Provider, Application.ActivityLifecycleCallbacks {
@@ -55,6 +58,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     // Track when Mobile Ads SDK has been initialized
     private var isMobileAdsInitialized = false
+
+    // Consent management
+    private lateinit var consentInformation: ConsentInformation
 
     // Shared preferences key for first launch check
     private val PREFS_NAME = "app_preferences"
@@ -109,7 +115,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.d("App has been initialized before, ready for ads")
         }
         // Initialize Mobile Ads SYNCHRONOUSLY on main thread first
-        MobileAds.initialize(this) { initializationStatus ->
+        /*MobileAds.initialize(this) { initializationStatus ->
             Timber.d("MobileAds initialized with status: $initializationStatus")
 
             // Setup app open ad manager
@@ -125,7 +131,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
 
             Timber.d("AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart")
-        }
+        }*/
 
         CoroutineScope(Dispatchers.IO).launch {
             preloadRepository.preloadCategoryData()
@@ -147,30 +153,114 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         }
     }
 
-    private fun initApiConfig() {
-        CoroutineScope(Dispatchers.IO).launch {
-            Timber.d("Starting to fetch API config from Firebase...")
-            firebaseRepository.getApiConfig().collect { result ->
-                result.onSuccess { configMap ->
-                    Timber.d("API config successfully fetched from Firebase: $configMap")
-                    // Log the specific keys we're looking for
-                    Timber.d("API_KEY value from Firebase: ${configMap["API_KEY"]}")
-                    Timber.d("API_HOST value from Firebase: ${configMap["API_HOST"]}")
+   private fun initApiConfig() {
+       // First set default values in case Firebase fails
+       val defaultConfig = mapOf(
+           "API_KEY" to BuildConfig.DEFAULT_API_KEY,
+           "API_HOST" to BuildConfig.DEFAULT_API_HOST
+       )
+       // Set default values immediately to prevent crashes
+       apiConfigProvider.updateConfig(defaultConfig)
+       Timber.d("Set default API config: $defaultConfig")
 
-                    apiConfigProvider.updateConfig(configMap)
-                    Timber.d("ApiConfigProvider updated - API Key: ${apiConfigProvider.getApiKey()}, Host: ${apiConfigProvider.getApiHost()}")
-                }.onFailure { error ->
-                    Timber.e(error, "Failed to fetch API config from Firebase")
-                }
-            }
-        }
-    }
+       // Then try to fetch from Firebase
+       CoroutineScope(Dispatchers.IO).launch {
+           Timber.d("Starting to fetch API config from Firebase...")
+           firebaseRepository.getApiConfig().collect { result ->
+               result.onSuccess { configMap ->
+                   Timber.d("API config successfully fetched from Firebase: $configMap")
+                   // Log the specific keys we're looking for
+                   Timber.d("API_KEY value from Firebase: ${configMap["API_KEY"]}")
+                   Timber.d("API_HOST value from Firebase: ${configMap["API_HOST"]}")
+
+                   apiConfigProvider.updateConfig(configMap)
+                   Timber.d("ApiConfigProvider updated - API Key: ${apiConfigProvider.getApiKey()}, Host: ${apiConfigProvider.getApiHost()}")
+               }.onFailure { error ->
+                   Timber.e(error, "Failed to fetch API config from Firebase")
+                   // We already have default values set, so no need to handle failure specifically
+               }
+           }
+       }
+   }
+
+   /**
+    * Initializes and requests consent information.
+    * This should be called from an Activity context, e.g., in onActivityStarted.
+    */
+   private fun initializeConsent(activity: Activity) {
+          val paramsBuilder = com.google.android.ump.ConsentRequestParameters.Builder()
+
+          if (BuildConfig.DEBUG) {
+              val debugSettings = com.google.android.ump.ConsentDebugSettings.Builder(this)
+                  .addTestDeviceHashedId("AF635FCF25F0A2F4F2631DE103049E7D")
+                  .build()
+              paramsBuilder.setConsentDebugSettings(debugSettings)
+          }
+
+          val params = paramsBuilder.build()
+
+          consentInformation = com.google.android.ump.UserMessagingPlatform.getConsentInformation(this)
+          consentInformation.requestConsentInfoUpdate(
+              activity,
+              params,
+              {
+                  // Consent information updated.
+                  // Load and show the form if required.
+                  loadAndShowConsentFormIfRequired(activity)
+              },
+              { requestError ->
+                  Timber.e("Failed to request consent info update: ${requestError.message}")
+              }
+          )
+      }
+
+   /**
+    * Loads and shows the consent form if it's required.
+    */
+   private fun loadAndShowConsentFormIfRequired(activity: Activity) {
+       com.google.android.ump.UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { loadAndShowError ->
+           if (loadAndShowError != null) {
+               Timber.e("Failed to load or show consent form: ${loadAndShowError.message}")
+               return@loadAndShowConsentFormIfRequired
+           }
+
+           // Consent has been gathered.
+           // The Mobile Ads SDK can be initialized or will now use the updated consent.
+           Timber.d("Consent gathered. Can request ads: ${consentInformation.canRequestAds()}")
+       }
+   }
 
     override fun onActivityCreated(
         activity: Activity,
         savedInstanceState: Bundle?
     ) {
         currentActivity = activity
+        initializeConsent(activity)
+
+        if (!isMobileAdsInitialized) {
+            val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            val appInitialized = prefs.getBoolean(KEY_APP_INITIALIZED, false)
+
+            // Pass the application context to avoid leaking the activity context.
+            MobileAds.initialize(this) { initializationStatus ->
+                Timber.d("MobileAds initialized with status: $initializationStatus")
+
+                // Setup app open ad manager
+                setupAppOpenAdManager()
+
+                // Mark Mobile Ads as initialized
+                isMobileAdsInitialized = true
+
+                // If this is not the first launch and app was previously initialized, allow ads
+                if (!isFirstLaunch() && !appInitialized) {
+                    isInitialAppStart = false
+                    Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                }
+
+                Timber.d("AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart")
+            }
+        }
+
     }
 
     override fun onActivityDestroyed(activity: Activity) {

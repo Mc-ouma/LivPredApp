@@ -2,6 +2,7 @@ package com.soccertips.predictx
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -52,30 +53,30 @@ import com.soccertips.predictx.viewmodel.FavoritesViewModel
 import com.soccertips.predictx.viewmodel.MainViewModel
 
 sealed class BottomNavScreens(
-        open val route: String,
-        open val title: String,
-        open val selectedIcon: ImageVector,
-        open val unselectedIcon: ImageVector,
-        open val hasNews: Boolean,
-        open val badgeCount: Int? = null
+    open val route: String,
+    @StringRes open val title: Int,
+    open val selectedIcon: ImageVector,
+    open val unselectedIcon: ImageVector,
+    open val hasNews: Boolean,
+    open val badgeCount: Int? = null
 ) {
     object Categories :
-            BottomNavScreens(
-                    "categories",
-                    "Home",
-                    Icons.Filled.Home,
-                    Icons.Outlined.Home,
-                    false,
-                    null
-            )
+        BottomNavScreens(
+            "categories",
+            R.string.home_categories,
+            Icons.Filled.Home,
+            Icons.Outlined.Home,
+            false,
+            null
+        )
 
     data class Favorite(
-            override val route: String = "favorites",
-            override val title: String = "Saved",
-            override val selectedIcon: ImageVector = Icons.Filled.Favorite,
-            override val unselectedIcon: ImageVector = Icons.Filled.FavoriteBorder,
-            override val hasNews: Boolean = false,
-            override val badgeCount: Int? = null
+        override val route: String = "favorites",
+        @StringRes override val title: Int = R.string.favorites,
+        override val selectedIcon: ImageVector = Icons.Filled.Favorite,
+        override val unselectedIcon: ImageVector = Icons.Filled.FavoriteBorder,
+        override val hasNews: Boolean = false,
+        override val badgeCount: Int? = null
     ) : BottomNavScreens(route, title, selectedIcon, unselectedIcon, hasNews, badgeCount)
 }
 
@@ -86,16 +87,16 @@ fun HomeScreen(navController: NavController) {
     rememberNavController()
     val favoritesViewModel: FavoritesViewModel = hiltViewModel()
     val favoriteCount by
-            favoritesViewModel.favoriteCount.collectAsStateWithLifecycle(initialValue = 0)
+    favoritesViewModel.favoriteCount.collectAsStateWithLifecycle(initialValue = 0)
     val mainViewModel: MainViewModel = hiltViewModel()
     val networkUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val items =
-            listOf(
-                    BottomNavScreens.Categories,
-                    BottomNavScreens.Favorite(badgeCount = favoriteCount),
-            )
+        listOf(
+            BottomNavScreens.Categories,
+            BottomNavScreens.Favorite(badgeCount = favoriteCount),
+        )
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
@@ -114,11 +115,11 @@ fun HomeScreen(navController: NavController) {
             } else {
                 backPressState = currentTime
                 Toast.makeText(
-                                context,
-                                context.getString(R.string.press_back_again_to_exit),
-                                Toast.LENGTH_SHORT
-                        )
-                        .show()
+                    context,
+                    context.getString(R.string.press_back_again_to_exit),
+                    Toast.LENGTH_SHORT
+                )
+                    .show()
             }
         }
     }
@@ -126,11 +127,11 @@ fun HomeScreen(navController: NavController) {
     LaunchedEffect(networkUiState) {
         if (networkUiState is MainViewModel.UiState.NetworkError) {
             val result =
-                    snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.no_internet_connection),
-                            actionLabel = context.getString(R.string.retry),
-                            duration = SnackbarDuration.Long
-                    )
+                snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.no_internet_connection),
+                    actionLabel = context.getString(R.string.retry),
+                    duration = SnackbarDuration.Long
+                )
             if (result == SnackbarResult.ActionPerformed) {
                 mainViewModel.retryNetworkOperation()
             }
@@ -138,83 +139,83 @@ fun HomeScreen(navController: NavController) {
     }
 
     Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
-            },
-            topBar = {
-                HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior)
-            },
-            bottomBar = {
-                NavigationBar {
-                    items.forEachIndexed { index, item ->
-                        NavigationBarItem(
-                                selected = selectedItemIndex == index,
-                                onClick = { selectedItemIndex = index },
-                                label = { Text(text = item.title) },
-                                icon = {
-                                    BadgedBox(
-                                            badge = {
-                                                if (item.badgeCount != null) {
-                                                    Badge(
-                                                            containerColor =
-                                                                    MaterialTheme.colorScheme
-                                                                            .primary
-                                                    ) { Text(text = item.badgeCount.toString()) }
-                                                } else if (item.hasNews) {
-                                                    Badge(
-                                                            containerColor =
-                                                                    MaterialTheme.colorScheme
-                                                                            .primary
-                                                    )
-                                                }
-                                            }
-                                    ) {
-                                        Icon(
-                                                imageVector =
-                                                        if (index == selectedItemIndex) {
-                                                            item.selectedIcon
-                                                        } else item.unselectedIcon,
-                                                contentDescription = item.title
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
+        },
+        topBar = {
+            HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior)
+        },
+        bottomBar = {
+            NavigationBar {
+                items.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        selected = selectedItemIndex == index,
+                        onClick = { selectedItemIndex = index },
+                        label = { Text(text = stringResource(item.title)) },
+                        icon = {
+                            BadgedBox(
+                                badge = {
+                                    if (item.badgeCount != null) {
+                                        Badge(
+                                            containerColor =
+                                                MaterialTheme.colorScheme
+                                                    .primary
+                                        ) { Text(text = item.badgeCount.toString()) }
+                                    } else if (item.hasNews) {
+                                        Badge(
+                                            containerColor =
+                                                MaterialTheme.colorScheme
+                                                    .primary
                                         )
                                     }
                                 }
-                        )
-                    }
-                }
-            },
-            content = { padding ->
-                Column(modifier = Modifier.padding(padding)) {
-                    AnimatedVisibility(
-                            visible = selectedItemIndex == 0,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                    ) { CategoriesScreen(navController = navController) }
-                    AnimatedVisibility(
-                            visible = selectedItemIndex == 1,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                    ) { FavoritesScreen(navController = navController) }
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (index == selectedItemIndex) {
+                                            item.selectedIcon
+                                        } else item.unselectedIcon,
+                                    contentDescription = stringResource(item.title)
+                                )
+                            }
+                        }
+                    )
                 }
             }
+        },
+        content = { padding ->
+            Column(modifier = Modifier.padding(padding)) {
+                AnimatedVisibility(
+                    visible = selectedItemIndex == 0,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) { CategoriesScreen(navController = navController) }
+                AnimatedVisibility(
+                    visible = selectedItemIndex == 1,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) { FavoritesScreen(navController = navController) }
+            }
+        }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
-        modifier: Modifier = Modifier,
-        selectedItemIndex: Int,
-        scrollBehavior: TopAppBarScrollBehavior
+    modifier: Modifier = Modifier,
+    selectedItemIndex: Int,
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
     CenterAlignedTopAppBar(
-            title = {
-                if (selectedItemIndex == 0) Text(stringResource(R.string.categories))
-                else Text(stringResource(R.string.favorites))
-            },
-            modifier = modifier,
-            navigationIcon = {},
-            actions = { Menu() },
-            scrollBehavior = scrollBehavior,
+        title = {
+            if (selectedItemIndex == 0) Text(stringResource(R.string.categories))
+            else Text(stringResource(R.string.favorites))
+        },
+        modifier = modifier,
+        navigationIcon = {},
+        actions = { Menu() },
+        scrollBehavior = scrollBehavior,
     )
 }

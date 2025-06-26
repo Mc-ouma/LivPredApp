@@ -206,7 +206,11 @@ fun TeamScreen(
                                         modifier = Modifier
                                             .size(32.dp)
                                             .clip(CircleShape)
-                                            .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                            .border(
+                                                1.dp,
+                                                MaterialTheme.colorScheme.primary,
+                                                CircleShape
+                                            )
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     // Team Name and Country
@@ -225,11 +229,12 @@ fun TeamScreen(
                                 }
                             } else {
                                 Text(
-                                    text = "Team Info",
+                                    text = stringResource(R.string.team_info),
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }
                         }
+
                         is UiState.Loading -> {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isTeamDataLoading) {
@@ -239,27 +244,32 @@ fun TeamScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Loading Team Info...",
+                                        text = stringResource(R.string.loading),
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                 } else {
                                     Text(
-                                        text = "Team Info",
+                                        text = stringResource(R.string.team_info),
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                 }
                             }
                         }
+
                         is UiState.Error -> Text(
-                            text = "Error Loading Team",
+                            text = stringResource(
+                                R.string.an_error_occurred_please_check_your_internet_or_check_again_later
+                            ),
                             style = MaterialTheme.typography.titleMedium
                         )
+
                         UiState.Empty -> Text(
-                            text = "No Team Data",
+                            text = stringResource(R.string.no_data_available),
                             style = MaterialTheme.typography.titleMedium
                         )
+
                         is UiState.ShowSnackbar -> Text(
-                            text = "Team Info",
+                            text = stringResource(R.string.team_info),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -268,7 +278,7 @@ fun TeamScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -338,8 +348,9 @@ fun TeamScreen(
 
 
                 is UiState.Error ->
-                    ErrorScreen(paddingValues,
-                        "An error occurred. Please check your internet or check again later",
+                    ErrorScreen(
+                        paddingValues,
+                        stringResource(R.string.an_error_occurred_please_check_your_internet_or_check_again_later),
                         //(teamDataState as UiState.Error).message
                         onRetry = {
                             viewModel.getTeams(leagueId, season, teamId)
@@ -516,13 +527,14 @@ fun <T> ShowDataOrLoading(
         }
 
         is UiState.Error ->
-            ErrorScreen(paddingValues = PaddingValues(0.dp),
-                message = "An error occurred. Please check your internet or check again later",
+            ErrorScreen(
+                paddingValues = PaddingValues(0.dp),
+                message = stringResource(R.string.an_error_occurred_please_check_your_internet_or_check_again_later),
                 //state.message
                 onRetry = {
 
                 }
-                )
+            )
 
 
         UiState.Empty ->
@@ -619,12 +631,12 @@ fun TeamInfoCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Founded: ${statistics.team.founded}",
+                        text = stringResource(R.string.founded, statistics.team.founded),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = "Country: ${statistics.team.country}",
+                        text = stringResource(R.string.country, statistics.team.country),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -638,13 +650,16 @@ fun TeamInfoCard(
                 modifier = Modifier.align(Alignment.End)
             ) {
                 Text(
-                    text = if (stadiumDetailsVisible.value) "Hide Stadium Details" else "Show Stadium Details"
+                    text = if (stadiumDetailsVisible.value) stringResource(R.string.hide_stadium_details) else stringResource(
+                        R.string.show_stadium_details
+                    )
                 )
             }
             AnimatedVisibility(visible = stadiumDetailsVisible.value) {
                 Column {
                     Spacer(modifier = Modifier.height(8.dp))
-                    GridLayout(items = listOf(
+                    GridLayout(
+                        items = listOf(
                         {
                             TeamInfoItem(
                                 icon = Icons.Default.LocationOn,

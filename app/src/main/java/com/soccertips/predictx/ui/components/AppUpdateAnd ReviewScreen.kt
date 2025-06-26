@@ -19,17 +19,22 @@ import com.soccertips.predictx.R
 
 @Composable
 fun AppUpdateAndReviewScreen(
-        showSnackbar: Boolean,
-        onDismissSnackbar: () -> Unit,
-        onCompleteUpdate: () -> Unit,
-        onRequestReview: () -> Unit
+    showSnackbar: Boolean,
+    onDismissSnackbar: () -> Unit,
+    onCompleteUpdate: () -> Unit,
+    onRequestReview: () -> Unit
 ) {
     LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Button(onClick = onRequestReview) {
                 Text(stringResource(R.string.request_in_app_review))
@@ -39,16 +44,18 @@ fun AppUpdateAndReviewScreen(
 
     if (showSnackbar) {
         Snackbar(
-                action = {
-                    Button(
-                            onClick = {
-                                onCompleteUpdate()
-                                onDismissSnackbar()
-                            }
-                    ) { Text(stringResource(R.string.restart)) }
-                },
-                modifier = Modifier.padding(16.dp)
-        ) { Text(stringResource(R.string.update_downloaded_restart)) }
+            action = {
+                Button(onClick = {
+                    onCompleteUpdate()
+                    onDismissSnackbar()
+                }) {
+                    Text(stringResource(R.string.restart))
+                }
+            },
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(stringResource(R.string.update_downloaded_restart))
+        }
     }
 }
 
@@ -56,9 +63,10 @@ fun AppUpdateAndReviewScreen(
 @Composable
 private fun AppUpdateAndReviewScreenPreview() {
     AppUpdateAndReviewScreen(
-            showSnackbar = true,
-            onDismissSnackbar = {},
-            onCompleteUpdate = {},
-            onRequestReview = {}
+        showSnackbar = true,
+        onDismissSnackbar = {},
+        onCompleteUpdate = {},
+        onRequestReview = {}
     )
+
 }

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Match-related strings -->
     <string name="match_details">Détails</string>
     <string name="result">Résultat</string>
     <string name="statistics">Statistiques</string>
@@ -12,9 +11,7 @@
     <string name="fixtures">Calendrier</string>
     <string name="transfers">Transferts</string>
     <string name="overview">Aperçu</string>
-
-    <!-- Date and time -->
-    <string name="today">Aujourd’hui</string>
+    <string name="today">Aujourd\'hui</string>
     <string name="tomorrow">Demain</string>
     <string name="yesterday">Hier</string>
     <string name="unknown_date">Date inconnue</string>
@@ -26,9 +23,7 @@
     <string name="against">Contre</string>
     <string name="minute">Minute</string>
     <string name="percentage">Pourcentage</string>
-    <string name="category">Catégorie</string>
-
-    <!-- Navigation and UI -->
+    <string name="category">Catégorie</string>    <!-- Navigation and UI -->
     <string name="categories">Catégories</string>
     <string name="favorites">Favoris</string>
     <string name="saved">Enregistré</string>
@@ -38,23 +33,17 @@
     <string name="retry">Réessayer</string>
     <string name="ok">OK</string>
     <string name="cancel">Annuler</string>
-    <string name="submit">Envoyer</string>
-
-    <!-- Menu Items -->
+    <string name="submit">Envoyer</string>    <!-- Menu Items -->
     <string name="share">Partager</string>
     <string name="rate_us">Évaluez-nous</string>
     <string name="privacy_policy">Politique de confidentialité</string>
-    <string name="telegram">Télégramme</string>
+    <string name="telegram">Telegram</string>
     <string name="send_feedback">Envoyer des commentaires</string>
-    <string name="about_us">À propos</string>
-
-    <!-- Form Labels -->
+    <string name="about_us">À propos</string>    <!-- Form Labels -->
     <string name="email_address">Adresse e-mail</string>
     <string name="message">Message</string>
     <string name="enter_email_placeholder">Entrez votre adresse e-mail</string>
-    <string name="other_feedback">Autres commentaires</string>
-
-    <!-- Prediction Categories -->
+    <string name="other_feedback">Autres commentaires</string>    <!-- Prediction Categories -->
     <string name="over_under">Plus/Moins</string>
     <string name="btts">Les deux équipes marquent</string>
     <string name="daily_2_odds">Cotes quotidiennes 2</string>
@@ -62,12 +51,10 @@
     <string name="ht_ft">Mi-temps/Fin de match</string>
     <string name="home_away">Domicile/Extérieur</string>
     <string name="daily_bonus">Bonus quotidien</string>
-    <string name="extra_picks">Choix supplémentaires</string>
-
-    <!-- Prediction Carousel -->
+    <string name="extra_picks">Choix supplémentaires</string>    <!-- Prediction Carousel -->
     <string name="goals_for">Buts pour :</string>
     <string name="goals_against">Buts contre :</string>
-    <string name="failed_to_score">N’a pas marqué :</string>
+    <string name="failed_to_score">N\'a pas marqué :</string>
     <string name="scored">Marqués :</string>
     <string name="conceded">Concédés :</string>
     <string name="clean_sheets">Cages inviolées :</string>
@@ -76,31 +63,31 @@
     <string name="defense">Défense</string>
     <string name="h2h">H2H</string>
     <string name="overall">Global</string>
-
-    <!-- Team Details -->
+    <string name="last_5_matches_goals">Derniers 5 matchs - Buts</string>    <!-- Team Details -->
     <string name="invalid_date">Date invalide</string>
-    <string name="invalid_time">Heure invalide</string>
-
-    <!-- Error Messages -->
+    <string name="invalid_time">Heure invalide</string>    <!-- Error Messages -->
     <string name="press_back_again_to_exit">Appuyez à nouveau sur retour pour quitter</string>
     <string name="no_internet_connection">Pas de connexion internet</string>
-    <string name="could_not_open_link">Impossible d’ouvrir le lien</string>
-    <string name="invalid_team_ids">ID(s) d’équipe invalide(s). Vérifiez votre saisie.</string>
-    <string name="error_occurred_check_internet">Une erreur s’est produite. Vérifiez votre connexion internet ou réessayez plus tard.</string>
-    <string name="error_occurred_fetching_data">Une erreur s’est produite lors de la récupération des données.</string>
+    <string name="could_not_open_link">Impossible d\'ouvrir le lien</string>
+    <string name="invalid_team_ids">ID(s) d\'équipe invalide(s). Vérifiez votre saisie.</string>
+    <string name="error_occurred_check_internet">Une erreur s\'est produite. Vérifiez votre
+        connexion internet ou réessayez plus tard</string>
+    <string name="error_occurred_fetching_data">Une erreur s\'est produite lors de la récupération
+        des données.</string>
     <string name="no_data_available">Aucune donnée disponible</string>
     <string name="removed_from_favorites">Supprimé des favoris</string>
     <string name="undo">Annuler</string>
-    <string name="no_categories_available">Aucune catégorie disponible. Rejoignez notre chaîne Telegram pour des mises à jour et du support.</string>
+    <string name="no_categories_available">Aucune catégorie disponible. Rejoignez notre chaîne
+        Telegram pour des mises à jour et du support.</string>
     <string name="failed_to_fetch_data">Échec de la récupération des données</string>
     <string name="error_loading_categories">Erreur lors du chargement des catégories</string>
     <string name="no_standings_found">Aucun classement trouvé</string>
     <string name="failed_to_fetch_standings">Échec de la récupération du classement</string>
-    <string name="an_error_occurred_while_fetching_fixtures">Une erreur s’est produite lors de la récupération du calendrier.</string>
-    <string name="an_unexpected_error_occurred">Une erreur inattendue s’est produite.</string>
-    <string name="network_error_check_connection">Erreur réseau. Vérifiez votre connexion et réessayez.</string>
-
-    <!-- Notification Messages -->
+    <string name="an_error_occurred_while_fetching_fixtures">Une erreur s\'est produite lors de la
+        récupération du calendrier.</string>
+    <string name="an_unexpected_error_occurred">Une erreur inattendue s\'est produite.</string>
+    <string name="network_error_check_connection">Erreur réseau. Vérifiez votre connexion et
+        réessayez.</string>    <!-- Notification Messages -->
     <string name="match_starts_in_15_minutes">Le match commence dans 15 minutes !</string>
     <string name="upcoming_matches">Matchs à venir</string>
     <string name="match_updates">Mises à jour des matchs</string>
@@ -109,25 +96,21 @@
     <string name="league_format">Ligue : %s</string>
     <string name="date_format">Date : %s Heure : %s</string>
     <string name="your_pick_format">Votre choix : %s</string>
-    <string name="vs">VS</string>
-
-    <!-- App Update -->
-    <string name="an_update_has_been_downloaded">Une mise à jour vient d’être téléchargée.</string>
+    <string name="vs">VS</string>    <!-- App Update -->
+    <string name="an_update_has_been_downloaded">Une mise à jour vient d\'être téléchargée.</string>
     <string name="restart">REDÉMARRER</string>
     <string name="update_downloaded_restart">Mise à jour téléchargée. Redémarrez pour installer.</string>
-    <string name="request_in_app_review">Demander une évaluation dans l’application</string>
-
-    <!-- Join Telegram -->
-    <string name="join_our_telegram_channel">Rejoignez notre chaîne Telegram</string>
-
-    <!-- Content Descriptions -->
+    <string name="request_in_app_review">Demander une évaluation dans l\'application</string>    <!--
+    Join Telegram -->
+    <string name="join_our_telegram_channel">Rejoignez notre chaîne Telegram</string>    <!-- Content
+    Descriptions -->
     <string name="localized_description">Description localisée</string>
-    <string name="app_icon">Icône de l’application</string>
-    <string name="app_logo">Logo de l’application</string>
+    <string name="app_icon">Icône de l\'application</string>
+    <string name="app_logo">Logo de l\'application</string>
     <string name="splash_screen">Écran de démarrage</string>
     <string name="contact_us">Contactez-nous</string>
-    <string name="home_team_logo">Logo de l’équipe à domicile</string>
-    <string name="away_team_logo">Logo de l’équipe à l’extérieur</string>
+    <string name="home_team_logo">Logo de l\'équipe à domicile</string>
+    <string name="away_team_logo">Logo de l\'équipe à l\'extérieur</string>
     <string name="team_logo_format">Logo de %s</string>
     <string name="home_logo">Logo domicile</string>
     <string name="away_logo">Logo extérieur</string>
@@ -135,11 +118,134 @@
     <string name="card_icon">Icône de carton</string>
     <string name="substitution_icon">Icône de remplacement</string>
     <string name="var_icon">Icône de VAR</string>
-    <string name="event_icon">Icône d’événement</string>
+    <string name="event_icon">Icône d\'événement</string>
     <string name="soccer_ball">Ballon de football</string>
 
     <!-- Animation Labels -->
+
+
     <string name="logo_pulse">pulsationLogo</string>
     <string name="pulse_animation">animationPulsation</string>
-    <string name="tab_content_transition">Transition de contenu d’onglet</string>
+    <string name="tab_content_transition">Transition de contenu d\'onglet</string>
+    <string name="home_categories">Accueil</string>
+
+    <!-- Fixture    Details Strings -->
+
+
+    <string name="loading">Chargement...</string>
+    <string name="no_predictions_available">Aucune prédiction disponible.</string>
+    <string name="no_fixtures_available">Aucun match disponible</string>
+    <string name="no_head_to_head_data_available">Aucune donnée de confrontation directe disponible</string>
+    <string name="no_events_available">Aucun événement disponible</string>
+    <string name="no_standings_available">Aucun classement disponible</string>
+    <string name="date_unavailable">Date indisponible</string>
+    <string name="watch_ad_for_extra_predictions">Regarder une publicité pour des prédictions
+        supplémentaires</string>
+    <string name="stats">Statistiques</string>
+    <string name="na">N/D</string>
+    <string name="unknown_player">Joueur inconnu</string>
+    <string name="substitutes">Remplaçants</string>
+    <string name="coach_format">Entraîneur : %1$s</string>
+    <string name="coach_default">Entraîneur</string>
+    <string name="coach_photo">Photo de l\'entraîneur</string>
+    <string name="team_logo">Logo de l\'équipe</string>
+    <string name="position_format">(%1$s)</string>
+    <string name="goals_analysis">Analyse des buts</string>
+    <string name="error_check_internet">Une erreur s\'est produite. Vérifiez votre connexion
+        internet ou réessayez plus tard.</string>
+    <string name="team_a">Équipe A</string>    <!-- Standings Screen -->
+    <string name="team">Équipe</string>
+    <string name="played">J</string>
+    <string name="won">G</string>
+    <string name="drawn">N</string>
+    <string name="lost">P</string>
+    <string name="goals_for_against">+/-</string>
+    <string name="goal_difference">DB</string>
+    <string name="points">Pts</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Aucune donnée d’historique d’affrontements disponible pour les équipes %1$s et %2$s</string>
+
+    <!-- Summary Screen -->
+
+
+    <string name="no_detail_available">Aucun détail disponible</string>
+    <string name="unknown_event">Événement inconnu</string>
+    <string name="goal_type_goal">But</string>
+    <string name="goal_type_normal">But</string>
+    <string name="goal_type_own">But contre son camp</string>
+    <string name="goal_type_penalty">But sur penalty</string>
+    <string name="goal_type_missed_penalty">Penalty manqué</string>
+    <string name="card_type_yellow">Carton jaune</string>
+    <string name="card_type_red">Carton rouge</string>
+
+    <!-- Prediction Carousel -->
+
+
+    <string name="season_performance">Performance de la saison</string>
+    <string name="head_to_head_history">Historique des confrontations</string>
+    <string name="no_head_to_head_history_available">Aucun historique de confrontation disponible</string>
+    <string name="draws_format">Nuls : %d</string>
+    <string name="last_5_matches">5 derniers matchs</string>
+    <string name="match_prediction_overview">Aperçu de la prédiction du match</string>
+    <string name="team_wins_format">%s : %d</string>    <!-- Date Formats -->
+    <string name="date_pattern_input">yyyy-MM-dd\'T\'HH:mm:ssXXX</string>
+    <string name="date_pattern_output">dd-MM-yyyy</string>
+    <string name="date_pattern_display">dd MMM yyyy</string>
+
+    <!-- Number Formats -->
+
+    <string name="decimal_format">%.2f</string>
+    <string name="percent_suffix">%</string>
+
+
+    <!-- Statistics Types -->
+    <string name="shots_on_goal">Tirs cadrés</string>
+    <string name="shots_off_goal">Tirs non cadrés</string>
+    <string name="total_shots">Tirs totaux</string>
+    <string name="blocked_shots">Tirs bloqués</string>
+    <string name="shots_insidebox">Tirs dans la surface</string>
+    <string name="shots_outsidebox">Tirs hors de la surface</string>
+    <string name="fouls">Fautes</string>
+    <string name="corner_kicks">Corners</string>
+    <string name="offsides">Hors-jeu</string>
+    <string name="ball_possession">Possession de balle</string>
+    <string name="yellow_cards">Cartons jaunes</string>
+    <string name="red_cards">Cartons rouges</string>
+    <string name="goalkeeper_saves">Arrêts du gardien</string>
+    <string name="total_passes">Passes totales</string>
+    <string name="passes_accurate">Passes réussies</string>
+    <string name="passes_percentage">Pourcentage de passes</string>
+    <string name="expected_goals">Buts attendus</string>
+    <string name="goals_prevented">Buts évités</string>
+
+    <!-- Team Events -->
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Une erreur s’est produite. Vérifiez votre connexion internet ou réessayez plus tard.</string>
+    <string name="team_info">Informations sur l’équipe</string>
+    <string name="hide_stadium_details">Masquer les détails du stade</string>
+    <string name="show_stadium_details">Afficher les détails du stade</string>
+    <string name="founded">Fondé: %1$s</string>
+    <string name="country">Pays: %1$s</string>
+    <string name="age_years">Age: %1$d ans</string>
+
+    <!-- Team Statistics -->
+    <string name="team_statistics">Statistiques de l’équipe</string>
+    <string name="goals">Buts</string>
+    <string name="games_played">Matchs joués</string>
+    <string name="wins">Victoires</string>
+    <string name="draws">Matchs nuls</string>
+    <string name="losses">Défaites</string>
+    <string name="average_goals">Moyenne de buts</string>
+    <string name="goals_by_minute">Buts par minute</string>
+    <string name="goals_under_over">Buts Plus/Moins</string>
+    <string name="biggest_streak">Plus grande série</string>
+    <string name="biggest_wins">Plus grandes victoires</string>
+    <string name="biggest_losses">Plus grandes défaites</string>
+    <string name="penalties">Pénalties</string>
+    <string name="penalties_scored">Marqués</string>
+    <string name="penalties_missed">Manqués</string>
+    <string name="cards">Cartons</string>
+
+    <!-- Under/Over -->
+    <string name="over">Plus</string>
+    <string name="under">Moins</string>
+
 </resources>

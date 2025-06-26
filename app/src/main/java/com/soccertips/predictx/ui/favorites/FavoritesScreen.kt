@@ -241,6 +241,7 @@ fun FavoriteItemCard(
     onFavoriteClick: (FavoriteItem) -> Unit = {},
     isFavorite: Boolean,
     onClick: () -> Unit,
+    context: android.content.Context = androidx.compose.ui.platform.LocalContext.current,
 ) {
     val cardColors = LocalCardColors.current
     val homeTeamDetails = TeamDetails(item.hLogoPath, item.homeTeam)
@@ -267,7 +268,7 @@ fun FavoriteItemCard(
             MatchHeader(
                 league = item.league?.split(",")?.firstOrNull() ?: "Unknown League",
                 leagueLogo = item.leagueLogo,
-                date = DateUtils.formatRelativeDate(item.mDate),
+                date = DateUtils.formatRelativeDate(context, item.mDate),
                 isFavorite = isFavorite,
                 onFavoriteClick = { onFavoriteClick(item) },
             )

@@ -80,10 +80,13 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_PredictX)
+
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         // Use the modern edge-to-edge API
-        enableEdgeToEdge()
+
 
         //Initialize Ad Managers
         interstitialAdManager = InterstitialAdManager(this)

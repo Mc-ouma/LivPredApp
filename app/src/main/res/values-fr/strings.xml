@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AI ScoreCast</string>
     <string name="match_details">Détails</string>
     <string name="result">Résultat</string>
     <string name="statistics">Statistiques</string>
@@ -120,11 +119,19 @@
     <string name="substitution_icon">Icône de remplacement</string>
     <string name="var_icon">Icône de VAR</string>
     <string name="event_icon">Icône d\'événement</string>
-    <string name="soccer_ball">Ballon de football</string>    <!-- Animation Labels -->
+    <string name="soccer_ball">Ballon de football</string>
+
+    <!-- Animation Labels -->
+
+
     <string name="logo_pulse">pulsationLogo</string>
     <string name="pulse_animation">animationPulsation</string>
-    <string name="tab_content_transition">Transition de contenu d\'onglet</string>    <!-- Fixture
-    Details Strings -->
+    <string name="tab_content_transition">Transition de contenu d\'onglet</string>
+    <string name="home_categories">Accueil</string>
+
+    <!-- Fixture    Details Strings -->
+
+
     <string name="loading">Chargement...</string>
     <string name="no_predictions_available">Aucune prédiction disponible.</string>
     <string name="no_fixtures_available">Aucun match disponible</string>
@@ -155,6 +162,7 @@
     <string name="goals_for_against">+/-</string>
     <string name="goal_difference">DB</string>
     <string name="points">Pts</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Aucune donnée d’historique d’affrontements disponible pour les équipes %1$s et %2$s</string>
 
     <!-- Summary Screen -->
 
@@ -187,4 +195,57 @@
 
     <string name="decimal_format">%.2f</string>
     <string name="percent_suffix">%</string>
+
+
+    <!-- Statistics Types -->
+    <string name="shots_on_goal">Tirs cadrés</string>
+    <string name="shots_off_goal">Tirs non cadrés</string>
+    <string name="total_shots">Tirs totaux</string>
+    <string name="blocked_shots">Tirs bloqués</string>
+    <string name="shots_insidebox">Tirs dans la surface</string>
+    <string name="shots_outsidebox">Tirs hors de la surface</string>
+    <string name="fouls">Fautes</string>
+    <string name="corner_kicks">Corners</string>
+    <string name="offsides">Hors-jeu</string>
+    <string name="ball_possession">Possession de balle</string>
+    <string name="yellow_cards">Cartons jaunes</string>
+    <string name="red_cards">Cartons rouges</string>
+    <string name="goalkeeper_saves">Arrêts du gardien</string>
+    <string name="total_passes">Passes totales</string>
+    <string name="passes_accurate">Passes réussies</string>
+    <string name="passes_percentage">Pourcentage de passes</string>
+    <string name="expected_goals">Buts attendus</string>
+    <string name="goals_prevented">Buts évités</string>
+
+    <!-- Team Events -->
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Une erreur s’est produite. Vérifiez votre connexion internet ou réessayez plus tard.</string>
+    <string name="team_info">Informations sur l’équipe</string>
+    <string name="hide_stadium_details">Masquer les détails du stade</string>
+    <string name="show_stadium_details">Afficher les détails du stade</string>
+    <string name="founded">Fondé: %1$s</string>
+    <string name="country">Pays: %1$s</string>
+    <string name="age_years">Age: %1$d ans</string>
+
+    <!-- Team Statistics -->
+    <string name="team_statistics">Statistiques de l’équipe</string>
+    <string name="goals">Buts</string>
+    <string name="games_played">Matchs joués</string>
+    <string name="wins">Victoires</string>
+    <string name="draws">Matchs nuls</string>
+    <string name="losses">Défaites</string>
+    <string name="average_goals">Moyenne de buts</string>
+    <string name="goals_by_minute">Buts par minute</string>
+    <string name="goals_under_over">Buts Plus/Moins</string>
+    <string name="biggest_streak">Plus grande série</string>
+    <string name="biggest_wins">Plus grandes victoires</string>
+    <string name="biggest_losses">Plus grandes défaites</string>
+    <string name="penalties">Pénalties</string>
+    <string name="penalties_scored">Marqués</string>
+    <string name="penalties_missed">Manqués</string>
+    <string name="cards">Cartons</string>
+
+    <!-- Under/Over -->
+    <string name="over">Plus</string>
+    <string name="under">Moins</string>
+
 </resources>

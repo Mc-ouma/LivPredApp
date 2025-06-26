@@ -22,12 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.standings.Goals
 import com.soccertips.predictx.data.model.standings.HomeAwayRecord
 import com.soccertips.predictx.data.model.standings.OverallRecord
@@ -100,26 +102,40 @@ fun GroupHeader(groupName: String) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Add rank column header
+            Text(
+                text = "#",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(2f),
+                textAlign = TextAlign.Center
+            )
+
+            // Other column headers with consistent alignment
             listOf(
-                "",
-                "",
-                "Team",
-                "P",
-                "W",
-                "D",
-                "L",
-                "+/-",
-                "GD",
-                "Pts"
-            ).forEach { text ->
+                stringResource(R.string.team),
+                stringResource(R.string.played),
+                stringResource(R.string.won),
+                stringResource(R.string.drawn),
+                stringResource(R.string.lost),
+                stringResource(R.string.goal_difference),
+                stringResource(R.string.points)
+            ).forEachIndexed { index, text ->
                 Text(
                     text = text,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(if (text == "Team") 4f else if (text == "Pts ") 3f else if (text == "+/-") 4f else 2f),
-                    textAlign = TextAlign.End
+                    modifier = Modifier.weight(
+                        when {
+                            index == 0 -> 4f // Team name
+                            index == 6 -> 3f // Points
+                            else -> 2f       // Other stats
+                        }
+                    ),
+                    textAlign = if (index == 0) TextAlign.Start else TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -146,20 +162,13 @@ fun TeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
             textAlign = TextAlign.Center
         )
 
-        Image(
-            painter = rememberAsyncImagePainter(model = teamStanding.team.logo),
-            contentDescription = "${teamStanding.team.name} logo",
-            modifier = Modifier
-                .size(24.dp)
-                .weight(1f)
-        )
 
         Text(
             text = teamStanding.team.name,
             maxLines = 1,
             textAlign = TextAlign.Start,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(4f)
+            modifier = Modifier.weight(6f) // Increased weight from 4f to 6f
         )
 
         listOf(
@@ -167,15 +176,20 @@ fun TeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
             teamStanding.all.win,
             teamStanding.all.draw,
             teamStanding.all.lose,
-            "${teamStanding.all.goals.`for`}-${teamStanding.all.goals.against}",
             teamStanding.goalsDiff,
             teamStanding.points
         ).forEachIndexed { index, value ->
             Text(
                 text = "$value",
-                fontWeight = if (index == 6) FontWeight.Bold else FontWeight.Normal,
-                modifier = Modifier.weight(if (index == 4) 3f else 2f),
-                textAlign = TextAlign.End
+                fontWeight = if (index == 5) FontWeight.Bold else FontWeight.Normal,
+                modifier = Modifier.weight(
+                    when (index) {
+                        4 -> 1.5f  // Goal difference - reduced from 3f or 2f
+                        5 -> 2.5f  // Points - give slightly more space
+                        else -> 2f // Other stats remain the same
+                    }
+                ),
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -183,7 +197,7 @@ fun TeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
 
 
 @RequiresApi(Build.VERSION_CODES.S)
-@Preview(showBackground = true, )
+@Preview(showBackground = true, locale = "pt")
 @Composable
 private fun LeagueCardPreview() {
     val sampleStandings = listOf(

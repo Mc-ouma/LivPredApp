@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +29,7 @@ import com.soccertips.predictx.data.model.statistics.Response
 import com.soccertips.predictx.data.model.statistics.Team
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
+import com.soccertips.predictx.util.StatisticsUtils
 
 @Composable
 fun FixtureStatisticsScreen(statistics: List<Response>) {
@@ -35,6 +37,7 @@ fun FixtureStatisticsScreen(statistics: List<Response>) {
 
     val team1 = statistics[0]
     val team2 = statistics[1]
+    val context = LocalContext.current
 
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
@@ -69,7 +72,7 @@ fun FixtureStatisticsScreen(statistics: List<Response>) {
             team1.statistics.forEachIndexed { index, stat ->
                 val team1Value = stat.value?.toString() ?: stringResource(R.string.na)
                 val statType = stat.type
-                val team2Value = team2.statistics.getOrNull(index)?.value?.toString() ?: "N/A"
+                val team2Value = team2.statistics.getOrNull(index)?.value?.toString() ?: stringResource(R.string.na)
 
                 SharedStatisticRow(
                         team1Value = team1Value,
@@ -89,7 +92,7 @@ fun TeamHeader(team: Team) {
     ) {
         Image(
                 painter = rememberAsyncImagePainter(model = team.logo),
-                contentDescription = "${team.name} logo",
+                contentDescription = stringResource(R.string.team_logo_format, team.name),
                 modifier = Modifier.size(40.dp),
         )
     }
@@ -101,6 +104,8 @@ fun SharedStatisticRow(
         statType: String,
         team2Value: String,
 ) {
+    val context = LocalContext.current
+
     // Get formatted values
     val formattedTeam1Value = formatValue(team1Value)
     val formattedTeam2Value = formatValue(team2Value)
@@ -109,6 +114,9 @@ fun SharedStatisticRow(
     val team1Style = getTextStyle(formattedTeam1Value, formattedTeam2Value)
     val team2Style = getTextStyle(formattedTeam2Value, formattedTeam1Value)
 
+    // Get localized stat type
+    val resourceId = StatisticsUtils.getLocalizedStatTypeResourceId(statType)
+
     Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -116,7 +124,7 @@ fun SharedStatisticRow(
     ) {
         Text(text = formattedTeam1Value, textAlign = TextAlign.Center, style = team1Style)
         Text(
-                text = statType,
+                text = stringResource(resourceId),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.weight(1f),
@@ -127,8 +135,8 @@ fun SharedStatisticRow(
 
 @Composable
 fun getTextStyle(value1: String, value2: String): TextStyle {
-    val numericValue1 = extractNumericValue(value1)
-    val numericValue2 = extractNumericValue(value2)
+    val numericValue1 = StatisticsUtils.extractNumericValue(value1)
+    val numericValue2 = StatisticsUtils.extractNumericValue(value2)
 
     return when {
         numericValue1 != null && numericValue2 != null -> {
@@ -158,7 +166,7 @@ fun getTextStyle(value1: String, value2: String): TextStyle {
 }
 
 fun formatValue(value: String): String {
-    val numericValue = extractNumericValue(value)
+    val numericValue = StatisticsUtils.extractNumericValue(value)
     return if (numericValue != null) {
         // If the value is a whole number, format it as an integer
         if (numericValue == numericValue.toInt().toDouble()) {
@@ -168,21 +176,5 @@ fun formatValue(value: String): String {
         }
     } else {
         value // If not numeric, return the original value
-    }
-}
-
-fun extractNumericValue(value: String): Double? {
-    // Check if it's a percentage (contains '%')
-    return when {
-        value.contains("%") -> {
-            // Remove the '%' sign and convert to Double
-            val percentageValue = value.removeSuffix("%")
-            percentageValue
-                    .toDoubleOrNull()
-                    ?.div(100) // Return value as fraction (e.g., 54% becomes 0.54 for comparison)
-        }
-        else -> {
-            value.toDoubleOrNull() // Return the numeric value, or null if it's not a number
-        }
     }
 }

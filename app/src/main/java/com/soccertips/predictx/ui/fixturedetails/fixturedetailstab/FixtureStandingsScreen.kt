@@ -1,5 +1,7 @@
 package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,8 +32,10 @@ import com.soccertips.predictx.data.model.standings.HomeAwayRecord
 import com.soccertips.predictx.data.model.standings.OverallRecord
 import com.soccertips.predictx.data.model.standings.TeamInfo
 import com.soccertips.predictx.data.model.standings.TeamStanding
+import com.soccertips.predictx.ui.team.FixtureStandings
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
+import com.soccertips.predictx.ui.theme.PredictXTheme
 import kotlin.collections.List
 
 @Composable
@@ -86,36 +91,31 @@ fun FixtureStandingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Rank, Logo, and Team Name headers
-                        Text(text = "", modifier = Modifier.weight(1f))
-                        Text(text = "", modifier = Modifier.weight(1f))
+                        Text(text = "", modifier = Modifier.weight(2f))
                         Text(text = stringResource(R.string.team), modifier = Modifier.weight(4f))
 
                         // Stats headers
                         Text(
                                 text = stringResource(R.string.played),
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(2f),
                                 textAlign = TextAlign.End
                         )
                         Text(
                                 text = stringResource(R.string.won),
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(2f),
                                 textAlign = TextAlign.End
                         )
                         Text(
                                 text = stringResource(R.string.drawn),
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(2f),
                                 textAlign = TextAlign.End
                         )
                         Text(
                                 text = stringResource(R.string.lost),
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.weight(2f),
                                 textAlign = TextAlign.End
                         )
-                        Text(
-                                text = stringResource(R.string.goals_for_against),
-                                modifier = Modifier.weight(3f),
-                                textAlign = TextAlign.End
-                        )
+
                         Text(
                                 text = stringResource(R.string.goal_difference),
                                 modifier = Modifier.weight(2f),
@@ -160,19 +160,6 @@ fun FixtureStandingsScreen(
                                     textAlign = TextAlign.Center
                             )
 
-                            // Team logo column
-                            Image(
-                                    painter =
-                                            rememberAsyncImagePainter(
-                                                    model = teamStanding.team.logo
-                                            ),
-                                    contentDescription =
-                                            stringResource(
-                                                    R.string.team_logo_format,
-                                                    teamStanding.team.name
-                                            ),
-                                    modifier = Modifier.size(24.dp).weight(1f)
-                            )
 
                             // Team name column
                             Text(
@@ -180,36 +167,31 @@ fun FixtureStandingsScreen(
                                     maxLines = 1,
                                     textAlign = TextAlign.Start,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(4f)
+                                    modifier = Modifier.weight(6f)
                             )
 
                             // Stats columns (align text to end for numeric values)
                             Text(
                                     text = "${teamStanding.all.played}",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(2f),
                                     textAlign = TextAlign.End
                             )
                             Text(
                                     text = "${teamStanding.all.win}",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(2f),
                                     textAlign = TextAlign.End
                             )
                             Text(
                                     text = "${teamStanding.all.draw}",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(2f),
                                     textAlign = TextAlign.End
                             )
                             Text(
                                     text = "${teamStanding.all.lose}",
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(2f),
                                     textAlign = TextAlign.End
                             )
-                            Text(
-                                    text =
-                                            "${teamStanding.all.goals.`for`}-${teamStanding.all.goals.against}",
-                                    modifier = Modifier.weight(3f),
-                                    textAlign = TextAlign.End
-                            )
+
                             Text(
                                     text = "${teamStanding.goalsDiff}",
                                     modifier = Modifier.weight(2f),
@@ -227,6 +209,129 @@ fun FixtureStandingsScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+@Preview(showBackground = true, locale = "pt")
+@Composable
+private fun LeagueCardPreview() {
+    val sampleStandings = listOf(
+        TeamStanding(
+            rank = 1,
+            team = TeamInfo(
+                id = 33,
+                name = "Manchester City",
+                logo = "https://media.api-sports.io/football/teams/50.png",
+            ),
+            points = 23,
+            goalsDiff = 11,
+            group = "Premier League - Group A",
+            form = "WWWDD",
+            status = "same",
+            description = "Champions League",
+            all = OverallRecord(
+                played = 9,
+                win = 7,
+                draw = 2,
+                lose = 0,
+                goals = Goals(`for` = 20, against = 9),
+            ),
+            home = HomeAwayRecord(
+                played = 5,
+                win = 4,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 12, against = 6),
+            ),
+            away = HomeAwayRecord(
+                played = 4,
+                win = 3,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 8, against = 3),
+            ),
+            update = "2024-10-28T00:00:00+00:00",
+        ),
+        TeamStanding(
+            rank = 2,
+            team = TeamInfo(
+                id = 40,
+                name = "Liverpool",
+                logo = "https://media.api-sports.io/football/teams/40.png",
+            ),
+            points = 22,
+            goalsDiff = 12,
+            group = "Premier League - Group A",
+            form = "DWLWW",
+            status = "same",
+            description = "Champions League",
+            all = OverallRecord(
+                played = 9,
+                win = 7,
+                draw = 1,
+                lose = 1,
+                goals = Goals(`for` = 17, against = 5),
+            ),
+            home = HomeAwayRecord(
+                played = 4,
+                win = 3,
+                draw = 0,
+                lose = 1,
+                goals = Goals(`for` = 7, against = 2),
+            ),
+            away = HomeAwayRecord(
+                played = 5,
+                win = 4,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 10, against = 3),
+            ),
+            update = "2024-10-28T00:00:00+00:00",
+        ),
+        TeamStanding(
+            rank = 1,
+            team = TeamInfo(
+                id = 50,
+                name = "Chelsea",
+                logo = "https://media.api-sports.io/football/teams/49.png",
+            ),
+            points = 20,
+            goalsDiff = 8,
+            group = "Premier League - Group B",
+            form = "WWLWD",
+            status = "same",
+            description = "Champions League",
+            all = OverallRecord(
+                played = 9,
+                win = 6,
+                draw = 2,
+                lose = 1,
+                goals = Goals(`for` = 15, against = 7),
+            ),
+            home = HomeAwayRecord(
+                played = 5,
+                win = 3,
+                draw = 1,
+                lose = 1,
+                goals = Goals(`for` = 9, against = 4),
+            ),
+            away = HomeAwayRecord(
+                played = 4,
+                win = 3,
+                draw = 1,
+                lose = 0,
+                goals = Goals(`for` = 6, against = 3),
+            ),
+            update = "2024-10-28T00:00:00+00:00",
+        )
+    )
+    PredictXTheme {
+        FixtureStandingsScreen(
+            standings = sampleStandings,
+            teamId1 = 33,
+            teamId2 = 40,
+        )
     }
 }
 

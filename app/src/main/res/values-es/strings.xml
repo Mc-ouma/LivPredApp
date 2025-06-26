@@ -171,6 +171,7 @@
     <string name="error_check_internet">Se produjo un error. Verifica tu conexión a internet o
         inténtalo de nuevo más tarde.</string>
     <string name="team_a">Equipo A</string>
+    <string name="no_head_to_head_data_available_for_teams_and">No hay datos de enfrentamientos directos disponibles para los equipos %1$s y %2$s</string>
 
     <!-- Head to Head Screen -->
     <string name="invalid_date">Fecha inválida</string>
@@ -213,5 +214,57 @@
     <!-- Number Formats -->
     <string name="decimal_format">%.2f</string>
     <string name="percent_suffix">%</string>
+
+
+    <!-- Statistics Types -->
+    <string name="shots_on_goal">Tiros a puerta</string>
+    <string name="shots_off_goal">Tiros fuera</string>
+    <string name="total_shots">Tiros totales</string>
+    <string name="blocked_shots">Tiros bloqueados</string>
+    <string name="shots_insidebox">Tiros dentro del área</string>
+    <string name="shots_outsidebox">Tiros fuera del área</string>
+    <string name="fouls">Faltas</string>
+    <string name="corner_kicks">Córners</string>
+    <string name="offsides">Fueras de juego</string>
+    <string name="ball_possession">Posesión del balón</string>
+    <string name="yellow_cards">Tarjetas amarillas</string>
+    <string name="red_cards">Tarjetas rojas</string>
+    <string name="goalkeeper_saves">Paradas del portero</string>
+    <string name="total_passes">Pases totales</string>
+    <string name="passes_accurate">Pases precisos</string>
+    <string name="passes_percentage">Porcentaje de pases</string>
+    <string name="expected_goals">Goles esperados</string>
+    <string name="goals_prevented">Goles evitados</string>
+
+    <!-- Team Events -->
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Ocurrió un error. Verifica tu conexión a internet o intenta de nuevo más tarde</string>
+    <string name="team_info">Información del equipo</string>
+    <string name="hide_stadium_details">Ocultar detalles del estadio</string>
+    <string name="show_stadium_details">Mostrar detalles del estadio</string>
+    <string name="founded">Fundado: %1$s</string>
+    <string name="country">País: %1$s</string>
+    <string name="age_years">Edad: %1$s años</string>
+
+    <!-- Team Statistics -->
+    <string name="team_statistics">Estadísticas del equipo</string>
+    <string name="goals">Goles</string>
+    <string name="games_played">Partidos jugados</string>
+    <string name="wins">Victorias</string>
+    <string name="draws">Empates</string>
+    <string name="losses">Derrotas</string>
+    <string name="average_goals">Promedio de goles</string>
+    <string name="goals_by_minute">Goles por minuto</string>
+    <string name="goals_under_over">Goles Más/Menos</string>
+    <string name="biggest_streak">Racha más larga</string>
+    <string name="biggest_wins">Mayores victorias</string>
+    <string name="biggest_losses">Mayores derrotas</string>
+    <string name="penalties">Penaltis</string>
+    <string name="penalties_scored">Anotados</string>
+    <string name="penalties_missed">Fallados</string>
+    <string name="cards">Tarjetas</string>
+
+    <!-- Under/Over -->
+    <string name="over">Más</string>
+    <string name="under">Menos</string>
 
 </resources>

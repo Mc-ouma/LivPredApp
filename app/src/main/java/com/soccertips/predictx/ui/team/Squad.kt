@@ -25,10 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.team.squad.Player
 import com.soccertips.predictx.data.model.team.squad.Response
 import com.soccertips.predictx.data.model.team.squad.Team
@@ -130,7 +132,7 @@ fun PlayerItem(player: Player) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Age: ${player.age} years",
+                    text = stringResource(R.string.age_years, player.age),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )

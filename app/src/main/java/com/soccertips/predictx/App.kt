@@ -61,9 +61,6 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     // Consent management
     private lateinit var consentInformation: ConsentInformation
-    private var consentForm: ConsentForm? = null
-    private val CONSENT_PREFS_NAME = "consent_preferences"
-    private val KEY_CONSENT_STATUS = "consent_status"
 
     // Shared preferences key for first launch check
     private val PREFS_NAME = "app_preferences"
@@ -118,7 +115,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.d("App has been initialized before, ready for ads")
         }
         // Initialize Mobile Ads SYNCHRONOUSLY on main thread first
-        MobileAds.initialize(this) { initializationStatus ->
+        /*MobileAds.initialize(this) { initializationStatus ->
             Timber.d("MobileAds initialized with status: $initializationStatus")
 
             // Setup app open ad manager
@@ -134,7 +131,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
 
             Timber.d("AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart")
-        }
+        }*/
 
         CoroutineScope(Dispatchers.IO).launch {
             preloadRepository.preloadCategoryData()
@@ -157,6 +154,16 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     }
 
    private fun initApiConfig() {
+       // First set default values in case Firebase fails
+       val defaultConfig = mapOf(
+           "API_KEY" to BuildConfig.DEFAULT_API_KEY,
+           "API_HOST" to BuildConfig.DEFAULT_API_HOST
+       )
+       // Set default values immediately to prevent crashes
+       apiConfigProvider.updateConfig(defaultConfig)
+       Timber.d("Set default API config: $defaultConfig")
+
+       // Then try to fetch from Firebase
        CoroutineScope(Dispatchers.IO).launch {
            Timber.d("Starting to fetch API config from Firebase...")
            firebaseRepository.getApiConfig().collect { result ->
@@ -170,6 +177,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                    Timber.d("ApiConfigProvider updated - API Key: ${apiConfigProvider.getApiKey()}, Host: ${apiConfigProvider.getApiHost()}")
                }.onFailure { error ->
                    Timber.e(error, "Failed to fetch API config from Firebase")
+                   // We already have default values set, so no need to handle failure specifically
                }
            }
        }
@@ -228,6 +236,31 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     ) {
         currentActivity = activity
         initializeConsent(activity)
+
+        if (!isMobileAdsInitialized) {
+            val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            val appInitialized = prefs.getBoolean(KEY_APP_INITIALIZED, false)
+
+            // Pass the application context to avoid leaking the activity context.
+            MobileAds.initialize(this) { initializationStatus ->
+                Timber.d("MobileAds initialized with status: $initializationStatus")
+
+                // Setup app open ad manager
+                setupAppOpenAdManager()
+
+                // Mark Mobile Ads as initialized
+                isMobileAdsInitialized = true
+
+                // If this is not the first launch and app was previously initialized, allow ads
+                if (!isFirstLaunch() && !appInitialized) {
+                    isInitialAppStart = false
+                    Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                }
+
+                Timber.d("AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart")
+            }
+        }
+
     }
 
     override fun onActivityDestroyed(activity: Activity) {

@@ -1,5 +1,6 @@
 package com.soccertips.predictx
 
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
@@ -57,6 +58,7 @@ fun AppNavigation(
     forceNavigate: Boolean = false,
     interstitialAdManager: InterstitialAdManager,
     rewardedAdManager: RewardedAdManager,
+    context: Context = LocalContext.current,
 ) {
     val navController = rememberNavController()
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()
@@ -117,10 +119,11 @@ fun AppNavigation(
             SplashScreen(
                 navController = navController,
                 initialFixtureId = fixtureId,
-                onSplashCompleted = { sharedViewModel.markSplashCompleted()
+                onSplashCompleted = {
+                    sharedViewModel.markSplashCompleted()
                 },
 
-            )
+                )
         }
 
         composable(Routes.Home.route) {

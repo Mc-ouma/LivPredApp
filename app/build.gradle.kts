@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -10,7 +12,21 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.google.firebase.crashlytics)
     id("jacoco")
+}
 
+// Load values from dot.env file
+val dotEnvFile = file("${project.rootDir}/dot.env")
+val dotEnvProps = Properties()
+if (dotEnvFile.exists()) {
+    dotEnvFile.inputStream().reader().use {
+        val content = it.readText()
+        content.split("\n").forEach { line ->
+            if (!line.startsWith("//") && !line.startsWith("#") && line.contains("=")) {
+                val (key, value) = line.split("=", limit = 2)
+                dotEnvProps[key.trim()] = value.trim()
+            }
+        }
+    }
 }
 
 android {
@@ -42,6 +58,13 @@ android {
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
 
         buildConfigField("boolean", "DEBUG", "true")
+
+        // Use API keys from dot.env file
+        buildConfigField("String", "DEFAULT_API_KEY", "\"${dotEnvProps["API_KEY"] ?: ""}\"")
+        buildConfigField("String", "DEFAULT_API_HOST", "\"${dotEnvProps["API_HOST"] ?: ""}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${dotEnvProps["API_BASE_URL"] ?: ""}\"")
+        buildConfigField("String", "DAILY_BONUS_BASE_URL", "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\"")
+        buildConfigField("String", "API_BASE_URL_VALUE", "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\"")
 
         javaCompileOptions {
             annotationProcessorOptions {

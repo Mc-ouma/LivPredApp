@@ -222,4 +222,82 @@
     <string name="draw">Draw: %1$s</string>
     <string name="away__">Away: %1$s</string>
      <!-- Format for displaying time in minutes : seconds--> <string name="time_format">%1$d:%2$02d</string>
+    <string name="no_head_to_head_data_available_for_teams_and">No head-to-head data available for teams %1$s and %2$s</string>
+
+    <!-- Statistics Types -->
+
+    <string name="shots_on_goal">Shots on Goal</string>
+    <string name="shots_off_goal">Shots off Goal</string>
+    <string name="total_shots">Total Shots</string>
+    <string name="blocked_shots">Blocked Shots</string>
+    <string name="shots_insidebox">Shots Inside Box</string>
+    <string name="shots_outsidebox">Shots Outside Box</string>
+    <string name="fouls">Fouls</string>
+    <string name="corner_kicks">Corner Kicks</string>
+    <string name="offsides">Offsides</string>
+    <string name="ball_possession">Ball Possession</string>
+    <string name="yellow_cards">Yellow Cards</string>
+    <string name="red_cards">Red Cards</string>
+    <string name="goalkeeper_saves">Goalkeeper Saves</string>
+    <string name="total_passes">Total Passes</string>
+    <string name="passes_accurate">Passes Accurate</string>
+    <string name="passes_percentage">Passes %</string>
+    <string name="expected_goals">Expected Goals</string>
+    <string name="goals_prevented">Goals Prevented</string>
+
+    <!-- Team Events -->
+
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">An error occurred. Please check your internet or check again later</string>
+    <string name="team_info">Team Info</string>
+    <string name="hide_stadium_details">Hide Stadium Details</string>
+    <string name="show_stadium_details">Show Stadium Details</string>
+
+    <!-- Team Statistics -->
+    <string name="team_statistics">Team Statistics</string>
+    <string name="goals">Goals</string>
+    <string name="games_played">Games Played</string>
+    <string name="wins">Wins</string>
+    <string name="draws">Draws</string>
+    <string name="losses">Losses</string>
+    <string name="average_goals">Average Goals</string>
+    <string name="goals_by_minute">Goals by Minute</string>
+    <string name="goals_under_over">Goals Under/Over</string>
+    <string name="biggest_streak">Biggest Streak</string>
+    <string name="biggest_wins">Biggest Wins</string>
+    <string name="biggest_losses">Biggest Losses</string>
+    <string name="penalties">Penalties</string>
+    <string name="penalties_scored">Scored</string>
+    <string name="penalties_missed">Missed</string>
+    <string name="cards">Cards</string>
+
+
+    <!-- Time intervals -->
+    <string name="minutes_0_15">0–15\'</string>
+    <string name="minutes_16_30">16–30\'</string>
+    <string name="minutes_31_45">31–45\'</string>
+    <string name="minutes_46_60">46–60\'</string>
+    <string name="minutes_61_75">61–75\'</string>
+    <string name="minutes_76_90">76–90\'</string>
+    <string name="minutes_91_105">91–105\'</string>
+    <string name="minutes_106_120">106–120\'</string>
+
+    <!-- Under/Over -->
+    <string name="over">Over</string>
+    <string name="under">Under</string>
+    <string name="goals_0_5">0.5</string>
+    <string name="goals_1_5">1.5</string>
+    <string name="goals_2_5">2.5</string>
+    <string name="goals_3_5">3.5</string>
+    <string name="goals_4_5">4.5</string>
+
+    <!-- Formatting -->
+    <string name="formation_played_times">%1$s (%2$d)</string>
+    <string name="percentage_format">%1$s%%</string>
+    <string name="score_format">%1$s</string>
+    <string name="no_data">-</string>
+    <string name="founded">Founded: %1$s</string>
+    <string name="country">Country: %1$s</string>
+    <string name="age_years">Age: %1$s years</string>
+    <string name="starting_eleven">Starting XI</string>
+    <string name="coach_title">Coach</string>
 </resources>

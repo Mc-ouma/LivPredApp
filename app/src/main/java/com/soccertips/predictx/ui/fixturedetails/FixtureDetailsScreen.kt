@@ -1,5 +1,6 @@
 package com.soccertips.predictx.ui.fixturedetails
 
+import android.content.Context
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -103,7 +104,8 @@ fun FixtureDetailsScreen(
     sharedViewModel: SharedViewModel = hiltViewModel(LocalContext.current as ViewModelStoreOwner),
     viewModel: FixtureDetailsViewModel = hiltViewModel(),
     pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
-    rewardedAdManager: RewardedAdManager
+    rewardedAdManager: RewardedAdManager,
+    context: Context = LocalContext.current,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val formState by sharedViewModel.fixturesState.collectAsState()
@@ -114,7 +116,7 @@ fun FixtureDetailsScreen(
     LaunchedEffect(fixtureId) {
         if (!hasInitialFetch) {
             Timber.d("Initial data fetch for fixture: $fixtureId")
-            viewModel.fetchFixtureDetails(fixtureId)
+            viewModel.fetchFixtureDetails(fixtureId, context)
             hasInitialFetch = true
         }
     }
@@ -131,12 +133,12 @@ fun FixtureDetailsScreen(
                 val last = "10"
 
                 // Parallelize independent data fetching for performance
-                viewModel.fetchFormAndPredictions(fixtureId)
+                viewModel.fetchFormAndPredictions(fixtureId, context)
                 sharedViewModel.fetchStandings(leagueId, season)
                 sharedViewModel.fetchFixtures(season, homeTeamId, awayTeamId, last)
 
                 // Fetch additional data needed for initial view
-                viewModel.fetchFixtureStats(fixtureId, homeTeamId, awayTeamId)
+                viewModel.fetchFixtureStats(fixtureId, homeTeamId, awayTeamId, context)
             }
             is FixtureDetailsUiState.Loading -> {
                 Timber.d("Loading fixture details...")
@@ -211,7 +213,7 @@ fun FixtureDetailsScreen(
                 paddingValues = paddingValues,
                 message = "An error occurred. Please check your internet connection or try again later.",
                 onRetry = {
-                    viewModel.fetchFixtureDetails(fixtureId)
+                    viewModel.fetchFixtureDetails(fixtureId, context)
                 }
             )
         }
@@ -303,7 +305,8 @@ fun FixtureDetailsTabs(
     sharedViewModel: SharedViewModel,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
     navController: NavController,
-    rewardedAdManager: RewardedAdManager
+    rewardedAdManager: RewardedAdManager,
+    context: Context = LocalContext.current,
 ) {
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
@@ -377,16 +380,16 @@ fun FixtureDetailsTabs(
 
                     when (pages[pageIndex]) {
                         FixtureDetailsScreenPage.STATISTICS -> {
-                            viewModel.fetchFixtureStats(fixtureId, homeTeamId, awayTeamId)
+                            viewModel.fetchFixtureStats(fixtureId, homeTeamId, awayTeamId, context)
                         }
                         FixtureDetailsScreenPage.HEAD_TO_HEAD -> {
-                            viewModel.fetchHeadToHead(homeTeamId, awayTeamId)
+                            viewModel.fetchHeadToHead(homeTeamId, awayTeamId, context)
                         }
                         FixtureDetailsScreenPage.LINEUPS -> {
-                            viewModel.fetchLineups(fixtureId)
+                            viewModel.fetchLineups(fixtureId, context)
                         }
                         FixtureDetailsScreenPage.SUMMARY -> {
-                            viewModel.fetchFixtureEvents(fixtureId)
+                            viewModel.fetchFixtureEvents(fixtureId, context)
                         }
                         else -> { /* No additional data needed */ }
                     }

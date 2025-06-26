@@ -1,8 +1,10 @@
 package com.soccertips.predictx.viewmodel
 
+import android.content.Context
 import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.Event
 import com.soccertips.predictx.data.model.events.FixtureEvent
 import com.soccertips.predictx.data.model.headtohead.FixtureDetails
@@ -31,6 +33,7 @@ import com.soccertips.predictx.data.model.statistics.Response as StatsResponse
 @HiltViewModel
 class FixtureDetailsViewModel @Inject constructor(
     private val fixtureDetailsRepository: FixtureDetailsRepository,
+    context: Context,
 ) : ViewModel() {
 
     private val _uiState: MutableStateFlow<FixtureDetailsUiState> =
@@ -151,7 +154,7 @@ class FixtureDetailsViewModel @Inject constructor(
         }
     }
 
-    fun fetchFixtureDetails(fixtureId: String) {
+    fun fetchFixtureDetails(fixtureId: String, context: Context) {
         viewModelScope.launch {
             val cacheKey = "fixture_details_$fixtureId"
 
@@ -198,7 +201,7 @@ class FixtureDetailsViewModel @Inject constructor(
 
                     // Prefetch related data in parallel after getting fixture details
                     prefetchRelatedData(fixtureId, fixtureDetails.teams.home.id.toString(),
-                                      fixtureDetails.teams.away.id.toString())
+                                      fixtureDetails.teams.away.id.toString(), context)
 
                 } catch (e: Exception) {
                     if (e is CancellationException) throw e
@@ -220,21 +223,21 @@ class FixtureDetailsViewModel @Inject constructor(
     }
 
     // Prefetch related data in parallel to improve perceived performance
-    private fun prefetchRelatedData(fixtureId: String, homeTeamId: String, awayTeamId: String) {
+    private fun prefetchRelatedData(fixtureId: String, homeTeamId: String, awayTeamId: String, context: Context) {
         viewModelScope.launch {
             supervisorScope {
                 // Use async to launch parallel requests but don't await results
                 // They will be loaded into cache for fast access when user navigates to those tabs
-                async { fetchFixtureStats(fixtureId, homeTeamId, awayTeamId) }
-                async { fetchFixtureEvents(fixtureId) }
-                async { fetchFormAndPredictions(fixtureId) }
-                async { fetchHeadToHead(homeTeamId, awayTeamId) }
-                async { fetchLineups(fixtureId) }
+                async { fetchFixtureStats(fixtureId, homeTeamId, awayTeamId, context) }
+                async { fetchFixtureEvents(fixtureId, context) }
+                async { fetchFormAndPredictions(fixtureId, context) }
+                async { fetchHeadToHead(homeTeamId, awayTeamId, context) }
+                async { fetchLineups(fixtureId, context) }
             }
         }
     }
 
-    fun fetchFixtureStats(fixtureId: String, homeTeamId: String, awayTeamId: String) {
+    fun fetchFixtureStats(fixtureId: String, homeTeamId: String, awayTeamId: String, context: Context) {
         viewModelScope.launch {
             fetchData(
                 cache = fixtureStatsCache,
@@ -258,7 +261,7 @@ class FixtureDetailsViewModel @Inject constructor(
                             if (combinedStats.isNotEmpty()) {
                                 UiState.Success(combinedStats)
                             } else {
-                                UiState.Error("No fixture stats available yet")
+                                UiState.Error(context.getString(R.string.no_data_available))
                             }
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e
@@ -272,7 +275,7 @@ class FixtureDetailsViewModel @Inject constructor(
         }
     }
 
-    fun fetchFixtureEvents(fixtureId: String) {
+    fun fetchFixtureEvents(fixtureId: String, context: Context) {
         viewModelScope.launch {
             fetchData(
                 cache = fixtureEventsCache,
@@ -284,7 +287,7 @@ class FixtureDetailsViewModel @Inject constructor(
                         if (fixtureEvents.isNotEmpty()) {
                             UiState.Success(fixtureEvents)
                         } else {
-                            UiState.Error("No fixture events available yet")
+                            UiState.Error(context.getString(R.string.no_data_available))
                         }
                     } catch (e: Exception) {
                         if (e is CancellationException) throw e
@@ -297,7 +300,7 @@ class FixtureDetailsViewModel @Inject constructor(
         }
     }
 
-    fun fetchHeadToHead(homeTeamId: String, awayTeamId: String) {
+    fun fetchHeadToHead(homeTeamId: String, awayTeamId: String, context: Context) {
         viewModelScope.launch {
             fetchData(
                 cache = headToHeadCache,
@@ -311,7 +314,13 @@ class FixtureDetailsViewModel @Inject constructor(
                         if (headToHead.isNotEmpty()) {
                             UiState.Success(headToHead)
                         } else {
-                            UiState.Error("No head to head data available yet")
+                            UiState.Error(
+                                context.getString(
+                                    R.string.no_head_to_head_data_available_for_teams_and,
+                                    homeTeamId,
+                                    awayTeamId
+                                )
+                            )
                         }
                     } catch (e: Exception) {
                         if (e is CancellationException) throw e
@@ -324,7 +333,7 @@ class FixtureDetailsViewModel @Inject constructor(
         }
     }
 
-    fun fetchLineups(fixtureId: String) {
+    fun fetchLineups(fixtureId: String, context: Context) {
         viewModelScope.launch {
             fetchData(
                 cache = lineupsCache,
@@ -335,7 +344,7 @@ class FixtureDetailsViewModel @Inject constructor(
                         if (lineups.isNotEmpty()) {
                             UiState.Success(lineups)
                         } else {
-                            UiState.Error("No lineups available yet")
+                            UiState.Error(context.getString(R.string.no_data_available))
                         }
                     } catch (e: Exception) {
                         if (e is CancellationException) throw e
@@ -348,7 +357,7 @@ class FixtureDetailsViewModel @Inject constructor(
         }
     }
 
-    fun fetchFormAndPredictions(fixtureId: String) {
+    fun fetchFormAndPredictions(fixtureId: String, context: Context) {
         viewModelScope.launch {
             fetchData(
                 cache = predictionsCache,
@@ -360,7 +369,7 @@ class FixtureDetailsViewModel @Inject constructor(
                         if (predictions.isNotEmpty()) {
                             UiState.Success(predictions)
                         } else {
-                            UiState.Error("No predictions available yet")
+                            UiState.Error(context.getString(R.string.no_predictions_available))
                         }
                     } catch (e: Exception) {
                         if (e is CancellationException) throw e

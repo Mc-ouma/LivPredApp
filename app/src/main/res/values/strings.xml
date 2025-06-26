@@ -300,4 +300,14 @@
     <string name="age_years">Age: %1$s years</string>
     <string name="starting_eleven">Starting XI</string>
     <string name="coach_title">Coach</string>
+    
+    <!-- Player Positions -->
+    <string name="position_goalkeeper">Goalkeeper</string>
+    <string name="position_defender">Defender</string>
+    <string name="position_midfielder">Midfielder</string>
+    <string name="position_forward">Forward</string>
+    <string name="position_goalkeeper_short">GK</string>
+    <string name="position_defender_short">DEF</string>
+    <string name="position_midfielder_short">MID</string>
+    <string name="position_forward_short">FWD</string>
 </resources>

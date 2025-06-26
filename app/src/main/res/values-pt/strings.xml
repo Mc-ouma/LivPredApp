@@ -266,4 +266,17 @@
     <string name="over">Acima</string>
     <string name="under">Abaixo</string>
 
+    <!-- Lineup Strings -->
+    <string name="coach_title">Treinador</string>
+
+    <!-- Player Positions -->
+    <string name="position_goalkeeper">Goleiro</string>
+    <string name="position_defender">Defensor</string>
+    <string name="position_midfielder">Meio-campista</string>
+    <string name="position_forward">Atacante</string>
+    <string name="position_goalkeeper_short">GOL</string>
+    <string name="position_defender_short">DEF</string>
+    <string name="position_midfielder_short">MEI</string>
+    <string name="position_forward_short">ATA</string>
+
 </resources>

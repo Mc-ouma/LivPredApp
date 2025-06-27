@@ -9,9 +9,7 @@ import androidx.core.content.edit
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.google.android.gms.ads.MobileAds
-import com.google.android.ump.ConsentForm
 import com.google.android.ump.ConsentInformation
-import com.google.firebase.analytics.FirebaseAnalytics.ConsentStatus
 import com.soccertips.predictx.admob.AppOpenAdManager
 import com.soccertips.predictx.notification.NotificationHelper
 import com.soccertips.predictx.repository.PredictionRepository

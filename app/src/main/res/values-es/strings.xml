@@ -149,7 +149,7 @@
     <string name="home_categories">Inicio</string>
 
     <!-- Fixture Details Strings -->
-    <string name="loading">Cargando...</string>
+    <string name="loading">Cargando…</string>
     <string name="no_predictions_available">No hay predicciones disponibles.</string>
     <string name="no_fixtures_available">No hay partidos disponibles</string>
     <string name="no_head_to_head_data_available">No hay datos de enfrentamientos directos
@@ -281,5 +281,8 @@
     <string name="position_defender_short">DEF</string>
     <string name="position_midfielder_short">MED</string>
     <string name="position_forward_short">DEL</string>
+
+    <string name="no_games_found_for_the_selected_date">No se encontraron partidos para la fecha seleccionada.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">No se pudieron obtener los partidos, por favor intenta de nuevo más tarde.</string>
 
 </resources>

@@ -145,10 +145,10 @@
     <string name="logo_pulse">pulsoLogo</string>
     <string name="pulse_animation">animaçãoPulso</string>
     <string name="tab_content_transition">Transição de conteúdo da aba</string>
-    <string name="home_categories">Inicio</string>
+    <string name="home_categories">Início</string>
 
     <!-- Fixture Details Strings -->
-    <string name="loading">Carregando...</string>
+    <string name="loading">Carregando…</string>
     <string name="no_predictions_available">Nenhuma previsão disponível.</string>
     <string name="no_fixtures_available">Nenhum jogo disponível</string>
     <string name="no_head_to_head_data_available">Nenhum dado de confronto direto disponível</string>
@@ -280,5 +280,8 @@
     <string name="position_defender_short">DEF</string>
     <string name="position_midfielder_short">MEI</string>
     <string name="position_forward_short">ATA</string>
+
+    <string name="no_games_found_for_the_selected_date">Nenhum jogo encontrado para a data selecionada.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Falha ao buscar jogos, por favor tente novamente mais tarde.</string>
 
 </resources>

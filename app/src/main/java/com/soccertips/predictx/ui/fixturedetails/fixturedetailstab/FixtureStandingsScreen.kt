@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,12 +46,12 @@ fun FixtureStandingsScreen(
         teamId1: Int,
         teamId2: Int,
 ) {
-    val cardColors = LocalCardColors.current
-    val cardElevation = LocalCardElevation.current
+
     Card(
-            colors = cardColors,
-            elevation = cardElevation,
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         // Group teams by their group name
         val groupedStandings = standings.groupBy { it.group } // Group teams by the 'group' field

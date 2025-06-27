@@ -51,8 +51,8 @@ android {
             libs.versions.targetSdk
                 .get()
                 .toInt()
-        versionCode = 9
-        versionName = "1.0.9"
+        versionCode = 10
+        versionName = "1.1.0"
 
         testInstrumentationRunner =
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"

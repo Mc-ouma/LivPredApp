@@ -1,6 +1,9 @@
 package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,6 +62,19 @@ import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.viewmodel.SharedViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import timber.log.Timber
+
+// Extension function to safely find the Activity from any Context
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) {
+            return context
+        }
+        context = context.baseContext
+    }
+    return null
+}
 
 @Composable
 fun FixtureMatchDetailsScreen(
@@ -122,15 +138,25 @@ fun FixtureMatchDetailsScreen(
         } else {
             val context = LocalContext.current
             val showPredictions = remember { androidx.compose.runtime.mutableStateOf(false) }
+            val activityContext = remember { context.findActivity() }
 
             if (!showPredictions.value) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     AnimatedButton(
                         onClick = {
-                            rewardedAdManager?.showRewardedAd(
-                                activity = context as Activity,
-                                onRewardEarned = { showPredictions.value = true }
-                            )
+                            if (activityContext != null && rewardedAdManager?.isAdLoaded() == true) {
+                                Timber.tag("RewardedAd").d("Button clicked - showing rewarded ad from activity: ${activityContext.javaClass.simpleName}")
+                                rewardedAdManager.showRewardedAd(
+                                    activity = activityContext,
+                                    onRewardEarned = {
+                                        showPredictions.value = true
+                                        Timber.tag("RewardedAd").d("Reward earned callback executed")
+                                    }
+                                )
+                            } else {
+                                Timber.tag("RewardedAd").e("Cannot show ad: activity=${activityContext != null}, adLoaded=${rewardedAdManager?.isAdLoaded()}")
+                                Toast.makeText(context, "Ad not ready yet. Please try again later.", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         enabled = rewardedAdManager?.isAdLoaded() == true,
                         text = stringResource(R.string.watch_ad_for_extra_predictions),

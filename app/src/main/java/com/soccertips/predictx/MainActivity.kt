@@ -34,6 +34,7 @@ import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.soccertips.predictx.admob.AdStateManager
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
@@ -51,6 +52,8 @@ class MainActivity : ComponentActivity() {
     lateinit var interstitialAdManager: InterstitialAdManager
     @Inject
     lateinit var rewardedAdManager: RewardedAdManager
+    @Inject
+    lateinit var adStateManager: AdStateManager
 
     // Initialize Firebase Analytics
     private lateinit var analytics: FirebaseAnalytics
@@ -80,7 +83,7 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.Theme_PredictX)
+        // Removed setTheme call to prevent theme switching delay
 
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -88,13 +91,8 @@ class MainActivity : ComponentActivity() {
         // Use the modern edge-to-edge API
 
 
-        //Initialize Ad Managers
-        interstitialAdManager = InterstitialAdManager(this)
-        rewardedAdManager = RewardedAdManager(this)
-        // Note: setDecorFitsSystemWindows is deprecated in Android 15
-        // WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // Instead, let the Activity handle edge-to-edge automatically
+        // Note: we're no longer manually initializing ad managers here since they're injected
+        // The AdStateManager is now also properly injected as a dependency
 
         // Initialize AppUpdateManager
         if (UPDATE_TYPE == AppUpdateType.FLEXIBLE) {

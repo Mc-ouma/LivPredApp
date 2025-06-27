@@ -153,7 +153,7 @@
     <string name="home_categories">Home</string>
 
     <!-- Fixture Details Strings -->
-    <string name="loading">Loading...</string>
+    <string name="loading">Loading…</string>
     <string name="no_predictions_available">No predictions available.</string>
     <string name="no_fixtures_available">No fixtures available</string>
     <string name="no_head_to_head_data_available">No head-to-head data available</string>
@@ -313,4 +313,8 @@
     <string name="position_defender_short">DEF</string>
     <string name="position_midfielder_short">MID</string>
     <string name="position_forward_short">FWD</string>
+
+
+    <string name="no_games_found_for_the_selected_date">No games found for the selected date.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Failed to fetch games, please try again later.</string>
 </resources>

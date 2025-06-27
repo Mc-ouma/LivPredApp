@@ -132,7 +132,7 @@
     <!-- Fixture    Details Strings -->
 
 
-    <string name="loading">Chargement...</string>
+    <string name="loading">Chargement…</string>
     <string name="no_predictions_available">Aucune prédiction disponible.</string>
     <string name="no_fixtures_available">Aucun match disponible</string>
     <string name="no_head_to_head_data_available">Aucune donnée de confrontation directe disponible</string>
@@ -162,7 +162,8 @@
     <string name="goals_for_against">+/-</string>
     <string name="goal_difference">DB</string>
     <string name="points">Pts</string>
-    <string name="no_head_to_head_data_available_for_teams_and">Aucune donnée d’historique d’affrontements disponible pour les équipes %1$s et %2$s</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Aucune donnée d’historique
+        d’affrontements disponible pour les équipes %1$s et %2$s</string>
 
     <!-- Summary Screen -->
 
@@ -218,7 +219,8 @@
     <string name="goals_prevented">Buts évités</string>
 
     <!-- Team Events -->
-    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Une erreur s’est produite. Vérifiez votre connexion internet ou réessayez plus tard.</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Une erreur
+        s’est produite. Vérifiez votre connexion internet ou réessayez plus tard.</string>
     <string name="team_info">Informations sur l’équipe</string>
     <string name="hide_stadium_details">Masquer les détails du stade</string>
     <string name="show_stadium_details">Afficher les détails du stade</string>
@@ -247,5 +249,21 @@
     <!-- Under/Over -->
     <string name="over">Plus</string>
     <string name="under">Moins</string>
+
+    <!-- Lineup Strings -->
+    <string name="coach_title">Entraîneur</string>
+
+    <!-- Player Positions -->
+    <string name="position_goalkeeper">Gardien de but</string>
+    <string name="position_defender">Défenseur</string>
+    <string name="position_midfielder">Milieu de terrain</string>
+    <string name="position_forward">Attaquant</string>
+    <string name="position_goalkeeper_short">GB</string>
+    <string name="position_defender_short">DÉF</string>
+    <string name="position_midfielder_short">MIL</string>
+    <string name="position_forward_short">ATT</string>
+
+    <string name="no_games_found_for_the_selected_date">Aucun match trouvé pour la date sélectionnée.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Échec de la récupération des matchs, veuillez réessayer plus tard.</string>
 
 </resources>

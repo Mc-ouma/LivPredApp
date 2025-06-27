@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.SportsSoccer
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.Square
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.twotone.SwapHoriz
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,15 +45,12 @@ import com.soccertips.predictx.ui.theme.LocalCardElevation
 fun FixtureSummaryScreen(events: List<FixtureEvent>, homeTeamId: Int, awayTeamId: Int) {
     // Sort events by descending elapsed time
     val reversedEvents = events.sortedByDescending { it.time.elapsed }
-    val cardColors = LocalCardColors.current
-    val cardElevation = LocalCardElevation.current
 
     Card(
-            colors = cardColors,
-            elevation = cardElevation,
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier
             .padding(16.dp)

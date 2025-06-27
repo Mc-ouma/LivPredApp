@@ -110,7 +110,14 @@ fun ItemsListScreen(
                             try {
                                 val activity = navController.context as? Activity
                                 activity?.let {
-                                    interstitialAdManager.showInterstitialAd(it)
+                                    interstitialAdManager.showInterstitialAdWithCallback(it,
+                                        onAdDismissed = {
+                                            // Navigate back after ad is dismissed
+                                            navController.popBackStack()
+                                            // Optionally, you can navigate to a specific screen
+                                            // navController.navigate(Routes.SomeScreen.route)
+                                        }
+                                    )
                                     // The navigation will happen after ad dismissal via the FullScreenContentCallback
                                 } ?: run {
                                     // If activity casting fails, just navigate back
@@ -156,7 +163,7 @@ fun ItemsListScreen(
 
                 is UiState.Error -> {
                     ErrorMessage(
-                        message = "Failed to fetch games, please try again later.",
+                        message = stringResource(R.string.failed_to_fetch_games_please_try_again_later),
                         onRetry = { viewModel.fetchItems(category.url, selectedDate) },
                         modifier = Modifier.align(Alignment.Center),
                     )
@@ -166,7 +173,7 @@ fun ItemsListScreen(
                     val items = uiState.data
                     if (items.isEmpty()) {
                         ErrorMessage(
-                            message = "No games found for the selected date.",
+                            message = stringResource(R.string.no_games_found_for_the_selected_date),
                             onRetry = { viewModel.fetchItems(category.url, selectedDate) },
                             modifier = Modifier.align(Alignment.Center),
                         )

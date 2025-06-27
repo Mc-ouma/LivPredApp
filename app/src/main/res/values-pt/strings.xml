@@ -145,10 +145,10 @@
     <string name="logo_pulse">pulsoLogo</string>
     <string name="pulse_animation">animaçãoPulso</string>
     <string name="tab_content_transition">Transição de conteúdo da aba</string>
-    <string name="home_categories">Inicio</string>
+    <string name="home_categories">Início</string>
 
     <!-- Fixture Details Strings -->
-    <string name="loading">Carregando...</string>
+    <string name="loading">Carregando…</string>
     <string name="no_predictions_available">Nenhuma previsão disponível.</string>
     <string name="no_fixtures_available">Nenhum jogo disponível</string>
     <string name="no_head_to_head_data_available">Nenhum dado de confronto direto disponível</string>
@@ -169,7 +169,8 @@
     <string name="error_check_internet">Ocorreu um erro. Verifique sua conexão com a internet ou
         tente novamente mais tarde.</string>
     <string name="team_a">Equipe A</string>
-    <string name="no_head_to_head_data_available_for_teams_and">Nenhum dado de confrontos diretos disponível para os times %1$s e %2$s</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Nenhum dado de confrontos diretos
+        disponível para os times %1$s e %2$s</string>
 
     <!-- Head to Head Screen -->
     <string name="invalid_date">Data inválida</string>
@@ -235,7 +236,8 @@
     <string name="goals_prevented">Gols evitados</string>
 
     <!-- Team Events -->
-    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Ocorreu um erro. Verifique sua conexão com a internet ou tente novamente mais tarde.</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Ocorreu um
+        erro. Verifique sua conexão com a internet ou tente novamente mais tarde.</string>
     <string name="team_info">Informações do time</string>
     <string name="hide_stadium_details">Ocultar detalhes do estádio</string>
     <string name="show_stadium_details">Mostrar detalhes do estádio</string>
@@ -265,5 +267,21 @@
     <!-- Under/Over -->
     <string name="over">Acima</string>
     <string name="under">Abaixo</string>
+
+    <!-- Lineup Strings -->
+    <string name="coach_title">Treinador</string>
+
+    <!-- Player Positions -->
+    <string name="position_goalkeeper">Goleiro</string>
+    <string name="position_defender">Defensor</string>
+    <string name="position_midfielder">Meio-campista</string>
+    <string name="position_forward">Atacante</string>
+    <string name="position_goalkeeper_short">GOL</string>
+    <string name="position_defender_short">DEF</string>
+    <string name="position_midfielder_short">MEI</string>
+    <string name="position_forward_short">ATA</string>
+
+    <string name="no_games_found_for_the_selected_date">Nenhum jogo encontrado para a data selecionada.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Falha ao buscar jogos, por favor tente novamente mais tarde.</string>
 
 </resources>

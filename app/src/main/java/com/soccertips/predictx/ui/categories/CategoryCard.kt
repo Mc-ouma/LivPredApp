@@ -26,6 +26,7 @@ import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.ui.theme.PredictXTheme
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun CategoryCard(
@@ -50,7 +51,7 @@ fun ImageListItem(
     val cardElevation = LocalCardElevation.current
 
     // Use custom color if provided or extract from icon
-    val iconTint = colorHex?.let { Color(android.graphics.Color.parseColor(it)) }
+    val iconTint = colorHex?.let { Color(it.toColorInt()) }
         ?: MaterialTheme.colorScheme.primary
 
     // Create card color based on the icon tint with 15% opacity for the container

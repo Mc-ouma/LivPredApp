@@ -105,18 +105,6 @@ constructor(
                         }
                     }
 
-            // FOR TESTING: Use a simulated response
-            /* val simulatedFixtureResponse = createSimulatedFixtureResponse(
-                fixtureId = fixtureId,
-                statusShort = "HT", // Example: Test Half-Time
-                homeGoals = 1,
-                awayGoals = 1,
-                homeTeamName = "Home Team Test",
-                awayTeamName = "Away Team Test",
-                leagueName = "Test League"
-            )
-            val fixtureResponse: FixtureResponse? = simulatedFixtureResponse*/
-            // END TESTING BLOCK
 
             // Update the notification
             if (fixtureResponse != null && fixtureResponse.response.isNotEmpty()) {

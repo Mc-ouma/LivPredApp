@@ -51,8 +51,8 @@ android {
             libs.versions.targetSdk
                 .get()
                 .toInt()
-        versionCode = 10
-        versionName = "1.1.0"
+        versionCode = 11
+        versionName = "1.1.1"
 
         testInstrumentationRunner =
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
@@ -164,6 +164,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.database)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
     // Unit testing dependencies
     testImplementation(libs.junit)
     testImplementation(libs.mockito.inline)

@@ -4,8 +4,6 @@ import android.app.Application
 import android.content.Context
 import androidx.work.Configuration
 import androidx.work.WorkerFactory
-import com.soccertips.predictx.admob.InterstitialAdManager
-import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.local.AppDatabase
 import com.soccertips.predictx.data.local.dao.FavoriteDao
 import com.soccertips.predictx.network.ApiService
@@ -25,9 +23,7 @@ import com.soccertips.predictx.util.NetworkTaggingInitializer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ActivityContext
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.android.scopes.ActivityRetainedScoped
 import dagger.hilt.components.SingletonComponent
 import okhttp3.Cache
 import okhttp3.HttpUrl
@@ -38,8 +34,17 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
 import java.io.File
+import java.net.URI
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Named
 import javax.inject.Singleton
+import kotlin.random.Random
+import android.webkit.CookieManager
+import okhttp3.Cookie
+import okhttp3.CookieJar
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -52,7 +57,7 @@ object AppModule {
     }
 
 
-        @Provides
+    @Provides
     @Singleton
     fun provideContext(application: Application): Context {
         return application.applicationContext
@@ -128,9 +133,160 @@ object AppModule {
             .addInterceptor(socketTaggingInterceptor)
             .addInterceptor(loggingInterceptor)
             .addNetworkInterceptor(cacheInterceptor)
+            .addInterceptor(provideBrowserEmulationInterceptor(context))
+            .cookieJar(AntiBot403CookieJar()) // Add persistent cookie jar
             .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .build()
+    }
+
+    /**
+     * Creates an advanced interceptor that makes API requests look like they're coming from a real browser
+     * with techniques to bypass aggressive bot detection
+     */
+    @Provides
+    @Singleton
+    fun provideBrowserEmulationInterceptor(context: Context): Interceptor = Interceptor { chain ->
+        val originalRequest = chain.request()
+        val url = originalRequest.url.toString()
+
+        // Common Chrome on Android user agent
+        val androidUserAgent = "Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36"
+
+        // User agents for desktop browsers
+        val desktopUserAgents = listOf(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        )
+
+        // Choose between mobile and desktop user agent based on domain
+        val userAgent = if (url.contains("dailypredictz.com")) {
+            // For this specific domain, always use a mobile user agent
+            androidUserAgent
+        } else {
+            // For other domains, randomize between desktop user agents
+            desktopUserAgents[Random.nextInt(desktopUserAgents.size)]
+        }
+
+        // Create referrer URL - typically use the domain's homepage
+        val domain = try {
+            URI(url).host
+        } catch (e: Exception) {
+            null
+        }
+
+        val referrer = if (domain != null) {
+            // If the request is going to dailypredictz.com, use the website itself as referrer
+            if (domain.contains("dailypredictz.com")) {
+                "https://dailypredictz.com/"
+            } else {
+                "https://www.google.com/search?q=${URLEncoder.encode(domain, StandardCharsets.UTF_8.toString())}"
+            }
+        } else {
+            "https://www.google.com/"
+        }
+
+        // Generate a consistent browser fingerprint for the session
+        val sessionId = DeviceSessionManager.getSessionId(context)
+
+        // Build the request with browser-like headers
+        val newRequest = originalRequest.newBuilder()
+            .header("User-Agent", userAgent)
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header("Accept-Encoding", "gzip, deflate, br")
+            .header("Referer", referrer)
+            .apply { if (domain != null) header("Origin", "https://$domain") }
+            .header("Connection", "keep-alive")
+            .header("DNT", "1")
+            .header("Upgrade-Insecure-Requests", "1")
+            .header("Sec-Ch-Ua", "\"Google Chrome\";v=\"115\", \"Chromium\";v=\"115\"")
+            .header("Sec-Ch-Ua-Mobile", if (userAgent == androidUserAgent) "?1" else "?0")
+            .header("Sec-Ch-Ua-Platform", if (userAgent == androidUserAgent) "\"Android\"" else "\"Windows\"")
+            .header("Sec-Fetch-Dest", "document")
+            .header("Sec-Fetch-Mode", "navigate")
+            .header("Sec-Fetch-Site", "same-origin")
+            .header("Sec-Fetch-User", "?1")
+            .header("X-Requested-With", "com.soccertips.predictx")
+            .header("Cache-Control", "max-age=0")
+            .header("X-Client-Session-Id", sessionId)
+            .removeHeader("Host") // Let OkHttp set this automatically
+            .build()
+
+        // Add randomized delay to simulate human behavior (between 500ms and 3s)
+        // For the specific domain that's giving 403s, always add a delay
+        if (url.contains("dailypredictz.com") || Random.nextInt(5) == 0) {
+            val delayMillis = Random.nextLong(500, 3000)
+            try {
+                Thread.sleep(delayMillis)
+            } catch (e: InterruptedException) {
+                // Ignore
+            }
+        }
+
+        val response = chain.proceed(newRequest)
+
+        // Return the response
+        response
+    }
+
+    /**
+     * Cookie jar implementation that persists cookies between requests
+     * to maintain session state, which helps bypass bot detection
+     */
+    class AntiBot403CookieJar : CookieJar {
+        private val cookieStore = ConcurrentHashMap<String, List<Cookie>>()
+
+        override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+            cookieStore[url.host] = cookies
+
+            // Also sync with WebView CookieManager to maintain consistent state
+            val cookieManager = CookieManager.getInstance()
+            cookieManager.setAcceptCookie(true)
+
+            for (cookie in cookies) {
+                val cookieString = "${cookie.name}=${cookie.value}; domain=${cookie.domain}"
+                cookieManager.setCookie(url.toString(), cookieString)
+            }
+
+            cookieManager.flush()
+        }
+
+        override fun loadForRequest(url: HttpUrl): List<Cookie> {
+            val cookies = cookieStore[url.host] ?: emptyList()
+
+            // Also check WebView cookies to maintain consistent state
+            val cookieManager = CookieManager.getInstance()
+            val cookieString = cookieManager.getCookie(url.toString())
+
+            if (!cookieString.isNullOrBlank()) {
+                // Process WebView cookies if needed
+            }
+
+            return cookies
+        }
+    }
+
+    /**
+     * Manages device session IDs to maintain consistent browser fingerprints
+     */
+    object DeviceSessionManager {
+        private const val PREFS_NAME = "device_session_prefs"
+        private const val KEY_SESSION_ID = "browser_session_id"
+
+        fun getSessionId(context: Context): String {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            var sessionId = prefs.getString(KEY_SESSION_ID, null)
+
+            if (sessionId == null) {
+                sessionId = UUID.randomUUID().toString()
+                prefs.edit().putString(KEY_SESSION_ID, sessionId).apply()
+            }
+
+            return sessionId
+        }
     }
 
 
@@ -171,8 +327,10 @@ object AppModule {
     @Singleton
     fun providePredictionRepository(
         apiService: ApiService,
+        apiConfigProvider: ApiConfigProvider,
+        @ApplicationContext context: Context
     ): PredictionRepository =
-        PredictionRepository(apiService, lazy { PreloadRepository.getInstance() })
+        PredictionRepository(apiService, lazy { PreloadRepository.getInstance() }, context, apiConfigProvider)
 
     @Provides
     @Singleton
@@ -341,4 +499,3 @@ object AppModule {
 
 
 }
-

@@ -1,9 +1,10 @@
 package com.soccertips.predictx.repository
 
+import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.database
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.Category
 import kotlinx.coroutines.channels.awaitClose
@@ -12,13 +13,15 @@ import kotlinx.coroutines.flow.callbackFlow
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
-
+import kotlin.coroutines.resume
 
 @Singleton
 class FirebaseRepository @Inject constructor() {
-    private val database = FirebaseDatabase.getInstance()
-    private val categoriesRef = database.getReference("categories")
-    private val apiConfig = database.getReference("api-config") // Updated to use hyphen instead of underscore
+
+    private val database = Firebase.database.reference
+    // Use correct node names as defined in your DB structure
+    private val categoriesRef = database.child("categories")
+    private val apiConfigRef = database.child("api-config") // Note: hyphen, not underscore
 
     fun getCategories(): Flow<Result<List<Category>>> = callbackFlow {
         val listener = object : ValueEventListener {
@@ -34,7 +37,6 @@ class FirebaseRepository @Inject constructor() {
                             .getValue(String::class.java)
 
                         val iconResId = getIconResourceId(iconResIdString)
-
 
                         categories.add(Category(url, name, iconResId, colorHex))
                     }
@@ -54,45 +56,36 @@ class FirebaseRepository @Inject constructor() {
         categoriesRef.addValueEventListener(listener)
         awaitClose { categoriesRef.removeEventListener(listener) }
     }
-    fun getApiConfig(): Flow<Result<Map<String, String>>> = callbackFlow {
-        val listener = object : ValueEventListener {
+
+    fun getApiConfig() = callbackFlow {
+        val configListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
                     val configMap = mutableMapOf<String, String>()
 
-                    // Get values with hypen keys and convert to underscore keys for app consistency
-                    val apiKey = snapshot.child("API-KEY").getValue(String::class.java)
-                    val apiHost = snapshot.child("API-HOST").getValue(String::class.java)
+                    // Get API key and host using the correct property names from your DB
+                    val apiKey = snapshot.child("API-KEY").getValue(String::class.java) ?: ""
+                    val apiHost = snapshot.child("API-HOST").getValue(String::class.java) ?: ""
 
-                    if (apiKey != null) {
-                        configMap["API_KEY"] = apiKey
-                        Timber.d("Found API key in Firebase: $apiKey")
-                    } else {
-                        Timber.w("API-KEY not found in Firebase")
-                    }
-
-                    if (apiHost != null) {
-                        configMap["API_HOST"] = apiHost
-                        Timber.d("Found API host in Firebase: $apiHost")
-                    } else {
-                        Timber.w("API-HOST not found in Firebase")
-                    }
+                    // Map to standard names used in the rest of your app
+                    if (apiKey.isNotEmpty()) configMap["API_KEY"] = apiKey
+                    if (apiHost.isNotEmpty()) configMap["API_HOST"] = apiHost
 
                     trySend(Result.success(configMap))
                 } catch (e: Exception) {
-                    Timber.e(e, "Error parsing API config from Firebase")
+                    Timber.e(e, "Error fetching API config from Firebase: ${e.message}")
                     trySend(Result.failure(e))
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Timber.e("Firebase Database error: ${error.message}")
+                Timber.e("Firebase Database error fetching config: ${error.message}")
                 trySend(Result.failure(error.toException()))
             }
         }
 
-        apiConfig.addValueEventListener(listener)
-        awaitClose { apiConfig.removeEventListener(listener) }
+        apiConfigRef.addValueEventListener(configListener)
+        awaitClose { apiConfigRef.removeEventListener(configListener) }
     }
 
     private fun getIconResourceId(iconName: String?): Int {

@@ -404,13 +404,16 @@ class FixtureDetailsViewModel @Inject constructor(
         homeTeamId: Int
     ): List<Pair<String, String>> =
         events
-            .filter { it.type == "Goal" && it.team.id == homeTeamId }
-            .mapNotNull {
-                val playerName = it.player.name
-                if (playerName.isBlank()) {
+            .filter { event ->
+                event.type == "Goal" &&
+                event.team?.id == homeTeamId
+            }
+            .mapNotNull { event ->
+                val playerName = event.player?.name
+                if (playerName.isNullOrBlank()) {
                     null
                 } else {
-                    val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}'"
+                    val elapsed = "${event.time?.elapsed ?: 0}${event.time?.extra?.let { "+$it" } ?: ""}'"
                     playerName to elapsed
                 }
             }
@@ -420,13 +423,16 @@ class FixtureDetailsViewModel @Inject constructor(
         awayTeamId: Int,
     ): List<Pair<String, String>> =
         events
-            .filter { it.type == "Goal" && it.team.id == awayTeamId }
-            .mapNotNull {
-                val playerName = it.player.name
-                if (playerName.isBlank()) {
+            .filter { event ->
+                event.type == "Goal" &&
+                event.team?.id == awayTeamId
+            }
+            .mapNotNull { event ->
+                val playerName = event.player?.name
+                if (playerName.isNullOrBlank()) {
                     null
                 } else {
-                    val elapsed = "${it.time.elapsed}${it.time.extra?.let { "+$it" } ?: ""}'"
+                    val elapsed = "${event.time?.elapsed ?: 0}${event.time?.extra?.let { "+$it" } ?: ""}'"
                     playerName to elapsed
                 }
             }

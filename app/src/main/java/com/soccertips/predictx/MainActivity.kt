@@ -50,8 +50,10 @@ class MainActivity : ComponentActivity() {
     //Admob
     @Inject
     lateinit var interstitialAdManager: InterstitialAdManager
+
     @Inject
     lateinit var rewardedAdManager: RewardedAdManager
+
     @Inject
     lateinit var adStateManager: AdStateManager
 
@@ -126,6 +128,7 @@ class MainActivity : ComponentActivity() {
         // Handle notification intent that launched the app
         handleNotificationIntent(intent)
 
+
         setContent {
             PredictXTheme {
                 Surface(
@@ -137,7 +140,7 @@ class MainActivity : ComponentActivity() {
                         interstitialAdManager = interstitialAdManager,
                         rewardedAdManager = rewardedAdManager,
 
-                    )
+                        )
                 }
             }
         }
@@ -153,6 +156,8 @@ class MainActivity : ComponentActivity() {
         checkForAppUpdates()
         requestReview()
     }
+
+
 
     private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
         when (state.installStatus()) {
@@ -312,76 +317,166 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-
-        // Set the new intent
         setIntent(intent)
+        intent?.let { handleNotificationIntent(it) }
+    }
 
-        // Process the notification intent
-        if (intent.action == "com.soccertips.predictx.ACTION_VIEW_MATCH" ||
-            intent.getBooleanExtra("fromNotification", false)
-        ) {
+    private fun handleNotificationIntent(intent: Intent) {
+        val fromNotification = intent.getBooleanExtra("fromNotification", false)
 
-            // Get the fixture ID from the intent
-            val idFromIntent = intent.getStringExtra("fixtureId")
+        if (fromNotification) {
+            val action = intent.action
+            val notificationType = intent.getStringExtra("notificationType")
 
-            if (!idFromIntent.isNullOrEmpty()) {
-                // Update the fixture ID state
-                fixtureId.value = idFromIntent
-
-                // Store the ID for navigation handling
-                sharedPrefs.edit {
-                    putString("pending_navigation_fixture_id", idFromIntent)
-                    putLong("notification_open_timestamp", System.currentTimeMillis())
-                    // Flag specifically for foreground navigation
-                    putBoolean("force_navigate_from_foreground", true)
+            when {
+                action == "com.soccertips.predictx.ACTION_VIEW_BETTING_SUCCESS" ||
+                        notificationType == "betting_success" -> {
+                    handleBettingSuccessIntent(intent)
                 }
 
-                Timber.d("Foreground notification click for fixture ID: $idFromIntent - triggering immediate navigation")
+                action == "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" -> {
+                    handleBettingHistoryIntent(intent)
+                }
 
-                // Force immediate navigation by recreating the content
-                setContent {
-                    PredictXTheme {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.surface
-                        ) {
-                            AppNavigation(
-                                fixtureId = idFromIntent,
-                                forceNavigate = true,
-                                interstitialAdManager,
-                                rewardedAdManager
-                            )
-                        }
+                action == "com.soccertips.predictx.ACTION_VIEW_MATCH" -> {
+                    handleMatchIntent(intent)
+                }
+            }
+        }
+    }
+
+    private fun handleBettingSuccessIntent(intent: Intent) {
+        // Extract betting success data
+        val date = intent.getStringExtra("betting_date") ?: ""
+        val matchCount = intent.getStringExtra("match_count") ?: "0"
+        val winCount = intent.getStringExtra("win_count") ?: "0"
+        val successRate = intent.getStringExtra("success_rate") ?: "0"
+        val matchesDetails = intent.getStringExtra("matches_details") ?: ""
+        val summary = intent.getStringExtra("summary") ?: ""
+
+        // Log the success for analytics
+        logBettingSuccessEvent(date, matchCount, winCount, successRate)
+
+        // Show celebration dialog or navigate to success screen
+        showBettingSuccessDialog(date, matchCount, winCount, successRate, matchesDetails, summary)
+    }
+
+    private fun handleBettingHistoryIntent(intent: Intent) {
+        val filterDate = intent.getStringExtra("filter_date")
+        Timber.d("Navigating to betting history with date filter: $filterDate")
+        // TODO: Implement navigation to your betting history screen/composable
+        // You might need to use a navigation controller to navigate to the correct destination
+        // and pass the filterDate as an argument.
+    }
+
+    private fun handleMatchIntent(intent: Intent) {
+        val idFromIntent = intent.getStringExtra("fixtureId")
+
+        if (!idFromIntent.isNullOrEmpty()) {
+            // Update the fixture ID state
+            fixtureId.value = idFromIntent
+
+            // Store the ID for navigation handling
+            sharedPrefs.edit {
+                putString("pending_navigation_fixture_id", idFromIntent)
+                putLong("notification_open_timestamp", System.currentTimeMillis())
+                // Flag specifically for foreground navigation
+                putBoolean("force_navigate_from_foreground", true)
+            }
+
+            Timber.d("Foreground notification click for fixture ID: $idFromIntent - triggering immediate navigation")
+
+            // Force immediate navigation by recreating the content
+            setContent {
+                PredictXTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        AppNavigation(
+                            fixtureId = idFromIntent,
+                            forceNavigate = true,
+                            interstitialAdManager,
+                            rewardedAdManager
+                        )
                     }
                 }
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun handleNotificationIntent(intent: Intent?) {
-        if (intent?.action == "com.soccertips.predictx.ACTION_VIEW_MATCH" || intent?.getBooleanExtra(
-                "fromNotification",
-                false
-            ) == true
-        ) {
-            val idFromIntent = intent.getStringExtra("fixtureId")
-
-            if (!idFromIntent.isNullOrEmpty()) {
-                // Set the fixture ID that should be displayed
-                fixtureId.value = idFromIntent
-
-                // Store the ID for navigation handling
-                sharedPrefs.edit {
-                    putString("pending_navigation_fixture_id", idFromIntent)
-                    putLong("notification_open_timestamp", System.currentTimeMillis())
-                    // Mark that this came from a notification for special handling
-                    putBoolean("from_notification_click", true)
-                }
-
-                Timber.d("Notification click detected for fixture ID: $idFromIntent")
+    private fun showBettingSuccessDialog(
+        date: String,
+        matchCount: String,
+        winCount: String,
+        successRate: String,
+        matchesDetails: String,
+        summary: String
+    ) {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("🎉 Perfect Betting Day!")
+            .setMessage(
+                """
+                              📅 Date: $date
+                              🏆 Matches Won: $winCount/$matchCount
+                              🎯 Success Rate: $successRate%
+                              
+                              📊 Summary: $summary
+                              
+                              📋 Match Results:
+                              $matchesDetails
+                          """.trimIndent()
+            )
+            .setPositiveButton("View History") { _, _ ->
+                handleBettingHistoryIntent(Intent().apply {
+                    putExtra("filter_date", date)
+                })
             }
+            .setNegativeButton("Share Success") { _, _ ->
+                shareSuccess(matchCount, successRate, date)
+            }
+            .setNeutralButton("Close", null)
+            .create()
+
+        dialog.show()
+    }
+
+    private fun shareSuccess(matchCount: String, successRate: String, date: String) {
+        val shareText = """
+                          🎉 Perfect Betting Day! 🎉
+                          
+                          📅 Date: $date
+                          🏆 All $matchCount matches won!
+                          🎯 Success Rate: $successRate%
+                          
+                          #BettingSuccess #PerfectDay #SoccerTips
+                      """.trimIndent()
+
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, shareText)
         }
+
+        startActivity(Intent.createChooser(shareIntent, "Share Betting Success"))
+    }
+
+    private fun logBettingSuccessEvent(
+        date: String,
+        matchCount: String,
+        winCount: String,
+        successRate: String
+    ) {
+        val bundle = Bundle().apply {
+            putString("date", date)
+            putLong("match_count", matchCount.toLongOrNull() ?: 0L)
+            putLong("win_count", winCount.toLongOrNull() ?: 0L)
+            putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
+        }
+        analytics.logEvent("betting_success_notification", bundle)
+
+        // Log to Timber for debugging
+        Timber.i("Betting Success Event - Date: $date, Matches: $matchCount, Wins: $winCount, Rate: $successRate%")
     }
 
     @Composable

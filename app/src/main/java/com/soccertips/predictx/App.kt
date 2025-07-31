@@ -19,8 +19,13 @@ import com.soccertips.predictx.util.StrictModeUtil
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import java.io.IOException
+import java.util.*
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -37,6 +42,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     @Inject
     lateinit var firebaseRepository: com.soccertips.predictx.repository.FirebaseRepository
+
+    @Inject
+    lateinit var tokenRepository: com.soccertips.predictx.notification.TokenRepository
 
     @Inject
     lateinit var apiConfigProvider: com.soccertips.predictx.repository.ApiConfigProvider
@@ -77,6 +85,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         networkTaggingInitializer.initialize()
 
         initApiConfig()
+        initFirebaseMessaging()
 
         preloadRepository.setPredictionRepository(predictionRepository)
 
@@ -112,24 +121,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             isInitialAppStart = false
             Timber.d("App has been initialized before, ready for ads")
         }
-        // Initialize Mobile Ads SYNCHRONOUSLY on main thread first
-        /*MobileAds.initialize(this) { initializationStatus ->
-            Timber.d("MobileAds initialized with status: $initializationStatus")
 
-            // Setup app open ad manager
-            setupAppOpenAdManager()
-
-            // Mark Mobile Ads as initialized
-            isMobileAdsInitialized = true
-
-            // If this is not the first launch and app was previously initialized, allow ads
-            if (!isFirstLaunch() && !appInitialized) {
-                isInitialAppStart = false
-                Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
-            }
-
-            Timber.d("AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart")
-        }*/
 
         CoroutineScope(Dispatchers.IO).launch {
             preloadRepository.preloadCategoryData()
@@ -353,6 +345,101 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.d("AppOpenAdManager: No app open ad available to show")
             // Ensure we have an ad ready for next time
             appOpenAdManager.loadAppOpenAd()
+        }
+    }
+
+    /**
+     * Initialize Firebase Cloud Messaging and request a new token with retry logic
+     */
+    private fun initFirebaseMessaging() {
+        // Enable FCM auto init
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().isAutoInitEnabled = true
+
+        // Try to get the token with retry logic
+        requestFcmTokenWithRetry()
+    }
+
+    /**
+     * Request FCM token with exponential backoff retry
+     */
+    private fun requestFcmTokenWithRetry(attempt: Int = 0, maxAttempts: Int = 5) {
+        if (attempt >= maxAttempts) {
+            Timber.e("Failed to get FCM token after $maxAttempts attempts")
+            // Generate a placeholder token to allow the app to continue working
+            generatePlaceholderToken()
+            return
+        }
+
+        // Calculate exponential backoff delay (0s, 2s, 4s, 8s, 16s)
+        val delayMillis = if (attempt == 0) 0L else (1L shl attempt) * 1000
+
+        Timber.d("Attempting to get FCM token (attempt ${attempt + 1}/$maxAttempts), delay: $delayMillis ms")
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                delay(delayMillis) // Wait before retry with exponential backoff
+
+                // Use withTimeout to avoid waiting too long
+                withTimeout(20_000) {
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // Got the token successfully
+                                val token = task.result
+                                Timber.d("FCM Token retrieved successfully: $token")
+
+                                // Save the token to repository
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    tokenRepository.saveToken(token)
+                                }
+                            } else {
+                                val exception = task.exception
+                                if (exception is IOException && exception.message?.contains("SERVICE_NOT_AVAILABLE") == true) {
+                                    Timber.w(exception, "FCM service not available (attempt ${attempt + 1}/$maxAttempts), will retry...")
+                                    // Retry with increased attempt counter
+                                    requestFcmTokenWithRetry(attempt + 1, maxAttempts)
+                                } else {
+                                    Timber.e(exception, "Failed to get FCM token with error")
+                                    // For other errors, try at least one more time
+                                    if (attempt == 0) {
+                                        requestFcmTokenWithRetry(maxAttempts - 1, maxAttempts)
+                                    } else {
+                                        // Generate a placeholder after exhausting retries
+                                        generatePlaceholderToken()
+                                    }
+                                }
+                            }
+                        }
+                }
+            } catch (e: TimeoutCancellationException) {
+                Timber.w(e, "FCM token request timed out (attempt ${attempt + 1}/$maxAttempts)")
+                // Retry with increased attempt counter
+                requestFcmTokenWithRetry(attempt + 1, maxAttempts)
+            } catch (e: Exception) {
+                Timber.e(e, "Unexpected error during FCM token retrieval")
+                if (attempt < maxAttempts - 1) {
+                    requestFcmTokenWithRetry(attempt + 1, maxAttempts)
+                } else {
+                    generatePlaceholderToken()
+                }
+            }
+        }
+    }
+
+    /**
+     * Generate a placeholder token when Firebase service is unavailable
+     * This allows the app to continue functioning without FCM
+     */
+    private fun generatePlaceholderToken() {
+        Timber.w("Generating placeholder FCM token due to service unavailability")
+        val placeholderToken = "placeholder-${UUID.randomUUID()}"
+
+        CoroutineScope(Dispatchers.IO).launch {
+            tokenRepository.saveToken(placeholderToken, isPlaceholder = true)
+
+            // Schedule a retry after some time (15 minutes)
+            delay(15 * 60 * 1000) // 15 minutes in milliseconds
+            requestFcmTokenWithRetry()
         }
     }
 }

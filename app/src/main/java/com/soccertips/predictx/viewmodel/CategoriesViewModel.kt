@@ -62,19 +62,6 @@ class CategoriesViewModel @Inject constructor(private val firebaseRepository: Fi
         }
     }
 
-    // Fallback categories to be used if Firebase data is not available
-    /* private fun getFallbackCategories(): List<Category> =
-    listOf(
-        Category("https://dailypredictz.com/scripts/pscripts/json_over.php", context.getString(R.string.over_under)),
-        Category("https://dailypredictz.com/scripts/pscripts/json_gg.php", context.getString(R.string.btts)),
-        Category("https://dailypredictz.com/scripts/pscripts/json_2odds.php", context.getString(R.string.daily_2_odds)),
-        Category("https://dailypredictz.com/scripts/pscripts/json_combo.php", context.getString(R.string.combo)),
-        Category("https://dailypredictz.com/scripts/pscripts/json_htft.php", context.getString(R.string.ht_ft)),
-        Category("https://dailypredictz.com/scripts/pscripts/json_home_away.php", context.getString(R.string.home_away)),
-        Category("https://surebetsapp.com//app_json_scrits/json_toppicks.php", context.getString(R.string.daily_bonus)),
-        Category("https://dailypredictz.com/scripts/pscripts/json_Toppicks.php", context.getString(R.string.extra_picks)),
-    )*/
-
     // Function to retry loading categories
     fun retryLoadCategories() {
         _uiState.value = UiState.Loading

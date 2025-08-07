@@ -92,6 +92,12 @@ class MainActivity : ComponentActivity() {
 
         // Use the modern edge-to-edge API
 
+        // Configure ad managers to use Activity context for Android 14+ compatibility
+        interstitialAdManager.setActivityContext(this)
+        interstitialAdManager.useActivityContextForAdLoading(true)
+
+        rewardedAdManager.setActivityContext(this)
+        rewardedAdManager.useActivityContextForAdLoading(true)
 
         // Note: we're no longer manually initializing ad managers here since they're injected
         // The AdStateManager is now also properly injected as a dependency
@@ -272,6 +278,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        // Update all ad managers with current activity context for Android 14+ compatibility
+        interstitialAdManager.setActivityContext(this)
+        rewardedAdManager.setActivityContext(this)
 
         // For IMMEDIATE updates that were interrupted
         if (UPDATE_TYPE == AppUpdateType.IMMEDIATE) {

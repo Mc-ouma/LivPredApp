@@ -2,6 +2,7 @@ package com.soccertips.predictx.admob
 
 import android.app.Activity
 import android.content.Context
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -95,13 +96,41 @@ class InterstitialAdManager
     private var interstitialAd: InterstitialAd? = null
     private val adUnitId = context.getString(R.string.interstitial_id) // Test interstitial ID
 
+    // Track current activity context for loading ads
+    private var currentActivityContext: Activity? = null
+
+    // Flag to control whether to use Activity context for ad loading
+    private var useActivityContextForLoading = true
+
     init {
         loadInterstitialAd()
     }
 
+    // Method to set the current activity context
+    fun setActivityContext(activity: Activity?) {
+        currentActivityContext = activity
+    }
+
+    // Method to configure whether to use activity context
+    fun useActivityContextForAdLoading(enable: Boolean) {
+        useActivityContextForLoading = enable
+    }
+
     fun loadInterstitialAd() {
+        // Choose the appropriate context for loading
+        val contextToUse = if (useActivityContextForLoading && currentActivityContext != null) {
+            Timber.tag("InterstitialAd").d("Using Activity context for ad loading")
+            currentActivityContext!!
+        } else {
+            // Fall back to the provided context (typically Application)
+            if (useActivityContextForLoading) {
+                Timber.tag("InterstitialAd").w("Activity context requested but not available, using default context")
+            }
+            context
+        }
+
         InterstitialAd.load(
-            context,
+            contextToUse,
             adUnitId,
             AdRequest.Builder().build(),
             object : InterstitialAdLoadCallback() {
@@ -145,10 +174,46 @@ class InterstitialAdManager
             return
         }
 
-        interstitialAd?.show(activity) ?: run {
+        val ad = interstitialAd
+        if (ad == null) {
             Timber.tag("InterstitialAd").e("The interstitial ad wasn't ready yet.")
             loadInterstitialAd() // Attempt to load a new ad if the current one is null
+            return
         }
+
+        // Configure the ad for proper edge-to-edge display
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+            override fun onAdShowedFullScreenContent() {
+                Timber.tag("InterstitialAd").d("Ad showed full screen content")
+                adStateManager.setFullScreenAdShowing(true)
+
+                // Handle edge-to-edge display for the ad
+                handleEdgeToEdgeForAd(activity, true)
+            }
+
+            override fun onAdDismissedFullScreenContent() {
+                Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
+                adStateManager.setFullScreenAdShowing(false)
+
+                // Restore edge-to-edge display settings
+                handleEdgeToEdgeForAd(activity, false)
+
+                interstitialAd = null
+                loadInterstitialAd() // Load a new ad for next time
+            }
+
+            override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message}")
+                adStateManager.setFullScreenAdShowing(false)
+
+                // Restore edge-to-edge display settings
+                handleEdgeToEdgeForAd(activity, false)
+
+                interstitialAd = null
+            }
+        }
+
+        ad.show(activity)
     }
 
     // New method that accepts a callback to execute after ad is dismissed
@@ -173,11 +238,18 @@ class InterstitialAdManager
             override fun onAdShowedFullScreenContent() {
                 Timber.tag("InterstitialAd").d("Ad showed full screen content")
                 adStateManager.setFullScreenAdShowing(true)
+
+                // Handle edge-to-edge display for the ad
+                handleEdgeToEdgeForAd(activity, true)
             }
 
             override fun onAdDismissedFullScreenContent() {
                 Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
                 adStateManager.setFullScreenAdShowing(false)
+
+                // Restore edge-to-edge display settings
+                handleEdgeToEdgeForAd(activity, false)
+
                 interstitialAd = null
                 loadInterstitialAd() // Load a new ad for next time
 
@@ -188,6 +260,10 @@ class InterstitialAdManager
             override fun onAdFailedToShowFullScreenContent(error: AdError) {
                 Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message}")
                 adStateManager.setFullScreenAdShowing(false)
+
+                // Restore edge-to-edge display settings
+                handleEdgeToEdgeForAd(activity, false)
+
                 interstitialAd = null
 
                 // Execute the provided callback when ad fails to show
@@ -197,6 +273,37 @@ class InterstitialAdManager
 
         Timber.tag("InterstitialAd").d("Showing interstitial ad with callback")
         ad.show(activity)
+    }
+
+    private fun handleEdgeToEdgeForAd(activity: Activity, isAdShowing: Boolean) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                val window = activity.window
+                val controller = window.insetsController
+
+                if (isAdShowing) {
+                    // When ad is showing, ensure proper insets handling
+                    controller?.let {
+                        // Hide system bars for true full screen ad experience
+                        it.hide(android.view.WindowInsets.Type.systemBars())
+                        it.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    }
+                } else {
+                    // When ad is dismissed, restore edge-to-edge mode
+                    controller?.let {
+                        it.show(android.view.WindowInsets.Type.systemBars())
+                        it.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_DEFAULT
+                    }
+
+                    // Re-enable edge-to-edge
+                    if (activity is androidx.activity.ComponentActivity) {
+                        activity.enableEdgeToEdge()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.tag("InterstitialAd").w("Failed to handle edge-to-edge for ad: ${e.message}")
+        }
     }
 
     fun isAdLoaded(): Boolean =
@@ -211,14 +318,43 @@ class RewardedAdManager @Inject constructor(
     private var rewardedAd: RewardedAd? = null
     private val adUnitId = context.getString(R.string.reward) // Test rewarded ad ID
 
+    // Track current activity context for loading ads
+    private var currentActivityContext: Activity? = null
+
+    // Flag to control whether to use Activity context for ad loading
+    private var useActivityContextForLoading = true
+
     init {
         loadRewardedAd()
     }
 
+    // Method to set the current activity context
+    fun setActivityContext(activity: Activity?) {
+        currentActivityContext = activity
+    }
+
+    // Method to configure whether to use activity context
+    fun useActivityContextForAdLoading(enable: Boolean) {
+        useActivityContextForLoading = enable
+    }
+
     fun loadRewardedAd() {
         Timber.tag("RewardedAd").d("Starting to load rewarded ad...")
+
+        // Choose the appropriate context for loading
+        val contextToUse = if (useActivityContextForLoading && currentActivityContext != null) {
+            Timber.tag("RewardedAd").d("Using Activity context for ad loading")
+            currentActivityContext!!
+        } else {
+            // Fall back to the provided context (typically Application)
+            if (useActivityContextForLoading) {
+                Timber.tag("RewardedAd").w("Activity context requested but not available, using default context")
+            }
+            context
+        }
+
         RewardedAd.load(
-            context,
+            contextToUse,
             adUnitId,
             AdRequest.Builder().build(),
             object : RewardedAdLoadCallback() {
@@ -275,6 +411,39 @@ class RewardedAdManager @Inject constructor(
 
         Timber.tag("RewardedAd").d("Attempting to show rewarded ad now...")
         try {
+            // Set up proper edge-to-edge handling for rewarded ads
+            rewardedAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdShowedFullScreenContent() {
+                    Timber.tag("RewardedAd").d("Rewarded ad showed full screen content")
+                    adStateManager.setFullScreenAdShowing(true)
+
+                    // Handle edge-to-edge display for the ad
+                    handleEdgeToEdgeForAd(activity, true)
+                }
+
+                override fun onAdDismissedFullScreenContent() {
+                    Timber.tag("RewardedAd").d("Rewarded ad dismissed full screen content")
+                    adStateManager.setFullScreenAdShowing(false)
+
+                    // Restore edge-to-edge display settings
+                    handleEdgeToEdgeForAd(activity, false)
+
+                    rewardedAd = null
+                    loadRewardedAd() // Load a new ad for next time
+                }
+
+                override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                    Timber.tag("RewardedAd")
+                        .e("Failed to show rewarded ad: ${error.message}")
+                    adStateManager.setFullScreenAdShowing(false)
+
+                    // Restore edge-to-edge display settings
+                    handleEdgeToEdgeForAd(activity, false)
+
+                    rewardedAd = null
+                }
+            }
+
             rewardedAd?.show(activity) { rewardItem ->
                 Timber.tag("RewardedAd")
                     .d("User earned reward: ${rewardItem.amount} ${rewardItem.type}")
@@ -287,6 +456,37 @@ class RewardedAdManager @Inject constructor(
             Timber.tag("RewardedAd").e("Exception when showing rewarded ad: ${e.message}")
             e.printStackTrace()
             loadRewardedAd()
+        }
+    }
+
+    private fun handleEdgeToEdgeForAd(activity: Activity, isAdShowing: Boolean) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                val window = activity.window
+                val controller = window.insetsController
+
+                if (isAdShowing) {
+                    // When ad is showing, ensure proper insets handling
+                    controller?.let {
+                        // Hide system bars for true full screen ad experience
+                        it.hide(android.view.WindowInsets.Type.systemBars())
+                        it.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    }
+                } else {
+                    // When ad is dismissed, restore edge-to-edge mode
+                    controller?.let {
+                        it.show(android.view.WindowInsets.Type.systemBars())
+                        it.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_DEFAULT
+                    }
+
+                    // Re-enable edge-to-edge
+                    if (activity is androidx.activity.ComponentActivity) {
+                        activity.enableEdgeToEdge()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.tag("RewardedAd").w("Failed to handle edge-to-edge for ad: ${e.message}")
         }
     }
 
@@ -307,6 +507,9 @@ class AppOpenAdManager @Inject constructor(
     private var loadTime: Long = 0
     private val adUnitId = context.getString(R.string.appOpen_id) // Test App Open ID
 
+    // Track current activity context for loading ads
+    private var currentActivityContext: Activity? = null
+
     // Track whether the app is in foreground to avoid showing ads when app is in background
     private var isAppInForeground = false
 
@@ -318,6 +521,9 @@ class AppOpenAdManager @Inject constructor(
 
     // Track ad failure events for analytics
     private var adFailureListener: ((String) -> Unit)? = null
+
+    // Flag to control whether to use Activity context for ad loading
+    private var useActivityContextForLoading = true
 
     companion object {
         private const val AD_TIMEOUT = 4 * 60 * 60 * 1000L // 4 hours in milliseconds
@@ -337,6 +543,17 @@ class AppOpenAdManager @Inject constructor(
 
     init {
         loadAppOpenAd()
+    }
+
+    // Method to set the current activity context
+    fun setActivityContext(activity: Activity?) {
+        currentActivityContext = activity
+    }
+
+    // Allows configuring whether to use Activity context for ad loading
+    // This helps prevent ViewConfiguration errors on Android 14+
+    fun useActivityContextForAdLoading(enable: Boolean) {
+        useActivityContextForLoading = enable
     }
 
     fun setAdImpressionListener(listener: () -> Unit) {
@@ -387,8 +604,20 @@ class AppOpenAdManager @Inject constructor(
         isLoadingAd = true
         val request = AdRequest.Builder().build()
 
+        // Choose the appropriate context for loading
+        val contextToUse = if (useActivityContextForLoading && currentActivityContext != null) {
+            Timber.tag("AppOpenAd").d("Using Activity context for ad loading")
+            currentActivityContext!!
+        } else {
+            // Fall back to the provided context (typically Application)
+            if (useActivityContextForLoading) {
+                Timber.tag("AppOpenAd").w("Activity context requested but not available, using default context")
+            }
+            context
+        }
+
         AppOpenAd.load(
-            context,
+            contextToUse,
             adUnitId,
             request,
             object : AppOpenAdLoadCallback() {

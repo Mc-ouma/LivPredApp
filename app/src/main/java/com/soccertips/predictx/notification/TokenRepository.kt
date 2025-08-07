@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +24,20 @@ class TokenRepository @Inject constructor(
     private val sharedPreferences = context.getSharedPreferences(FCM_PREFS, Context.MODE_PRIVATE)
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val tokensRef = firebaseDatabase.getReference("fcm_tokens")
+
+    private val supportedLanguages = listOf("en","pt","fr", "es")
+    private fun getSupportedLanguage(): String {
+        val systemLang = Locale.getDefault().language.lowercase()
+        return if (supportedLanguages.contains(systemLang)) {
+            systemLang
+        } else {
+            "en"
+        }
+    }
+
+    private val _userLanguage: String by lazy { getSupportedLanguage() }
+    val userLanguage: String get() = _userLanguage
+
 
     // Get or generate a unique device ID
     private val deviceId: String
@@ -60,6 +75,7 @@ class TokenRepository @Inject constructor(
                     "model" to "${Build.MANUFACTURER} ${Build.MODEL}",
                     "osVersion" to "Android ${Build.VERSION.RELEASE}",
                     "appVersion" to getAppVersion(),
+                    "language" to userLanguage,
                     "lastUpdated" to System.currentTimeMillis()
                 )
 

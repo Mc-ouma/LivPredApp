@@ -54,6 +54,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     @Inject
     lateinit var appOpenAdManager: AppOpenAdManager
+
     private var currentActivity: Activity? = null
 
     // Track app foreground status
@@ -140,6 +141,14 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         appOpenAdManager.setAdFailureListener { errorMessage ->
             Timber.e("AppOpenAd failed: $errorMessage")
             // Here you could add code to record the failure in your analytics system
+        }
+
+        // Configure AppOpenAdManager to use activity context for ad loading
+        appOpenAdManager.useActivityContextForAdLoading(true)
+        
+        // Set the current activity context if available
+        currentActivity?.let {
+            appOpenAdManager.setActivityContext(it)
         }
     }
 
@@ -231,8 +240,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
             val appInitialized = prefs.getBoolean(KEY_APP_INITIALIZED, false)
 
-            // Pass the application context to avoid leaking the activity context.
-            MobileAds.initialize(this) { initializationStatus ->
+            // Use Activity context instead of Application context to prevent WindowManager access violations
+            MobileAds.initialize(activity) { initializationStatus ->
                 Timber.d("MobileAds initialized with status: $initializationStatus")
 
                 // Setup app open ad manager
@@ -265,6 +274,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     override fun onActivityResumed(activity: Activity) {
         currentActivity = activity
+
+        // Update AppOpenAdManager with current activity context
+        appOpenAdManager.setActivityContext(activity)
 
         // Mark app as in foreground
         if (!appInForeground) {

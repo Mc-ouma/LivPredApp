@@ -265,5 +265,6 @@
 
     <string name="no_games_found_for_the_selected_date">Aucun match trouvé pour la date sélectionnée.</string>
     <string name="failed_to_fetch_games_please_try_again_later">Échec de la récupération des matchs, veuillez réessayer plus tard.</string>
+    <string name="ad_not_available">La publicité n\'est pas disponible.</string>
 
 </resources>

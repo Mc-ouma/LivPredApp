@@ -585,7 +585,7 @@ fun TableComposable(headers: List<String>, rows: List<List<Any?>>) {
         row.map { cell ->
             when (cell) {
                 null -> "-"
-                is String -> if (cell.isNotBlank()) cell else "-"
+                is String -> cell.ifBlank { "-" }
                 else -> cell.toString()
             }
         }

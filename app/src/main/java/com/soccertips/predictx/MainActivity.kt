@@ -12,7 +12,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -135,21 +137,25 @@ class MainActivity : ComponentActivity() {
         handleNotificationIntent(intent)
 
 
-        setContent {
-            PredictXTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    AppNavigation(
-                        fixtureId = fixtureId.value,
-                        interstitialAdManager = interstitialAdManager,
-                        rewardedAdManager = rewardedAdManager,
+       setContent {
+                   PredictXTheme {
+                       Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                           Surface(
+                               modifier = Modifier
+                                   .fillMaxSize()
+                                   .padding(innerPadding),
+                               color = MaterialTheme.colorScheme.surface
+                           ) {
+                               AppNavigation(
+                                   fixtureId = fixtureId.value,
+                                   interstitialAdManager = interstitialAdManager,
+                                   rewardedAdManager = rewardedAdManager,
+                               )
+                           }
+                       }
+                   }
+               }
 
-                        )
-                }
-            }
-        }
 
         // Initialize Firebase Analytics
         analytics = FirebaseAnalytics.getInstance(this)
@@ -162,7 +168,6 @@ class MainActivity : ComponentActivity() {
         checkForAppUpdates()
         requestReview()
     }
-
 
 
     private val installStateUpdatedListener = InstallStateUpdatedListener { state ->

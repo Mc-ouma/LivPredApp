@@ -283,5 +283,6 @@
 
     <string name="no_games_found_for_the_selected_date">Nenhum jogo encontrado para a data selecionada.</string>
     <string name="failed_to_fetch_games_please_try_again_later">Falha ao buscar jogos, por favor tente novamente mais tarde.</string>
+    <string name="ad_not_available">Anúncio não disponível.</string>
 
 </resources>

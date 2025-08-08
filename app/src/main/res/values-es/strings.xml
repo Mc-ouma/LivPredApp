@@ -284,5 +284,6 @@
 
     <string name="no_games_found_for_the_selected_date">No se encontraron partidos para la fecha seleccionada.</string>
     <string name="failed_to_fetch_games_please_try_again_later">No se pudieron obtener los partidos, por favor intenta de nuevo más tarde.</string>
+    <string name="ad_not_available">El anuncio no está disponible en este momento.</string>
 
 </resources>

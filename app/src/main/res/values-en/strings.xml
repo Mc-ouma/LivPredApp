@@ -283,5 +283,6 @@
 
     <string name="no_games_found_for_the_selected_date">No games found for the selected date.</string>
     <string name="failed_to_fetch_games_please_try_again_later">Failed to fetch games, please try again later.</string>
+    <string name="ad_not_available">Ad not available</string>
 
 </resources>

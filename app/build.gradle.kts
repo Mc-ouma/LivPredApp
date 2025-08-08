@@ -165,6 +165,7 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)
+    implementation(libs.androidx.foundation.layout)
     // Unit testing dependencies
     testImplementation(libs.junit)
     testImplementation(libs.mockito.inline)

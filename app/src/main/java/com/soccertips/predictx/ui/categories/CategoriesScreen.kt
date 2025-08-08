@@ -2,10 +2,18 @@ package com.soccertips.predictx.ui.categories
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -32,43 +40,53 @@ fun CategoriesScreen(
     viewModel: CategoriesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    when (uiState) {
-        is UiState.Loading -> {
-            LoadingIndicator()
-        }
 
-        is UiState.Error -> {
-            ErrorScreen(
-                paddingValues = PaddingValues(16.dp),
-                message = "No internet connection. Please check your network.",
-                onRetry = { viewModel.retryLoadCategories() }
+    Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.navigationBars),
+    ) { paddingValues ->
+        when (uiState) {
+            is UiState.Loading -> {
+                LoadingIndicator()
+            }
+
+            is UiState.Error -> {
+                ErrorScreen(
+                    paddingValues = paddingValues,
+                    message = "No internet connection. Please check your network.",
+                    onRetry = { viewModel.retryLoadCategories() }
+                )
+            }
+
+            is UiState.Success -> {
+                val categories = (uiState as UiState.Success<List<Category>>).data
+                CategoriesContent(
+                    modifier = Modifier.padding(paddingValues),
+                    navController = navController,
+                    categories = categories,
+                )
+            }
+
+            UiState.Empty -> EmptyScreen(
+                paddingValues = paddingValues,
+                message = "No categories available. Join our Telegram channel for updates and support.",
             )
+
+            else -> Unit
         }
-
-        is UiState.Success -> {
-            val categories = (uiState as UiState.Success<List<Category>>).data
-            CategoriesContent(
-                navController = navController,
-                categories = categories,
-            )
-        }
-
-        UiState.Empty -> EmptyScreen(
-            paddingValues = PaddingValues(16.dp),
-            message = "No categories available. Join our Telegram channel for updates and support.",
-        )
-
-        else -> Unit
     }
 }
 
 
 @Composable
-fun CategoriesContent(navController: NavController, categories: List<Category>) {
+fun CategoriesContent(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    categories: List<Category>
+) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 150.dp),
         contentPadding = PaddingValues(16.dp),
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceAround,
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {

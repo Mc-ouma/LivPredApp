@@ -29,9 +29,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -137,14 +140,28 @@ fun FixtureMatchDetailsScreen(
             }
         } else {
             val context = LocalContext.current
-            val showPredictions = remember { androidx.compose.runtime.mutableStateOf(false) }
+            val showPredictions = remember { mutableStateOf(false) }
             val activityContext = remember { context.findActivity() }
+            var adIsLoading by remember { mutableStateOf(false) }
+            val isAdReady by remember(rewardedAdManager) {
+                derivedStateOf { rewardedAdManager.isAdLoaded() }
+            }
+
+            // Use LaunchedEffect to react to changes in ad readiness and loading state
+            LaunchedEffect(isAdReady, rewardedAdManager.isAdLoading()) {
+                adIsLoading = rewardedAdManager.isAdLoading()
+                if (activityContext != null && !isAdReady && !adIsLoading) {
+                    // If the ad is not ready and not currently loading, request one
+                    Timber.tag("RewardedAd").d("FixtureMatchDetailsScreen: Ad not loaded, requesting a new one.")
+                    rewardedAdManager.loadRewardedAd()
+                }
+            }
 
             if (!showPredictions.value) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     AnimatedButton(
                         onClick = {
-                            if (activityContext != null && rewardedAdManager?.isAdLoaded() == true) {
+                            if (activityContext != null && isAdReady) {
                                 Timber.tag("RewardedAd").d("Button clicked - showing rewarded ad from activity: ${activityContext.javaClass.simpleName}")
                                 rewardedAdManager.showRewardedAd(
                                     activity = activityContext,
@@ -154,13 +171,17 @@ fun FixtureMatchDetailsScreen(
                                     }
                                 )
                             } else {
-                                Timber.tag("RewardedAd").e("Cannot show ad: activity=${activityContext != null}, adLoaded=${rewardedAdManager?.isAdLoaded()}")
+                                Timber.tag("RewardedAd").e("Cannot show ad: activity=${activityContext != null}, adReady=$isAdReady")
                                 Toast.makeText(context, "Ad not ready yet. Please try again later.", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        enabled = rewardedAdManager?.isAdLoaded() == true,
-                        text = stringResource(R.string.watch_ad_for_extra_predictions),
-                        pulseEnabled = true
+                        enabled = isAdReady,
+                        text = when {
+                            isAdReady -> stringResource(R.string.watch_ad_for_extra_predictions)
+                            adIsLoading -> stringResource(R.string.loading)
+                            else -> stringResource(R.string.ad_not_available)
+                        },
+                        pulseEnabled = isAdReady
                     )
                 }
             }

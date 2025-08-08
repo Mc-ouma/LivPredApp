@@ -1,14 +1,20 @@
 package com.soccertips.predictx.ui.items
 
-
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -22,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -89,6 +96,35 @@ fun ItemsListScreen(
     val formattedDate = DateUtils.formatRelativeDate(context, selectedDate.toString())
     var scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
+    // Function to handle back navigation with an interstitial ad
+    val navigateBackWithAd: () -> Unit = {
+        if (interstitialAdManager.isAdLoaded()) {
+            try {
+                val activity = navController.context as? Activity
+                activity?.let {
+                    interstitialAdManager.showInterstitialAdWithCallback(
+                        it,
+                        onAdDismissed = {
+                            // Navigate back after ad is dismissed
+                            navController.popBackStack()
+                        }
+                    )
+                } ?: navController.popBackStack() // Fallback if activity is null
+            } catch (e: Exception) {
+                e.printStackTrace()
+                navController.popBackStack() // Fallback on error
+            }
+        } else {
+            // If no ad is loaded, just navigate back
+            navController.popBackStack()
+        }
+    }
+
+    // Handle system back gesture
+    BackHandler {
+        navigateBackWithAd()
+    }
+
     // Fetch items when the category or selected date changes
     LaunchedEffect(key1 = category, key2 = selectedDate) {
         viewModel.fetchItems(category.url, selectedDate)
@@ -96,6 +132,7 @@ fun ItemsListScreen(
 
     Scaffold(
         Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.navigationBars),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -105,33 +142,7 @@ fun ItemsListScreen(
                 },
                 //show  interstitial ad when the back button is pressed
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (interstitialAdManager.isAdLoaded()) {
-                            try {
-                                val activity = navController.context as? Activity
-                                activity?.let {
-                                    interstitialAdManager.showInterstitialAdWithCallback(it,
-                                        onAdDismissed = {
-                                            // Navigate back after ad is dismissed
-                                            navController.popBackStack()
-                                            // Optionally, you can navigate to a specific screen
-                                            // navController.navigate(Routes.SomeScreen.route)
-                                        }
-                                    )
-                                    // The navigation will happen after ad dismissal via the FullScreenContentCallback
-                                } ?: run {
-                                    // If activity casting fails, just navigate back
-                                    navController.popBackStack()
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                navController.popBackStack()
-                            }
-                        } else {
-                            // If no ad is loaded, just navigate back
-                            navController.popBackStack()
-                        }
-                    }) {
+                    IconButton(onClick = navigateBackWithAd) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
                             contentDescription = "Back"
@@ -152,7 +163,7 @@ fun ItemsListScreen(
             )
         },
         bottomBar = {
-            BannerAdView()
+            BannerAdView(modifier = Modifier.safeDrawingPadding())
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {

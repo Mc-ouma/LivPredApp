@@ -6,8 +6,18 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -22,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -35,8 +46,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -51,6 +64,7 @@ import com.soccertips.predictx.ui.categories.CategoriesScreen
 import com.soccertips.predictx.ui.favorites.FavoritesScreen
 import com.soccertips.predictx.viewmodel.FavoritesViewModel
 import com.soccertips.predictx.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 sealed class BottomNavScreens(
     open val route: String,
@@ -92,6 +106,7 @@ fun HomeScreen(navController: NavController) {
     val networkUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+
     val items =
         listOf(
             BottomNavScreens.Categories,
@@ -102,6 +117,9 @@ fun HomeScreen(navController: NavController) {
 
     // State to track the last back press time
     var backPressState by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    val pagerState = rememberPagerState {items.size}
+    val scope = rememberCoroutineScope ()
 
     // Handle back button press
     BackHandler(enabled = true) {
@@ -138,8 +156,15 @@ fun HomeScreen(navController: NavController) {
         }
     }
 
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page->
+            selectedItemIndex = page
+        }
+    }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.navigationBars),
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
         },
@@ -150,8 +175,12 @@ fun HomeScreen(navController: NavController) {
             NavigationBar {
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
-                        selected = selectedItemIndex == index,
-                        onClick = { selectedItemIndex = index },
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            scope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        },
                         label = { Text(text = stringResource(item.title)) },
                         icon = {
                             BadgedBox(
@@ -173,7 +202,7 @@ fun HomeScreen(navController: NavController) {
                             ) {
                                 Icon(
                                     imageVector =
-                                        if (index == selectedItemIndex) {
+                                        if (pagerState.currentPage == index) {
                                             item.selectedIcon
                                         } else item.unselectedIcon,
                                     contentDescription = stringResource(item.title)
@@ -185,20 +214,18 @@ fun HomeScreen(navController: NavController) {
             }
         },
         content = { padding ->
-            Column(modifier = Modifier.padding(padding)) {
-                AnimatedVisibility(
-                    visible = selectedItemIndex == 0,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
-                ) { CategoriesScreen(navController = navController) }
-                AnimatedVisibility(
-                    visible = selectedItemIndex == 1,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
-                ) { FavoritesScreen(navController = navController) }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.padding(padding)
+            ) { page ->
+                when (page) {
+                    0 -> CategoriesScreen(navController = navController)
+                    1 -> FavoritesScreen(navController = navController)
+                }
             }
         }
     )
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

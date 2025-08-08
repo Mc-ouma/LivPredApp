@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Rectangle
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -66,7 +65,7 @@ fun TeamStatisticsContent(
         item {
             StatisticCard(title = stringResource(R.string.form)) {
                 Row(horizontalArrangement = Arrangement.Center) {
-                    statistics.form.forEach { letter ->
+                    statistics.form?.forEach { letter ->
                         val (color, background) = when (letter) {
                             'W' -> Color.Green to Color.Green.copy(alpha = 0.2f)
                             'D' -> Color.Gray to Color.Gray.copy(alpha = 0.2f)
@@ -327,7 +326,7 @@ fun TeamStatisticsContent(
                 LinearProgressIndicator(
                     progress = {
                         if (statistics.penalty.total > 0) {
-                            statistics.penalty.scored.total / statistics.penalty.total.toFloat()
+                            statistics.penalty.scored.total.toFloat() / statistics.penalty.total
                         } else 0f
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -342,7 +341,7 @@ fun TeamStatisticsContent(
                 LinearProgressIndicator(
                     progress = {
                         if (statistics.penalty.total > 0) {
-                            statistics.penalty.missed.total / statistics.penalty.total.toFloat()
+                            statistics.penalty.missed.total.toFloat() / statistics.penalty.total
                         } else 0f
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -352,7 +351,6 @@ fun TeamStatisticsContent(
 
         // Lineups/Formation Card
         item {
-            val mostUsedFormation = statistics.lineups.maxByOrNull { it.played }?.formation ?: "-"
             ExpandableStatisticCard(
                 title = stringResource(R.string.lineups)
             ) {

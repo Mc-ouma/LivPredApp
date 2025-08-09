@@ -17,12 +17,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -32,8 +29,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -108,84 +103,78 @@ fun FavoritesScreen(
 
     }
 
-    Scaffold(
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.navigationBars),
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                isRefreshing = true; viewModel.loadFavorites(); isRefreshing = false
-            }, // Start refresh gesture
-            state = state,
-            indicator = {
-                PullToRefreshDefaults.LoadingIndicator(
-                    state = state,
-                    isRefreshing = isRefreshing,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
-            }
-        ) {
-            AnimatedContent(
-                targetState = uiState,
-                transitionSpec = {
-                    if (targetState is UiState.Success) {
-                        fadeIn(animationSpec = tween(durationMillis = 300)) +
-                                scaleIn(
-                                    initialScale = 0.9f,
-                                    animationSpec = tween(durationMillis = 300)
-                                ) togetherWith
-                                fadeOut(animationSpec = tween(durationMillis = 200))
-                    } else {
-                        fadeIn(animationSpec = tween(durationMillis = 300)) togetherWith
-                                fadeOut(animationSpec = tween(durationMillis = 200))
-                    }
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true; viewModel.loadFavorites(); isRefreshing = false
+        }, // Start refresh gesture
+        state = state,
+        indicator = {
+            PullToRefreshDefaults.LoadingIndicator(
+                state = state,
+                isRefreshing = isRefreshing,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
+    ) {
+        AnimatedContent(
+            targetState = uiState,
+            transitionSpec = {
+                if (targetState is UiState.Success) {
+                    fadeIn(animationSpec = tween(durationMillis = 300)) +
+                            scaleIn(
+                                initialScale = 0.9f,
+                                animationSpec = tween(durationMillis = 300)
+                            ) togetherWith
+                            fadeOut(animationSpec = tween(durationMillis = 200))
+                } else {
+                    fadeIn(animationSpec = tween(durationMillis = 300)) togetherWith
+                            fadeOut(animationSpec = tween(durationMillis = 200))
                 }
-            ) { uiState ->
-                when (uiState) {
-                    is UiState.Loading -> {
-                        LoadingIndicator()
-                    }
+            }
+        ) { uiState ->
+            when (uiState) {
+                is UiState.Loading -> {
+                    LoadingIndicator()
+                }
 
-                    is UiState.Error -> {
-                        ErrorMessage(
-                            message = uiState.message,
-                            onRetry = { viewModel.loadFavorites() },
+                is UiState.Error -> {
+                    ErrorMessage(
+                        message = uiState.message,
+                        onRetry = { viewModel.loadFavorites() },
+                    )
+                }
+
+                is UiState.Success -> {
+                    val favoriteItems = uiState.data
+                    val listState = rememberLazyListState()
+                    if (favoriteItems.isEmpty()) {
+                        EmptyScreen(
+                            paddingValues = PaddingValues(16.dp),
+                            message = "No favorite items"
+                        )
+                    } else {
+                        FavoritesList(
+                            navController = navController,
+                            viewModel = viewModel,
+                            favoriteItems = favoriteItems,
+                            listState = listState
                         )
                     }
-
-                    is UiState.Success -> {
-                        val favoriteItems = uiState.data
-                        val listState = rememberLazyListState()
-                        if (favoriteItems.isEmpty()) {
-                            EmptyScreen(
-                                paddingValues = PaddingValues(16.dp),
-                                message = "No favorite items"
-                            )
-                        } else {
-                            FavoritesScreen(
-                                navController = navController,
-                                viewModel = viewModel,
-                                favoriteItems = favoriteItems,
-                                listState = listState
-                            )
-                        }
-                    }
-
-                    is UiState.Empty ->
-                        EmptyScreen(paddingValues = PaddingValues(16.dp))
-
-                    else -> Unit
                 }
+
+                is UiState.Empty ->
+                    EmptyScreen(paddingValues = PaddingValues(16.dp))
+
+                else -> Unit
             }
         }
     }
+    SnackbarHost(snackbarHostState)
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun FavoritesScreen(
+fun FavoritesList(
     navController: NavController,
     viewModel: FavoritesViewModel = hiltViewModel(),
     favoriteItems: List<FavoriteItem>,

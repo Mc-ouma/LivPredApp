@@ -1,6 +1,5 @@
 package com.soccertips.predictx
 
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
@@ -36,7 +35,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import com.soccertips.predictx.admob.AppOpenAdManager
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.Category
@@ -58,7 +56,6 @@ fun AppNavigation(
     forceNavigate: Boolean = false,
     interstitialAdManager: InterstitialAdManager,
     rewardedAdManager: RewardedAdManager,
-    context: Context = LocalContext.current,
 ) {
     val navController = rememberNavController()
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()

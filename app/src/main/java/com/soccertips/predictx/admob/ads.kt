@@ -9,6 +9,7 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -322,6 +323,7 @@ class InterstitialAdManager
         ad.show(activity)
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun handleEdgeToEdgeForAd(activity: Activity, isAdShowing: Boolean) {
         val window = activity.window
         try {
@@ -345,7 +347,9 @@ class InterstitialAdManager
                             or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
                 } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                    window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                    window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
                 }
             }
         } catch (e: Exception) {
@@ -373,10 +377,6 @@ class RewardedAdManager @Inject constructor(
 
     // Flag to control whether to use Activity context for ad loading
     private var useActivityContextForLoading = true
-
-    init {
-        // We will call loadRewardedAd from the activity lifecycle now
-    }
 
     // Method to set the current activity context and trigger ad loading
     fun setActivityContext(activity: Activity?) {
@@ -436,7 +436,7 @@ class RewardedAdManager @Inject constructor(
                     rewardedAd = null
                     isAdLoading = false
                     // Try to reload after a delay
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    Handler(Looper.getMainLooper()).postDelayed({
                         loadRewardedAd()
                     }, 60000) // Retry after 1 minute
                 }
@@ -504,6 +504,7 @@ class RewardedAdManager @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun handleEdgeToEdgeForAd(activity: Activity, isAdShowing: Boolean) {
         val window = activity.window
         try {
@@ -526,7 +527,9 @@ class RewardedAdManager @Inject constructor(
                             or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
                 } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                    window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                    window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
                 }
             }
         } catch (e: Exception) {
@@ -725,7 +728,7 @@ class AppOpenAdManager @Inject constructor(
 
     private fun scheduleAdLoadRetry() {
         // Retry loading the ad after a delay
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+        Handler(Looper.getMainLooper()).postDelayed({
             if (!isAdAvailable() && !isLoadingAd) {
                 loadAppOpenAd()
             }

@@ -18,10 +18,10 @@
       </SelectionState>
       <SelectionState runConfigName="AI_ScoreCast.app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-08-08T06:56:27.162582853Z">
+        <DropdownSelection timestamp="2025-08-08T18:48:52.896938992Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/home/luizzy/.android/avd/Pixel_9_Pro_XL.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/home/luizzy/.android/avd/Pixel.avd" />
             </handle>
           </Target>
         </DropdownSelection>

@@ -4,17 +4,10 @@ import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -28,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -132,7 +124,6 @@ fun ItemsListScreen(
 
     Scaffold(
         Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.navigationBars),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -163,20 +154,20 @@ fun ItemsListScreen(
             )
         },
         bottomBar = {
-            BannerAdView(modifier = Modifier.safeDrawingPadding())
+            BannerAdView()
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             when (val uiState = viewModel.uiState.collectAsState().value) {
                 is UiState.Loading -> {
-                    LoadingIndicator(modifier = Modifier.align(Alignment.Center))
+                    LoadingIndicator(modifier = Modifier.align(Alignment.Center).padding(paddingValues))
                 }
 
                 is UiState.Error -> {
                     ErrorMessage(
                         message = stringResource(R.string.failed_to_fetch_games_please_try_again_later),
                         onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                        modifier = Modifier.align(Alignment.Center),
+                        modifier = Modifier.align(Alignment.Center).padding(paddingValues),
                     )
                 }
 
@@ -186,12 +177,11 @@ fun ItemsListScreen(
                         ErrorMessage(
                             message = stringResource(R.string.no_games_found_for_the_selected_date),
                             onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                            modifier = Modifier.align(Alignment.Center),
+                            modifier = Modifier.align(Alignment.Center).padding(paddingValues),
                         )
                     } else {
                         LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().padding(paddingValues),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(items) { item ->

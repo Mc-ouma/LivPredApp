@@ -124,11 +124,13 @@ package com.soccertips.predictx
                     Timber.d("App has been initialized before, ready for ads")
                 }
 
+                // Initialize Mobile Ads as early as possible
+                CoroutineScope(Dispatchers.Main).launch {
+                    initializeMobileAds()
+                }
 
                 CoroutineScope(Dispatchers.IO).launch {
                     preloadRepository.preloadCategoryData()
-                    // Initialize Mobile Ads on a background thread
-                    initializeMobileAds()
                 }
                 registerActivityLifecycleCallbacks(this)
             }
@@ -138,9 +140,11 @@ package com.soccertips.predictx
                     MobileAds.initialize(this@App) { initializationStatus ->
                         Timber.d("MobileAds initialized with status: $initializationStatus")
 
-                        // Setup app open ad manager on the main thread after initialization
+                        // Setup and preload app open ad manager on the main thread after initialization
                         CoroutineScope(Dispatchers.Main).launch {
                             setupAppOpenAdManager()
+                            // Preload the first ad
+                            appOpenAdManager.loadAppOpenAd()
                         }
 
                         // Mark Mobile Ads as initialized

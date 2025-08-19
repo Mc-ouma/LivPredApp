@@ -32,11 +32,11 @@ import com.google.android.gms.ads.rewarded.RewardItem
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.soccertips.predictx.R
-import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.pow
+import timber.log.Timber
 
 // Global singleton to track ad state across different ad types
 @Singleton
@@ -58,50 +58,51 @@ class AdStateManager @Inject constructor() {
 
 @Composable
 fun BannerAdView(
-    modifier: Modifier = Modifier,
-    adUnitId: String = stringResource(R.string.banner_id) // Test banner ID
+        modifier: Modifier = Modifier,
+        adUnitId: String = stringResource(R.string.banner_id) // Test banner ID
 ) {
     val context = LocalContext.current
     AndroidView(
-        modifier = modifier
-            .fillMaxWidth()
-            // Add WindowInsets.navigationBars padding to avoid overlap with navigation buttons
-            .windowInsetsPadding(
-                androidx.compose.foundation.layout.WindowInsets.navigationBars
-            ),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360))
-                this.adUnitId = adUnitId
-                loadAd(AdRequest.Builder().build())
+            modifier =
+                    modifier.fillMaxWidth()
+                            // Add WindowInsets.navigationBars padding to avoid overlap with
+                            // navigation buttons
+                            .windowInsetsPadding(
+                                    androidx.compose.foundation.layout.WindowInsets.navigationBars
+                            ),
+            factory = { factoryContext ->
+                AdView(factoryContext).apply {
+                    setAdSize(
+                            AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
+                    )
+                    this.adUnitId = adUnitId
+                    loadAd(AdRequest.Builder().build())
+                }
             }
-        }
     )
 }
 
 @Composable
 fun InlineBannerAdView(
-    modifier: Modifier = Modifier,
-    adUnitId: String = stringResource(R.string.banner_id)
+        modifier: Modifier = Modifier,
+        adUnitId: String = stringResource(R.string.banner_id)
 ) {
     val context = LocalContext.current
     AndroidView(
-        modifier = modifier.fillMaxWidth(),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, 360))
-                this.adUnitId = adUnitId
-                loadAd(AdRequest.Builder().build())
+            modifier = modifier.fillMaxWidth(),
+            factory = { factoryContext ->
+                AdView(factoryContext).apply {
+                    setAdSize(AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, 360))
+                    this.adUnitId = adUnitId
+                    loadAd(AdRequest.Builder().build())
+                }
             }
-        }
     )
 }
 
 class InterstitialAdManager
-@Inject constructor(
-    private val context: Context,
-    private val adStateManager: AdStateManager
-) {
+@Inject
+constructor(private val context: Context, private val adStateManager: AdStateManager) {
     private var interstitialAd: InterstitialAd? = null
     private val adUnitId = context.getString(R.string.interstitial_id) // Test interstitial ID
 
@@ -148,68 +149,76 @@ class InterstitialAdManager
         Timber.tag("InterstitialAd").d("Starting to load interstitial ad...")
 
         // Choose the appropriate context for loading
-        val contextToUse = if (useActivityContextForLoading && currentActivityContext != null) {
-            Timber.tag("InterstitialAd").d("Using Activity context for ad loading")
-            currentActivityContext!!
-        } else {
-            // Fall back to the provided context (typically Application)
-            if (useActivityContextForLoading) {
-                Timber.tag("InterstitialAd")
-                    .w("Activity context requested but not available, using default context")
-            }
-            context
-        }
+        val contextToUse =
+                if (useActivityContextForLoading && currentActivityContext != null) {
+                    Timber.tag("InterstitialAd").d("Using Activity context for ad loading")
+                    currentActivityContext!!
+                } else {
+                    // Fall back to the provided context (typically Application)
+                    if (useActivityContextForLoading) {
+                        Timber.tag("InterstitialAd")
+                                .w(
+                                        "Activity context requested but not available, using default context"
+                                )
+                    }
+                    context
+                }
 
         InterstitialAd.load(
-            contextToUse,
-            adUnitId,
-            AdRequest.Builder().build(),
-            object : InterstitialAdLoadCallback() {
-                override fun onAdLoaded(ad: InterstitialAd) {
-                    Timber.tag("InterstitialAd").d("Ad loaded successfully")
-                    interstitialAd = ad
-                    isAdLoading = false
-                    retryAttempt = 0 // Reset retry counter on success
+                contextToUse,
+                adUnitId,
+                AdRequest.Builder().build(),
+                object : InterstitialAdLoadCallback() {
+                    override fun onAdLoaded(ad: InterstitialAd) {
+                        Timber.tag("InterstitialAd").d("Ad loaded successfully")
+                        interstitialAd = ad
+                        isAdLoading = false
+                        retryAttempt = 0 // Reset retry counter on success
 
-                    ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                        override fun onAdShowedFullScreenContent() {
-                            Timber.tag("InterstitialAd").d("Ad showed full screen content")
-                            adStateManager.setFullScreenAdShowing(true)
-                        }
+                        ad.fullScreenContentCallback =
+                                object : FullScreenContentCallback() {
+                                    override fun onAdShowedFullScreenContent() {
+                                        Timber.tag("InterstitialAd")
+                                                .d("Ad showed full screen content")
+                                        adStateManager.setFullScreenAdShowing(true)
+                                    }
 
-                        override fun onAdDismissedFullScreenContent() {
-                            Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
-                            adStateManager.setFullScreenAdShowing(false)
-                            interstitialAd = null
-                            loadInterstitialAd() // Load a new ad for next time
-                        }
+                                    override fun onAdDismissedFullScreenContent() {
+                                        Timber.tag("InterstitialAd")
+                                                .d("Ad dismissed full screen content")
+                                        adStateManager.setFullScreenAdShowing(false)
+                                        interstitialAd = null
+                                        loadInterstitialAd() // Load a new ad for next time
+                                    }
 
-                        override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                            Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message}")
-                            adStateManager.setFullScreenAdShowing(false)
-                            interstitialAd = null
+                                    override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                                        Timber.tag("InterstitialAd")
+                                                .e("Failed to show ad: ${error.message}")
+                                        adStateManager.setFullScreenAdShowing(false)
+                                        interstitialAd = null
+                                    }
+                                }
+                    }
+
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        Timber.tag("InterstitialAd").e("Failed to load ad: ${error.message}")
+                        interstitialAd = null
+                        isAdLoading = false
+                        retryAttempt++
+
+                        val maxRetries = 5
+                        if (retryAttempt <= maxRetries) {
+                            val delay = TimeUnit.SECONDS.toMillis(2.0.pow(retryAttempt).toLong())
+                            Timber.tag("InterstitialAd")
+                                    .d("Retrying ad load in ${delay}ms (attempt $retryAttempt)")
+                            Handler(Looper.getMainLooper())
+                                    .postDelayed({ loadInterstitialAd() }, delay)
+                        } else {
+                            Timber.tag("InterstitialAd")
+                                    .e("Exceeded max retry attempts for ad loading.")
                         }
                     }
                 }
-
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    Timber.tag("InterstitialAd").e("Failed to load ad: ${error.message}")
-                    interstitialAd = null
-                    isAdLoading = false
-                    retryAttempt++
-
-                    val maxRetries = 5
-                    if (retryAttempt <= maxRetries) {
-                        val delay = TimeUnit.SECONDS.toMillis(2.0.pow(retryAttempt).toLong())
-                        Timber.tag("InterstitialAd")
-                            .d("Retrying ad load in ${delay}ms (attempt $retryAttempt)")
-                        Handler(Looper.getMainLooper()).postDelayed({ loadInterstitialAd() }, delay)
-                    } else {
-                        Timber.tag("InterstitialAd")
-                            .e("Exceeded max retry attempts for ad loading.")
-                    }
-                }
-            }
         )
     }
 
@@ -217,7 +226,7 @@ class InterstitialAdManager
         // Don't show if another full screen ad is showing
         if (adStateManager.isFullScreenAdShowing()) {
             Timber.tag("InterstitialAd")
-                .d("Skipped showing ad because another full screen ad is already showing")
+                    .d("Skipped showing ad because another full screen ad is already showing")
             return
         }
 
@@ -229,36 +238,37 @@ class InterstitialAdManager
         }
 
         // Configure the ad for proper edge-to-edge display
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdShowedFullScreenContent() {
-                Timber.tag("InterstitialAd").d("Ad showed full screen content")
-                adStateManager.setFullScreenAdShowing(true)
+        ad.fullScreenContentCallback =
+                object : FullScreenContentCallback() {
+                    override fun onAdShowedFullScreenContent() {
+                        Timber.tag("InterstitialAd").d("Ad showed full screen content")
+                        adStateManager.setFullScreenAdShowing(true)
 
-                // Handle edge-to-edge display for the ad
-                handleEdgeToEdgeForAd(activity, true)
-            }
+                        // Handle edge-to-edge display for the ad
+                        handleEdgeToEdgeForAd(activity, true)
+                    }
 
-            override fun onAdDismissedFullScreenContent() {
-                Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
-                adStateManager.setFullScreenAdShowing(false)
+                    override fun onAdDismissedFullScreenContent() {
+                        Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
+                        adStateManager.setFullScreenAdShowing(false)
 
-                // Restore edge-to-edge display settings
-                handleEdgeToEdgeForAd(activity, false)
+                        // Restore edge-to-edge display settings
+                        handleEdgeToEdgeForAd(activity, false)
 
-                interstitialAd = null
-                loadInterstitialAd() // Load a new ad for next time
-            }
+                        interstitialAd = null
+                        loadInterstitialAd() // Load a new ad for next time
+                    }
 
-            override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message}")
-                adStateManager.setFullScreenAdShowing(false)
+                    override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                        Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message}")
+                        adStateManager.setFullScreenAdShowing(false)
 
-                // Restore edge-to-edge display settings
-                handleEdgeToEdgeForAd(activity, false)
+                        // Restore edge-to-edge display settings
+                        handleEdgeToEdgeForAd(activity, false)
 
-                interstitialAd = null
-            }
-        }
+                        interstitialAd = null
+                    }
+                }
 
         ad.show(activity)
     }
@@ -268,7 +278,7 @@ class InterstitialAdManager
         // Don't show if another full screen ad is showing
         if (adStateManager.isFullScreenAdShowing()) {
             Timber.tag("InterstitialAd")
-                .d("Skipped showing ad because another full screen ad is already showing")
+                    .d("Skipped showing ad because another full screen ad is already showing")
             onAdDismissed() // Execute callback immediately if we can't show the ad
             return
         }
@@ -282,42 +292,43 @@ class InterstitialAdManager
         }
 
         // Set a new callback that will trigger our navigation callback when ad is dismissed
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdShowedFullScreenContent() {
-                Timber.tag("InterstitialAd").d("Ad showed full screen content")
-                adStateManager.setFullScreenAdShowing(true)
+        ad.fullScreenContentCallback =
+                object : FullScreenContentCallback() {
+                    override fun onAdShowedFullScreenContent() {
+                        Timber.tag("InterstitialAd").d("Ad showed full screen content")
+                        adStateManager.setFullScreenAdShowing(true)
 
-                // Handle edge-to-edge display for the ad
-                handleEdgeToEdgeForAd(activity, true)
-            }
+                        // Handle edge-to-edge display for the ad
+                        handleEdgeToEdgeForAd(activity, true)
+                    }
 
-            override fun onAdDismissedFullScreenContent() {
-                Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
-                adStateManager.setFullScreenAdShowing(false)
+                    override fun onAdDismissedFullScreenContent() {
+                        Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
+                        adStateManager.setFullScreenAdShowing(false)
 
-                // Restore edge-to-edge display settings
-                handleEdgeToEdgeForAd(activity, false)
+                        // Restore edge-to-edge display settings
+                        handleEdgeToEdgeForAd(activity, false)
 
-                interstitialAd = null
-                loadInterstitialAd() // Load a new ad for next time
+                        interstitialAd = null
+                        loadInterstitialAd() // Load a new ad for next time
 
-                // Execute the provided callback when ad is dismissed
-                onAdDismissed()
-            }
+                        // Execute the provided callback when ad is dismissed
+                        onAdDismissed()
+                    }
 
-            override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message}")
-                adStateManager.setFullScreenAdShowing(false)
+                    override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                        Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message}")
+                        adStateManager.setFullScreenAdShowing(false)
 
-                // Restore edge-to-edge display settings
-                handleEdgeToEdgeForAd(activity, false)
+                        // Restore edge-to-edge display settings
+                        handleEdgeToEdgeForAd(activity, false)
 
-                interstitialAd = null
+                        interstitialAd = null
 
-                // Execute the provided callback when ad fails to show
-                onAdDismissed()
-            }
-        }
+                        // Execute the provided callback when ad fails to show
+                        onAdDismissed()
+                    }
+                }
 
         Timber.tag("InterstitialAd").d("Showing interstitial ad with callback")
         ad.show(activity)
@@ -332,7 +343,7 @@ class InterstitialAdManager
                 if (isAdShowing) {
                     controller?.hide(WindowInsets.Type.systemBars())
                     controller?.systemBarsBehavior =
-                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                            WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 } else {
                     // When ad is dismissed, restore system bars
                     controller?.show(WindowInsets.Type.systemBars())
@@ -342,14 +353,16 @@ class InterstitialAdManager
                 @Suppress("DEPRECATION")
                 if (isAdShowing) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                    window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                    window.decorView.systemUiVisibility =
+                            (View.SYSTEM_UI_FLAG_FULLSCREEN or
+                                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
                 } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                    window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+                    window.decorView.systemUiVisibility =
+                            (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
                 }
             }
         } catch (e: Exception) {
@@ -357,15 +370,12 @@ class InterstitialAdManager
         }
     }
 
-    fun isAdLoaded(): Boolean =
-        interstitialAd != null
-
+    fun isAdLoaded(): Boolean = interstitialAd != null
 }
 
-class RewardedAdManager @Inject constructor(
-    private val context: Context,
-    private val adStateManager: AdStateManager
-) {
+class RewardedAdManager
+@Inject
+constructor(private val context: Context, private val adStateManager: AdStateManager) {
     private var rewardedAd: RewardedAd? = null
     private val adUnitId = context.getString(R.string.reward) // Test rewarded ad ID
 
@@ -408,39 +418,41 @@ class RewardedAdManager @Inject constructor(
         Timber.tag("RewardedAd").d("Starting to load rewarded ad...")
 
         // Choose the appropriate context for loading
-        val contextToUse = if (useActivityContextForLoading && currentActivityContext != null) {
-            Timber.tag("RewardedAd").d("Using Activity context for ad loading")
-            currentActivityContext!!
-        } else {
-            // Fall back to the provided context (typically Application)
-            if (useActivityContextForLoading) {
-                Timber.tag("RewardedAd")
-                    .w("Activity context requested but not available, using default context")
-            }
-            context
-        }
+        val contextToUse =
+                if (useActivityContextForLoading && currentActivityContext != null) {
+                    Timber.tag("RewardedAd").d("Using Activity context for ad loading")
+                    currentActivityContext!!
+                } else {
+                    // Fall back to the provided context (typically Application)
+                    if (useActivityContextForLoading) {
+                        Timber.tag("RewardedAd")
+                                .w(
+                                        "Activity context requested but not available, using default context"
+                                )
+                    }
+                    context
+                }
 
         RewardedAd.load(
-            contextToUse,
-            adUnitId,
-            AdRequest.Builder().build(),
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: RewardedAd) {
-                    Timber.tag("RewardedAd").d("Rewarded ad loaded successfully")
-                    rewardedAd = ad
-                    isAdLoading = false
-                }
+                contextToUse,
+                adUnitId,
+                AdRequest.Builder().build(),
+                object : RewardedAdLoadCallback() {
+                    override fun onAdLoaded(ad: RewardedAd) {
+                        Timber.tag("RewardedAd").d("Rewarded ad loaded successfully")
+                        rewardedAd = ad
+                        isAdLoading = false
+                    }
 
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    Timber.tag("RewardedAd").e("Failed to load rewarded ad: ${error.message}")
-                    rewardedAd = null
-                    isAdLoading = false
-                    // Try to reload after a delay
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        loadRewardedAd()
-                    }, 60000) // Retry after 1 minute
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        Timber.tag("RewardedAd").e("Failed to load rewarded ad: ${error.message}")
+                        rewardedAd = null
+                        isAdLoading = false
+                        // Try to reload after a delay
+                        Handler(Looper.getMainLooper())
+                                .postDelayed({ loadRewardedAd() }, 60000) // Retry after 1 minute
+                    }
                 }
-            }
         )
     }
 
@@ -448,7 +460,7 @@ class RewardedAdManager @Inject constructor(
         // Don't show if another full screen ad is showing
         if (adStateManager.isFullScreenAdShowing()) {
             Timber.tag("RewardedAd")
-                .d("Skipped showing ad because another full screen ad is already showing")
+                    .d("Skipped showing ad because another full screen ad is already showing")
             return
         }
 
@@ -461,47 +473,48 @@ class RewardedAdManager @Inject constructor(
         Timber.tag("RewardedAd").d("Attempting to show rewarded ad now...")
 
         // Set up proper edge-to-edge handling for rewarded ads
-        rewardedAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdShowedFullScreenContent() {
-                Timber.tag("RewardedAd").d("Rewarded ad showed full screen content")
-                adStateManager.setFullScreenAdShowing(true)
+        rewardedAd?.fullScreenContentCallback =
+                object : FullScreenContentCallback() {
+                    override fun onAdShowedFullScreenContent() {
+                        Timber.tag("RewardedAd").d("Rewarded ad showed full screen content")
+                        adStateManager.setFullScreenAdShowing(true)
 
-                // Handle edge-to-edge display for the ad
-                handleEdgeToEdgeForAd(activity, true)
-            }
+                        // Handle edge-to-edge display for the ad
+                        handleEdgeToEdgeForAd(activity, true)
+                    }
 
-            override fun onAdDismissedFullScreenContent() {
-                Timber.tag("RewardedAd").d("Rewarded ad dismissed full screen content")
-                adStateManager.setFullScreenAdShowing(false)
+                    override fun onAdDismissedFullScreenContent() {
+                        Timber.tag("RewardedAd").d("Rewarded ad dismissed full screen content")
+                        adStateManager.setFullScreenAdShowing(false)
 
-                // Restore edge-to-edge display settings
-                handleEdgeToEdgeForAd(activity, false)
+                        // Restore edge-to-edge display settings
+                        handleEdgeToEdgeForAd(activity, false)
 
-                rewardedAd = null
-                loadRewardedAd() // Load a new ad for next time
-            }
+                        rewardedAd = null
+                        loadRewardedAd() // Load a new ad for next time
+                    }
 
-            override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                Timber.tag("RewardedAd")
-                    .e("Failed to show rewarded ad: ${error.message}")
-                adStateManager.setFullScreenAdShowing(false)
+                    override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                        Timber.tag("RewardedAd").e("Failed to show rewarded ad: ${error.message}")
+                        adStateManager.setFullScreenAdShowing(false)
 
-                // Restore edge-to-edge display settings
-                handleEdgeToEdgeForAd(activity, false)
+                        // Restore edge-to-edge display settings
+                        handleEdgeToEdgeForAd(activity, false)
 
-                rewardedAd = null
-                loadRewardedAd() // Preload the next ad
-            }
-        }
+                        rewardedAd = null
+                        loadRewardedAd() // Preload the next ad
+                    }
+                }
 
         rewardedAd?.show(activity) { rewardItem ->
             Timber.tag("RewardedAd")
-                .d("User earned reward: ${rewardItem.amount} ${rewardItem.type}")
+                    .d("User earned reward: ${rewardItem.amount} ${rewardItem.type}")
             onRewardEarned(rewardItem)
-        } ?: run {
-            Timber.tag("RewardedAd").e("The rewarded ad wasn't ready yet.")
-            loadRewardedAd() // Attempt to load a new ad if the current one is null
         }
+                ?: run {
+                    Timber.tag("RewardedAd").e("The rewarded ad wasn't ready yet.")
+                    loadRewardedAd() // Attempt to load a new ad if the current one is null
+                }
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -513,7 +526,7 @@ class RewardedAdManager @Inject constructor(
                 if (isAdShowing) {
                     controller?.hide(WindowInsets.Type.systemBars())
                     controller?.systemBarsBehavior =
-                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                            WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 } else {
                     controller?.show(WindowInsets.Type.systemBars())
                     controller?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_DEFAULT
@@ -522,14 +535,16 @@ class RewardedAdManager @Inject constructor(
                 @Suppress("DEPRECATION")
                 if (isAdShowing) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                    window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
-                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                    window.decorView.systemUiVisibility =
+                            (View.SYSTEM_UI_FLAG_FULLSCREEN or
+                                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
                 } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                    window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+                    window.decorView.systemUiVisibility =
+                            (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
                 }
             }
         } catch (e: Exception) {
@@ -548,11 +563,10 @@ class RewardedAdManager @Inject constructor(
     }
 }
 
-//AppOpenAd
-class AppOpenAdManager @Inject constructor(
-    private val context: Context,
-    private val adStateManager: AdStateManager
-) {
+// AppOpenAd
+class AppOpenAdManager
+@Inject
+constructor(private val context: Context, private val adStateManager: AdStateManager) {
     private var appOpenAd: AppOpenAd? = null
     private var isLoadingAd = false
     private var loadTime: Long = 0
@@ -592,9 +606,7 @@ class AppOpenAdManager @Inject constructor(
     // Track when the last ad was shown to prevent excessive ad displays
     private var lastAdDisplayTime: Long = 0
 
-    init {
-        loadAppOpenAd()
-    }
+    // Initial load is triggered explicitly by the application after user consent
 
     // Method to set the current activity context
     fun setActivityContext(activity: Activity?) {
@@ -633,13 +645,19 @@ class AppOpenAdManager @Inject constructor(
     }
 
     fun shouldShowAdOnAppStart(isFirstLaunch: Boolean): Boolean {
-        return showAdOnAppStart && !isFirstLaunch && isAdAvailable() &&
-                canShowAdBasedOnInterval() && !adStateManager.isFullScreenAdShowing()
+        return showAdOnAppStart &&
+                !isFirstLaunch &&
+                isAdAvailable() &&
+                canShowAdBasedOnInterval() &&
+                !adStateManager.isFullScreenAdShowing()
     }
 
     fun shouldShowAdOnAppResume(): Boolean {
-        return showAdOnAppResume && wasAppInBackground && isAdAvailable() &&
-                canShowAdBasedOnInterval() && !adStateManager.isFullScreenAdShowing()
+        return showAdOnAppResume &&
+                wasAppInBackground &&
+                isAdAvailable() &&
+                canShowAdBasedOnInterval() &&
+                !adStateManager.isFullScreenAdShowing()
     }
 
     private fun canShowAdBasedOnInterval(): Boolean {
@@ -656,90 +674,104 @@ class AppOpenAdManager @Inject constructor(
         val request = AdRequest.Builder().build()
 
         // Choose the appropriate context for loading
-        val contextToUse = if (useActivityContextForLoading && currentActivityContext != null) {
-            Timber.tag("AppOpenAd").d("Using Activity context for ad loading")
-            currentActivityContext!!
-        } else {
-            // Fall back to the provided context (typically Application)
-            if (useActivityContextForLoading) {
-                Timber.tag("AppOpenAd")
-                    .w("Activity context requested but not available, using default context")
-            }
-            context
-        }
+        val contextToUse =
+                if (useActivityContextForLoading && currentActivityContext != null) {
+                    Timber.tag("AppOpenAd").d("Using Activity context for ad loading")
+                    currentActivityContext!!
+                } else {
+                    // Fall back to the provided context (typically Application)
+                    if (useActivityContextForLoading) {
+                        Timber.tag("AppOpenAd")
+                                .w(
+                                        "Activity context requested but not available, using default context"
+                                )
+                    }
+                    context
+                }
 
         AppOpenAd.load(
-            contextToUse,
-            adUnitId,
-            request,
-            object : AppOpenAdLoadCallback() {
-                override fun onAdLoaded(ad: AppOpenAd) {
-                    Timber.tag("AppOpenAd").d("App open ad loaded")
-                    appOpenAd = ad
-                    isLoadingAd = false
-                    loadTime = System.currentTimeMillis()
+                contextToUse,
+                adUnitId,
+                request,
+                object : AppOpenAdLoadCallback() {
+                    override fun onAdLoaded(ad: AppOpenAd) {
+                        Timber.tag("AppOpenAd").d("App open ad loaded")
+                        appOpenAd = ad
+                        isLoadingAd = false
+                        loadTime = System.currentTimeMillis()
 
-                    ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-                        override fun onAdDismissedFullScreenContent() {
-                            Timber.tag("AppOpenAd").d("App open ad dismissed")
-                            adStateManager.setFullScreenAdShowing(false)
-                            appOpenAd = null
-                            loadAppOpenAd() // Load next ad
-                        }
+                        ad.fullScreenContentCallback =
+                                object : FullScreenContentCallback() {
+                                    override fun onAdDismissedFullScreenContent() {
+                                        Timber.tag("AppOpenAd").d("App open ad dismissed")
+                                        adStateManager.setFullScreenAdShowing(false)
+                                        appOpenAd = null
+                                        loadAppOpenAd() // Load next ad
+                                    }
 
-                        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                            Timber.tag("AppOpenAd")
-                                .d("App open ad failed to show: ${adError.message}")
-                            adStateManager.setFullScreenAdShowing(false)
-                            adFailureListener?.invoke(adError.message)
-                            appOpenAd = null
-                            loadAppOpenAd()
-                        }
+                                    override fun onAdFailedToShowFullScreenContent(
+                                            adError: AdError
+                                    ) {
+                                        Timber.tag("AppOpenAd")
+                                                .d("App open ad failed to show: ${adError.message}")
+                                        adStateManager.setFullScreenAdShowing(false)
+                                        adFailureListener?.invoke(adError.message)
+                                        appOpenAd = null
+                                        loadAppOpenAd()
+                                    }
 
-                        override fun onAdShowedFullScreenContent() {
-                            Timber.tag("AppOpenAd").d("App open ad showed")
-                            adStateManager.setFullScreenAdShowing(true)
-                            lastAdDisplayTime = System.currentTimeMillis()
-                            wasAppInBackground = false
-                            adImpressionListener?.invoke()
-                        }
+                                    override fun onAdShowedFullScreenContent() {
+                                        Timber.tag("AppOpenAd").d("App open ad showed")
+                                        adStateManager.setFullScreenAdShowing(true)
+                                        lastAdDisplayTime = System.currentTimeMillis()
+                                        wasAppInBackground = false
+                                        adImpressionListener?.invoke()
+                                    }
 
-                        override fun onAdImpression() {
-                            Timber.tag("AppOpenAd").d("App open ad impression recorded")
-                            adImpressionListener?.invoke()
+                                    override fun onAdImpression() {
+                                        Timber.tag("AppOpenAd").d("App open ad impression recorded")
+                                        adImpressionListener?.invoke()
+                                    }
+                                }
+                    }
+
+                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                        Timber.tag("AppOpenAd")
+                                .d("App open ad failed to load: ${loadAdError.message}")
+                        adFailureListener?.invoke(loadAdError.message)
+                        isLoadingAd = false
+
+                        // Retry loading after a delay if error is retryable
+                        if (loadAdError.code != 2 /* NETWORK_ERROR */ &&
+                                        loadAdError.code != 3 /* NO_FILL */
+                        ) {
+                            scheduleAdLoadRetry()
                         }
                     }
                 }
-
-                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    Timber.tag("AppOpenAd").d("App open ad failed to load: ${loadAdError.message}")
-                    adFailureListener?.invoke(loadAdError.message)
-                    isLoadingAd = false
-
-                    // Retry loading after a delay if error is retryable
-                    if (loadAdError.code != 2 /* NETWORK_ERROR */ &&
-                        loadAdError.code != 3 /* NO_FILL */) {
-                        scheduleAdLoadRetry()
-                    }
-                }
-            }
         )
     }
 
     private fun scheduleAdLoadRetry() {
         // Retry loading the ad after a delay
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (!isAdAvailable() && !isLoadingAd) {
-                loadAppOpenAd()
-            }
-        }, 60000) // Retry after 1 minute
+        Handler(Looper.getMainLooper())
+                .postDelayed(
+                        {
+                            if (!isAdAvailable() && !isLoadingAd) {
+                                loadAppOpenAd()
+                            }
+                        },
+                        60000
+                ) // Retry after 1 minute
     }
 
     fun showAdIfAvailable(activity: Activity, onShowAdCompleteListener: () -> Unit) {
         // Check if any other full screen ad is currently showing
         if (adStateManager.isFullScreenAdShowing()) {
             Timber.tag("AppOpenAd")
-                .d("Skipped showing app open ad because another full screen ad is already showing")
+                    .d(
+                            "Skipped showing app open ad because another full screen ad is already showing"
+                    )
             onShowAdCompleteListener()
             return
         }
@@ -759,37 +791,38 @@ class AppOpenAdManager @Inject constructor(
         }
 
         // Set callback to be triggered after ad is dismissed
-        appOpenAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() {
-                Timber.tag("AppOpenAd").d("App open ad dismissed")
-                adStateManager.setFullScreenAdShowing(false)
-                appOpenAd = null
-                onShowAdCompleteListener()
-                loadAppOpenAd() // Load next ad
-            }
+        appOpenAd?.fullScreenContentCallback =
+                object : FullScreenContentCallback() {
+                    override fun onAdDismissedFullScreenContent() {
+                        Timber.tag("AppOpenAd").d("App open ad dismissed")
+                        adStateManager.setFullScreenAdShowing(false)
+                        appOpenAd = null
+                        onShowAdCompleteListener()
+                        loadAppOpenAd() // Load next ad
+                    }
 
-            override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                Timber.tag("AppOpenAd").d("App open ad failed to show: ${adError.message}")
-                adStateManager.setFullScreenAdShowing(false)
-                adFailureListener?.invoke(adError.message)
-                appOpenAd = null
-                onShowAdCompleteListener()
-                loadAppOpenAd()
-            }
+                    override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+                        Timber.tag("AppOpenAd").d("App open ad failed to show: ${adError.message}")
+                        adStateManager.setFullScreenAdShowing(false)
+                        adFailureListener?.invoke(adError.message)
+                        appOpenAd = null
+                        onShowAdCompleteListener()
+                        loadAppOpenAd()
+                    }
 
-            override fun onAdShowedFullScreenContent() {
-                Timber.tag("AppOpenAd").d("App open ad showed")
-                adStateManager.setFullScreenAdShowing(true)
-                lastAdDisplayTime = System.currentTimeMillis()
-                wasAppInBackground = false
-                adImpressionListener?.invoke()
-            }
+                    override fun onAdShowedFullScreenContent() {
+                        Timber.tag("AppOpenAd").d("App open ad showed")
+                        adStateManager.setFullScreenAdShowing(true)
+                        lastAdDisplayTime = System.currentTimeMillis()
+                        wasAppInBackground = false
+                        adImpressionListener?.invoke()
+                    }
 
-            override fun onAdImpression() {
-                Timber.tag("AppOpenAd").d("App open ad impression recorded")
-                adImpressionListener?.invoke()
-            }
-        }
+                    override fun onAdImpression() {
+                        Timber.tag("AppOpenAd").d("App open ad impression recorded")
+                        adImpressionListener?.invoke()
+                    }
+                }
 
         Timber.tag("AppOpenAd").d("Showing app open ad")
         appOpenAd?.show(activity)

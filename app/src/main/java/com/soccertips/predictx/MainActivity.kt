@@ -39,31 +39,26 @@ import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     // Admob
-    @Inject
-    lateinit var interstitialAdManager: InterstitialAdManager
+    @Inject lateinit var interstitialAdManager: InterstitialAdManager
 
-    @Inject
-    lateinit var rewardedAdManager: RewardedAdManager
+    @Inject lateinit var rewardedAdManager: RewardedAdManager
 
-    @Inject
-    lateinit var adStateManager: AdStateManager
+    @Inject lateinit var adStateManager: AdStateManager
 
     // Lazy initialize Firebase Analytics to prevent main thread blocking
-    private val analytics: FirebaseAnalytics by lazy {
-        FirebaseAnalytics.getInstance(this)
-    }
+    private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(this) }
 
     // In-app update manager
     private val appUpdateManager by lazy { AppUpdateManagerFactory.create(this) }
@@ -75,9 +70,7 @@ class MainActivity : ComponentActivity() {
     // Cache review info
     private var cachedReviewInfo: ReviewInfo? = null
 
-    val sharedPrefs by lazy {
-        getSharedPreferences("app_prefs", MODE_PRIVATE)
-    }
+    val sharedPrefs by lazy { getSharedPreferences("app_prefs", MODE_PRIVATE) }
 
     companion object {
         private const val UPDATE_REQUEST_CODE = 100
@@ -94,6 +87,15 @@ class MainActivity : ComponentActivity() {
         // Configure ad managers - lightweight operation
         setupAdManagers()
 
+        // Count app launches for in-app review cadence
+        try {
+            val launches = sharedPrefs.getInt("app_launch_count", 0) + 1
+            sharedPrefs.edit { putInt("app_launch_count", launches) }
+            Timber.d("App launch count updated: $launches")
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to update app launch count")
+        }
+
         // Set content first to improve perceived performance
         setContent {
             val snackbarHostState = remember { SnackbarHostState() }
@@ -101,13 +103,13 @@ class MainActivity : ComponentActivity() {
 
             PredictXTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surface
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.surface
                 ) {
                     AppNavigation(
-                        fixtureId = fixtureId.value,
-                        interstitialAdManager = interstitialAdManager,
-                        rewardedAdManager = rewardedAdManager,
+                            fixtureId = fixtureId.value,
+                            interstitialAdManager = interstitialAdManager,
+                            rewardedAdManager = rewardedAdManager,
                     )
                 }
 
@@ -124,9 +126,7 @@ class MainActivity : ComponentActivity() {
             delay(500) // Ensure UI is responsive first
 
             // Check permissions on main thread after UI is shown
-            withContext(Dispatchers.Main) {
-                checkPermissions()
-            }
+            withContext(Dispatchers.Main) { checkPermissions() }
 
             // Background operations
             prefetchReviewInfoAsync()
@@ -188,37 +188,33 @@ class MainActivity : ComponentActivity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
+                            PackageManager.PERMISSION_GRANTED
             ) {
-                requestPermissions(
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    1
-                )
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
             }
         }
     }
 
     private fun checkForUpdatesIfNeeded() {
         if (shouldCheckForUpdates()) {
-            lifecycleScope.launch(Dispatchers.IO) {
-                checkForAppUpdates()
-            }
+            lifecycleScope.launch(Dispatchers.IO) { checkForAppUpdates() }
         }
     }
 
     @Composable
     private fun UpdateSnackbarHandler(
-        snackbarHostState: SnackbarHostState,
-        scope: kotlinx.coroutines.CoroutineScope
+            snackbarHostState: SnackbarHostState,
+            scope: kotlinx.coroutines.CoroutineScope
     ) {
         val updateListener = remember {
             InstallStateUpdatedListener { state ->
                 if (state.installStatus() == InstallStatus.DOWNLOADED) {
                     scope.launch {
-                        val result = snackbarHostState.showSnackbar(
-                            message = "An update has just been downloaded.",
-                            actionLabel = "RESTART",
-                        )
+                        val result =
+                                snackbarHostState.showSnackbar(
+                                        message = "An update has just been downloaded.",
+                                        actionLabel = "RESTART",
+                                )
                         if (result == SnackbarResult.ActionPerformed) {
                             appUpdateManager.completeUpdate()
                         }
@@ -246,12 +242,10 @@ class MainActivity : ComponentActivity() {
                 // Handled by the UpdateSnackbarHandler composable
                 Timber.d("Update downloaded")
             }
-
             InstallStatus.FAILED -> {
                 Timber.e("Update failed: ${state.installErrorCode()}")
                 sharedPrefs.edit { putLong("last_update_check", 0) }
             }
-
             else -> Timber.d("Update status: ${state.installStatus()}")
         }
     }
@@ -268,22 +262,26 @@ class MainActivity : ComponentActivity() {
                 sharedPrefs.edit { putLong("last_update_check", System.currentTimeMillis()) }
 
                 val isUpdateAvailable =
-                    appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                        appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
                 val isUpdateTypeAllowed = appUpdateInfo.isUpdateTypeAllowed(UPDATE_TYPE)
                 val stalenessDays = appUpdateInfo.clientVersionStalenessDays() ?: 0
 
-                val updateOptions = AppUpdateOptions.newBuilder(
-                    if (stalenessDays > 5) AppUpdateType.IMMEDIATE else UPDATE_TYPE
-                ).setAllowAssetPackDeletion(true).build()
+                val updateOptions =
+                        AppUpdateOptions.newBuilder(
+                                        if (stalenessDays > 5) AppUpdateType.IMMEDIATE
+                                        else UPDATE_TYPE
+                                )
+                                .setAllowAssetPackDeletion(true)
+                                .build()
 
                 if (isUpdateAvailable && isUpdateTypeAllowed) {
                     lifecycleScope.launch(Dispatchers.Main) {
                         try {
                             appUpdateManager.startUpdateFlowForResult(
-                                appUpdateInfo,
-                                this@MainActivity,
-                                updateOptions,
-                                UPDATE_REQUEST_CODE
+                                    appUpdateInfo,
+                                    this@MainActivity,
+                                    updateOptions,
+                                    UPDATE_REQUEST_CODE
                             )
                             logAnalyticsEvent("update_flow_started", stalenessDays)
                         } catch (e: Exception) {
@@ -305,17 +303,17 @@ class MainActivity : ComponentActivity() {
             if (reviewInfo != null) {
                 launchReviewFlow(reviewInfo)
             } else {
-                reviewManager.requestReviewFlow()
-                    .addOnSuccessListener { launchReviewFlow(it) }
-                    .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
+                reviewManager
+                        .requestReviewFlow()
+                        .addOnSuccessListener { launchReviewFlow(it) }
+                        .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
             }
         }
     }
 
     private fun shouldShowReview(): Boolean {
         val lastReviewTime = sharedPrefs.getLong("last_review_time", 0)
-        val appLaunchCount = sharedPrefs.getInt("app_launch_count", 0) + 1
-        sharedPrefs.edit { putInt("app_launch_count", appLaunchCount) }
+        val appLaunchCount = sharedPrefs.getInt("app_launch_count", 0)
 
         val now = System.currentTimeMillis()
         val daysSinceLastReview = TimeUnit.MILLISECONDS.toDays(now - lastReviewTime)
@@ -326,11 +324,10 @@ class MainActivity : ComponentActivity() {
 
     private fun launchReviewFlow(reviewInfo: ReviewInfo) {
         try {
-            reviewManager.launchReviewFlow(this, reviewInfo)
-                .addOnCompleteListener {
-                    sharedPrefs.edit { putLong("last_review_time", System.currentTimeMillis()) }
-                    logAnalyticsEvent("review_flow_completed")
-                }
+            reviewManager.launchReviewFlow(this, reviewInfo).addOnCompleteListener {
+                sharedPrefs.edit { putLong("last_review_time", System.currentTimeMillis()) }
+                logAnalyticsEvent("review_flow_completed")
+            }
         } catch (e: Exception) {
             Timber.e(e, "Error launching review flow")
         }
@@ -338,9 +335,10 @@ class MainActivity : ComponentActivity() {
 
     private fun logAnalyticsEvent(name: String, stalenessDays: Int = 0) {
         try {
-            val bundle = Bundle().apply {
-                if (stalenessDays > 0) putInt("staleness_days", stalenessDays)
-            }
+            val bundle =
+                    Bundle().apply {
+                        if (stalenessDays > 0) putInt("staleness_days", stalenessDays)
+                    }
             analytics.logEvent(name, bundle)
         } catch (e: Exception) {
             Timber.e(e, "Failed to log analytics event: $name")
@@ -359,17 +357,17 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch(Dispatchers.IO) {
                 appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
                     if (appUpdateInfo.updateAvailability() ==
-                        UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+                                    UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
                     ) {
                         lifecycleScope.launch(Dispatchers.Main) {
                             try {
                                 appUpdateManager.startUpdateFlowForResult(
-                                    appUpdateInfo,
-                                    this@MainActivity,
-                                    AppUpdateOptions.newBuilder(UPDATE_TYPE)
-                                        .setAllowAssetPackDeletion(true)
-                                        .build(),
-                                    UPDATE_REQUEST_CODE
+                                        appUpdateInfo,
+                                        this@MainActivity,
+                                        AppUpdateOptions.newBuilder(UPDATE_TYPE)
+                                                .setAllowAssetPackDeletion(true)
+                                                .build(),
+                                        UPDATE_REQUEST_CODE
                                 )
                             } catch (e: Exception) {
                                 Timber.e(e, "Failed to resume update")
@@ -392,14 +390,16 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun showExactAlarmPermissionDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Exact Alarm Permission Required")
-            .setMessage("This app requires permission to schedule exact alarms. Please grant the permission in the settings.")
-            .setPositiveButton("Go to Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                startActivity(intent)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+                .setTitle("Exact Alarm Permission Required")
+                .setMessage(
+                        "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
+                )
+                .setPositiveButton("Go to Settings") { _, _ ->
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    startActivity(intent)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -407,9 +407,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
 
-        lifecycleScope.launch(Dispatchers.Default) {
-            intent?.let { handleNotificationIntent(it) }
-        }
+        lifecycleScope.launch(Dispatchers.Default) { intent?.let { handleNotificationIntent(it) } }
     }
 
     private fun handleNotificationIntent(intent: Intent) {
@@ -424,11 +422,9 @@ class MainActivity : ComponentActivity() {
                         notificationType == "betting_success" -> {
                     handleBettingSuccessIntent(intent)
                 }
-
                 action == "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" -> {
                     handleBettingHistoryIntent(intent)
                 }
-
                 action == "com.soccertips.predictx.ACTION_VIEW_MATCH" -> {
                     handleMatchIntent(intent)
                 }
@@ -471,13 +467,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showBettingSuccessDialog(
-        date: String, matchCount: String, winCount: String,
-        successRate: String, matchesDetails: String, summary: String
+            date: String,
+            matchCount: String,
+            winCount: String,
+            successRate: String,
+            matchesDetails: String,
+            summary: String
     ) {
         AlertDialog.Builder(this)
-            .setTitle("🎉 Perfect Betting Day!")
-            .setMessage(
-                """
+                .setTitle("🎉 Perfect Betting Day!")
+                .setMessage(
+                        """
                     📅 Date: $date
                     🏆 Matches Won: $winCount/$matchCount
                     🎯 Success Rate: $successRate%
@@ -487,21 +487,20 @@ class MainActivity : ComponentActivity() {
                     📋 Match Results:
                     $matchesDetails
                     """.trimIndent()
-            )
-            .setPositiveButton("View History") { _, _ ->
-                handleBettingHistoryIntent(Intent().apply {
-                    putExtra("filter_date", date)
-                })
-            }
-            .setNegativeButton("Share Success") { _, _ ->
-                shareSuccess(matchCount, successRate, date)
-            }
-            .setNeutralButton("Close", null)
-            .show()
+                )
+                .setPositiveButton("View History") { _, _ ->
+                    handleBettingHistoryIntent(Intent().apply { putExtra("filter_date", date) })
+                }
+                .setNegativeButton("Share Success") { _, _ ->
+                    shareSuccess(matchCount, successRate, date)
+                }
+                .setNeutralButton("Close", null)
+                .show()
     }
 
     private fun shareSuccess(matchCount: String, successRate: String, date: String) {
-        val shareText = """
+        val shareText =
+                """
                 🎉 Perfect Betting Day! 🎉
     
                 📅 Date: $date
@@ -511,23 +510,34 @@ class MainActivity : ComponentActivity() {
                 #BettingSuccess #PerfectDay #SoccerTips
             """.trimIndent()
 
-        startActivity(Intent.createChooser(Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, shareText)
-        }, "Share Betting Success"))
+        startActivity(
+                Intent.createChooser(
+                        Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                        },
+                        "Share Betting Success"
+                )
+        )
     }
 
     private fun logBettingSuccessEvent(
-        date: String, matchCount: String, winCount: String, successRate: String
+            date: String,
+            matchCount: String,
+            winCount: String,
+            successRate: String
     ) {
         try {
-            analytics.logEvent("betting_success_notification", Bundle().apply {
-                putString("date", date)
-                putLong("match_count", matchCount.toLongOrNull() ?: 0L)
-                putLong("win_count", winCount.toLongOrNull() ?: 0L)
-                putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
-            })
+            analytics.logEvent(
+                    "betting_success_notification",
+                    Bundle().apply {
+                        putString("date", date)
+                        putLong("match_count", matchCount.toLongOrNull() ?: 0L)
+                        putLong("win_count", winCount.toLongOrNull() ?: 0L)
+                        putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
+                    }
+            )
         } catch (e: Exception) {
             Timber.e(e, "Failed to log betting success event")
         }

@@ -41,7 +41,7 @@ data class TeamInfo(
 
 data class PlayerInfo(
     val id: Int?,
-    val name: String,
+    val name: String?,
 )
 
 data class AssistInfo(

@@ -16,6 +16,7 @@ import com.soccertips.predictx.notification.NotificationHelper
 import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.repository.PreloadRepository
 import com.soccertips.predictx.util.NetworkTaggingInitializer
+import com.soccertips.predictx.util.StartupTimeTracker
 import com.soccertips.predictx.util.StrictModeUtil
 import dagger.hilt.android.HiltAndroidApp
 import java.io.IOException
@@ -49,6 +50,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     @Inject lateinit var appOpenAdManager: AppOpenAdManager
 
+    @Inject lateinit var startupTimeTracker: StartupTimeTracker
+
     private var currentActivity: Activity? = null
 
     // Track app foreground status
@@ -77,50 +80,71 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     override fun onCreate() {
         super.onCreate()
 
+        // Record app start time for performance tracking
+        StartupTimeTracker.recordAppStart()
+
+        // Only essential initialization on main thread
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+
         // Initialize network tagging early to prevent socket violations
         networkTaggingInitializer.initialize()
 
-        initApiConfig()
-        initFirebaseMessaging()
+        // Register lifecycle callbacks immediately
+        registerActivityLifecycleCallbacks(this)
 
-        preloadRepository.setPredictionRepository(predictionRepository)
-
-        NotificationHelper.createNotificationChannels(this)
-
-        if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
-            StrictModeUtil.enableStrictModeForIntentViolations()
-
-            // Add StrictMode policy for edge-to-edge issues
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                StrictMode.setVmPolicy(
-                        StrictMode.VmPolicy.Builder(StrictMode.getVmPolicy())
-                                .detectAll()
-                                .penaltyLog()
-                                .build()
-                )
-            }
-        }
-
-        // Check if the app has been initialized before
+        // Check app initialization state quickly
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val appInitialized = prefs.getBoolean(KEY_APP_INITIALIZED, false)
+        isInitialAppStart = !appInitialized
 
         if (!appInitialized) {
-            // First time app initialization - mark it
             prefs.edit { putBoolean(KEY_APP_INITIALIZED, true) }
-            // Keep isInitialAppStart as true to avoid showing ads
-        } else {
-            // App has been initialized before, we can potentially show ads sooner
-            isInitialAppStart = false
-            Timber.d("App has been initialized before, ready for ads")
         }
 
-        // Initialize Mobile Ads as early as possible
-        CoroutineScope(Dispatchers.Main).launch { initializeMobileAds() }
+        // Defer heavy operations to background threads
+        CoroutineScope(Dispatchers.IO).launch { initializeInBackground() }
 
-        CoroutineScope(Dispatchers.IO).launch { preloadRepository.preloadCategoryData() }
-        registerActivityLifecycleCallbacks(this)
+        // Start Mobile Ads initialization on IO thread, setup on Main
+        CoroutineScope(Dispatchers.IO).launch { initializeMobileAds() }
+    }
+
+    private suspend fun initializeInBackground() {
+        withContext(Dispatchers.IO) {
+            // Initialize non-critical components in background
+            NotificationHelper.createNotificationChannels(this@App)
+
+            // Set up prediction repository dependency
+            preloadRepository.setPredictionRepository(predictionRepository)
+
+            // Initialize API config
+            initApiConfig()
+
+            // Initialize Firebase messaging with delay
+            delay(1000) // Let UI start first
+            initFirebaseMessaging()
+
+            // StrictMode for debug builds
+            if (BuildConfig.DEBUG) {
+                withContext(Dispatchers.Main) {
+                    StrictModeUtil.enableStrictModeForIntentViolations()
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        StrictMode.setVmPolicy(
+                                StrictMode.VmPolicy.Builder(StrictMode.getVmPolicy())
+                                        .detectAll()
+                                        .penaltyLog()
+                                        .build()
+                        )
+                    }
+                }
+            }
+
+            // Delay preloading until app UI is ready
+            delay(2000)
+            preloadRepository.preloadCategoryData()
+        }
     }
 
     private suspend fun initializeMobileAds() {
@@ -293,6 +317,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     override fun onActivityResumed(activity: Activity) {
         currentActivity = activity
+
+        // Record first frame for performance tracking (first activity resume)
+        if (isInitialAppStart) {
+            startupTimeTracker.recordFirstFrameRendered()
+        }
 
         // Update AppOpenAdManager with current activity context
         appOpenAdManager.setActivityContext(activity)

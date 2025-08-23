@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.content.edit
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -38,6 +39,7 @@ import com.soccertips.predictx.admob.AdStateManager
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
+import com.soccertips.predictx.util.StartupTimeTracker
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -81,22 +83,26 @@ class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Record process start time for cold start tracking
+        StartupTimeTracker.recordProcessStart()
+
+        // Install splash screen before super.onCreate()
+        val splashScreen = installSplashScreen()
+
+        // Keep splash visible while initialization is happening
+        var isReady = false
+        splashScreen.setKeepOnScreenCondition { !isReady }
+
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Configure ad managers - lightweight operation
+        // Only essential UI setup on main thread
         setupAdManagers()
 
-        // Count app launches for in-app review cadence
-        try {
-            val launches = sharedPrefs.getInt("app_launch_count", 0) + 1
-            sharedPrefs.edit { putInt("app_launch_count", launches) }
-            Timber.d("App launch count updated: $launches")
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to update app launch count")
-        }
+        // Count app launches for in-app review cadence (lightweight)
+        updateAppLaunchCount()
 
-        // Set content first to improve perceived performance
+        // Set content immediately for faster perceived performance
         setContent {
             val snackbarHostState = remember { SnackbarHostState() }
             val scope = rememberCoroutineScope()
@@ -118,18 +124,37 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Handle intent that launched the app - keep this lightweight
+        // Handle intent quickly without heavy processing
         handleInitialIntent(intent)
 
-        // Move heavy operations to background
-        lifecycleScope.launch(Dispatchers.Default) {
-            delay(500) // Ensure UI is responsive first
+        // Allow splash screen to dismiss after UI is set
+        isReady = true
 
-            // Check permissions on main thread after UI is shown
-            withContext(Dispatchers.Main) { checkPermissions() }
+        // Defer heavy initialization to background after UI is ready
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(100) // Minimal delay to ensure UI thread is free
+            initializeBackgroundComponents()
+        }
+    }
 
-            // Background operations
+    private fun updateAppLaunchCount() {
+        try {
+            val launches = sharedPrefs.getInt("app_launch_count", 0) + 1
+            sharedPrefs.edit { putInt("app_launch_count", launches) }
+            Timber.d("App launch count updated: $launches")
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to update app launch count")
+        }
+    }
+
+    private suspend fun initializeBackgroundComponents() {
+        withContext(Dispatchers.IO) {
+            // Prefetch review info early
             prefetchReviewInfoAsync()
+
+            // Check permissions after a short delay
+            delay(500)
+            withContext(Dispatchers.Main) { checkPermissions() }
 
             // Lower priority operations
             delay(1000)

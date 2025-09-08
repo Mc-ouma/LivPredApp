@@ -20,7 +20,7 @@ class FirebaseRepository @Inject constructor() {
     private val database = Firebase.database.reference
     // Use correct node names as defined in your DB structure
     private val categoriesRef = database.child("categories")
-    private val apiConfigRef = database.child("api-config") // Note: hyphen, not underscore
+    private val apiConfigRef = database.child("api-config")
 
     fun getCategories(): Flow<Result<List<Category>>> = callbackFlow {
         val listener = object : ValueEventListener {

@@ -138,7 +138,7 @@ fun FixtureScoreAndScorers(
                             if (matchStatusText.isNotEmpty()) {
                                 Text(
                                         text = matchStatusText,
-                                        fontSize = 14.sp,
+                                        fontSize = 12.sp,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(top = 4.dp),
                                         textAlign = TextAlign.Center,

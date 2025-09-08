@@ -79,7 +79,8 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
             android:theme="@style/Theme.App.AdActivity"
             android:hardwareAccelerated="true"
-            android:exported="false" />
+            android:exported="false"
+            tools:replace="android:theme" />
 
         <!-- Let the Google Mobile Ads SDK declare AdActivity via manifest merge to ensure correct
         theme/config -->

@@ -293,34 +293,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
             // Initialize MobileAds if not already done and consent allows it
             if (!isMobileAdsInitialized && canRequestAds) {
-                initializeMobileAds()
-            }
-        }
-    }
-
-    private fun initializeMobileAds() {
-        try {
-            MobileAds.initialize(this) { initializationStatus ->
-                Timber.d("MobileAds initialized with status: $initializationStatus")
-
-                // Setup app open ad manager
-                setupAppOpenAdManager()
-
-                // Mark Mobile Ads as initialized
-                isMobileAdsInitialized = true
-
-                // If this is not the first launch, allow ads
-                if (!isFirstLaunch()) {
-                    isInitialAppStart = false
-                    Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                CoroutineScope(Dispatchers.IO).launch {
+                    initializeMobileAds()
                 }
-
-                Timber.d(
-                        "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
-                )
             }
-        } catch (e: Exception) {
-            Timber.e("Error initializing MobileAds: ${e.message}")
         }
     }
 

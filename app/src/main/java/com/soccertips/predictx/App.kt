@@ -63,6 +63,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     // Track when Mobile Ads SDK has been initialized
     private var isMobileAdsInitialized = false
 
+    // Track if MobileAds initialization is in progress
+    private var isMobileAdsInitializing = false
+
     // Consent management
     private lateinit var consentInformation: ConsentInformation
 
@@ -82,6 +85,13 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
         // Record app start time for performance tracking
         StartupTimeTracker.recordAppStart()
+
+        // Set system property to help with ViewConfiguration issues
+        try {
+            System.setProperty("android.os.strictmode.checkContextForConfiguration", "false")
+        } catch (e: Exception) {
+            Timber.w("Could not set ViewConfiguration system property: ${e.message}")
+        }
 
         // Only essential initialization on main thread
         if (BuildConfig.DEBUG) {
@@ -106,8 +116,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Defer heavy operations to background threads
         CoroutineScope(Dispatchers.IO).launch { initializeInBackground() }
 
-        // Start Mobile Ads initialization on IO thread, setup on Main
-        CoroutineScope(Dispatchers.IO).launch { initializeMobileAds() }
+        // Don't initialize Mobile Ads here - wait for activity context
+        // MobileAds will be initialized in onActivityCreated with proper Activity context
     }
 
     private suspend fun initializeInBackground() {
@@ -148,28 +158,107 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     }
 
     private suspend fun initializeMobileAds() {
-        withContext(Dispatchers.IO) {
-            MobileAds.initialize(this@App) { initializationStatus ->
-                Timber.d("MobileAds initialized with status: $initializationStatus")
+        // Prevent multiple initialization attempts
+        if (isMobileAdsInitialized || isMobileAdsInitializing) {
+            Timber.d("MobileAds already initialized or initializing, skipping")
+            return
+        }
 
-                // Setup app open ad manager on the main thread after initialization
-                CoroutineScope(Dispatchers.Main).launch {
-                    setupAppOpenAdManager()
-                    // DO NOT load ad here. It will be loaded when an activity is available.
-                }
+        // Ensure we have an activity context and run on Main thread
+        val activity = currentActivity
+        if (activity == null || activity.isFinishing || activity.isDestroyed) {
+            Timber.w("Cannot initialize MobileAds - no valid activity context available")
+            return
+        }
 
-                // Mark Mobile Ads as initialized
-                isMobileAdsInitialized = true
-
-                // If this is not the first launch, allow ads
-                if (!isFirstLaunch()) {
-                    isInitialAppStart = false
-                    Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
-                }
-
+        withContext(Dispatchers.Main) {
+            try {
+                isMobileAdsInitializing = true
                 Timber.d(
-                        "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
+                        "Initializing MobileAds with activity context: ${activity.javaClass.simpleName}"
                 )
+
+                // Additional validation before calling MobileAds.initialize
+                if (!activity.hasWindowFocus()) {
+                    Timber.w(
+                            "Activity does not have window focus, delaying MobileAds initialization"
+                    )
+                    delay(1000)
+                }
+
+                MobileAds.initialize(activity) { initializationStatus ->
+                    Timber.d("MobileAds initialized with status: $initializationStatus")
+
+                    // Setup app open ad manager on the main thread after initialization
+                    setupAppOpenAdManager()
+
+                    // Mark Mobile Ads as initialized
+                    isMobileAdsInitialized = true
+                    isMobileAdsInitializing = false
+
+                    // If this is not the first launch, allow ads
+                    if (!isFirstLaunch()) {
+                        isInitialAppStart = false
+                        Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                    }
+
+                    Timber.d(
+                            "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
+                    )
+
+                    // Load first ad with additional delay to ensure everything is stable
+                    CoroutineScope(Dispatchers.Main).launch {
+                        delay(2000) // Additional delay before loading first ad
+                        if (currentActivity != null && !isFirstAdLoadAttempted) {
+                            Timber.d("Loading first App Open ad after initialization delay")
+                            try {
+                                appOpenAdManager.loadAppOpenAd()
+                                isFirstAdLoadAttempted = true
+                            } catch (e: Exception) {
+                                Timber.e("Error loading first app open ad: ${e.message}")
+                                if (e.message?.contains("ViewConfiguration") == true) {
+                                    Timber.e(
+                                            "ViewConfiguration error during ad loading - will retry later"
+                                    )
+                                    // Retry after additional delay
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        delay(5000)
+                                        try {
+                                            appOpenAdManager.loadAppOpenAd()
+                                            isFirstAdLoadAttempted = true
+                                        } catch (retryError: Exception) {
+                                            Timber.e("Retry failed: ${retryError.message}")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e("Error initializing MobileAds: ${e.message}")
+                isMobileAdsInitializing = false
+
+                // Special handling for ViewConfiguration errors
+                if (e.message?.contains("ViewConfiguration") == true ||
+                                e.message?.contains("context") == true
+                ) {
+                    Timber.e(
+                            "ViewConfiguration or context error detected - will retry with longer delay"
+                    )
+                    CoroutineScope(Dispatchers.Main).launch {
+                        delay(5000) // Wait 5 seconds before retry
+                        if (currentActivity != null &&
+                                        !currentActivity!!.isFinishing &&
+                                        !currentActivity!!.isDestroyed
+                        ) {
+                            Timber.d(
+                                    "Retrying MobileAds initialization after ViewConfiguration error"
+                            )
+                            initializeMobileAds()
+                        }
+                    }
+                }
             }
         }
     }
@@ -190,14 +279,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Configure AppOpenAdManager to use activity context for ad loading
         appOpenAdManager.useActivityContextForAdLoading(true)
 
-        // Set the current activity context if available and trigger first load if not attempted
+        // Set the current activity context but don't load ad yet
+        // Ad loading will be handled separately with proper delays
         currentActivity?.let { activity ->
             appOpenAdManager.setActivityContext(activity)
-            if (!isFirstAdLoadAttempted) {
-                Timber.d("Triggering initial App Open ad load after MobileAds init")
-                appOpenAdManager.loadAppOpenAd()
-                isFirstAdLoadAttempted = true
-            }
+            Timber.d("AppOpenAdManager setup complete with activity context")
         }
     }
 
@@ -292,9 +378,22 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.d("Consent process completed. Can request ads: $canRequestAds")
 
             // Initialize MobileAds if not already done and consent allows it
-            if (!isMobileAdsInitialized && canRequestAds) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    initializeMobileAds()
+            if (!isMobileAdsInitialized && !isMobileAdsInitializing && canRequestAds) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    // Add delay before initializing after consent
+                    delay(1000)
+
+                    // Double-check activity is still valid
+                    if (currentActivity != null &&
+                                    !currentActivity!!.isFinishing &&
+                                    !currentActivity!!.isDestroyed
+                    ) {
+                        initializeMobileAds()
+                    } else {
+                        Timber.w(
+                                "Activity no longer valid after consent delay, skipping MobileAds init"
+                        )
+                    }
                 }
             }
         }
@@ -309,12 +408,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Initialize consent first
         initializeConsent(activity)
 
-        // Load the first App Open Ad once an activity is available and ads are initialized.
-        if (isMobileAdsInitialized && !isFirstAdLoadAttempted) {
-            Timber.d("Activity created, attempting to load first App Open Ad.")
-            appOpenAdManager.loadAppOpenAd()
-            isFirstAdLoadAttempted = true
-        }
+        // Don't initialize MobileAds immediately - wait for activity to be fully ready
+        // This will be handled in onActivityResumed after a delay
     }
 
     override fun onActivityDestroyed(activity: Activity) {
@@ -342,9 +437,26 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Update AppOpenAdManager with current activity context
         appOpenAdManager.setActivityContext(activity)
         try {
-            FirebaseCrashlytics.getInstance()
-                    .log("onActivityResumed: ${'$'}{activity.javaClass.name}")
+            FirebaseCrashlytics.getInstance().log("onActivityResumed: ${activity.javaClass.name}")
         } catch (_: Exception) {}
+
+        // Initialize MobileAds with delay after activity is fully resumed and stable
+        if (!isMobileAdsInitialized && !isMobileAdsInitializing) {
+            CoroutineScope(Dispatchers.Main).launch {
+                // Wait for activity to be fully stable before initializing ads
+                delay(1500) // Give the activity time to fully load and stabilize
+
+                // Double-check that we still have an active activity
+                if (currentActivity != null && !activity.isFinishing && !activity.isDestroyed) {
+                    Timber.d("Initializing MobileAds after activity stabilization delay")
+                    initializeMobileAds()
+                } else {
+                    Timber.w(
+                            "Activity no longer valid after stabilization delay, skipping MobileAds init"
+                    )
+                }
+            }
+        }
 
         // Mark app as in foreground
         if (!appInForeground) {

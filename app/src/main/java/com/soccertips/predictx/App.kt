@@ -276,24 +276,64 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 loadAndShowError ->
             if (loadAndShowError != null) {
                 Timber.e("Failed to load or show consent form: ${loadAndShowError.message}")
-                return@loadAndShowConsentFormIfRequired
+                // Don't return here - still try to initialize ads if possible
             }
 
-            // Consent has been gathered.
+            // Consent has been gathered or there was an error.
             // The Mobile Ads SDK can be initialized or will now use the updated consent.
-            Timber.d("Consent gathered. Can request ads: ${consentInformation.canRequestAds()}")
+            val canRequestAds =
+                    try {
+                        consentInformation.canRequestAds()
+                    } catch (e: Exception) {
+                        Timber.e("Error checking consent status: ${e.message}")
+                        false
+                    }
+
+            Timber.d("Consent process completed. Can request ads: $canRequestAds")
+
+            // Initialize MobileAds if not already done and consent allows it
+            if (!isMobileAdsInitialized && canRequestAds) {
+                initializeMobileAds()
+            }
+        }
+    }
+
+    private fun initializeMobileAds() {
+        try {
+            MobileAds.initialize(this) { initializationStatus ->
+                Timber.d("MobileAds initialized with status: $initializationStatus")
+
+                // Setup app open ad manager
+                setupAppOpenAdManager()
+
+                // Mark Mobile Ads as initialized
+                isMobileAdsInitialized = true
+
+                // If this is not the first launch, allow ads
+                if (!isFirstLaunch()) {
+                    isInitialAppStart = false
+                    Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                }
+
+                Timber.d(
+                        "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
+                )
+            }
+        } catch (e: Exception) {
+            Timber.e("Error initializing MobileAds: ${e.message}")
         }
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         currentActivity = activity
         try {
-            FirebaseCrashlytics.getInstance()
-                    .log("onActivityCreated: ${'$'}{activity.javaClass.name}")
+            FirebaseCrashlytics.getInstance().log("onActivityCreated: ${activity.javaClass.name}")
         } catch (_: Exception) {}
+
+        // Initialize consent first
         initializeConsent(activity)
 
-        // Load the first App Open Ad once an activity is available.
+        // Load the first App Open Ad once an activity is available and ads are initialized.
         if (isMobileAdsInitialized && !isFirstAdLoadAttempted) {
             Timber.d("Activity created, attempting to load first App Open Ad.")
             appOpenAdManager.loadAppOpenAd()

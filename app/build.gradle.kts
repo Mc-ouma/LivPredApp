@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
@@ -43,8 +44,8 @@ android {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 14
-        versionName = "1.1.4"
+        versionCode = 15
+        versionName = "1.1.5"
 
         testInstrumentationRunner =
             "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
@@ -121,11 +122,8 @@ android {
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.15" }
 
-    kotlinOptions {
-        jvmTarget = "11"
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-        freeCompilerArgs += "-opt-in=kotlin.Experimental"
-    }
+
+
     packaging { resources { excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1") } }
     buildToolsVersion = "36.0.0"
 
@@ -142,6 +140,12 @@ android {
         disable += "InvalidPackage"
         disable += "GradleDependency"
         baseline = file("lint-baseline.xml")
+    }
+}
+kotlin{
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+        freeCompilerArgs.addAll("-opt-in=kotlin.RequiresOptIn", "-opt-in=kotlin.Experimental")
     }
 }
 

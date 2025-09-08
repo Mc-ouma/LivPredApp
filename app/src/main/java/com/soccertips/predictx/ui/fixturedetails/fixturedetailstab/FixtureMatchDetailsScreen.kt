@@ -108,22 +108,7 @@ fun FixtureMatchDetailsScreen(
             .fillMaxWidth()
             .padding(12.dp)
     ) {
-        // Fixture detail card
-        FixtureDetailCard(fixture = fixtureDetails.fixture)
-        Spacer(modifier = Modifier.height(16.dp))
-        InlineBannerAdView()
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Home and away fixtures section
-        FixtureListScreen(
-            combinedFormData = fixtures,
-            homeTeamIdInt = homeTeamIdInt,
-            awayTeamIdInt = awayTeamIdInt,
-            fixtureDetails = fixtureDetails,
-            navController = navController
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.height(8.dp))
         // Prediction card section
         if (predictions == null) {
             Box(
@@ -183,6 +168,7 @@ fun FixtureMatchDetailsScreen(
                         },
                         pulseEnabled = isAdReady
                     )
+
                 }
             }
 
@@ -190,6 +176,22 @@ fun FixtureMatchDetailsScreen(
                 PredictionCarousel(predictions, comparison, teams, h2h)
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
+        // Fixture detail card
+        FixtureDetailCard(fixture = fixtureDetails.fixture)
+        Spacer(modifier = Modifier.height(16.dp))
+        InlineBannerAdView()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Home and away fixtures section
+        FixtureListScreen(
+            combinedFormData = fixtures,
+            homeTeamIdInt = homeTeamIdInt,
+            awayTeamIdInt = awayTeamIdInt,
+            fixtureDetails = fixtureDetails,
+            navController = navController
+        )
+
     }
 }
 

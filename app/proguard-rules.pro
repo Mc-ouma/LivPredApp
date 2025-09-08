@@ -48,3 +48,9 @@
 # AdMob optimizations
 -keep class com.google.android.gms.ads.** { *; }
 -dontwarn com.google.android.gms.ads.**
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.internal.** { *; }
+
+# User Messaging Platform (UMP)
+-keep class com.google.android.ump.** { *; }
+-dontwarn com.google.android.ump.**

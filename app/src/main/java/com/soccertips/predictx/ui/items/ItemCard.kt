@@ -47,132 +47,6 @@ import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.viewmodel.ItemsListViewModel
 
-
-/*@Composable
-fun ItemCard(
-    item: ServerResponse,
-    onClick: () -> Unit,
-    onFavoriteClick: (ServerResponse) -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: ItemsListViewModel
-) {
-    val cardColors = LocalCardColors.current
-    val cardElevation = LocalCardElevation.current
-    val teamHomeDetails = TeamDetails(item.hLogoPath, item.homeTeam)
-    val teamAwayDetails = TeamDetails(item.aLogoPath, item.awayTeam)
-    var isFavorite by remember { mutableStateOf(false) }
-    var showToast by remember { mutableStateOf(false) }
-    var toastMessage by remember { mutableStateOf("") }
-
-    LaunchedEffect(isFavorite) {
-        isFavorite = viewModel.isFavorite(item)
-    }
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(
-                onClick = onClick,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple()
-            ),
-        colors = cardColors,
-        elevation = cardElevation
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-
-                LeagueInfo(
-                    leagueLogo = item.leagueLogo,
-                    leagueName = item.league?.split(",")?.firstOrNull()
-                )
-                Spacer(modifier = Modifier.weight(1f))
-
-                IconButton(onClick = {
-                    onFavoriteClick(item)
-                    viewModel.toggleFavorite(item)
-                    isFavorite = !isFavorite
-                    showToast = true
-                    toastMessage =
-                        if (isFavorite) "Added to Favorites" else "Removed from Favorites"
-                }) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else Color.Gray,
-                        modifier = Modifier.align(Alignment.Top),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TeamInfo(
-                    teamDetails = teamHomeDetails,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    item.mTime?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                        )
-                    }
-                }
-
-                TeamInfo(
-                    teamDetails = teamAwayDetails,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                item.pick?.let {
-                    Text(
-                        text = "Pick $it",
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
-                if (item.color != Color.Unspecified) {
-                    Icon(
-                        imageVector = Icons.Outlined.FiberManualRecord,
-                        contentDescription = "Status Indicator",
-                        tint = item.color,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-                Text(
-                    text = item.mStatus ?: "TBD",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-
-            }
-        }
-    }
-}*/
 @Composable
 fun ItemCard(
     item: ServerResponse,
@@ -240,7 +114,7 @@ fun ItemCard(
 }
 
 @Composable
- fun MatchHeader(
+fun MatchHeader(
     league: String,
     leagueLogo: String?,
     date: String,
@@ -307,12 +181,24 @@ fun ItemCard(
 }
 
 @Composable
- fun TeamsRow(
+fun TeamsRow(
     homeTeam: TeamDetails,
     awayTeam: TeamDetails,
     matchTime: String,
     score: String?
 ) {
+    val displayScore = score?.let { rawScore ->
+
+        val parts = rawScore.split(":")
+
+        parts.find { part ->
+            val trimmed = part.trim()
+            trimmed.matches(Regex(".*\\d+\\s*-\\s*\\d+.*"))
+        }?.let { scorePart ->
+            val scoreMatch = Regex("(\\d+\\s*-\\s*\\d+)").find(scorePart.trim())
+            scoreMatch?.value
+        }
+    } ?: "-"
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -334,7 +220,7 @@ fun ItemCard(
             )
             if (!score.isNullOrBlank() && score != "Unknown") {
                 Text(
-                    text = score,
+                    text = displayScore,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -351,7 +237,7 @@ fun ItemCard(
 }
 
 @Composable
- fun EnhancedTeamInfo(
+fun EnhancedTeamInfo(
     teamDetails: TeamDetails,
     alignment: Alignment.Horizontal,
     modifier: Modifier = Modifier
@@ -399,7 +285,7 @@ fun ItemCard(
 }
 
 @Composable
- fun MatchStatusRow(
+fun MatchStatusRow(
     pick: String?,
     status: String?,
     statusColor: Color
@@ -441,32 +327,6 @@ fun ItemCard(
                 }
             )
         }
-    }
-}
-
-
-@Composable
-fun LeagueInfo(leagueLogo: String?, leagueName: String?) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 8.dp)
-    ) {
-
-        Image(
-            rememberAsyncImagePainter(leagueLogo),
-            contentDescription = "League Logo",
-            modifier = Modifier
-                .height(24.dp)
-                .width(24.dp),
-
-            )
-        Text(
-            text = leagueName ?: "Unknown League",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
-            modifier = Modifier.padding(start = 8.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 
@@ -516,3 +376,62 @@ private fun MatchHeaderPreview() {
 
 }
 
+@Preview
+@Composable
+private fun ItemCardPreview() {
+    val mockItem = ServerResponse(
+        fixtureId = "12345",
+        pick = "Home Win",
+        homeTeam = "Team A",
+        awayTeam = "Team B",
+        mDate = "2022-12-31",
+        league = "Premier League, England",
+        mTime = "15:00",
+        betOdds = "1.5",
+        outcome = "win",
+        htScore = "1-0",
+        result = "3-2:(Odds:1.250)" , // Example with odds format
+        hLogoPath = "https://cdn.soccertips.com/assets/teams/team-a.png",
+        aLogoPath = "https://cdn.soccertips.com/assets/teams/team-b.png",
+        leagueLogo = "https://cdn.soccertips.com/assets/leagues/england-premier-league.png",
+        mStatus = "Finished",
+        color = Color.Green
+    )
+
+    // Create a simple preview without the viewModel dependency
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            MatchHeader(
+                league = mockItem.league?.split(",")?.firstOrNull() ?: "Unknown",
+                leagueLogo = mockItem.leagueLogo,
+                date = mockItem.mDate ?: "Unknown",
+                isFavorite = false,
+                onFavoriteClick = {}
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TeamsRow(
+                homeTeam = TeamDetails(mockItem.hLogoPath, mockItem.homeTeam),
+                awayTeam = TeamDetails(mockItem.aLogoPath, mockItem.awayTeam),
+                matchTime = mockItem.mTime ?: "TBD",
+                score = mockItem.result
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            MatchStatusRow(
+                pick = mockItem.pick,
+                status = mockItem.mStatus,
+                statusColor = mockItem.color
+            )
+        }
+    }
+}

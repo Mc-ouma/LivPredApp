@@ -6,7 +6,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
-import com.google.firebase.database.ktx.database
 import com.google.gson.Gson
 import com.soccertips.predictx.data.model.RootResponse
 import com.soccertips.predictx.network.ApiService
@@ -81,7 +80,7 @@ class PredictionRepository @Inject constructor(
         }
     }
 
-    private suspend fun retryApiCallWithBackoff(url: String, initialException: Exception, maxRetries: Int = 3): RootResponse {
+    private suspend fun retryApiCallWithBackoff(url: String, initialException: Exception, maxRetries: Int = 2): RootResponse {
         var retryCount = 0
         var lastException = initialException
 

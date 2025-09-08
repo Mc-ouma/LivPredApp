@@ -130,11 +130,9 @@ fun FixtureScoreAndScorers(
                         ) {
                             Text(
                                     text = response.fixture.status.short,
-                                    fontSize = 18.sp,
                             )
                             Text(
                                     text = "${response.goals.home} - ${response.goals.away}",
-                                    fontSize = 16.sp
                             )
 
                             if (matchStatusText.isNotEmpty()) {

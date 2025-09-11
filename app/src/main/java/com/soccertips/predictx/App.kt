@@ -184,67 +184,108 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                             "Activity does not have window focus, delaying MobileAds initialization"
                     )
                     delay(1000)
+
+                    // Double-check activity is still valid
+                    if (activity.isFinishing || activity.isDestroyed) {
+                        Timber.w("Activity became invalid during delay, aborting MobileAds init")
+                        isMobileAdsInitializing = false
+                        return@withContext
+                    }
                 }
 
-                MobileAds.initialize(activity) { initializationStatus ->
-                    Timber.d("MobileAds initialized with status: $initializationStatus")
+                // Use application context for initialization but ensure activity context for ad operations
+                try {
+                    withTimeout(5000) { // Add timeout to prevent hanging
+                        MobileAds.initialize(activity) { initializationStatus ->
+                            Timber.d("MobileAds initialized with status: $initializationStatus")
 
-                    // Setup app open ad manager on the main thread after initialization
-                    setupAppOpenAdManager()
+                            // Setup app open ad manager on the main thread after initialization
+                            // but only if activity is still valid
+                            if (!activity.isFinishing && !activity.isDestroyed) {
+                                setupAppOpenAdManager()
+                            } else {
+                                Timber.w("Activity invalid after MobileAds init, skipping ad manager setup")
+                            }
 
-                    // Mark Mobile Ads as initialized
-                    isMobileAdsInitialized = true
-                    isMobileAdsInitializing = false
+                            // Mark Mobile Ads as initialized
+                            isMobileAdsInitialized = true
+                            isMobileAdsInitializing = false
 
-                    // If this is not the first launch, allow ads
-                    if (!isFirstLaunch()) {
-                        isInitialAppStart = false
-                        Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
-                    }
+                            // If this is not the first launch, allow ads
+                            if (!isFirstLaunch()) {
+                                isInitialAppStart = false
+                                Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                            }
 
-                    Timber.d(
-                            "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
-                    )
+                            Timber.d(
+                                    "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
+                            )
 
-                    // Load first ad with additional delay to ensure everything is stable
-                    CoroutineScope(Dispatchers.Main).launch {
-                        delay(2000) // Additional delay before loading first ad
-                        if (currentActivity != null && !isFirstAdLoadAttempted) {
-                            Timber.d("Loading first App Open ad after initialization delay")
-                            try {
-                                appOpenAdManager.loadAppOpenAd()
-                                isFirstAdLoadAttempted = true
-                            } catch (e: Exception) {
-                                Timber.e("Error loading first app open ad: ${e.message}")
-                                if (e.message?.contains("ViewConfiguration") == true) {
-                                    Timber.e(
-                                            "ViewConfiguration error during ad loading - will retry later"
-                                    )
-                                    // Retry after additional delay
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        delay(5000)
-                                        try {
-                                            appOpenAdManager.loadAppOpenAd()
-                                            isFirstAdLoadAttempted = true
-                                        } catch (retryError: Exception) {
-                                            Timber.e("Retry failed: ${retryError.message}")
+                            // Load first ad with additional delay to ensure everything is stable
+                            CoroutineScope(Dispatchers.Main).launch {
+                                delay(2000) // Additional delay before loading first ad
+
+                                // Re-check currentActivity to ensure we have the most recent one
+                                val currentValidActivity = currentActivity
+                                if (currentValidActivity != null &&
+                                        !currentValidActivity.isFinishing &&
+                                        !currentValidActivity.isDestroyed &&
+                                        !isFirstAdLoadAttempted) {
+
+                                    Timber.d("Loading first App Open ad after initialization delay")
+                                    try {
+                                        // Ensure ad manager has the latest activity context
+                                        appOpenAdManager.setActivityContext(currentValidActivity)
+                                        appOpenAdManager.loadAppOpenAd()
+                                        isFirstAdLoadAttempted = true
+                                    } catch (e: Exception) {
+                                        Timber.e("Error loading first app open ad: ${e.message}")
+                                        if (e.message?.contains("ViewConfiguration") == true ||
+                                                e.message?.contains("WindowManager") == true ||
+                                                e.message?.contains("visual Context") == true) {
+
+                                            Timber.e(
+                                                    "Context error during ad loading - will retry later"
+                                            )
+                                            // Retry after additional delay
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                delay(5000)
+                                                val retryActivity = currentActivity
+                                                if (retryActivity != null &&
+                                                        !retryActivity.isFinishing &&
+                                                        !retryActivity.isDestroyed) {
+                                                    try {
+                                                        // Update context again before retry
+                                                        appOpenAdManager.setActivityContext(retryActivity)
+                                                        appOpenAdManager.loadAppOpenAd()
+                                                        isFirstAdLoadAttempted = true
+                                                    } catch (retryError: Exception) {
+                                                        Timber.e("Retry failed: ${retryError.message}")
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                } catch (timeoutEx: TimeoutCancellationException) {
+                    Timber.e("MobileAds initialization timed out")
+                    isMobileAdsInitializing = false
                 }
             } catch (e: Exception) {
                 Timber.e("Error initializing MobileAds: ${e.message}")
                 isMobileAdsInitializing = false
 
-                // Special handling for ViewConfiguration errors
+                // Special handling for context-related errors
                 if (e.message?.contains("ViewConfiguration") == true ||
-                                e.message?.contains("context") == true
-                ) {
+                        e.message?.contains("context") == true ||
+                        e.message?.contains("WindowManager") == true ||
+                        e.message?.contains("visual Context") == true) {
+
                     Timber.e(
-                            "ViewConfiguration or context error detected - will retry with longer delay"
+                            "Context error detected - will retry with longer delay"
                     )
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(5000) // Wait 5 seconds before retry

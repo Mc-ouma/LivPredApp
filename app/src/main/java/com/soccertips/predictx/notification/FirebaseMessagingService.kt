@@ -207,7 +207,7 @@ class FCMService : FirebaseMessagingService() {
             .setLights(Color.GREEN, 1000, 1000) // Green light for success
             .setVibrate(longArrayOf(0, 500, 200, 500)) // Custom vibration pattern
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         // Create enhanced notification channel for betting success
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -274,7 +274,7 @@ class FCMService : FirebaseMessagingService() {
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         // Since Android Oreo, notification channels are required
         val channel = NotificationChannel(

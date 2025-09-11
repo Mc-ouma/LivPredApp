@@ -39,10 +39,10 @@ fun FixtureStatisticsScreen(statistics: List<Response>) {
 
     val team1 = statistics[0]
     val team2 = statistics[1]
-    val context = LocalContext.current
+    LocalContext.current
 
-    val cardColors = LocalCardColors.current
-    val cardElevation = LocalCardElevation.current
+    LocalCardColors.current
+    LocalCardElevation.current
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -107,7 +107,7 @@ fun SharedStatisticRow(
         statType: String,
         team2Value: String,
 ) {
-    val context = LocalContext.current
+    LocalContext.current
 
     // Get formatted values
     val formattedTeam1Value = formatValue(team1Value)

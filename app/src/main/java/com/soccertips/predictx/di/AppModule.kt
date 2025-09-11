@@ -2,8 +2,11 @@ package com.soccertips.predictx.di
 
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.work.Configuration
 import androidx.work.WorkerFactory
+import com.google.android.play.core.review.ReviewManager
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.soccertips.predictx.data.local.AppDatabase
 import com.soccertips.predictx.data.local.dao.FavoriteDao
 import com.soccertips.predictx.network.ApiService
@@ -25,6 +28,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.io.File
+import javax.inject.Named
+import javax.inject.Singleton
 import okhttp3.Cache
 import okhttp3.HttpUrl
 import okhttp3.Interceptor
@@ -33,9 +39,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import timber.log.Timber
-import java.io.File
-import javax.inject.Named
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -47,7 +50,6 @@ object AppModule {
         return ApiConfigProvider()
     }
 
-
     @Provides
     @Singleton
     fun provideContext(application: Application): Context {
@@ -56,18 +58,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideWorkManagerConfiguration(
-        workerFactory: HiltWorkerFactory
-    ): Configuration {
-        return Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
+    fun provideWorkManagerConfiguration(workerFactory: HiltWorkerFactory): Configuration {
+        return Configuration.Builder().setWorkerFactory(workerFactory).build()
     }
 
-
-    @Named("defaultBaseUrl")
-    @Provides
-    fun provideDefaultBaseUrl() = Constants.API_BASE_URL
+    @Named("defaultBaseUrl") @Provides fun provideDefaultBaseUrl() = Constants.API_BASE_URL
     private const val CACHE_SIZE = 10 * 1024 * 1024 // 10 MB
     private const val CACHE_MAX_AGE = 2 * 60 * 60 // 2 hours
 
@@ -86,22 +81,25 @@ object AppModule {
         return logging
     }
 
-
     @Provides
     @Singleton
     @Named("cacheInterceptor")
     fun provideCacheInterceptor(context: Context): Interceptor {
         return Interceptor { chain ->
             var request = chain.request()
-            request = if (NetworkUtils.isOnline(context)) {
-                request.newBuilder().header("Cache-Control", "public, max-age=$CACHE_MAX_AGE")
-                    .build()
-            } else {
-                request.newBuilder().header(
-                    "Cache-Control",
-                    "public, only-if-cached, max-stale=${7 * 24 * 60 * 60}"
-                ).build()
-            }
+            request =
+                    if (NetworkUtils.isOnline(context)) {
+                        request.newBuilder()
+                                .header("Cache-Control", "public, max-age=$CACHE_MAX_AGE")
+                                .build()
+                    } else {
+                        request.newBuilder()
+                                .header(
+                                        "Cache-Control",
+                                        "public, only-if-cached, max-stale=${7 * 24 * 60 * 60}"
+                                )
+                                .build()
+                    }
             chain.proceed(request)
         }
     }
@@ -110,23 +108,23 @@ object AppModule {
     @Singleton
     @Named("defaultOkHttpClient")
     fun provideDefaultOkHttpClient(
-        context: Context,
-        loggingInterceptor: HttpLoggingInterceptor,
-        @Named("cacheInterceptor") cacheInterceptor: Interceptor,
-        socketTaggingInterceptor: SocketTaggingInterceptor,
-        dnsFailureInterceptor: DnsFailureInterceptor,
-        fallbackDns: DnsFailureInterceptor.FallbackDns
+            context: Context,
+            loggingInterceptor: HttpLoggingInterceptor,
+            @Named("cacheInterceptor") cacheInterceptor: Interceptor,
+            socketTaggingInterceptor: SocketTaggingInterceptor,
+            dnsFailureInterceptor: DnsFailureInterceptor,
+            fallbackDns: DnsFailureInterceptor.FallbackDns
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .dns(fallbackDns) // Use custom DNS with fallback mechanism
-            .cache(provideCache(context))
-            .addInterceptor(dnsFailureInterceptor) // Add DNS failure handling
-            .addInterceptor(socketTaggingInterceptor)
-            .addInterceptor(loggingInterceptor)
-            .addNetworkInterceptor(cacheInterceptor)
-            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .build()
+                .dns(fallbackDns) // Use custom DNS with fallback mechanism
+                .cache(provideCache(context))
+                .addInterceptor(dnsFailureInterceptor) // Add DNS failure handling
+                .addInterceptor(socketTaggingInterceptor)
+                .addInterceptor(loggingInterceptor)
+                .addNetworkInterceptor(cacheInterceptor)
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
     }
 
     // Configuration for AppDatabase and FavoriteItemDao
@@ -146,43 +144,42 @@ object AppModule {
     @Singleton
     @Named("defaultRetrofit")
     fun provideDefaultRetrofit(
-        @Named("defaultOkHttpClient") okHttpClient: OkHttpClient,
-        @Named("defaultBaseUrl") baseUrl: String
+            @Named("defaultOkHttpClient") okHttpClient: OkHttpClient,
+            @Named("defaultBaseUrl") baseUrl: String
     ): Retrofit =
-        Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+            Retrofit.Builder()
+                    .baseUrl(baseUrl)
+                    .client(okHttpClient)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
 
     @Provides
     @Singleton
-    fun provideApiService(
-        @Named("defaultRetrofit") retrofit: Retrofit
-    ): ApiService =
-        retrofit.create(ApiService::class.java)
+    fun provideApiService(@Named("defaultRetrofit") retrofit: Retrofit): ApiService =
+            retrofit.create(ApiService::class.java)
 
     @Provides
     @Singleton
     fun providePredictionRepository(
-        apiService: ApiService,
-        apiConfigProvider: ApiConfigProvider,
-        @ApplicationContext context: Context
+            apiService: ApiService,
+            apiConfigProvider: ApiConfigProvider,
+            @ApplicationContext context: Context
     ): PredictionRepository =
-        PredictionRepository(apiService, lazy { PreloadRepository.getInstance() }, context, apiConfigProvider)
+            PredictionRepository(
+                    apiService,
+                    lazy { PreloadRepository.getInstance() },
+                    context,
+                    apiConfigProvider
+            )
 
     @Provides
     @Singleton
     fun providePreloadRepository(
-        firebaseRepository: FirebaseRepository,
-        networkUtils: com.soccertips.predictx.util.NetworkUtils
+            firebaseRepository: FirebaseRepository,
+            networkUtils: com.soccertips.predictx.util.NetworkUtils
     ): PreloadRepository {
-        return PreloadRepository.createInstance(
-            firebaseRepository,
-            networkUtils
-        )
+        return PreloadRepository.createInstance(firebaseRepository, networkUtils)
     }
-
 
     // Configuration for FixtureDetailsService and FixtureDetailsRepository
 
@@ -196,10 +193,12 @@ object AppModule {
 
             Timber.d("Using API Key: $apiKey, Host: $apiHost")
 
-            val request = chain.request().newBuilder()
-                .addHeader("x-apisports-key", apiKey)
-                .addHeader("x-apisports-host", apiHost)
-                .build()
+            val request =
+                    chain.request()
+                            .newBuilder()
+                            .addHeader("x-apisports-key", apiKey)
+                            .addHeader("x-apisports-host", apiHost)
+                            .build()
             chain.proceed(request)
         }
     }
@@ -208,12 +207,12 @@ object AppModule {
     @Singleton
     @Named("fixtureDetailsOkHttpClient")
     fun provideOkHttpClient(
-        context: Context,
-        loggingInterceptor: HttpLoggingInterceptor,
-        @Named("fixtureDetailsHeaderInterceptor") headerInterceptor: Interceptor,
-        socketTaggingInterceptor: SocketTaggingInterceptor,
-        dnsFailureInterceptor: DnsFailureInterceptor,
-        fallbackDns: DnsFailureInterceptor.FallbackDns
+            context: Context,
+            loggingInterceptor: HttpLoggingInterceptor,
+            @Named("fixtureDetailsHeaderInterceptor") headerInterceptor: Interceptor,
+            socketTaggingInterceptor: SocketTaggingInterceptor,
+            dnsFailureInterceptor: DnsFailureInterceptor,
+            fallbackDns: DnsFailureInterceptor.FallbackDns
     ): OkHttpClient {
         val cacheDir = File(context.cacheDir, "http_cache")
         val cache = Cache(cacheDir, CACHE_SIZE.toLong())
@@ -228,32 +227,29 @@ object AppModule {
                 url.toString().contains("fixtures") -> {
                     // Cache for fixtures endpoints for 1 hour (medium cache)
                     requestBuilder.header(
-                        "Cache-Control",
-                        "public, max-age=${Constants.CACHE_MAX_AGE_SHORT}"
+                            "Cache-Control",
+                            "public, max-age=${Constants.CACHE_MAX_AGE_SHORT}"
                     )
                 }
-
                 url.toString().contains("predictions") -> {
                     // Cache predictions for 24 hours (long cache)
                     requestBuilder.header(
-                        "Cache-Control",
-                        "public, max-age=${Constants.CACHE_MAX_AGE_VERY_LONG}"
+                            "Cache-Control",
+                            "public, max-age=${Constants.CACHE_MAX_AGE_VERY_LONG}"
                     )
                 }
-
                 url.toString().contains("standings") -> {
                     // Cache standings for 10 minutes (short cache)
                     requestBuilder.header(
-                        "Cache-Control",
-                        "public, max-age=${Constants.CACHE_MAX_AGE_LONG}"
+                            "Cache-Control",
+                            "public, max-age=${Constants.CACHE_MAX_AGE_LONG}"
                     )
                 }
-
                 else -> {
                     // Default: cache for 1 hour
                     requestBuilder.header(
-                        "Cache-Control",
-                        "public, max-age=${Constants.CACHE_MAX_AGE_LONG}"
+                            "Cache-Control",
+                            "public, max-age=${Constants.CACHE_MAX_AGE_LONG}"
                     )
                 }
             }
@@ -262,16 +258,16 @@ object AppModule {
         }
 
         return OkHttpClient.Builder()
-            .dns(fallbackDns) // Use custom DNS with fallback mechanism
-            .addInterceptor(dnsFailureInterceptor) // Add DNS failure handling
-            .addInterceptor(socketTaggingInterceptor)
-            .addInterceptor(loggingInterceptor)
-            .addInterceptor(headerInterceptor)
-            .addInterceptor(customCacheInterceptor)
-            .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            .cache(cache)
-            .build()
+                .dns(fallbackDns) // Use custom DNS with fallback mechanism
+                .addInterceptor(dnsFailureInterceptor) // Add DNS failure handling
+                .addInterceptor(socketTaggingInterceptor)
+                .addInterceptor(loggingInterceptor)
+                .addInterceptor(headerInterceptor)
+                .addInterceptor(customCacheInterceptor)
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .cache(cache)
+                .build()
     }
 
     // Provide Retrofit with OkHttpClient and Cache
@@ -280,16 +276,18 @@ object AppModule {
     @Named("fixtureDetailsRetrofit")
     fun provideRetrofit(@Named("fixtureDetailsOkHttpClient") client: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(Constants.API_BASE_URL_VALUE)
-            .client(client) // Use the OkHttp client with cache
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+                .baseUrl(Constants.API_BASE_URL_VALUE)
+                .client(client) // Use the OkHttp client with cache
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
     }
 
     // Provide FixtureDetailsService
     @Provides
     @Singleton
-    fun provideFixtureDetailsService(@Named("fixtureDetailsRetrofit") retrofit: Retrofit): FixtureDetailsService {
+    fun provideFixtureDetailsService(
+            @Named("fixtureDetailsRetrofit") retrofit: Retrofit
+    ): FixtureDetailsService {
         return retrofit.create(FixtureDetailsService::class.java)
     }
 
@@ -335,6 +333,15 @@ object AppModule {
         return DnsFailureInterceptor.FallbackDns()
     }
 
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
+        return context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    }
 
-
+    @Provides
+    @Singleton
+    fun provideReviewManager(@ApplicationContext context: Context): ReviewManager {
+        return ReviewManagerFactory.create(context)
+    }
 }

@@ -233,8 +233,6 @@ dependencies {
     implementation(libs.coil.kt.coil.compose.v240)
     implementation(libs.androidx.compiler)
 
-    implementation(libs.compose)
-
     implementation(libs.sheets.m3)
 
     implementation(libs.lottie.compose)

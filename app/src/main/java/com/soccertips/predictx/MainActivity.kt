@@ -1,15 +1,14 @@
 package com.soccertips.predictx
 
-import android.app.AlarmManager
 import android.app.AlertDialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -18,10 +17,14 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
@@ -39,7 +42,7 @@ import com.soccertips.predictx.admob.AdStateManager
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
-import com.soccertips.predictx.util.StartupTimeTracker
+import com.soccertips.predictx.viewmodel.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -49,8 +52,46 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
+/**
+ * Composable that ensures ad managers are properly initialized with Activity context only after the
+ * Compose UI has been fully rendered and is stable. This prevents "Window couldn't find content
+ * container view" errors.
+ */
+@Composable
+private fun AdInitializedContent(
+        interstitialAdManager: InterstitialAdManager,
+        rewardedAdManager: RewardedAdManager,
+        content: @Composable () -> Unit
+) {
+    // Get the current activity context in the composable context
+    val activity = LocalContext.current as? ComponentActivity
+
+    // Use LaunchedEffect to initialize ad managers after first composition
+    LaunchedEffect(Unit) {
+        // Delay to ensure the Compose UI has fully rendered its first frame
+        delay(100)
+
+        // Initialize ad managers with Activity context
+        activity?.let {
+            // Set up ad managers with Activity context
+            interstitialAdManager.setActivityContext(it)
+            interstitialAdManager.useActivityContextForAdLoading(true)
+            rewardedAdManager.setActivityContext(it)
+            rewardedAdManager.useActivityContextForAdLoading(true)
+
+            Timber.d("Ad managers initialized after UI rendering completed")
+        }
+    }
+
+    // Render the content
+    content()
+}
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    // ViewModels
+    private val splashViewModel: SplashViewModel by viewModels()
 
     // Admob
     @Inject lateinit var interstitialAdManager: InterstitialAdManager
@@ -59,7 +100,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var adStateManager: AdStateManager
 
-    // Lazy initialize Firebase Analytics to prevent main thread blocking
+    // Lazy initialize for update and review functionality
     private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(this) }
 
     // In-app update manager
@@ -69,104 +110,90 @@ class MainActivity : ComponentActivity() {
     private val reviewManager: ReviewManager by lazy { ReviewManagerFactory.create(this) }
     private val fixtureId = mutableStateOf<String?>(null)
 
-    // Cache review info
-    private var cachedReviewInfo: ReviewInfo? = null
-
     val sharedPrefs by lazy { getSharedPreferences("app_prefs", MODE_PRIVATE) }
 
     companion object {
         private const val UPDATE_REQUEST_CODE = 100
         private const val UPDATE_TYPE = AppUpdateType.FLEXIBLE
-        private const val MIN_DAYS_BETWEEN_REVIEWS = 7
-        private const val MIN_LAUNCHES_FOR_REVIEW = 3
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Record process start time for cold start tracking
-        StartupTimeTracker.recordProcessStart()
 
+        // window.decorView
         // Install splash screen before super.onCreate()
         val splashScreen = installSplashScreen()
 
         // Keep splash visible while initialization is happening
-        var isReady = false
-        splashScreen.setKeepOnScreenCondition { !isReady }
+        splashScreen.setKeepOnScreenCondition { !splashViewModel.isReady.value }
 
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Only essential UI setup on main thread
-        setupAdManagers()
+        // Start initialization process
+        splashViewModel.initialize()
 
-        // Count app launches for in-app review cadence (lightweight)
-        updateAppLaunchCount()
-
-        // Set content immediately for faster perceived performance
+        // Set content and observe the splash state
         setContent {
-            val snackbarHostState = remember { SnackbarHostState() }
-            val scope = rememberCoroutineScope()
+            val isReady by splashViewModel.isReady.collectAsState()
 
-            PredictXTheme {
-                Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.surface
+            // Only show content when ready
+            if (isReady) {
+                val snackbarHostState = remember { SnackbarHostState() }
+                val scope = rememberCoroutineScope()
+
+                // Initialize ad managers after UI is ready
+                AdInitializedContent(
+                        interstitialAdManager = interstitialAdManager,
+                        rewardedAdManager = rewardedAdManager,
                 ) {
-                    AppNavigation(
-                            fixtureId = fixtureId.value,
-                            interstitialAdManager = interstitialAdManager,
-                            rewardedAdManager = rewardedAdManager,
-                    )
-                }
+                    PredictXTheme {
+                        Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.surface
+                        ) {
+                            AppNavigation(
+                                    fixtureId = fixtureId.value,
+                            )
+                        }
 
-                // Handle update notifications in the UI
-                UpdateSnackbarHandler(snackbarHostState, scope)
+                        // Handle update notifications in the UI
+                        UpdateSnackbarHandler(snackbarHostState, scope)
+                    }
+                }
             }
         }
 
         // Handle intent quickly without heavy processing
         handleInitialIntent(intent)
 
-        // Allow splash screen to dismiss after UI is set
-        isReady = true
+        // Check permissions after splash initialization
+        lifecycleScope.launch {
+            splashViewModel.isReady.collect { ready ->
+                if (ready && splashViewModel.shouldCheckPermissions()) {
+                    checkPermissions()
+                }
+            }
+        }
 
         // Defer heavy initialization to background after UI is ready
         lifecycleScope.launch(Dispatchers.IO) {
-            delay(100) // Minimal delay to ensure UI thread is free
+            delay(1000) // Wait for splash to complete
             initializeBackgroundComponents()
         }
     }
 
     private fun updateAppLaunchCount() {
-        try {
-            val launches = sharedPrefs.getInt("app_launch_count", 0) + 1
-            sharedPrefs.edit { putInt("app_launch_count", launches) }
-            Timber.d("App launch count updated: $launches")
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to update app launch count")
-        }
+        // This is now handled by SplashViewModel
+        // Keeping this method for any additional MainActivity-specific logic
     }
 
     private suspend fun initializeBackgroundComponents() {
         withContext(Dispatchers.IO) {
-            // Prefetch review info early
-            prefetchReviewInfoAsync()
-
-            // Check permissions after a short delay
-            delay(500)
-            withContext(Dispatchers.Main) { checkPermissions() }
-
-            // Lower priority operations
+            // Check for updates after a delay
             delay(1000)
             checkForUpdatesIfNeeded()
         }
-    }
-
-    private fun setupAdManagers() {
-        interstitialAdManager.setActivityContext(this)
-        interstitialAdManager.useActivityContextForAdLoading(true)
-        rewardedAdManager.setActivityContext(this)
-        rewardedAdManager.useActivityContextForAdLoading(true)
     }
 
     private fun handleInitialIntent(intent: Intent?) {
@@ -182,28 +209,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun prefetchReviewInfoAsync() {
-        withContext(Dispatchers.IO) {
-            try {
-                reviewManager.requestReviewFlow().addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        cachedReviewInfo = task.result
-                        Timber.d("Review info prefetched successfully")
-                    } else {
-                        Timber.e(task.exception, "Failed to prefetch review info")
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Error prefetching review info")
-            }
-        }
-    }
-
     private fun checkPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
-                val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-                if (!alarmManager.canScheduleExactAlarms()) {
+                if (!splashViewModel.canScheduleExactAlarms()) {
                     showExactAlarmPermissionDialog()
                 }
             } catch (e: Exception) {
@@ -212,9 +221,7 @@ class MainActivity : ComponentActivity() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
-                            PackageManager.PERMISSION_GRANTED
-            ) {
+            if (!splashViewModel.hasNotificationPermission()) {
                 requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
             }
         }
@@ -321,10 +328,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun maybeShowReview() {
-        if (!shouldShowReview()) return
+        if (!splashViewModel.shouldShowReview()) return
 
         lifecycleScope.launch(Dispatchers.Main) {
-            val reviewInfo = cachedReviewInfo
+            val reviewInfo = splashViewModel.getCachedReviewInfo()
             if (reviewInfo != null) {
                 launchReviewFlow(reviewInfo)
             } else {
@@ -337,14 +344,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun shouldShowReview(): Boolean {
-        val lastReviewTime = sharedPrefs.getLong("last_review_time", 0)
-        val appLaunchCount = sharedPrefs.getInt("app_launch_count", 0)
-
-        val now = System.currentTimeMillis()
-        val daysSinceLastReview = TimeUnit.MILLISECONDS.toDays(now - lastReviewTime)
-
-        return (appLaunchCount >= MIN_LAUNCHES_FOR_REVIEW &&
-                (lastReviewTime == 0L || daysSinceLastReview >= MIN_DAYS_BETWEEN_REVIEWS))
+        return splashViewModel.shouldShowReview()
     }
 
     private fun launchReviewFlow(reviewInfo: ReviewInfo) {
@@ -359,23 +359,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun logAnalyticsEvent(name: String, stalenessDays: Int = 0) {
-        try {
-            val bundle =
-                    Bundle().apply {
-                        if (stalenessDays > 0) putInt("staleness_days", stalenessDays)
-                    }
-            analytics.logEvent(name, bundle)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to log analytics event: $name")
-        }
+        splashViewModel.logAnalyticsEvent(name, stalenessDays)
     }
 
     override fun onResume() {
         super.onResume()
-
-        // Update ad managers with current activity context
-        interstitialAdManager.setActivityContext(this)
-        rewardedAdManager.setActivityContext(this)
 
         // For IMMEDIATE updates that were interrupted
         if (UPDATE_TYPE == AppUpdateType.IMMEDIATE) {

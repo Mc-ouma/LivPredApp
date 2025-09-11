@@ -1,6 +1,8 @@
 package com.soccertips.predictx.ui.fixturedetails
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -83,9 +85,30 @@ import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.UiState
 import com.soccertips.predictx.viewmodel.FixtureDetailsViewModel
 import com.soccertips.predictx.viewmodel.SharedViewModel
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface RewardedAdManagerEntryPoint {
+    fun rewardedAdManager(): RewardedAdManager
+}
+
+// Extension function to safely find the Activity from any Context
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) {
+            return context
+        }
+        context = context.baseContext
+    }
+    return null
+}
 
 enum class FixtureDetailsScreenPage(val titleResId: Int) {
     MATCH_DETAILS(R.string.match_details),
@@ -99,14 +122,35 @@ enum class FixtureDetailsScreenPage(val titleResId: Int) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FixtureDetailsScreen(
-    navController: NavController,
-    fixtureId: String,
-    sharedViewModel: SharedViewModel = hiltViewModel(LocalContext.current as ViewModelStoreOwner),
-    viewModel: FixtureDetailsViewModel = hiltViewModel(),
-    pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
-    rewardedAdManager: RewardedAdManager,
-    context: Context = LocalContext.current,
+        navController: NavController,
+        fixtureId: String,
+        sharedViewModel: SharedViewModel =
+                hiltViewModel(LocalContext.current as ViewModelStoreOwner),
+        viewModel: FixtureDetailsViewModel = hiltViewModel(),
+        pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
+        context: Context = LocalContext.current,
 ) {
+    // Access the rewarded ad manager via LocalContext and get the application context
+    val context = LocalContext.current
+    val rewardedAdManager = remember {
+        EntryPointAccessors.fromApplication(
+                        context.applicationContext,
+                        RewardedAdManagerEntryPoint::class.java
+                )
+                .rewardedAdManager()
+    }
+
+    // Ensure the activity context is set on the rewarded ad manager
+    LaunchedEffect(rewardedAdManager) {
+        val activity = context.findActivity()
+        if (activity != null) {
+            rewardedAdManager.setActivityContext(activity)
+            rewardedAdManager.useActivityContextForAdLoading(true)
+            Timber.d("RewardedAdManager activity context set in FixtureDetailsScreen")
+        } else {
+            Timber.w("Could not find Activity context in FixtureDetailsScreen")
+        }
+    }
     val uiState by viewModel.uiState.collectAsState()
     val formState by sharedViewModel.fixturesState.collectAsState()
 
@@ -144,7 +188,9 @@ fun FixtureDetailsScreen(
                 Timber.d("Loading fixture details...")
             }
             is FixtureDetailsUiState.Error -> {
-                Timber.e("Error loading fixture details: ${(uiState as FixtureDetailsUiState.Error).message}")
+                Timber.e(
+                        "Error loading fixture details: ${(uiState as FixtureDetailsUiState.Error).message}"
+                )
             }
         }
     }
@@ -153,69 +199,66 @@ fun FixtureDetailsScreen(
     val scrollState = rememberLazyListState()
 
     // Track visibility of FixtureScoreAndScorers
-    val showFixtureScore by remember {
-        derivedStateOf {
-            scrollState.firstVisibleItemIndex == 0
-        }
-    }
+    val showFixtureScore by remember { derivedStateOf { scrollState.firstVisibleItemIndex == 0 } }
 
     // Set up scroll behavior for the collapsible TopAppBar
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            TopAppBar(
-                title = {
-                    val fixtureDetails = (uiState as? FixtureDetailsUiState.Success)?.fixtureDetails
-                    if (fixtureDetails != null) {
-                        FixtureTopBarContent(showFixtureScore, fixtureDetails)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    Menu2()
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
+                TopAppBar(
+                        title = {
+                            val fixtureDetails =
+                                    (uiState as? FixtureDetailsUiState.Success)?.fixtureDetails
+                            if (fixtureDetails != null) {
+                                FixtureTopBarContent(showFixtureScore, fixtureDetails)
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                        imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                                        contentDescription = "Back"
+                                )
+                            }
+                        },
+                        actions = { Menu2() },
+                        scrollBehavior = scrollBehavior,
+                        colors =
+                                TopAppBarDefaults.topAppBarColors(
+                                        containerColor =
+                                                MaterialTheme.colorScheme.surfaceColorAtElevation(
+                                                        3.dp
+                                                ),
+                                )
                 )
-            )
-        }
+            }
     ) { paddingValues ->
         when (uiState) {
             is FixtureDetailsUiState.Loading -> LoadingScreen(paddingValues)
             is FixtureDetailsUiState.Success -> {
                 val fixtureDetails = (uiState as FixtureDetailsUiState.Success).fixtureDetails
                 DataScreen(
-                    paddingValues = paddingValues,
-                    scrollState = scrollState,
-                    showFixtureScore = showFixtureScore,
-                    viewModel = viewModel,
-                    sharedViewModel = sharedViewModel,
-                    pages = pages,
-                    formState = formState,
-                    fixtureDetails = fixtureDetails,
-                    navController = navController,
-                    rewardedAdManager = rewardedAdManager
+                        paddingValues = paddingValues,
+                        scrollState = scrollState,
+                        showFixtureScore = showFixtureScore,
+                        viewModel = viewModel,
+                        sharedViewModel = sharedViewModel,
+                        pages = pages,
+                        formState = formState,
+                        fixtureDetails = fixtureDetails,
+                        navController = navController,
+                        rewardedAdManager = rewardedAdManager
                 )
             }
-            is FixtureDetailsUiState.Error -> ErrorScreen(
-                paddingValues = paddingValues,
-                message = "An error occurred. Please check your internet connection or try again later.",
-                onRetry = {
-                    viewModel.fetchFixtureDetails(fixtureId, context)
-                }
-            )
+            is FixtureDetailsUiState.Error ->
+                    ErrorScreen(
+                            paddingValues = paddingValues,
+                            message =
+                                    "An error occurred. Please check your internet connection or try again later.",
+                            onRetry = { viewModel.fetchFixtureDetails(fixtureId, context) }
+                    )
         }
 
         // Display "No data available" message for each empty state
@@ -234,61 +277,49 @@ fun FixtureDetailsScreen(
 @Composable
 fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxWidth()
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
     ) {
-        AnimatedVisibility(
-            visible = !showFixtureScore,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
+        AnimatedVisibility(visible = !showFixtureScore, enter = fadeIn(), exit = fadeOut()) {
             Box(modifier = Modifier.size(24.dp)) {
                 Image(
-                    painter = rememberAsyncImagePainter(
-                        ImageRequest.Builder(LocalContext.current)
-                            .data(fixtureDetails.teams.home.logo)
-                            .crossfade(true)
-                            .memoryCachePolicy(CachePolicy.ENABLED)
-                            .build()
-                    ),
-                    contentDescription = "Home Logo",
-                    modifier = Modifier.size(24.dp)
+                        painter =
+                                rememberAsyncImagePainter(
+                                        ImageRequest.Builder(LocalContext.current)
+                                                .data(fixtureDetails.teams.home.logo)
+                                                .crossfade(true)
+                                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                                .build()
+                                ),
+                        contentDescription = "Home Logo",
+                        modifier = Modifier.size(24.dp)
                 )
             }
         }
 
-        AnimatedVisibility(
-            visible = !showFixtureScore,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
+        AnimatedVisibility(visible = !showFixtureScore, enter = fadeIn(), exit = fadeOut()) {
             Text(
-                text = fixtureDetails.goals.let { goals ->
-                    "${goals.home} - ${goals.away}"
-                },
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(horizontal = 8.dp)
+                    text = fixtureDetails.goals.let { goals -> "${goals.home} - ${goals.away}" },
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
 
-        AnimatedVisibility(
-            visible = !showFixtureScore,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
+        AnimatedVisibility(visible = !showFixtureScore, enter = fadeIn(), exit = fadeOut()) {
             Box(modifier = Modifier.size(24.dp)) {
                 Image(
-                    painter = rememberAsyncImagePainter(
-                        ImageRequest.Builder(LocalContext.current)
-                            .data(fixtureDetails.teams.away.logo)
-                            .crossfade(true)
-                            .memoryCachePolicy(CachePolicy.ENABLED)
-                            .build()
-                    ),
-                    contentDescription = "Away Logo",
-                    modifier = Modifier.size(24.dp)
+                        painter =
+                                rememberAsyncImagePainter(
+                                        ImageRequest.Builder(LocalContext.current)
+                                                .data(fixtureDetails.teams.away.logo)
+                                                .crossfade(true)
+                                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                                .build()
+                                ),
+                        contentDescription = "Away Logo",
+                        modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -298,15 +329,15 @@ fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun FixtureDetailsTabs(
-    modifier: Modifier = Modifier,
-    pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
-    fixtureDetails: ResponseData,
-    viewModel: FixtureDetailsViewModel,
-    sharedViewModel: SharedViewModel,
-    formState: UiState<List<SharedViewModel.FixtureWithType>>,
-    navController: NavController,
-    rewardedAdManager: RewardedAdManager,
-    context: Context = LocalContext.current,
+        modifier: Modifier = Modifier,
+        pages: Array<FixtureDetailsScreenPage> = FixtureDetailsScreenPage.entries.toTypedArray(),
+        fixtureDetails: ResponseData,
+        viewModel: FixtureDetailsViewModel,
+        sharedViewModel: SharedViewModel,
+        formState: UiState<List<SharedViewModel.FixtureWithType>>,
+        navController: NavController,
+        rewardedAdManager: RewardedAdManager,
+        context: Context = LocalContext.current,
 ) {
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
@@ -317,57 +348,58 @@ fun FixtureDetailsTabs(
     Column(modifier = modifier) {
         // TabRow with PagerState
         SecondaryScrollableTabRow(
-            selectedTabIndex = pagerState.currentPage,
-            modifier = Modifier.fillMaxWidth(),
-            edgePadding = 16.dp,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            divider = { /* No divider */ }
+                selectedTabIndex = pagerState.currentPage,
+                modifier = Modifier.fillMaxWidth(),
+                edgePadding = 16.dp,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                divider = { /* No divider */}
         ) {
             pages.forEachIndexed { index, page ->
                 val title = stringResource(id = page.titleResId)
-                val icon = when (page) {
-                    FixtureDetailsScreenPage.MATCH_DETAILS -> Icons.Default.SportsSoccer
-                    FixtureDetailsScreenPage.STATISTICS -> Icons.Default.BarChart
-                    FixtureDetailsScreenPage.HEAD_TO_HEAD -> Icons.AutoMirrored.Default.CompareArrows
-                    FixtureDetailsScreenPage.LINEUPS -> Icons.Default.People
-                    FixtureDetailsScreenPage.STANDINGS -> Icons.AutoMirrored.Default.List
-                    FixtureDetailsScreenPage.SUMMARY -> Icons.Default.Summarize
-                }
+                val icon =
+                        when (page) {
+                            FixtureDetailsScreenPage.MATCH_DETAILS -> Icons.Default.SportsSoccer
+                            FixtureDetailsScreenPage.STATISTICS -> Icons.Default.BarChart
+                            FixtureDetailsScreenPage.HEAD_TO_HEAD ->
+                                    Icons.AutoMirrored.Default.CompareArrows
+                            FixtureDetailsScreenPage.LINEUPS -> Icons.Default.People
+                            FixtureDetailsScreenPage.STANDINGS -> Icons.AutoMirrored.Default.List
+                            FixtureDetailsScreenPage.SUMMARY -> Icons.Default.Summarize
+                        }
                 Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(index)
-                        }
-                    },
-                    text = {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1
-                            )
-                        }
-                    },
-                    selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                        },
+                        text = {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1
+                                )
+                            }
+                        },
+                        selectedContentColor = MaterialTheme.colorScheme.primary,
+                        unselectedContentColor =
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 )
             }
         }
 
         // HorizontalPager that syncs with TabRow
         HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth(),
-            userScrollEnabled = true,
-            key = { pages[it].name }
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth(),
+                userScrollEnabled = true,
+                key = { pages[it].name }
         ) { pageIndex ->
             // Only fetch data if moving to a different tab
             LaunchedEffect(pageIndex) {
@@ -391,30 +423,33 @@ fun FixtureDetailsTabs(
                         FixtureDetailsScreenPage.SUMMARY -> {
                             viewModel.fetchFixtureEvents(fixtureId, context)
                         }
-                        else -> { /* No additional data needed */ }
+                        else -> {
+                            /* No additional data needed */
+                        }
                     }
                 }
             }
 
             AnimatedContent(
-                targetState = pageIndex,
-                transitionSpec = {
-                    slideInHorizontally(animationSpec = tween(300)) { direction ->
-                        direction * 30
-                    } + fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(200))
-                },
-                label = "Tab Content Transition"
+                    targetState = pageIndex,
+                    transitionSpec = {
+                        slideInHorizontally(animationSpec = tween(300)) { direction ->
+                            direction * 30
+                        } + fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(200))
+                    },
+                    label = "Tab Content Transition"
             ) { targetPageIndex ->
                 // Render the appropriate tab content
                 when (pages[targetPageIndex]) {
                     FixtureDetailsScreenPage.MATCH_DETAILS -> {
                         val predictionsState by viewModel.predictionsState.collectAsState()
                         FixtureMatchDetailsTab(
-                            formState = formState,
-                            fixturePredictionsState = predictionsState,
-                            fixtureDetails = fixtureDetails,
-                            navController = navController,
-                            rewardedAdManager = rewardedAdManager
+                                formState = formState,
+                                fixturePredictionsState = predictionsState,
+                                fixtureDetails = fixtureDetails,
+                                navController = navController,
+                                rewardedAdManager = rewardedAdManager
                         )
                     }
                     FixtureDetailsScreenPage.STATISTICS -> {
@@ -424,8 +459,8 @@ fun FixtureDetailsTabs(
                     FixtureDetailsScreenPage.HEAD_TO_HEAD -> {
                         val headToHeadState by viewModel.headToHeadState.collectAsState()
                         FixtureHeadToHeadTab(
-                            headToHeadState = headToHeadState,
-                            navController = navController
+                                headToHeadState = headToHeadState,
+                                navController = navController
                         )
                     }
                     FixtureDetailsScreenPage.LINEUPS -> {
@@ -435,15 +470,15 @@ fun FixtureDetailsTabs(
                     FixtureDetailsScreenPage.STANDINGS -> {
                         val standingsState by sharedViewModel.standingsState.collectAsState()
                         FixtureStandingsTab(
-                            standingsState = standingsState,
-                            fixtureDetails = fixtureDetails
+                                standingsState = standingsState,
+                                fixtureDetails = fixtureDetails
                         )
                     }
                     FixtureDetailsScreenPage.SUMMARY -> {
                         val fixtureEventsState by viewModel.fixtureEventsState.collectAsState()
                         FixtureSummaryTab(
-                            fixtureEventsState = fixtureEventsState,
-                            fixtureDetails = fixtureDetails
+                                fixtureEventsState = fixtureEventsState,
+                                fixtureDetails = fixtureDetails
                         )
                     }
                 }
@@ -454,61 +489,55 @@ fun FixtureDetailsTabs(
 
 @Composable
 fun Scorers(
-    playerName: String,
-    elapsed: String,
+        playerName: String,
+        elapsed: String,
 ) {
     Text(
-        text = "$playerName $elapsed",
-        fontSize = 10.sp,
-        color = Color.Gray,
+            text = "$playerName $elapsed",
+            fontSize = 10.sp,
+            color = Color.Gray,
     )
 }
 
 @Composable
 fun TeamColumn(
-    team: Team,
-    leagueId: String? = null,
-    season: String? = null,
-    modifier: Modifier = Modifier,
-    navController: NavController
+        team: Team,
+        leagueId: String? = null,
+        season: String? = null,
+        modifier: Modifier = Modifier,
+        navController: NavController
 ) {
     Column(
-        modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .clickable {
+            modifier.fillMaxWidth().wrapContentHeight().clickable {
                 if (!leagueId.isNullOrEmpty() && !season.isNullOrEmpty()) {
                     navController.navigate(
-                        Routes.TeamDetails.createRoute(
-                            team.id.toString(),
-                            leagueId,
-                            season
-                        )
+                            Routes.TeamDetails.createRoute(team.id.toString(), leagueId, season)
                     )
                 }
             },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
     ) {
         Image(
-            painter = rememberAsyncImagePainter(
-                ImageRequest.Builder(LocalContext.current)
-                    .data(team.logo)
-                    .crossfade(true)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .build()
-            ),
-            contentDescription = "${team.name} Logo",
-            modifier = Modifier.size(42.dp),
-            contentScale = ContentScale.Fit,
+                painter =
+                        rememberAsyncImagePainter(
+                                ImageRequest.Builder(LocalContext.current)
+                                        .data(team.logo)
+                                        .crossfade(true)
+                                        .memoryCachePolicy(CachePolicy.ENABLED)
+                                        .build()
+                        ),
+                contentDescription = "${team.name} Logo",
+                modifier = Modifier.size(42.dp),
+                contentScale = ContentScale.Fit,
         )
         Text(
-            text = team.name,
-            modifier = Modifier.padding(top = 4.dp),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            textAlign = TextAlign.Center,
+                text = team.name,
+                modifier = Modifier.padding(top = 4.dp),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
         )
     }
 }
@@ -517,14 +546,15 @@ fun TeamColumn(
 @Composable
 private fun TeamColumnPrev() {
     TeamColumn(
-        team = Team(
-            id = 1,
-            name = "Team A",
-            logo = "https://example.com/logo.png",
-            winner = true
-        ),
-        leagueId = "123",
-        season = "2023",
-        navController = NavController(LocalContext.current),
+            team =
+                    Team(
+                            id = 1,
+                            name = "Team A",
+                            logo = "https://example.com/logo.png",
+                            winner = true
+                    ),
+            leagueId = "123",
+            season = "2023",
+            navController = NavController(LocalContext.current),
     )
 }

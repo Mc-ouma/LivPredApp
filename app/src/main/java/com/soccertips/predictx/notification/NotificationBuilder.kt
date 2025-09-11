@@ -9,9 +9,11 @@ import android.graphics.Color
 import android.graphics.Paint
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.scale
 import androidx.core.graphics.toColorInt
-import com.bumptech.glide.Glide
+import coil.imageLoader
+import coil.request.ImageRequest
 import com.soccertips.predictx.MainActivity
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.local.entities.FavoriteItem
@@ -121,7 +123,13 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
     private suspend fun loadTeamLogo(logoUrl: String?): Bitmap? =
             withContext(Dispatchers.IO) {
                 try {
-                    logoUrl?.let { Glide.with(context).asBitmap().load(it).submit().get() }
+                    logoUrl?.let {
+                        val imageRequest = ImageRequest.Builder(context)
+                            .data(it)
+                            .build()
+                        val drawable = context.imageLoader.execute(imageRequest).drawable
+                        drawable?.toBitmap()
+                    }
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to load team logo: $logoUrl")
                     null

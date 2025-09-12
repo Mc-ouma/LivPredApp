@@ -80,6 +80,23 @@
                 <data android:scheme="app" android:host="com.soccertips.predictx"
                     android:pathPrefix="/fixture" />
             </intent-filter>
+            <!-- Intent filters for notification actions (Android 15+ compliance) -->
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_VIEW_MATCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_VIEW_BETTING_SUCCESS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
     </application>
 

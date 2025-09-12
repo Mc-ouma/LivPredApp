@@ -50,10 +50,10 @@ class DelayedNotificationWorker @AssistedInject constructor(
             notificationManager.notify(favoriteItem.fixtureId.hashCode(), notification)
             Result.success()
         } catch (e: SecurityException) {
-            Timber.Forest.e(e, "Notification permission not granted for fixture $fixtureId in DelayedNotificationWorker")
+            Timber.e(e, "Notification permission not granted for fixture $fixtureId in DelayedNotificationWorker")
             Result.failure()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Failed to show notification via DelayedNotificationWorker for $fixtureId")
+            Timber.e(e, "Failed to show notification via DelayedNotificationWorker for $fixtureId")
             Result.retry()
         }
     }

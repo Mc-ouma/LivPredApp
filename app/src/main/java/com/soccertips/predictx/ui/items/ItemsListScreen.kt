@@ -120,8 +120,7 @@ fun ItemsListScreen(
         if (activity != null) {
             interstitialAdManager.setActivityContext(activity)
             interstitialAdManager.useActivityContextForAdLoading(true)
-            // Load an ad if we don't have one already
-            interstitialAdManager.loadAdIfNeeded()
+            // Don't load ad here - it should only load after dismissal, failure, or when stale
             Timber.d("InterstitialAdManager activity context set in ItemsListScreen")
         } else {
             Timber.w("Could not find Activity context in ItemsListScreen")

@@ -22,3 +22,4 @@ app/assets/env
 Constants.kt
 /app/release/
 dot.env
+.vscode/settings.json

@@ -140,6 +140,7 @@ fun InlineBannerAdView(
     )
 }
 
+@Singleton
 class InterstitialAdManager
 @Inject
 constructor(private val applicationContext: Context, private val adStateManager: AdStateManager) {
@@ -433,6 +434,7 @@ constructor(private val applicationContext: Context, private val adStateManager:
     fun isCurrentlyLoading(): Boolean = isAdLoading
 }
 
+@Singleton
 class RewardedAdManager
 @Inject
 constructor(private val context: Context, private val adStateManager: AdStateManager) {
@@ -452,13 +454,11 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
     // Flag to control whether to use Activity context for ad loading
     private var useActivityContextForLoading = true
 
-    // Method to set the current activity context and trigger ad loading
+    // Method to set the current activity context
     fun setActivityContext(activity: Activity?) {
         currentActivityContext = activity
-        // Pre-load an ad as soon as we have an activity context
-        if (activity != null && rewardedAd == null && !isAdLoading) {
-            loadRewardedAd()
-        }
+        // Don't automatically load ad here - it should only load after dismissal, failure, or when
+        // explicitly requested
     }
 
     // Method to configure whether to use activity context
@@ -685,6 +685,7 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
 }
 
 // AppOpenAd
+@Singleton
 class AppOpenAdManager
 @Inject
 constructor(private val context: Context, private val adStateManager: AdStateManager) {

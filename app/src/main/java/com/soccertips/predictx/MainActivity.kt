@@ -1,5 +1,7 @@
 package com.soccertips.predictx
 
+import android.app.Activity.RESULT_CANCELED
+import android.app.Activity.RESULT_OK
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
@@ -28,12 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory
-import com.google.android.play.core.appupdate.AppUpdateOptions
-import com.google.android.play.core.install.InstallStateUpdatedListener
-import com.google.android.play.core.install.model.AppUpdateType
-import com.google.android.play.core.install.model.InstallStatus
-import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.install.model.ActivityResult
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.google.android.play.core.review.ReviewManagerFactory
@@ -42,9 +39,10 @@ import com.soccertips.predictx.admob.AdStateManager
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
+import com.soccertips.predictx.update.CustomAppUpdateManager
+import com.soccertips.predictx.update.UpdateHandler
 import com.soccertips.predictx.viewmodel.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -59,9 +57,9 @@ import timber.log.Timber
  */
 @Composable
 private fun AdInitializedContent(
-        interstitialAdManager: InterstitialAdManager,
-        rewardedAdManager: RewardedAdManager,
-        content: @Composable () -> Unit
+    interstitialAdManager: InterstitialAdManager,
+    rewardedAdManager: RewardedAdManager,
+    content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
     val activity = LocalContext.current as? ComponentActivity
@@ -79,6 +77,9 @@ private fun AdInitializedContent(
             rewardedAdManager.setActivityContext(it)
             rewardedAdManager.useActivityContextForAdLoading(true)
 
+            // Load initial ads once after app startup (not on every screen open)
+            interstitialAdManager.loadAdIfNeeded()
+
             Timber.d("Ad managers initialized after UI rendering completed")
         }
     }
@@ -94,28 +95,27 @@ class MainActivity : ComponentActivity() {
     private val splashViewModel: SplashViewModel by viewModels()
 
     // Admob
-    @Inject lateinit var interstitialAdManager: InterstitialAdManager
+    @Inject
+    lateinit var interstitialAdManager: InterstitialAdManager
 
-    @Inject lateinit var rewardedAdManager: RewardedAdManager
+    @Inject
+    lateinit var rewardedAdManager: RewardedAdManager
 
-    @Inject lateinit var adStateManager: AdStateManager
+    @Inject
+    lateinit var adStateManager: AdStateManager
 
-    // Lazy initialize for update and review functionality
+    // Custom Update Manager
+    @Inject
+    lateinit var customAppUpdateManager: CustomAppUpdateManager
+
+    // Lazy initialize for review functionality
     private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(this) }
-
-    // In-app update manager
-    private val appUpdateManager by lazy { AppUpdateManagerFactory.create(this) }
 
     // In-app review manager
     private val reviewManager: ReviewManager by lazy { ReviewManagerFactory.create(this) }
     private val fixtureId = mutableStateOf<String?>(null)
 
     val sharedPrefs by lazy { getSharedPreferences("app_prefs", MODE_PRIVATE) }
-
-    companion object {
-        private const val UPDATE_REQUEST_CODE = 100
-        private const val UPDATE_TYPE = AppUpdateType.FLEXIBLE
-    }
 
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,6 +130,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // Add lifecycle observation for custom update manager
+        lifecycle.addObserver(customAppUpdateManager)
+
         // Start initialization process
         splashViewModel.initialize()
 
@@ -139,26 +142,23 @@ class MainActivity : ComponentActivity() {
 
             // Only show content when ready
             if (isReady) {
-                val snackbarHostState = remember { SnackbarHostState() }
-                val scope = rememberCoroutineScope()
-
                 // Initialize ad managers after UI is ready
                 AdInitializedContent(
-                        interstitialAdManager = interstitialAdManager,
-                        rewardedAdManager = rewardedAdManager,
+                    interstitialAdManager = interstitialAdManager,
+                    rewardedAdManager = rewardedAdManager,
                 ) {
                     PredictXTheme {
                         Surface(
-                                modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.surface
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.surface
                         ) {
                             AppNavigation(
-                                    fixtureId = fixtureId.value,
+                                fixtureId = fixtureId.value,
                             )
                         }
 
-                        // Handle update notifications in the UI
-                        UpdateSnackbarHandler(snackbarHostState, scope)
+                        // Handle update notifications in the UI with new custom update manager
+                        UpdateHandler(updateManager = customAppUpdateManager)
                     }
                 }
             }
@@ -190,9 +190,9 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun initializeBackgroundComponents() {
         withContext(Dispatchers.IO) {
-            // Check for updates after a delay
+            // Check for updates using the custom update manager with retry logic after a delay
             delay(1000)
-            checkForUpdatesIfNeeded()
+            customAppUpdateManager.checkForUpdatesWithRetry()
         }
     }
 
@@ -227,106 +227,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun checkForUpdatesIfNeeded() {
-        if (shouldCheckForUpdates()) {
-            lifecycleScope.launch(Dispatchers.IO) { checkForAppUpdates() }
-        }
-    }
-
-    @Composable
-    private fun UpdateSnackbarHandler(
-            snackbarHostState: SnackbarHostState,
-            scope: kotlinx.coroutines.CoroutineScope
-    ) {
-        val updateListener = remember {
-            InstallStateUpdatedListener { state ->
-                if (state.installStatus() == InstallStatus.DOWNLOADED) {
-                    scope.launch {
-                        val result =
-                                snackbarHostState.showSnackbar(
-                                        message = "An update has just been downloaded.",
-                                        actionLabel = "RESTART",
-                                )
-                        if (result == SnackbarResult.ActionPerformed) {
-                            appUpdateManager.completeUpdate()
-                        }
-                    }
-                }
-            }
-        }
-
-        DisposableEffect(appUpdateManager) {
-            if (UPDATE_TYPE == AppUpdateType.FLEXIBLE) {
-                appUpdateManager.registerListener(updateListener)
-            }
-
-            onDispose {
-                if (UPDATE_TYPE == AppUpdateType.FLEXIBLE) {
-                    appUpdateManager.unregisterListener(updateListener)
-                }
-            }
-        }
-    }
-
-    private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
-        when (state.installStatus()) {
-            InstallStatus.DOWNLOADED -> {
-                // Handled by the UpdateSnackbarHandler composable
-                Timber.d("Update downloaded")
-            }
-            InstallStatus.FAILED -> {
-                Timber.e("Update failed: ${state.installErrorCode()}")
-                sharedPrefs.edit { putLong("last_update_check", 0) }
-            }
-            else -> Timber.d("Update status: ${state.installStatus()}")
-        }
-    }
-
-    private fun shouldCheckForUpdates(): Boolean {
-        val lastCheck = sharedPrefs.getLong("last_update_check", 0)
-        val now = System.currentTimeMillis()
-        return now - lastCheck > TimeUnit.DAYS.toMillis(1)
-    }
-
-    private fun checkForAppUpdates() {
-        try {
-            appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
-                sharedPrefs.edit { putLong("last_update_check", System.currentTimeMillis()) }
-
-                val isUpdateAvailable =
-                        appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-                val isUpdateTypeAllowed = appUpdateInfo.isUpdateTypeAllowed(UPDATE_TYPE)
-                val stalenessDays = appUpdateInfo.clientVersionStalenessDays() ?: 0
-
-                val updateOptions =
-                        AppUpdateOptions.newBuilder(
-                                        if (stalenessDays > 5) AppUpdateType.IMMEDIATE
-                                        else UPDATE_TYPE
-                                )
-                                .setAllowAssetPackDeletion(true)
-                                .build()
-
-                if (isUpdateAvailable && isUpdateTypeAllowed) {
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        try {
-                            appUpdateManager.startUpdateFlowForResult(
-                                    appUpdateInfo,
-                                    this@MainActivity,
-                                    updateOptions,
-                                    UPDATE_REQUEST_CODE
-                            )
-                            logAnalyticsEvent("update_flow_started", stalenessDays)
-                        } catch (e: Exception) {
-                            Timber.e(e, "Failed to start update flow")
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Exception during update check")
-        }
-    }
-
     private fun maybeShowReview() {
         if (!splashViewModel.shouldShowReview()) return
 
@@ -336,9 +236,9 @@ class MainActivity : ComponentActivity() {
                 launchReviewFlow(reviewInfo)
             } else {
                 reviewManager
-                        .requestReviewFlow()
-                        .addOnSuccessListener { launchReviewFlow(it) }
-                        .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
+                    .requestReviewFlow()
+                    .addOnSuccessListener { launchReviewFlow(it) }
+                    .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
             }
         }
     }
@@ -362,34 +262,19 @@ class MainActivity : ComponentActivity() {
         splashViewModel.logAnalyticsEvent(name, stalenessDays)
     }
 
+    private fun logAnalyticsEventWithResultCode(name: String, resultCode: Int) {
+        try {
+            analytics.logEvent(name, Bundle().apply { putInt("result_code", resultCode) })
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to log analytics event: $name")
+        }
+    }
+
     override fun onResume() {
         super.onResume()
 
-        // For IMMEDIATE updates that were interrupted
-        if (UPDATE_TYPE == AppUpdateType.IMMEDIATE) {
-            lifecycleScope.launch(Dispatchers.IO) {
-                appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
-                    if (appUpdateInfo.updateAvailability() ==
-                                    UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
-                    ) {
-                        lifecycleScope.launch(Dispatchers.Main) {
-                            try {
-                                appUpdateManager.startUpdateFlowForResult(
-                                        appUpdateInfo,
-                                        this@MainActivity,
-                                        AppUpdateOptions.newBuilder(UPDATE_TYPE)
-                                                .setAllowAssetPackDeletion(true)
-                                                .build(),
-                                        UPDATE_REQUEST_CODE
-                                )
-                            } catch (e: Exception) {
-                                Timber.e(e, "Failed to resume update")
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // For IMMEDIATE updates that were interrupted - use custom update manager
+        customAppUpdateManager.resumeUpdateIfNeeded(this)
 
         // Show review with low probability
         if (Math.random() < 0.2) { // 20% chance
@@ -403,16 +288,16 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun showExactAlarmPermissionDialog() {
         AlertDialog.Builder(this)
-                .setTitle("Exact Alarm Permission Required")
-                .setMessage(
-                        "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
-                )
-                .setPositiveButton("Go to Settings") { _, _ ->
-                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    startActivity(intent)
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+            .setTitle("Exact Alarm Permission Required")
+            .setMessage(
+                "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
+            )
+            .setPositiveButton("Go to Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -420,7 +305,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
 
-        lifecycleScope.launch(Dispatchers.Default) { intent?.let { handleNotificationIntent(it) } }
+        lifecycleScope.launch(Dispatchers.Default) { handleNotificationIntent(intent) }
     }
 
     private fun handleNotificationIntent(intent: Intent) {
@@ -435,9 +320,11 @@ class MainActivity : ComponentActivity() {
                         notificationType == "betting_success" -> {
                     handleBettingSuccessIntent(intent)
                 }
+
                 action == "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" -> {
                     handleBettingHistoryIntent(intent)
                 }
+
                 action == "com.soccertips.predictx.ACTION_VIEW_MATCH" -> {
                     handleMatchIntent(intent)
                 }
@@ -480,17 +367,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showBettingSuccessDialog(
-            date: String,
-            matchCount: String,
-            winCount: String,
-            successRate: String,
-            matchesDetails: String,
-            summary: String
+        date: String,
+        matchCount: String,
+        winCount: String,
+        successRate: String,
+        matchesDetails: String,
+        summary: String
     ) {
         AlertDialog.Builder(this)
-                .setTitle("🎉 Perfect Betting Day!")
-                .setMessage(
-                        """
+            .setTitle("🎉 Perfect Betting Day!")
+            .setMessage(
+                """
                     📅 Date: $date
                     🏆 Matches Won: $winCount/$matchCount
                     🎯 Success Rate: $successRate%
@@ -500,20 +387,20 @@ class MainActivity : ComponentActivity() {
                     📋 Match Results:
                     $matchesDetails
                     """.trimIndent()
-                )
-                .setPositiveButton("View History") { _, _ ->
-                    handleBettingHistoryIntent(Intent().apply { putExtra("filter_date", date) })
-                }
-                .setNegativeButton("Share Success") { _, _ ->
-                    shareSuccess(matchCount, successRate, date)
-                }
-                .setNeutralButton("Close", null)
-                .show()
+            )
+            .setPositiveButton("View History") { _, _ ->
+                handleBettingHistoryIntent(Intent().apply { putExtra("filter_date", date) })
+            }
+            .setNegativeButton("Share Success") { _, _ ->
+                shareSuccess(matchCount, successRate, date)
+            }
+            .setNeutralButton("Close", null)
+            .show()
     }
 
     private fun shareSuccess(matchCount: String, successRate: String, date: String) {
         val shareText =
-                """
+            """
                 🎉 Perfect Betting Day! 🎉
     
                 📅 Date: $date
@@ -524,46 +411,71 @@ class MainActivity : ComponentActivity() {
             """.trimIndent()
 
         startActivity(
-                Intent.createChooser(
-                        Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, shareText)
-                        },
-                        "Share Betting Success"
-                )
+            Intent.createChooser(
+                Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                },
+                "Share Betting Success"
+            )
         )
     }
 
     private fun logBettingSuccessEvent(
-            date: String,
-            matchCount: String,
-            winCount: String,
-            successRate: String
+        date: String,
+        matchCount: String,
+        winCount: String,
+        successRate: String
     ) {
         try {
             analytics.logEvent(
-                    "betting_success_notification",
-                    Bundle().apply {
-                        putString("date", date)
-                        putLong("match_count", matchCount.toLongOrNull() ?: 0L)
-                        putLong("win_count", winCount.toLongOrNull() ?: 0L)
-                        putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
-                    }
+                "betting_success_notification",
+                Bundle().apply {
+                    putString("date", date)
+                    putLong("match_count", matchCount.toLongOrNull() ?: 0L)
+                    putLong("win_count", winCount.toLongOrNull() ?: 0L)
+                    putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
+                }
             )
         } catch (e: Exception) {
             Timber.e(e, "Failed to log betting success event")
         }
     }
 
+    @Deprecated("Using onActivityResult is deprecated in favor of ActivityResultContracts")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == CustomAppUpdateManager.UPDATE_REQUEST_CODE) {
+            when (resultCode) {
+                RESULT_OK -> {
+                    Timber.d("Update flow completed successfully")
+                    logAnalyticsEvent("update_flow_completed")
+                }
+
+                RESULT_CANCELED -> {
+                    Timber.d("Update flow cancelled by user")
+                    logAnalyticsEvent("update_flow_cancelled")
+                }
+
+                ActivityResult.RESULT_IN_APP_UPDATE_FAILED -> {
+                    Timber.e("Update flow failed")
+                    logAnalyticsEvent("update_flow_failed")
+                    // Reset update check timer to retry sooner
+                    sharedPrefs.edit { putLong("last_update_check", 0) }
+                }
+
+                else -> {
+                    Timber.d("Update flow result: $resultCode")
+                    logAnalyticsEventWithResultCode("update_flow_unknown_result", resultCode)
+                }
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        try {
-            if (UPDATE_TYPE == AppUpdateType.FLEXIBLE) {
-                appUpdateManager.unregisterListener(installStateUpdatedListener)
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Error unregistering update listener")
-        }
+        // Clean up is now handled by the CustomAppUpdateManager lifecycle observer
     }
 }

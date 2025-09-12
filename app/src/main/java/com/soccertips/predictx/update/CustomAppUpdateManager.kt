@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
+import androidx.core.content.edit
 
 data class UpdateState(
         val isAvailable: Boolean = false,
@@ -77,7 +78,7 @@ constructor(
                     reason = "Install failed"
                 )
                 // Reset check timer for retry
-                sharedPrefs.edit().putLong("last_update_check", 0).apply()
+                sharedPrefs.edit { putLong("last_update_check", 0) }
             }
             else -> Timber.d("Update status: ${state.installStatus()}")
         }
@@ -121,9 +122,9 @@ constructor(
         appUpdateManager.appUpdateInfo
                 .addOnSuccessListener { appUpdateInfo ->
                     sharedPrefs
-                            .edit()
-                            .putLong("last_update_check", System.currentTimeMillis())
-                            .apply()
+                            .edit {
+                                putLong("last_update_check", System.currentTimeMillis())
+                            }
 
                     val isUpdateAvailable =
                             appUpdateInfo.updateAvailability() ==
@@ -154,7 +155,7 @@ constructor(
                 .addOnFailureListener { exception ->
                     Timber.e(exception, "Failed to check for updates")
                     // Reset the last check time to allow retry sooner
-                    sharedPrefs.edit().putLong("last_update_check", 0).apply()
+                    sharedPrefs.edit { putLong("last_update_check", 0) }
                 }
     }
 

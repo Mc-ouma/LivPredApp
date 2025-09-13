@@ -114,6 +114,36 @@
     <string name="your_pick_format">Sua escolha: %s</string>
     <string name="vs">VS</string>
 
+    <!-- Betting Success Notification Messages -->
+    <string name="perfect_day_in_category">🎉 Dia Perfeito em %s!</string>
+    <string name="perfect_betting_day">🎉 Dia Perfeito de Apostas!</string>
+    <string name="all_matches_won_with_rate">Todos os %d jogos ganhos com %d%% de sucesso!</string>
+    <string name="betting_success_share_text">🎉 Dia perfeito de apostas em %1$s! Todos os %2$d
+        jogos ganhos com %3$d%% de sucesso em %4$s! 🎯</string>
+    <string name="betting_success_fallback_share_text">🎉 Dia perfeito de apostas! Todos os %1$d
+        jogos ganhos com %2$d%% de sucesso em %3$s! 🎯</string>
+    <string name="category_label">🏆 Categoria: %s</string>
+    <string name="success_rate_label">🎯 Taxa de sucesso: %d%%</string>
+    <string name="perfect_day_stats">📊 Dia perfeito com %1$d/%2$d jogos ganhos</string>
+    <string name="date_label">📅 Data: %s</string>
+    <string name="match_results_label">📋 Resultados dos jogos:</string>
+    <string name="and_more_matches">... e mais %d jogos</string>
+    <string name="category_matches_won">%1$s - %2$d jogos ganhos</string>
+    <string name="betting_success_detailed_stats">🎯 Taxa de sucesso: %1$d%%\n📊 Dia perfeito com
+        %2$d/%3$d jogos ganhos\n📅 Data: %4$s\n\n📋 Resultados dos jogos:\n</string>
+
+    <!-- Betting Category Names -->
+    <string name="category_today_tips">Dicas de Hoje</string>
+    <string name="category_home_win">Vitória em Casa</string>
+    <string name="category_away_win">Vitória Fora</string>
+    <string name="category_draw">Empate</string>
+    <string name="category_home_win_or_draw">Vitória em Casa ou Empate</string>
+    <string name="category_away_win_or_draw">Vitória Fora ou Empate</string>
+    <string name="category_over_goals">Mais Gols</string>
+    <string name="category_under_goals">Menos Gols</string>
+    <string name="category_both_teams_score">Ambos Times Marcam</string>
+    <string name="category_clean_sheet">Defesa Inviolável</string>
+
     <!-- App Update -->
     <string name="an_update_has_been_downloaded">Uma atualização foi baixada.</string>
     <string name="restart">REINICIAR</string>
@@ -281,8 +311,10 @@
     <string name="position_midfielder_short">MEI</string>
     <string name="position_forward_short">ATA</string>
 
-    <string name="no_games_found_for_the_selected_date">Nenhum jogo encontrado para a data selecionada.</string>
-    <string name="failed_to_fetch_games_please_try_again_later">Falha ao buscar jogos, por favor tente novamente mais tarde.</string>
+    <string name="no_games_found_for_the_selected_date">Nenhum jogo encontrado para a data
+        selecionada.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Falha ao buscar jogos, por favor
+        tente novamente mais tarde.</string>
     <string name="ad_not_available">Anúncio não disponível.</string>
 
 </resources>

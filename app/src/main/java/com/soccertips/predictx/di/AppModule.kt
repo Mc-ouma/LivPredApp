@@ -16,6 +16,8 @@ import com.soccertips.predictx.network.DnsFailureInterceptor
 import com.soccertips.predictx.network.FixtureDetailsService
 import com.soccertips.predictx.network.NetworkUtils
 import com.soccertips.predictx.network.SocketTaggingInterceptor
+import com.soccertips.predictx.notification.BettingSuccessChecker
+import com.soccertips.predictx.notification.BettingSuccessScheduler
 import com.soccertips.predictx.notification.HiltWorkerFactory
 import com.soccertips.predictx.notification.NotificationBuilder
 import com.soccertips.predictx.notification.NotificationScheduler
@@ -302,6 +304,47 @@ object AppModule {
     @Singleton
     fun provideNotificationScheduler(@ApplicationContext context: Context): NotificationScheduler {
         return NotificationScheduler(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBettingSuccessChecker(
+            @ApplicationContext context: Context,
+            predictionRepository: PredictionRepository,
+            notificationBuilder: NotificationBuilder,
+            firebaseRepository: FirebaseRepository
+    ): BettingSuccessChecker {
+        return BettingSuccessChecker(
+                context,
+                predictionRepository,
+                notificationBuilder,
+                firebaseRepository
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideBettingSuccessScheduler(
+            @ApplicationContext context: Context,
+            bettingSuccessChecker: BettingSuccessChecker
+    ): BettingSuccessScheduler {
+        return BettingSuccessScheduler(context, bettingSuccessChecker)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRealTimeResultMonitor(
+            @ApplicationContext context: Context,
+            favoriteDao: FavoriteDao,
+            firebaseRepository: FirebaseRepository,
+            bettingSuccessChecker: BettingSuccessChecker
+    ): com.soccertips.predictx.notification.RealTimeResultMonitor {
+        return com.soccertips.predictx.notification.RealTimeResultMonitor(
+                context,
+                favoriteDao,
+                firebaseRepository,
+                bettingSuccessChecker
+        )
     }
 
     @Provides

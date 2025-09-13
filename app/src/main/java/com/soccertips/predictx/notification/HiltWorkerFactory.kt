@@ -19,7 +19,9 @@ constructor(
         private val notificationBuilder: Provider<NotificationBuilder>,
         private val favoriteDao: Provider<com.soccertips.predictx.data.local.dao.FavoriteDao>,
         private val rescheduleWorkerFactory:
-                Provider<RescheduleWorker.Factory> // Added RescheduleWorker Factory
+                Provider<RescheduleWorker.Factory>, // Added RescheduleWorker Factory
+        private val bettingSuccessWorkerFactory:
+                Provider<BettingSuccessWorker.Factory> // Added BettingSuccessWorker Factory
 ) : WorkerFactory() {
     override fun createWorker(
             appContext: Context,
@@ -39,6 +41,10 @@ constructor(
             RescheduleWorker::class.java.name -> {
                 // Use the factory to create RescheduleWorker
                 rescheduleWorkerFactory.get().create(appContext, workerParameters)
+            }
+            BettingSuccessWorker::class.java.name -> {
+                // Use the factory to create BettingSuccessWorker
+                bettingSuccessWorkerFactory.get().create(appContext, workerParameters)
             }
             else -> null
         }

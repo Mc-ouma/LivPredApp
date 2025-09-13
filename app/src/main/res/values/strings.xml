@@ -119,6 +119,36 @@
     <string name="your_pick_format">Your Pick: %s</string>
     <string name="vs">VS</string>
 
+    <!-- Betting Success Notification Messages -->
+    <string name="perfect_day_in_category">🎉 Perfect Day in %s!</string>
+    <string name="perfect_betting_day">🎉 Perfect Betting Day!</string>
+    <string name="all_matches_won_with_rate">All %d matches won with %d%% success rate!</string>
+    <string name="betting_success_share_text">🎉 Perfect betting day in %1$s! All %2$d matches won
+        with %3$d%% success rate on %4$s! 🎯</string>
+    <string name="betting_success_fallback_share_text">🎉 Perfect betting day! All %1$d matches won
+        with %2$d%% success rate on %3$s! 🎯</string>
+    <string name="category_label">🏆 Category: %s</string>
+    <string name="success_rate_label">🎯 Success Rate: %d%%</string>
+    <string name="perfect_day_stats">📊 Perfect day with %1$d/%2$d matches won</string>
+    <string name="date_label">📅 Date: %s</string>
+    <string name="match_results_label">📋 Match Results:</string>
+    <string name="and_more_matches">... and %d more matches</string>
+    <string name="category_matches_won">%1$s - %2$d matches won</string>
+    <string name="betting_success_detailed_stats">🎯 Success Rate: %1$d%%\n📊 Perfect day with
+        %2$d/%3$d matches won\n📅 Date: %4$s\n\n📋 Match Results:\n</string>
+
+    <!-- Betting Category Names -->
+    <string name="category_today_tips">Today\'s Tips</string>
+    <string name="category_home_win">Home Win</string>
+    <string name="category_away_win">Away Win</string>
+    <string name="category_draw">Draw</string>
+    <string name="category_home_win_or_draw">Home Win or Draw</string>
+    <string name="category_away_win_or_draw">Away Win or Draw</string>
+    <string name="category_over_goals">Over Goals</string>
+    <string name="category_under_goals">Under Goals</string>
+    <string name="category_both_teams_score">Both Teams Score</string>
+    <string name="category_clean_sheet">Clean Sheet</string>
+
     <!-- App Update -->
     <string name="an_update_has_been_downloaded">An update has just been downloaded.</string>
     <string name="restart">RESTART</string>
@@ -316,7 +346,8 @@
 
 
     <string name="no_games_found_for_the_selected_date">No games found for the selected date.</string>
-    <string name="failed_to_fetch_games_please_try_again_later">Failed to fetch games, please try again later.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Failed to fetch games, please try
+        again later.</string>
     <string name="ad_not_available">Ad not available</string>
     <string name="team_player">Team Player</string>
 </resources>

@@ -14,17 +14,12 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
@@ -57,9 +52,9 @@ import timber.log.Timber
  */
 @Composable
 private fun AdInitializedContent(
-    interstitialAdManager: InterstitialAdManager,
-    rewardedAdManager: RewardedAdManager,
-    content: @Composable () -> Unit
+        interstitialAdManager: InterstitialAdManager,
+        rewardedAdManager: RewardedAdManager,
+        content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
     val activity = LocalContext.current as? ComponentActivity
@@ -95,18 +90,14 @@ class MainActivity : ComponentActivity() {
     private val splashViewModel: SplashViewModel by viewModels()
 
     // Admob
-    @Inject
-    lateinit var interstitialAdManager: InterstitialAdManager
+    @Inject lateinit var interstitialAdManager: InterstitialAdManager
 
-    @Inject
-    lateinit var rewardedAdManager: RewardedAdManager
+    @Inject lateinit var rewardedAdManager: RewardedAdManager
 
-    @Inject
-    lateinit var adStateManager: AdStateManager
+    @Inject lateinit var adStateManager: AdStateManager
 
     // Custom Update Manager
-    @Inject
-    lateinit var customAppUpdateManager: CustomAppUpdateManager
+    @Inject lateinit var customAppUpdateManager: CustomAppUpdateManager
 
     // Lazy initialize for review functionality
     private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(this) }
@@ -144,16 +135,16 @@ class MainActivity : ComponentActivity() {
             if (isReady) {
                 // Initialize ad managers after UI is ready
                 AdInitializedContent(
-                    interstitialAdManager = interstitialAdManager,
-                    rewardedAdManager = rewardedAdManager,
+                        interstitialAdManager = interstitialAdManager,
+                        rewardedAdManager = rewardedAdManager,
                 ) {
                     PredictXTheme {
                         Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.surface
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colorScheme.surface
                         ) {
                             AppNavigation(
-                                fixtureId = fixtureId.value,
+                                    fixtureId = fixtureId.value,
                             )
                         }
 
@@ -236,9 +227,9 @@ class MainActivity : ComponentActivity() {
                 launchReviewFlow(reviewInfo)
             } else {
                 reviewManager
-                    .requestReviewFlow()
-                    .addOnSuccessListener { launchReviewFlow(it) }
-                    .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
+                        .requestReviewFlow()
+                        .addOnSuccessListener { launchReviewFlow(it) }
+                        .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
             }
         }
     }
@@ -288,16 +279,16 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun showExactAlarmPermissionDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Exact Alarm Permission Required")
-            .setMessage(
-                "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
-            )
-            .setPositiveButton("Go to Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                startActivity(intent)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+                .setTitle("Exact Alarm Permission Required")
+                .setMessage(
+                        "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
+                )
+                .setPositiveButton("Go to Settings") { _, _ ->
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    startActivity(intent)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -320,11 +311,9 @@ class MainActivity : ComponentActivity() {
                         notificationType == "betting_success" -> {
                     handleBettingSuccessIntent(intent)
                 }
-
                 action == "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" -> {
                     handleBettingHistoryIntent(intent)
                 }
-
                 action == "com.soccertips.predictx.ACTION_VIEW_MATCH" -> {
                     handleMatchIntent(intent)
                 }
@@ -334,6 +323,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handleBettingSuccessIntent(intent: Intent) {
         val date = intent.getStringExtra("betting_date") ?: ""
+        val categoryUrl = intent.getStringExtra("category_url") ?: ""
         val matchCount = intent.getStringExtra("match_count") ?: "0"
         val winCount = intent.getStringExtra("win_count") ?: "0"
         val successRate = intent.getStringExtra("success_rate") ?: "0"
@@ -344,7 +334,17 @@ class MainActivity : ComponentActivity() {
             logBettingSuccessEvent(date, matchCount, winCount, successRate)
         }
 
-        showBettingSuccessDialog(date, matchCount, winCount, successRate, matchesDetails, summary)
+        // Store the category URL for navigation
+        if (categoryUrl.isNotEmpty()) {
+            sharedPrefs.edit {
+                putString("pending_navigation_category_url", categoryUrl)
+                putString("pending_navigation_date", date)
+                putBoolean("pending_navigation_from_betting_success", true)
+            }
+        }
+
+        // Note: Navigation will be handled by AppNavigation compose function
+        // which will check for pending navigation and route to the ItemsListScreen
     }
 
     private fun handleBettingHistoryIntent(intent: Intent) {
@@ -367,17 +367,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showBettingSuccessDialog(
-        date: String,
-        matchCount: String,
-        winCount: String,
-        successRate: String,
-        matchesDetails: String,
-        summary: String
+            date: String,
+            matchCount: String,
+            winCount: String,
+            successRate: String,
+            matchesDetails: String,
+            summary: String
     ) {
         AlertDialog.Builder(this)
-            .setTitle("🎉 Perfect Betting Day!")
-            .setMessage(
-                """
+                .setTitle("🎉 Perfect Betting Day!")
+                .setMessage(
+                        """
                     📅 Date: $date
                     🏆 Matches Won: $winCount/$matchCount
                     🎯 Success Rate: $successRate%
@@ -387,20 +387,20 @@ class MainActivity : ComponentActivity() {
                     📋 Match Results:
                     $matchesDetails
                     """.trimIndent()
-            )
-            .setPositiveButton("View History") { _, _ ->
-                handleBettingHistoryIntent(Intent().apply { putExtra("filter_date", date) })
-            }
-            .setNegativeButton("Share Success") { _, _ ->
-                shareSuccess(matchCount, successRate, date)
-            }
-            .setNeutralButton("Close", null)
-            .show()
+                )
+                .setPositiveButton("View History") { _, _ ->
+                    handleBettingHistoryIntent(Intent().apply { putExtra("filter_date", date) })
+                }
+                .setNegativeButton("Share Success") { _, _ ->
+                    shareSuccess(matchCount, successRate, date)
+                }
+                .setNeutralButton("Close", null)
+                .show()
     }
 
     private fun shareSuccess(matchCount: String, successRate: String, date: String) {
         val shareText =
-            """
+                """
                 🎉 Perfect Betting Day! 🎉
     
                 📅 Date: $date
@@ -411,32 +411,32 @@ class MainActivity : ComponentActivity() {
             """.trimIndent()
 
         startActivity(
-            Intent.createChooser(
-                Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, shareText)
-                },
-                "Share Betting Success"
-            )
+                Intent.createChooser(
+                        Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                        },
+                        "Share Betting Success"
+                )
         )
     }
 
     private fun logBettingSuccessEvent(
-        date: String,
-        matchCount: String,
-        winCount: String,
-        successRate: String
+            date: String,
+            matchCount: String,
+            winCount: String,
+            successRate: String
     ) {
         try {
             analytics.logEvent(
-                "betting_success_notification",
-                Bundle().apply {
-                    putString("date", date)
-                    putLong("match_count", matchCount.toLongOrNull() ?: 0L)
-                    putLong("win_count", winCount.toLongOrNull() ?: 0L)
-                    putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
-                }
+                    "betting_success_notification",
+                    Bundle().apply {
+                        putString("date", date)
+                        putLong("match_count", matchCount.toLongOrNull() ?: 0L)
+                        putLong("win_count", winCount.toLongOrNull() ?: 0L)
+                        putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
+                    }
             )
         } catch (e: Exception) {
             Timber.e(e, "Failed to log betting success event")
@@ -453,19 +453,16 @@ class MainActivity : ComponentActivity() {
                     Timber.d("Update flow completed successfully")
                     logAnalyticsEvent("update_flow_completed")
                 }
-
                 RESULT_CANCELED -> {
                     Timber.d("Update flow cancelled by user")
                     logAnalyticsEvent("update_flow_cancelled")
                 }
-
                 ActivityResult.RESULT_IN_APP_UPDATE_FAILED -> {
                     Timber.e("Update flow failed")
                     logAnalyticsEvent("update_flow_failed")
                     // Reset update check timer to retry sooner
                     sharedPrefs.edit { putLong("last_update_check", 0) }
                 }
-
                 else -> {
                     Timber.d("Update flow result: $resultCode")
                     logAnalyticsEventWithResultCode("update_flow_unknown_result", resultCode)

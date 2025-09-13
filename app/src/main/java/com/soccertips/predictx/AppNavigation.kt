@@ -63,6 +63,16 @@ fun AppNavigation(
         mutableStateOf(activity.sharedPrefs.getString("pending_navigation_fixture_id", null))
     }
 
+    // Check for pending category navigation from betting success notification
+    val pendingCategoryUrl = remember {
+        mutableStateOf(activity.sharedPrefs.getString("pending_navigation_category_url", null))
+    }
+    val pendingFromBettingSuccess = remember {
+        mutableStateOf(
+                activity.sharedPrefs.getBoolean("pending_navigation_from_betting_success", false)
+        )
+    }
+
     // If there's a pending navigation, use it; otherwise use the provided fixture ID
     val targetFixtureId = remember { mutableStateOf(pendingFixtureId.value ?: fixtureId) }
 
@@ -259,6 +269,39 @@ fun AppNavigation(
                     activity.sharedPrefs.edit { remove("pending_navigation_fixture_id") }
                     pendingFixtureId.value = null
                 }
+            }
+        }
+    }
+
+    // Handle category navigation from betting success notification
+    LaunchedEffect(pendingFromBettingSuccess.value) {
+        if (pendingFromBettingSuccess.value && !pendingCategoryUrl.value.isNullOrEmpty()) {
+            val categoryUrlToNavigate = pendingCategoryUrl.value!!
+
+            // Encode the URL for navigation
+            val encodedUrl = java.net.URLEncoder.encode(categoryUrlToNavigate, "UTF-8")
+            val targetRoute = Routes.ItemsList.createRoute(encodedUrl)
+
+            // Make sure we're not already on this screen
+            if (navController.currentDestination?.route != targetRoute) {
+                // First navigate to Home to set it as the back destination
+                navController.navigate(Routes.Home.route) {
+                    // Clear the back stack
+                    popUpTo(navController.graph.id) { inclusive = true }
+                    launchSingleTop = true
+                }
+
+                // Then navigate to ItemsList for the specific category
+                navController.navigate(targetRoute) { launchSingleTop = true }
+
+                // Clear any pending category navigation
+                activity.sharedPrefs.edit {
+                    remove("pending_navigation_category_url")
+                    remove("pending_navigation_date")
+                    remove("pending_navigation_from_betting_success")
+                }
+                pendingCategoryUrl.value = null
+                pendingFromBettingSuccess.value = false
             }
         }
     }

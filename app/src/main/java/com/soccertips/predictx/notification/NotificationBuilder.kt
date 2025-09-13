@@ -157,6 +157,123 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
                 .setAutoCancel(true)
     }
 
+    /** Build a congratulatory notification for perfect betting days */
+    fun buildBettingSuccessNotification(
+            date: String,
+            categoryName: String,
+            categoryUrl: String,
+            totalMatches: Int,
+            winningMatches: Int,
+            successRate: Int,
+            matchDetails: List<String>
+    ): NotificationCompat.Builder {
+        return try {
+            val title = context.getString(R.string.perfect_day_in_category, categoryName)
+            val shortText =
+                    context.getString(
+                            R.string.all_matches_won_with_rate,
+                            winningMatches,
+                            successRate
+                    )
+
+            // Create detailed content for expanded view
+            val detailedContent =
+                    StringBuilder()
+                            .apply {
+                                append(
+                                        context.getString(R.string.category_label, categoryName) +
+                                                "\n"
+                                )
+                                append(
+                                        context.getString(
+                                                R.string.success_rate_label,
+                                                successRate
+                                        ) + "\n"
+                                )
+                                append(
+                                        context.getString(
+                                                R.string.perfect_day_stats,
+                                                winningMatches,
+                                                totalMatches
+                                        ) + "\n"
+                                )
+                                append(context.getString(R.string.date_label, date) + "\n\n")
+                                append(context.getString(R.string.match_results_label) + "\n")
+                                matchDetails.take(10).forEach { detail
+                                    -> // Limit to 10 matches for readability
+                                    append("$detail\n")
+                                }
+                                if (matchDetails.size > 10) {
+                                    append(
+                                            context.getString(
+                                                    R.string.and_more_matches,
+                                                    matchDetails.size - 10
+                                            )
+                                    )
+                                }
+                            }
+                            .toString()
+
+            val bigTextStyle =
+                    NotificationCompat.BigTextStyle()
+                            .setBigContentTitle(title)
+                            .bigText(detailedContent)
+                            .setSummaryText(
+                                    context.getString(
+                                            R.string.category_matches_won,
+                                            categoryName,
+                                            winningMatches
+                                    )
+                            )
+
+            // Create intent to open results screen for this specific category
+            val viewResultsIntent = createBettingSuccessIntent(categoryUrl, date)
+
+            // Create share intent
+            val shareText =
+                    context.getString(
+                            R.string.betting_success_share_text,
+                            categoryName,
+                            winningMatches,
+                            successRate,
+                            date
+                    )
+            val shareIntent = createShareIntent(shareText)
+
+            NotificationCompat.Builder(context, NotificationHelper.BETTING_SUCCESS_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.launcher)
+                    .setContentTitle(title)
+                    .setContentText(shortText)
+                    .setStyle(bigTextStyle)
+                    .setAutoCancel(true)
+                    .setContentIntent(viewResultsIntent)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setCategory(NotificationCompat.CATEGORY_EVENT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setColor(context.getColor(R.color.success_green))
+                    .addAction(R.drawable.ic_visibility, "View Results", viewResultsIntent)
+                    .addAction(R.drawable.ic_share, "Share Success", shareIntent)
+                    .setLights(android.graphics.Color.GREEN, 1000, 1000)
+                    .setVibrate(longArrayOf(0, 500, 200, 500))
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to build betting success notification")
+            // Create a simple fallback notification
+            NotificationCompat.Builder(context, NotificationHelper.BETTING_SUCCESS_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.launcher)
+                    .setContentTitle(context.getString(R.string.perfect_betting_day))
+                    .setContentText(
+                            context.getString(
+                                    R.string.all_matches_won_with_rate,
+                                    winningMatches,
+                                    successRate
+                            )
+                    )
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(createDefaultPendingIntent())
+        }
+    }
+
     private suspend fun loadTeamLogo(logoUrl: String?): Bitmap? =
             withContext(Dispatchers.IO) {
                 try {
@@ -317,6 +434,58 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
                     Intent(context, MainActivity::class.java),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+        }
+    }
+
+    /** Create a PendingIntent for betting success notification that opens results */
+    private fun createBettingSuccessIntent(categoryUrl: String, date: String): PendingIntent {
+        return try {
+            val intent =
+                    Intent(context, MainActivity::class.java).apply {
+                        action = "com.soccertips.predictx.ACTION_VIEW_BETTING_SUCCESS"
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                        putExtra("fromNotification", true)
+                        putExtra("betting_date", date)
+                        putExtra("category_url", categoryUrl)
+                        putExtra("show_results", true)
+                    }
+
+            PendingIntent.getActivity(
+                    context,
+                    ("betting_success_${categoryUrl}_$date").hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } catch (e: Exception) {
+            Timber.e(
+                    e,
+                    "Failed to create betting success intent for category: $categoryUrl, date: $date"
+            )
+            createDefaultPendingIntent()
+        }
+    }
+
+    /** Create a PendingIntent for sharing success */
+    private fun createShareIntent(shareText: String): PendingIntent {
+        return try {
+            val shareIntent =
+                    Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+
+            val chooserIntent = Intent.createChooser(shareIntent, "Share Success")
+
+            PendingIntent.getActivity(
+                    context,
+                    shareText.hashCode(),
+                    chooserIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create share intent")
+            createDefaultPendingIntent()
         }
     }
 

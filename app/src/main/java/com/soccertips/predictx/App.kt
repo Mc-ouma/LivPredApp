@@ -52,6 +52,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     @Inject lateinit var startupTimeTracker: StartupTimeTracker
 
+    @Inject
+    lateinit var bettingSuccessScheduler:
+            com.soccertips.predictx.notification.BettingSuccessScheduler
+
+    @Inject lateinit var realTimeResultMonitor: com.soccertips.predictx.notification.RealTimeResultMonitor
+
     private var currentActivity: Activity? = null
 
     // Track app foreground status
@@ -131,6 +137,13 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Initialize API config
             initApiConfig()
 
+            // Initialize betting success checking system
+            bettingSuccessScheduler.initialize()
+
+            // Initialize real-time result monitoring system
+            realTimeResultMonitor.startMonitoring()
+            Timber.d("Real-time result monitoring initialized")
+
             // Initialize Firebase messaging with delay
             delay(1000) // Let UI start first
             initFirebaseMessaging()
@@ -193,7 +206,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                     }
                 }
 
-                // Use application context for initialization but ensure activity context for ad operations
+                // Use application context for initialization but ensure activity context for ad
+                // operations
                 try {
                     withTimeout(5000) { // Add timeout to prevent hanging
                         MobileAds.initialize(activity) { initializationStatus ->
@@ -204,7 +218,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                             if (!activity.isFinishing && !activity.isDestroyed) {
                                 setupAppOpenAdManager()
                             } else {
-                                Timber.w("Activity invalid after MobileAds init, skipping ad manager setup")
+                                Timber.w(
+                                        "Activity invalid after MobileAds init, skipping ad manager setup"
+                                )
                             }
 
                             // Mark Mobile Ads as initialized
@@ -214,7 +230,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                             // If this is not the first launch, allow ads
                             if (!isFirstLaunch()) {
                                 isInitialAppStart = false
-                                Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                                Timber.d(
+                                        "AppOpenAdManager: Ready for ads after MobileAds initialization"
+                                )
                             }
 
                             Timber.d(
@@ -228,9 +246,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                 // Re-check currentActivity to ensure we have the most recent one
                                 val currentValidActivity = currentActivity
                                 if (currentValidActivity != null &&
-                                        !currentValidActivity.isFinishing &&
-                                        !currentValidActivity.isDestroyed &&
-                                        !isFirstAdLoadAttempted) {
+                                                !currentValidActivity.isFinishing &&
+                                                !currentValidActivity.isDestroyed &&
+                                                !isFirstAdLoadAttempted
+                                ) {
 
                                     Timber.d("Loading first App Open ad after initialization delay")
                                     try {
@@ -241,8 +260,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                     } catch (e: Exception) {
                                         Timber.e("Error loading first app open ad: ${e.message}")
                                         if (e.message?.contains("ViewConfiguration") == true ||
-                                                e.message?.contains("WindowManager") == true ||
-                                                e.message?.contains("visual Context") == true) {
+                                                        e.message?.contains("WindowManager") ==
+                                                                true ||
+                                                        e.message?.contains("visual Context") ==
+                                                                true
+                                        ) {
 
                                             Timber.e(
                                                     "Context error during ad loading - will retry later"
@@ -252,15 +274,20 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                                 delay(5000)
                                                 val retryActivity = currentActivity
                                                 if (retryActivity != null &&
-                                                        !retryActivity.isFinishing &&
-                                                        !retryActivity.isDestroyed) {
+                                                                !retryActivity.isFinishing &&
+                                                                !retryActivity.isDestroyed
+                                                ) {
                                                     try {
                                                         // Update context again before retry
-                                                        appOpenAdManager.setActivityContext(retryActivity)
+                                                        appOpenAdManager.setActivityContext(
+                                                                retryActivity
+                                                        )
                                                         appOpenAdManager.loadAppOpenAd()
                                                         isFirstAdLoadAttempted = true
                                                     } catch (retryError: Exception) {
-                                                        Timber.e("Retry failed: ${retryError.message}")
+                                                        Timber.e(
+                                                                "Retry failed: ${retryError.message}"
+                                                        )
                                                     }
                                                 }
                                             }
@@ -280,13 +307,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
                 // Special handling for context-related errors
                 if (e.message?.contains("ViewConfiguration") == true ||
-                        e.message?.contains("context") == true ||
-                        e.message?.contains("WindowManager") == true ||
-                        e.message?.contains("visual Context") == true) {
+                                e.message?.contains("context") == true ||
+                                e.message?.contains("WindowManager") == true ||
+                                e.message?.contains("visual Context") == true
+                ) {
 
-                    Timber.e(
-                            "Context error detected - will retry with longer delay"
-                    )
+                    Timber.e("Context error detected - will retry with longer delay")
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(5000) // Wait 5 seconds before retry
                         if (currentActivity != null &&

@@ -42,6 +42,7 @@ constructor(
     interface UpdateMatchNotificationWorkerEntryPoint {
         fun fixtureDetailsService(): FixtureDetailsService
         fun favoriteDao(): FavoriteDao
+        fun realTimeResultMonitor(): RealTimeResultMonitor
     }
 
     // Match status categories
@@ -169,6 +170,19 @@ constructor(
                 )
 
         withContext(Dispatchers.IO) { favoriteDao.updateFavoriteItem(updatedFavoriteItem) }
+
+        // Trigger real-time monitoring when match result is updated
+        val realTimeResultMonitor = entryPoint.realTimeResultMonitor()
+        
+        // If match has finished with a result, trigger immediate real-time monitoring
+        if (matchStatus in TERMINAL_STATUSES && currentScore != "0-0") {
+            try {
+                realTimeResultMonitor.monitorMatchResult(fixtureId)
+                Timber.d("Triggered real-time monitoring for completed match $fixtureId")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to trigger real-time monitoring for match $fixtureId")
+            }
+        }
 
         val workerName = "update_notification_${fixtureId}"
 

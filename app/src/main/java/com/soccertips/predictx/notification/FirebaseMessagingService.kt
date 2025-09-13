@@ -20,11 +20,12 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @AndroidEntryPoint
-class FCMService : FirebaseMessagingService() {
+class FirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var tokenRepository: TokenRepository
+    @Inject lateinit var realTimeResultMonitor: RealTimeResultMonitor
 
-    // Use a supervised job to handle cancellation properly
+    // Use a SupervisorJob so that failure of one coroutine doesn't cancel others
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
@@ -55,6 +56,11 @@ class FCMService : FirebaseMessagingService() {
                 "all_matches_won" -> {
                     handleBettingSuccessNotification(it.title, it.body, remoteMessage.data)
                 }
+                "match_result_update" -> {
+                    // Handle match result updates and trigger real-time monitoring
+                    handleMatchResultUpdate(remoteMessage.data)
+                    sendNotification(it.title, it.body, remoteMessage.data)
+                }
                 else -> {
                     sendNotification(it.title, it.body, remoteMessage.data)
                 }
@@ -75,10 +81,24 @@ class FCMService : FirebaseMessagingService() {
                             remoteMessage.data
                     )
                 }
+                "match_result_update" -> {
+                    // Handle match result updates and trigger real-time monitoring
+                    handleMatchResultUpdate(remoteMessage.data)
+                    val fixtureId = remoteMessage.data["fixtureId"]
+                    if (fixtureId != null) {
+                        sendNotification(
+                                remoteMessage.data["title"] ?: "Match Result Update",
+                                remoteMessage.data["body"] ?: "A match result has been updated",
+                                remoteMessage.data
+                        )
+                    }
+                }
                 else -> {
                     // Handle existing fixture notifications
                     val fixtureId = remoteMessage.data["fixtureId"]
                     if (fixtureId != null) {
+                        // Also trigger real-time monitoring for any fixture updates
+                        handleMatchResultUpdate(remoteMessage.data)
                         sendNotification(
                                 remoteMessage.data["title"] ?: "New Match Update",
                                 remoteMessage.data["body"] ?: "Check out the latest match details",
@@ -293,6 +313,34 @@ class FCMService : FirebaseMessagingService() {
         // Use a unique ID for each notification
         val notificationId = System.currentTimeMillis().toInt()
         notificationManager.notify(notificationId, notificationBuilder.build())
+    }
+
+    /**
+     * Handle match result updates and trigger real-time monitoring
+     */
+    private fun handleMatchResultUpdate(data: Map<String, String>) {
+        serviceScope.launch {
+            try {
+                val fixtureId = data["fixtureId"]
+                if (fixtureId != null) {
+                    Timber.d("Handling match result update for fixture: $fixtureId")
+                    
+                    // Trigger real-time monitoring for this specific match
+                    realTimeResultMonitor.monitorMatchResult(fixtureId)
+                    
+                    // Also check if any categories might be completed today
+                    realTimeResultMonitor.checkTodayCompletedCategories()
+                    
+                    Timber.d("Real-time monitoring triggered for fixture $fixtureId")
+                } else {
+                    // If no specific fixture ID, check all today's completed categories
+                    realTimeResultMonitor.checkTodayCompletedCategories()
+                    Timber.d("Real-time monitoring triggered for all today's categories")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to handle match result update")
+            }
+        }
     }
 
     override fun onDestroy() {

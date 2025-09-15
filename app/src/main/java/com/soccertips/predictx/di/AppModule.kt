@@ -335,14 +335,14 @@ object AppModule {
     @Singleton
     fun provideRealTimeResultMonitor(
             @ApplicationContext context: Context,
-            favoriteDao: FavoriteDao,
             firebaseRepository: FirebaseRepository,
+            predictionRepository: PredictionRepository,
             bettingSuccessChecker: BettingSuccessChecker
     ): com.soccertips.predictx.notification.RealTimeResultMonitor {
         return com.soccertips.predictx.notification.RealTimeResultMonitor(
                 context,
-                favoriteDao,
                 firebaseRepository,
+                predictionRepository,
                 bettingSuccessChecker
         )
     }

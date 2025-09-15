@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import androidx.core.content.edit
+import com.soccertips.predictx.utils.OutcomeCalculator
 
 @Singleton
 class BettingSuccessChecker
@@ -157,23 +158,33 @@ constructor(
             if (hasResult) {
                 matchesWithResults++
 
-                val outcome = match.outcome?.lowercase()
+                // Use OutcomeCalculator to determine the outcome dynamically
+                val calculatedOutcome = OutcomeCalculator.calculateOutcome(
+                    pick = match.pick,
+                    result = match.result,
+                    originalOutcome = match.outcome
+                )
+
+                val outcome = calculatedOutcome.lowercase()
                 when (outcome) {
                     "win" -> {
                         winningMatches++
                         matchDetails.add(
-                                "✅ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick})"
+                                "✅ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - Calculated: $calculatedOutcome"
                         )
+                        Timber.d("WIN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}")
                     }
                     "lose" -> {
                         losingMatches++
                         matchDetails.add(
-                                "❌ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick})"
+                                "❌ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - Calculated: $calculatedOutcome"
                         )
+                        Timber.d("LOSE: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}")
                     }
                     else -> {
                         // Treat unknown outcomes as not completed
                         matchesWithResults--
+                        Timber.d("UNKNOWN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}")
                     }
                 }
             }

@@ -21,9 +21,6 @@ import timber.log.Timber
 
 class NotificationScheduler @Inject constructor(@ApplicationContext private val context: Context) {
 
-    // Testing mode - set to false to disable test notifications
-    private val testingMode = false
-
     fun scheduleMatchNotification(item: FavoriteItem) {
         try {
             val notificationTime = calculateNotificationTime(item)
@@ -37,21 +34,6 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
                     scheduleWithAlarmManager(item, notificationTime)
                 } else {
                     scheduleWithWorkManager(item, notificationTime)
-                }
-
-                // For testing: also schedule a notification after a short delay if in testing mode
-                if (testingMode) {
-                    val testTime =
-                            System.currentTimeMillis() +
-                                    TimeUnit.SECONDS.toMillis(15) // 15 seconds for quick testing
-                    Timber.d(
-                            "TEST MODE: Also scheduling a test notification to appear in 15 seconds"
-                    )
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        scheduleWithAlarmManager(item, testTime)
-                    } else {
-                        scheduleWithWorkManager(item, testTime)
-                    }
                 }
             } else {
                 Timber.w(
@@ -85,9 +67,8 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
             return notificationTime
         } catch (e: Exception) {
             Timber.e(e, "Error parsing date/time for match ${item.fixtureId}, using fallback time")
-            // Fallback to 15 seconds from now for testing (reduced from 1 minute for quicker
-            // testing)
-            return System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(15)
+            // Fallback to 1 minute from now
+            return System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)
         }
     }
 
@@ -117,7 +98,6 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
                     }
 
             // Create a unique request code based on fixture ID and notification time
-            // This ensures that both regular and test notifications can be scheduled
             val requestCode = (item.fixtureId.hashCode() + (notificationTime % 10000)).toInt()
 
             val pendingIntent =
@@ -181,7 +161,6 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
                         .build()
 
         // Create a unique tag based on fixture ID and notification time
-        // This ensures that both regular and test notifications can be scheduled
         val tag = "match_notification_${item.fixtureId}_${notificationTime % 10000}"
 
         val notificationWork =

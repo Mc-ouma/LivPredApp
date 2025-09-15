@@ -86,7 +86,7 @@ constructor(
         }
     }
 
-    /** Check betting success immediately for testing purposes */
+    /** Check betting success immediately for manual verification */
     suspend fun checkImmediately(date: String? = null) {
         try {
             if (date != null) {

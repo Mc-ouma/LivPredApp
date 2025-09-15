@@ -136,33 +136,37 @@ fun ItemsListScreen(
 
     val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    
+
     // Check for pending navigation date from betting success notification
     val activity = context.findActivity()
     val sharedPrefs = activity?.getSharedPreferences("predictx_prefs", Context.MODE_PRIVATE)
     val pendingNavigationDate = sharedPrefs?.getString("pending_navigation_date", null)
-    
+
     // Initialize selectedDate with pending navigation date if available, otherwise use today
-    var selectedDate by rememberSaveable { 
+    var selectedDate by rememberSaveable {
         mutableStateOf(
-            if (!pendingNavigationDate.isNullOrEmpty()) {
-                try {
-                    val parsedDate = LocalDate.parse(pendingNavigationDate)
-                    Timber.d("ItemsListScreen: Using pending navigation date: $pendingNavigationDate")
-                    // Clear the pending navigation date after using it
-                    sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
-                    parsedDate
-                } catch (e: Exception) {
-                    Timber.w("ItemsListScreen: Failed to parse pending navigation date: $pendingNavigationDate")
+                if (!pendingNavigationDate.isNullOrEmpty()) {
+                    try {
+                        val parsedDate = LocalDate.parse(pendingNavigationDate)
+                        Timber.d(
+                                "ItemsListScreen: Using pending navigation date: $pendingNavigationDate"
+                        )
+                        // Clear the pending navigation date after using it
+                        sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
+                        parsedDate
+                    } catch (e: Exception) {
+                        Timber.w(
+                                "ItemsListScreen: Failed to parse pending navigation date: $pendingNavigationDate"
+                        )
+                        LocalDate.now()
+                    }
+                } else {
+                    Timber.d("ItemsListScreen: No pending navigation date, using today")
                     LocalDate.now()
                 }
-            } else {
-                Timber.d("ItemsListScreen: No pending navigation date, using today")
-                LocalDate.now()
-            }
         )
     }
-    
+
     val formattedDate = DateUtils.formatRelativeDate(context, selectedDate.toString())
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 

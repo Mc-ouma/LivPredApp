@@ -2,11 +2,13 @@ package com.soccertips.predictx.notification
 
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.edit
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.data.model.ServerResponse
 import com.soccertips.predictx.repository.FirebaseRepository
 import com.soccertips.predictx.repository.PredictionRepository
+import com.soccertips.predictx.utils.OutcomeCalculator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -16,8 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import androidx.core.content.edit
-import com.soccertips.predictx.utils.OutcomeCalculator
 
 @Singleton
 class BettingSuccessChecker
@@ -159,11 +159,12 @@ constructor(
                 matchesWithResults++
 
                 // Use OutcomeCalculator to determine the outcome dynamically
-                val calculatedOutcome = OutcomeCalculator.calculateOutcome(
-                    pick = match.pick,
-                    result = match.result,
-                    originalOutcome = match.outcome
-                )
+                val calculatedOutcome =
+                        OutcomeCalculator.calculateOutcome(
+                                pick = match.pick,
+                                result = match.result,
+                                originalOutcome = match.outcome
+                        )
 
                 val outcome = calculatedOutcome.lowercase()
                 when (outcome) {
@@ -172,19 +173,25 @@ constructor(
                         matchDetails.add(
                                 "✅ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - Calculated: $calculatedOutcome"
                         )
-                        Timber.d("WIN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}")
+                        Timber.d(
+                                "WIN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}"
+                        )
                     }
                     "lose" -> {
                         losingMatches++
                         matchDetails.add(
                                 "❌ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - Calculated: $calculatedOutcome"
                         )
-                        Timber.d("LOSE: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}")
+                        Timber.d(
+                                "LOSE: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}"
+                        )
                     }
                     else -> {
                         // Treat unknown outcomes as not completed
                         matchesWithResults--
-                        Timber.d("UNKNOWN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}")
+                        Timber.d(
+                                "UNKNOWN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}"
+                        )
                     }
                 }
             }
@@ -214,10 +221,7 @@ constructor(
     }
 
     /** Send congratulations notification for perfect betting day */
-    private fun sendCongratulationsNotification(
-            categoryResult: CategoryResult,
-            date: String
-    ) {
+    private fun sendCongratulationsNotification(categoryResult: CategoryResult, date: String) {
         try {
             val notification =
                     notificationBuilder
@@ -379,7 +383,7 @@ constructor(
                 LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         notifiedDates.removeAll { key -> key.substringAfterLast("_") < dateLimit }
 
-        sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates)}
+        sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates) }
     }
 }
 

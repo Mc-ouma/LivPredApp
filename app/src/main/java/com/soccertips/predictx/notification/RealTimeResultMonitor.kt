@@ -79,7 +79,9 @@ constructor(
                     }
                 }
 
-                Timber.d("Monitoring ${categories.size} categories for dates: $today, $yesterdayStr")
+                Timber.d(
+                        "Monitoring ${categories.size} categories for dates: $today, $yesterdayStr"
+                )
             } catch (e: Exception) {
                 Timber.e(e, "Failed to start real-time monitoring")
             }
@@ -91,17 +93,16 @@ constructor(
         monitorScope.launch {
             try {
                 val categoryDateKey = "${category.url}_$date"
-                
+
                 // Continuously monitor matches for this category and date
                 while (categoryDateKey !in completedCategoryDates) {
                     try {
                         // Get category data from the repository (not favorites)
                         val categoryData = predictionRepository.getCategoryData(category.url)
-                        
+
                         // Filter matches for the specific date
-                        val matchesForDate = categoryData.serverResponse.filter { match ->
-                            match.mDate == date
-                        }
+                        val matchesForDate =
+                                categoryData.serverResponse.filter { match -> match.mDate == date }
 
                         if (matchesForDate.isEmpty()) {
                             Timber.d("No matches found for category ${category.name} on date $date")
@@ -111,22 +112,26 @@ constructor(
                         // Remove duplicates based on fixtureId
                         val uniqueMatches = matchesForDate.distinctBy { it.fixtureId }
 
-                        val matchesWithResults = uniqueMatches.filter { match ->
-                            !match.result.isNullOrBlank() && 
-                            match.result != "-" && 
-                            match.result != "Unknown" && 
-                            match.result != "vs" &&
-                            !match.outcome.isNullOrBlank() &&
-                            match.outcome!!.lowercase() in listOf("win", "lose")
-                        }
+                        val matchesWithResults =
+                                uniqueMatches.filter { match ->
+                                    !match.result.isNullOrBlank() &&
+                                            match.result != "-" &&
+                                            match.result != "Unknown" &&
+                                            match.result != "vs" &&
+                                            !match.outcome.isNullOrBlank() &&
+                                            match.outcome!!.lowercase() in listOf("win", "lose")
+                                }
 
                         val totalMatches = uniqueMatches.size
                         val completedMatches = matchesWithResults.size
 
-                        Timber.d("Category ${category.name} on $date: $completedMatches/$totalMatches matches completed")
+                        Timber.d(
+                                "Category ${category.name} on $date: $completedMatches/$totalMatches matches completed"
+                        )
 
                         // Check if all matches for this category and date are completed
-                        if (completedMatches >= totalMatches * 0.8 && totalMatches > 0) { // At least 80% completed
+                        if (completedMatches >= totalMatches * 0.8 && totalMatches > 0
+                        ) { // At least 80% completed
                             completedCategoryDates.add(categoryDateKey)
 
                             // Emit completion event
@@ -141,16 +146,21 @@ constructor(
                             )
 
                             // Trigger immediate betting success check for this specific category
-                            val success = bettingSuccessChecker.checkBettingSuccessForCategory(
-                                    categoryUrl = category.url,
-                                    date = date,
-                                    categoryName = category.name
-                            )
+                            val success =
+                                    bettingSuccessChecker.checkBettingSuccessForCategory(
+                                            categoryUrl = category.url,
+                                            date = date,
+                                            categoryName = category.name
+                                    )
 
                             if (success) {
-                                Timber.i("Betting success notification sent for category '${category.name}' on $date")
+                                Timber.i(
+                                        "Betting success notification sent for category '${category.name}' on $date"
+                                )
                             } else {
-                                Timber.d("No betting success notification needed for category '${category.name}' on $date")
+                                Timber.d(
+                                        "No betting success notification needed for category '${category.name}' on $date"
+                                )
                             }
                             break
                         }
@@ -209,29 +219,34 @@ constructor(
         monitorScope.launch {
             try {
                 Timber.d("Monitoring match result for fixture $fixtureId in all categories")
-                
+
                 // Get all categories and check which ones contain this fixture
                 val categories = getAllCategoriesFromRepository()
                 val today = dateFormat.format(Date())
-                
+
                 categories.forEach { category ->
                     try {
                         val categoryData = predictionRepository.getCategoryData(category.url)
                         val match = categoryData.serverResponse.find { it.fixtureId == fixtureId }
-                        
+
                         if (match != null) {
                             val date = match.mDate ?: today
                             val categoryDateKey = "${category.url}_$date"
-                            
+
                             // Add this category-date to monitoring if not already monitored
                             if (categoryDateKey !in monitoredCategoryDates) {
                                 monitoredCategoryDates.add(categoryDateKey)
                                 monitorCategoryDateMatches(category, date)
-                                Timber.d("Started monitoring category ${category.name} for fixture $fixtureId on date $date")
+                                Timber.d(
+                                        "Started monitoring category ${category.name} for fixture $fixtureId on date $date"
+                                )
                             }
                         }
                     } catch (e: Exception) {
-                        Timber.e(e, "Error checking category ${category.name} for fixture $fixtureId")
+                        Timber.e(
+                                e,
+                                "Error checking category ${category.name} for fixture $fixtureId"
+                        )
                     }
                 }
             } catch (e: Exception) {
@@ -254,14 +269,15 @@ constructor(
 
                         if (todayMatches.isNotEmpty()) {
                             val uniqueMatches = todayMatches.distinctBy { it.fixtureId }
-                            val matchesWithResults = uniqueMatches.filter { match ->
-                                !match.result.isNullOrBlank() && 
-                                match.result != "-" && 
-                                match.result != "Unknown" && 
-                                match.result != "vs" &&
-                                !match.outcome.isNullOrBlank() &&
-                                match.outcome!!.lowercase() in listOf("win", "lose")
-                            }
+                            val matchesWithResults =
+                                    uniqueMatches.filter { match ->
+                                        !match.result.isNullOrBlank() &&
+                                                match.result != "-" &&
+                                                match.result != "Unknown" &&
+                                                match.result != "vs" &&
+                                                !match.outcome.isNullOrBlank() &&
+                                                match.outcome!!.lowercase() in listOf("win", "lose")
+                                    }
 
                             val totalMatches = uniqueMatches.size
                             val completedMatches = matchesWithResults.size
@@ -276,7 +292,10 @@ constructor(
                             }
                         }
                     } catch (e: Exception) {
-                        Timber.e(e, "Error checking today's completed matches for category ${category.name}")
+                        Timber.e(
+                                e,
+                                "Error checking today's completed matches for category ${category.name}"
+                        )
                     }
                 }
             } catch (e: Exception) {

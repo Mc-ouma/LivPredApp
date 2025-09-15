@@ -2,7 +2,6 @@ package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,8 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,18 +24,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.standings.Goals
 import com.soccertips.predictx.data.model.standings.HomeAwayRecord
 import com.soccertips.predictx.data.model.standings.OverallRecord
 import com.soccertips.predictx.data.model.standings.TeamInfo
 import com.soccertips.predictx.data.model.standings.TeamStanding
-import com.soccertips.predictx.ui.team.FixtureStandings
-import com.soccertips.predictx.ui.theme.LocalCardColors
-import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.ui.theme.PredictXTheme
-import kotlin.collections.List
 
 @Composable
 fun FixtureStandingsScreen(

@@ -1,7 +1,5 @@
 package com.soccertips.predictx
 
-import android.app.Activity.RESULT_CANCELED
-import android.app.Activity.RESULT_OK
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
@@ -174,11 +172,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun updateAppLaunchCount() {
-        // This is now handled by SplashViewModel
-        // Keeping this method for any additional MainActivity-specific logic
-    }
-
     private suspend fun initializeBackgroundComponents() {
         withContext(Dispatchers.IO) {
             // Check for updates using the custom update manager with retry logic after a delay
@@ -327,8 +320,8 @@ class MainActivity : ComponentActivity() {
         val matchCount = intent.getStringExtra("match_count") ?: "0"
         val winCount = intent.getStringExtra("win_count") ?: "0"
         val successRate = intent.getStringExtra("success_rate") ?: "0"
-        val matchesDetails = intent.getStringExtra("matches_details") ?: ""
-        val summary = intent.getStringExtra("summary") ?: ""
+        intent.getStringExtra("matches_details") ?: ""
+        intent.getStringExtra("summary") ?: ""
 
         lifecycleScope.launch(Dispatchers.IO) {
             logBettingSuccessEvent(date, matchCount, winCount, successRate)
@@ -471,8 +464,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // Clean up is now handled by the CustomAppUpdateManager lifecycle observer
-    }
 }

@@ -253,7 +253,7 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
                     .setColor(context.getColor(R.color.success_green))
                     .addAction(R.drawable.ic_visibility, "View Results", viewResultsIntent)
                     .addAction(R.drawable.ic_share, "Share Success", shareIntent)
-                    .setLights(android.graphics.Color.GREEN, 1000, 1000)
+                    .setLights(Color.GREEN, 1000, 1000)
                     .setVibrate(longArrayOf(0, 500, 200, 500))
         } catch (e: Exception) {
             Timber.e(e, "Failed to build betting success notification")

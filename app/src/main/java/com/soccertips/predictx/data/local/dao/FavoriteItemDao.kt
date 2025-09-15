@@ -39,6 +39,9 @@ interface FavoriteDao {
     @Query("SELECT * FROM favorites WHERE fixtureId = :fixtureId")
     fun getFavoriteItemByFixtureId(fixtureId: String): FavoriteItem
 
+    @Query("SELECT * FROM favorites WHERE fixtureId = :fixtureId")
+    suspend fun getFavoriteItemByFixtureIdOrNull(fixtureId: String): FavoriteItem?
+
     @Query("SELECT * FROM favorites WHERE mDate = :date")
     suspend fun getFavoritesByDate(date: String): List<FavoriteItem>
 

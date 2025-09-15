@@ -195,8 +195,8 @@ constructor(
     fun removeFromFavorites(item: FavoriteItem) {
         viewModelScope.launch {
             try {
-                favoriteItemDao.deleteFavoriteItem(fixtureId = item.fixtureId.toString())
-                notificationScheduler.cancelNotification(item.fixtureId.toString())
+                favoriteItemDao.deleteFavoriteItem(fixtureId = item.fixtureId)
+                notificationScheduler.cancelNotification(item.fixtureId)
                 val currentFavorites =
                         (uiState.value as? UiState.Success)?.data?.toMutableList()
                                 ?: mutableListOf()
@@ -212,7 +212,7 @@ constructor(
                         actionLabel = getApplication<Application>().getString(R.string.undo),
                         onActionPerformed = { restoreFavorites(item) }
                 )
-                cancelNotification(item.fixtureId.toString())
+                cancelNotification(item.fixtureId)
             } catch (e: Exception) {
                 _uiState.value =
                         UiState.Error(

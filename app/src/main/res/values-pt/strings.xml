@@ -127,7 +127,7 @@
     <string name="perfect_day_stats">📊 Dia perfeito com %1$d/%2$d jogos ganhos</string>
     <string name="date_label">📅 Data: %s</string>
     <string name="match_results_label">📋 Resultados dos jogos:</string>
-    <string name="and_more_matches">... e mais %d jogos</string>
+    <string name="and_more_matches">… e mais %d jogos</string>
     <string name="category_matches_won">%1$s - %2$d jogos ganhos</string>
     <string name="betting_success_detailed_stats">🎯 Taxa de sucesso: %1$d%%\n📊 Dia perfeito com
         %2$d/%3$d jogos ganhos\n📅 Data: %4$s\n\n📋 Resultados dos jogos:\n</string>

@@ -5,18 +5,15 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.soccertips.predictx.admob.AdStateManager
-import com.soccertips.predictx.admob.InterstitialAdManager
-import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.util.StartupTimeTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import androidx.core.content.edit
+import javax.inject.Inject
 
 @HiltViewModel
 class SplashViewModel

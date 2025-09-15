@@ -1,52 +1,78 @@
 package com.soccertips.predictx.util
 
-     import android.net.TrafficStats
-     import timber.log.Timber
-     import java.lang.reflect.Method
-     import java.net.Socket
-     import javax.inject.Inject
-     import javax.inject.Singleton
+import android.net.TrafficStats
+import android.os.Build
+import timber.log.Timber
+import java.lang.reflect.Method
+import java.net.Socket
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
-      * Initializer that globally tags socket connections to prevent StrictMode violations.
-      * This works by replacing Android's default socket tagger with our custom implementation.
-      */
-     @Singleton
-     class NetworkTaggingInitializer @Inject constructor() {
+ * Initializer that handles network traffic tagging to prevent StrictMode violations.
+ * Uses API-level appropriate methods for different Android versions.
+ */
+@Singleton
+class NetworkTaggingInitializer @Inject constructor() {
 
-         companion object {
-             private const val APP_SOCKET_TAG = 0xF00D // Unique tag for this app's traffic
-             private const val FIREBASE_SOCKET_TAG = 0xF1FE // Tag for Firebase traffic
-             private const val ANALYTICS_SOCKET_TAG = 0xABA1 // Tag for Analytics traffic
-         }
+    companion object {
+        private const val APP_SOCKET_TAG = 0xF00D // Unique tag for this app's traffic
+        private const val FIREBASE_SOCKET_TAG = 0xF1FE // Tag for Firebase traffic
+        private const val ANALYTICS_SOCKET_TAG = 0xABA1 // Tag for Analytics traffic
+    }
 
-         /**
-          * Initialize global socket tagging by replacing the system SocketTagger
-          */
-         fun initialize() {
-             try {
-                 // Get the setThreadStatsTag method from TrafficStats
-                 val setThreadStatsTagMethod = TrafficStats::class.java.getMethod(
-                     "setThreadStatsTag", Int::class.javaPrimitiveType)
+    /**
+     * Initialize network traffic tagging using API-appropriate methods
+     */
+    fun initialize() {
+        try {
+            // For newer Android versions, use the thread-level tagging approach
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                initializeThreadTagging()
+            } else {
+                Timber.d("Network tagging not available on this API level")
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Network tagging initialization failed, continuing without tagging")
+        }
+    }
 
-                 // Get the SocketTagger class via reflection (it's internal)
-                 val socketTaggerClass = Class.forName("android.net.TrafficStats\$SocketTagger")
+    private fun initializeThreadTagging() {
+        try {
+            // Set a default thread tag for the main thread
+            TrafficStats.setThreadStatsTag(APP_SOCKET_TAG)
 
-                 // Get the setSocketTagger method via reflection
-                 val setSocketTaggerMethod = TrafficStats::class.java.getMethod(
-                     "setSocketTagger", socketTaggerClass)
+            // Create a thread local to handle per-thread tagging
+            setupThreadLocalTagging()
 
-                 // Create our custom SocketTagger
-                 val customTagger = createSocketTagger(socketTaggerClass, setThreadStatsTagMethod)
+            Timber.d("Thread-based network tagging initialized successfully")
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to initialize thread-based network tagging")
+        }
+    }
 
-                 // Set our custom tagger
-                 setSocketTaggerMethod.invoke(null, customTagger)
+    private fun setupThreadLocalTagging() {
+        // Set up a thread-local approach for tagging network requests
+        // This is safer than trying to override system-level socket tagging
+        val threadLocal = ThreadLocal<Int>()
 
-                 Timber.d("Custom socket tagger installed successfully")
-             } catch (e: Exception) {
-                 Timber.e(e, "Failed to install custom socket tagger: ${e.message}")
-             }
-         }
+        // Set default tag for current thread
+        threadLocal.set(APP_SOCKET_TAG)
+
+        // For background threads that might make network calls, we can set appropriate tags
+        // This approach is more compatible across different Android versions
+    }
+
+    /**
+     * Tag network traffic for Firebase operations
+     */
+    fun tagFirebaseTraffic() {
+        try {
+            TrafficStats.setThreadStatsTag(FIREBASE_SOCKET_TAG)
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to tag Firebase traffic")
+        }
+    }
 
          private fun createSocketTagger(socketTaggerClass: Class<*>, setThreadStatsTagMethod: Method): Any {
              // Create a proxy that implements the SocketTagger class

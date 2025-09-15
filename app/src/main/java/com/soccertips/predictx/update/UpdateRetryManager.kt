@@ -35,7 +35,7 @@ class UpdateRetryManager @Inject constructor(private val sharedPrefs: SharedPref
     }
 
     suspend fun executeWithRetry(operation: suspend () -> Boolean): Boolean {
-        val retryCount = getRetryCount()
+        getRetryCount()
 
         if (!shouldRetry()) {
             Timber.d("Retry not allowed yet or max retries exceeded")

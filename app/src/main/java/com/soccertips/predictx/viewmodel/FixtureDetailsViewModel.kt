@@ -89,7 +89,7 @@ class FixtureDetailsViewModel @Inject constructor(
     private val activeJobs = mutableMapOf<String, Job>()
 
     // Generic function to fetch data and use cache with improved concurrency handling
-    private suspend fun <T> fetchData(
+    private fun <T> fetchData(
         cache: LruCache<String, CachedData<UiState<T>>>,
         cacheKey: String,
         dataFetcher: suspend () -> UiState<T>,

@@ -95,7 +95,6 @@ constructor(
                         }
                     }
 
-
             // Update the notification
             if (fixtureResponse != null && fixtureResponse.response.isNotEmpty()) {
                 updateNotification(fixtureId, fixtureResponse)
@@ -134,7 +133,22 @@ constructor(
         val currentScore = "$homeGoals-$awayGoals"
 
         val favoriteItem =
-                withContext(Dispatchers.IO) { favoriteDao.getFavoriteItemByFixtureId(fixtureId) }
+                withContext(Dispatchers.IO) { favoriteDao.getFavoriteItemByFixtureIdOrNull(fixtureId) }
+
+        // If the favorite item is no longer in the database, cancel the worker and return
+        if (favoriteItem == null) {
+            Timber.w("Fixture $fixtureId is no longer in favorites database, cancelling notifications")
+            val workerName = "update_notification_${fixtureId}"
+            workManagerWrapper.cancelUniqueWork(workerName)
+
+            // Clean up shared preferences for this fixture
+            sharedPrefs.edit {
+                remove(scoreKey)
+                remove(statusKey)
+            }
+
+            return
+        }
 
         // Update FavoriteItem with latest match status and score
         val updatedFavoriteItem =
@@ -173,7 +187,7 @@ constructor(
 
         // Trigger real-time monitoring when match result is updated
         val realTimeResultMonitor = entryPoint.realTimeResultMonitor()
-        
+
         // If match has finished with a result, trigger immediate real-time monitoring
         if (matchStatus in TERMINAL_STATUSES && currentScore != "0-0") {
             try {
@@ -288,5 +302,4 @@ constructor(
             )
         }
     }
-
 }

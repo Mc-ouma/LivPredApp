@@ -5,27 +5,23 @@ import android.os.Build
 import androidx.core.content.edit
 import com.google.firebase.database.FirebaseDatabase
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.tasks.await
-import timber.log.Timber
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 
-/**
- * Repository for managing FCM tokens
- */
+/** Repository for managing FCM tokens */
 @Singleton
-class TokenRepository @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class TokenRepository @Inject constructor(@ApplicationContext private val context: Context) {
     private val sharedPreferences = context.getSharedPreferences(FCM_PREFS, Context.MODE_PRIVATE)
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val tokensRef = firebaseDatabase.getReference("fcm_tokens")
 
-    private val supportedLanguages = listOf("en","pt","fr", "es")
+    private val supportedLanguages = listOf("en", "pt", "fr", "es")
     private fun getSupportedLanguage(): String {
         val systemLang = Locale.getDefault().language.lowercase()
         return if (supportedLanguages.contains(systemLang)) {
@@ -36,8 +32,8 @@ class TokenRepository @Inject constructor(
     }
 
     private val _userLanguage: String by lazy { getSupportedLanguage() }
-    val userLanguage: String get() = _userLanguage
-
+    val userLanguage: String
+        get() = _userLanguage
 
     // Get or generate a unique device ID
     private val deviceId: String
@@ -45,9 +41,7 @@ class TokenRepository @Inject constructor(
             var id = sharedPreferences.getString(KEY_DEVICE_ID, null)
             if (id == null) {
                 id = UUID.randomUUID().toString()
-                sharedPreferences.edit {
-                    putString(KEY_DEVICE_ID, id)
-                }
+                sharedPreferences.edit { putString(KEY_DEVICE_ID, id) }
             }
             return id
         }
@@ -69,74 +63,107 @@ class TokenRepository @Inject constructor(
         // Only send real tokens to Firebase
         if (!isPlaceholder) {
             try {
-                val deviceInfo = mapOf(
-                    "token" to token,
-                    "deviceId" to deviceId,
-                    "model" to "${Build.MANUFACTURER} ${Build.MODEL}",
-                    "osVersion" to "Android ${Build.VERSION.RELEASE}",
-                    "appVersion" to getAppVersion(),
-                    "language" to userLanguage,
-                    "lastUpdated" to System.currentTimeMillis()
-                )
+                val deviceInfo =
+                        mapOf(
+                                "token" to token,
+                                "deviceId" to deviceId,
+                                "model" to "${Build.MANUFACTURER} ${Build.MODEL}",
+                                "osVersion" to "Android ${Build.VERSION.RELEASE}",
+                                "appVersion" to getAppVersion(),
+                                "language" to userLanguage,
+                                "lastUpdated" to System.currentTimeMillis()
+                        )
 
                 tokensRef.child(deviceId).setValue(deviceInfo).await()
                 Timber.d("Token successfully sent to Firebase")
+
+                // Clear any previous Firebase error flag on success
+                clearFirebaseError()
             } catch (e: Exception) {
                 // Store that we had a Firebase error, but keep the token locally
-                sharedPreferences.edit {
-                    putBoolean(KEY_FIREBASE_ERROR, true)
+                sharedPreferences.edit { putBoolean(KEY_FIREBASE_ERROR, true) }
+
+                // Log different types of errors differently
+                when {
+                    e.message?.contains("AUTHENTICATION_FAILED") == true -> {
+                        Timber.e(
+                                e,
+                                "FCM token save failed due to authentication - check Firebase configuration"
+                        )
+                    }
+                    e.message?.contains("PERMISSION_DENIED") == true -> {
+                        Timber.e(
+                                e,
+                                "FCM token save failed due to permissions - check Firebase rules"
+                        )
+                    }
+                    e.message?.contains("NetworkException") == true -> {
+                        Timber.w(
+                                e,
+                                "FCM token save failed due to network issues - will retry later"
+                        )
+                    }
+                    else -> {
+                        Timber.e(e, "Failed to send token to Firebase: ${e.message}")
+                    }
                 }
-                Timber.e(e, "Failed to send token to Firebase")
             }
         } else {
             Timber.d("Not sending placeholder token to Firebase")
             // Mark that we're using a placeholder
-            sharedPreferences.edit {
-                putBoolean(KEY_FIREBASE_ERROR, true)
-            }
+            sharedPreferences.edit { putBoolean(KEY_FIREBASE_ERROR, true) }
         }
     }
 
-    /**
-     * Get the current FCM token if available
-     */
+    /** Retry sending a stored token to Firebase (useful after network/auth issues are resolved) */
+    suspend fun retryTokenSync() {
+        val token = getToken()
+        val isPlaceholder = isPlaceholderToken()
+
+        if (token != null && !isPlaceholder && hadFirebaseError()) {
+            Timber.d("Retrying FCM token sync to Firebase")
+            saveToken(token, false)
+        } else if (token != null && isPlaceholder) {
+            // If we have a placeholder token, try to get a real FCM token
+            Timber.d("Attempting to replace placeholder token with real FCM token")
+            try {
+                val realToken =
+                        com.google.firebase.messaging.FirebaseMessaging.getInstance().token.await()
+                saveToken(realToken, false)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to get real FCM token, keeping placeholder")
+            }
+        } else {
+            Timber.d(
+                    "No token retry needed - token: ${token != null}, placeholder: $isPlaceholder, error: ${hadFirebaseError()}"
+            )
+        }
+    }
+
+    /** Get the current FCM token if available */
     fun getToken(): String? {
         return sharedPreferences.getString(KEY_FCM_TOKEN, null)
     }
 
-    /**
-     * Check if the current token is a placeholder
-     */
+    /** Check if the current token is a placeholder */
     fun isPlaceholderToken(): Boolean {
         return sharedPreferences.getBoolean(KEY_IS_PLACEHOLDER, false)
     }
 
-    /**
-     * Check if we had an error with Firebase
-     */
+    /** Check if we had an error with Firebase */
     fun hadFirebaseError(): Boolean {
         return sharedPreferences.getBoolean(KEY_FIREBASE_ERROR, false)
     }
 
-    /**
-     * Clear the Firebase error flag (after successful reconnection)
-     */
+    /** Clear the Firebase error flag (after successful reconnection) */
     fun clearFirebaseError() {
-        sharedPreferences.edit {
-            putBoolean(KEY_FIREBASE_ERROR, false)
-        }
+        sharedPreferences.edit { putBoolean(KEY_FIREBASE_ERROR, false) }
     }
 
-    /**
-     * Observe FCM token as Flow
-     */
-    fun getTokenAsFlow(): Flow<String?> = flow {
-        emit(getToken())
-    }
+    /** Observe FCM token as Flow */
+    fun getTokenAsFlow(): Flow<String?> = flow { emit(getToken()) }
 
-    /**
-     * Delete token (e.g., on user logout)
-     */
+    /** Delete token (e.g., on user logout) */
     suspend fun deleteToken() {
         val token = getToken()
         val isPlaceholder = isPlaceholderToken()
@@ -158,9 +185,7 @@ class TokenRepository @Inject constructor(
         }
     }
 
-    /**
-     * Get the app version name
-     */
+    /** Get the app version name */
     private fun getAppVersion(): String? {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)

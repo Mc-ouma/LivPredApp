@@ -127,7 +127,7 @@
     <string name="perfect_day_stats">📊 Perfect day with %1$d/%2$d matches won</string>
     <string name="date_label">📅 Date: %s</string>
     <string name="match_results_label">📋 Match Results:</string>
-    <string name="and_more_matches">... and %d more matches</string>
+    <string name="and_more_matches">… and %d more matches</string>
     <string name="category_matches_won">%1$s - %2$d matches won</string>
     <string name="betting_success_detailed_stats">🎯 Success Rate: %1$d%%\n📊 Perfect day with
         %2$d/%3$d matches won\n📅 Date: %4$s\n\n📋 Match Results:\n</string>

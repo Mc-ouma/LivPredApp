@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import androidx.core.content.edit
 
 @Singleton
 class BettingSuccessChecker
@@ -202,7 +203,7 @@ constructor(
     }
 
     /** Send congratulations notification for perfect betting day */
-    private suspend fun sendCongratulationsNotification(
+    private fun sendCongratulationsNotification(
             categoryResult: CategoryResult,
             date: String
     ) {
@@ -248,7 +249,7 @@ constructor(
                 LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         notifiedDates.removeAll { it < dateLimit }
 
-        sharedPrefs.edit().putStringSet(NOTIFIED_DATES_KEY, notifiedDates).apply()
+        sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates) }
     }
 
     /** Check betting success for today's date */
@@ -271,7 +272,7 @@ constructor(
                     sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet())?.toMutableSet()
                             ?: mutableSetOf()
             notifiedDates.remove(date)
-            sharedPrefs.edit().putStringSet(NOTIFIED_DATES_KEY, notifiedDates).apply()
+            sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates) }
 
             checkBettingSuccessForDate(localDate)
         } catch (e: Exception) {
@@ -280,13 +281,13 @@ constructor(
     }
 
     /**
-     * Check betting success for a specific category and date immediately
-     * Used by real-time monitoring when all matches in a category are completed
+     * Check betting success for a specific category and date immediately Used by real-time
+     * monitoring when all matches in a category are completed
      */
     suspend fun checkBettingSuccessForCategory(
-        categoryUrl: String,
-        date: String,
-        categoryName: String
+            categoryUrl: String,
+            date: String,
+            categoryName: String
     ): Boolean {
         return withContext(Dispatchers.IO) {
             try {
@@ -295,7 +296,9 @@ constructor(
                 val notifiedDates =
                         sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet()) ?: emptySet()
                 if (notifiedDates.contains(notificationKey)) {
-                    Timber.d("Already notified for category $categoryName on date: $date, skipping check")
+                    Timber.d(
+                            "Already notified for category $categoryName on date: $date, skipping check"
+                    )
                     return@withContext false
                 }
 
@@ -303,9 +306,8 @@ constructor(
                 val categoryData = predictionRepository.getCategoryData(categoryUrl)
 
                 // Filter matches for the specific date
-                val matchesForDate = categoryData.serverResponse.filter { match ->
-                    match.mDate == date
-                }
+                val matchesForDate =
+                        categoryData.serverResponse.filter { match -> match.mDate == date }
 
                 if (matchesForDate.isEmpty()) {
                     Timber.d("No matches found for category $categoryName on date $date")
@@ -319,29 +321,36 @@ constructor(
                 val analysis = analyzeMatchResults(uniqueMatches, date)
 
                 if (analysis.shouldSendCongratulations) {
-                    val categoryResult = CategoryResult(
-                        categoryName = categoryName,
-                        categoryUrl = categoryUrl,
-                        analysis = analysis
-                    )
+                    val categoryResult =
+                            CategoryResult(
+                                    categoryName = categoryName,
+                                    categoryUrl = categoryUrl,
+                                    analysis = analysis
+                            )
 
                     // Send immediate notification
                     sendCongratulationsNotification(categoryResult, date)
-                    
+
                     // Mark this specific category-date as notified
                     markCategoryDateAsNotified(notificationKey)
 
-                    Timber.i("Sent immediate betting success notification for category '$categoryName' on $date")
+                    Timber.i(
+                            "Sent immediate betting success notification for category '$categoryName' on $date"
+                    )
                     return@withContext true
                 } else {
-                    Timber.d("Category '$categoryName' on $date does not meet criteria for congratulations: " +
-                            "Total=${analysis.totalMatches}, WithResults=${analysis.matchesWithResults}, " +
-                            "Wins=${analysis.winningMatches}, Losses=${analysis.losingMatches}")
+                    Timber.d(
+                            "Category '$categoryName' on $date does not meet criteria for congratulations: " +
+                                    "Total=${analysis.totalMatches}, WithResults=${analysis.matchesWithResults}, " +
+                                    "Wins=${analysis.winningMatches}, Losses=${analysis.losingMatches}"
+                    )
                     return@withContext false
                 }
-
             } catch (e: Exception) {
-                Timber.e(e, "Error checking betting success for category $categoryName on date: $date")
+                Timber.e(
+                        e,
+                        "Error checking betting success for category $categoryName on date: $date"
+                )
                 return@withContext false
             }
         }
@@ -357,11 +366,9 @@ constructor(
         // Keep only last 30 days to prevent unlimited growth
         val dateLimit =
                 LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        notifiedDates.removeAll { key ->
-            key.substringAfterLast("_") < dateLimit
-        }
+        notifiedDates.removeAll { key -> key.substringAfterLast("_") < dateLimit }
 
-        sharedPrefs.edit().putStringSet(NOTIFIED_DATES_KEY, notifiedDates).apply()
+        sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates)}
     }
 }
 

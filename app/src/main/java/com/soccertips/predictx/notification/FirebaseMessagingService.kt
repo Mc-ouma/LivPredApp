@@ -12,12 +12,12 @@ import com.google.firebase.messaging.RemoteMessage
 import com.soccertips.predictx.MainActivity
 import com.soccertips.predictx.R
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class FirebaseMessagingService : FirebaseMessagingService() {
@@ -315,22 +315,20 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
-    /**
-     * Handle match result updates and trigger real-time monitoring
-     */
+    /** Handle match result updates and trigger real-time monitoring */
     private fun handleMatchResultUpdate(data: Map<String, String>) {
         serviceScope.launch {
             try {
                 val fixtureId = data["fixtureId"]
                 if (fixtureId != null) {
                     Timber.d("Handling match result update for fixture: $fixtureId")
-                    
+
                     // Trigger real-time monitoring for this specific match
                     realTimeResultMonitor.monitorMatchResult(fixtureId)
-                    
+
                     // Also check if any categories might be completed today
                     realTimeResultMonitor.checkTodayCompletedCategories()
-                    
+
                     Timber.d("Real-time monitoring triggered for fixture $fixtureId")
                 } else {
                     // If no specific fixture ID, check all today's completed categories
@@ -364,10 +362,13 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         when (level) {
-            TRIM_MEMORY_RUNNING_MODERATE, TRIM_MEMORY_RUNNING_LOW, TRIM_MEMORY_RUNNING_CRITICAL -> {
+             TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_UI_HIDDEN-> {
                 // Cancel non-essential operations when memory is low
                 Timber.d("Memory trim requested (level: $level), considering resource cleanup")
+
+
             }
+
         }
     }
 }

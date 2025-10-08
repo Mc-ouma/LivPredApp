@@ -11,4 +11,8 @@
         <item name="postSplashScreenTheme">@style/Theme.PredictX</item>
     </style>
 
+    <!-- Theme for AdMob AdActivity for API 22 and below -->
+    <style name="Theme.PredictX.Admob" parent="@android:style/Theme.Translucent">
+    </style>
+
 </resources>

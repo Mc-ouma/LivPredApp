@@ -50,8 +50,6 @@ fun FixtureStandingsScreen(
 
         // Main Column for the entire screen content
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-            val primaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            val secondaryBackground = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
 
             // Iterate over the grouped standings
             groupedStandings.toList().forEachIndexed { index, (groupName, groupStandings) ->
@@ -59,16 +57,9 @@ fun FixtureStandingsScreen(
                     Spacer(modifier = Modifier.height(16.dp)) // Space between groups
                 }
 
-                // Determine the background color based on the index
-                val backgroundColor = if (index % 2 == 0) primaryBackground else secondaryBackground
-
                 Column(
                         modifier =
                                 Modifier.fillMaxWidth()
-                                        .background(
-                                                color = backgroundColor,
-                                                shape = MaterialTheme.shapes.medium
-                                        )
                                         .padding(vertical = 8.dp)
                 ) {
                     // Display group header as the card title
@@ -144,13 +135,13 @@ fun FixtureStandingsScreen(
                                                                 else Color.Transparent,
                                                         shape = MaterialTheme.shapes.medium
                                                 )
-                                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                                .padding(horizontal = 8.dp, vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Rank column
                             Text(
-                                    text = "${teamStanding.rank}",
-                                    modifier = Modifier.weight(1f),
+                                    text = "${teamStanding.rank}.",
+                                    modifier = Modifier.weight(2f),
                                     textAlign = TextAlign.Center
                             )
 
@@ -248,7 +239,7 @@ private fun LeagueCardPreview() {
             update = "2024-10-28T00:00:00+00:00",
         ),
         TeamStanding(
-            rank = 2,
+            rank = 22,
             team = TeamInfo(
                 id = 40,
                 name = "Liverpool",

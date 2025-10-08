@@ -120,6 +120,7 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 color = color,
                                         )
                                     }
+                                .sortedBy { it.mTime }
                         }
 
                 cachedData.put(cacheKey, System.currentTimeMillis() to items)

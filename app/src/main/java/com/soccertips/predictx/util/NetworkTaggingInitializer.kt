@@ -8,10 +8,7 @@ import java.net.Socket
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Initializer that handles network traffic tagging to prevent StrictMode violations.
- * Uses API-level appropriate methods for different Android versions.
- */
+
 @Singleton
 class NetworkTaggingInitializer @Inject constructor() {
 

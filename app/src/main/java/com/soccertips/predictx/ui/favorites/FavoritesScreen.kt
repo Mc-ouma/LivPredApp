@@ -246,19 +246,21 @@ fun FavoriteItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable(
                 onClick = onClick,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple()
-            )
-            .padding(4.dp),
-         colors = cardColors,
+            ),
+        colors = cardColors,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.material3.MaterialTheme.shapes.medium
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Match Header (League info, date and favorite button)
+            // Header with league info and favorite button
             MatchHeader(
                 league = item.league?.split(",")?.firstOrNull() ?: "Unknown League",
                 leagueLogo = item.leagueLogo,
@@ -267,23 +269,18 @@ fun FavoriteItemCard(
                 onFavoriteClick = { onFavoriteClick(item) },
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Teams Row
+            // Main content - teams and score
             TeamsRow(
                 homeTeam = homeTeamDetails,
                 awayTeam = awayTeamDetails,
                 matchTime = item.mTime ?: "TBD",
-                score = item.outcome // We likely don't have score in FavoriteItem
+                score = item.outcome,
+                statusColor = statusColor
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Match Status Row
+            // Footer with pick only
             MatchStatusRow(
-                pick = item.pick,
-                status = item.mStatus,
-                statusColor = statusColor
+                pick = item.pick
             )
         }
     }

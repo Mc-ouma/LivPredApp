@@ -60,7 +60,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -201,11 +200,8 @@ fun FixtureDetailsScreen(
     // Track visibility of FixtureScoreAndScorers
     val showFixtureScore by remember { derivedStateOf { scrollState.firstVisibleItemIndex == 0 } }
 
-    // Set up scroll behavior for the collapsible TopAppBar
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-
     Scaffold(
-            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+            modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopAppBar(
                         title = {
@@ -224,7 +220,6 @@ fun FixtureDetailsScreen(
                             }
                         },
                         actions = { Menu2() },
-                        scrollBehavior = scrollBehavior,
                         colors =
                                 TopAppBarDefaults.topAppBarColors(
                                         containerColor =

@@ -2,9 +2,7 @@ package com.soccertips.predictx
 
 import android.app.Activity
 import android.app.Application
-import android.os.Build
 import android.os.Bundle
-import android.os.StrictMode
 import androidx.core.content.edit
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
@@ -17,11 +15,7 @@ import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.repository.PreloadRepository
 import com.soccertips.predictx.util.NetworkTaggingInitializer
 import com.soccertips.predictx.util.StartupTimeTracker
-import com.soccertips.predictx.util.StrictModeUtil
 import dagger.hilt.android.HiltAndroidApp
-import java.io.IOException
-import java.util.*
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -30,6 +24,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import java.io.IOException
+import java.util.UUID
+import javax.inject.Inject
 
 @HiltAndroidApp
 class App : Application(), Configuration.Provider, Application.ActivityLifecycleCallbacks {
@@ -162,21 +159,6 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             delay(1000) // Let UI start first
             initFirebaseMessaging()
 
-            // StrictMode for debug builds
-            if (BuildConfig.DEBUG) {
-                withContext(Dispatchers.Main) {
-                    StrictModeUtil.enableStrictModeForIntentViolations()
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        StrictMode.setVmPolicy(
-                            StrictMode.VmPolicy.Builder(StrictMode.getVmPolicy())
-                                .detectAll()
-                                .penaltyLog()
-                                .build()
-                        )
-                    }
-                }
-            }
 
             // Delay preloading until app UI is ready
             delay(2000)
@@ -206,18 +188,35 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 )
 
                 // Additional validation before calling MobileAds.initialize
-                if (!activity.hasWindowFocus()) {
+                var checks = 0
+                while (
+                    (!activity.hasWindowFocus() ||
+                            activity.window?.decorView?.isAttachedToWindow != true) &&
+                    checks < 5
+                ) {
                     Timber.w(
-                        "Activity does not have window focus, delaying MobileAds initialization"
+                        "Activity not ready for MobileAds init (focus=${activity.hasWindowFocus()}, attached=${activity.window?.decorView?.isAttachedToWindow}). Retrying..."
                     )
-                    delay(1000)
+                    delay(300)
+                    checks++
 
-                    // Double-check activity is still valid
                     if (activity.isFinishing || activity.isDestroyed) {
-                        Timber.w("Activity became invalid during delay, aborting MobileAds init")
+                        Timber.w("Activity became invalid during readiness wait, aborting MobileAds init")
                         isMobileAdsInitializing = false
                         return@withContext
                     }
+                }
+
+                if (!activity.hasWindowFocus() ||
+                    activity.window?.decorView?.isAttachedToWindow != true
+                ) {
+                    Timber.w("Activity still not ready for MobileAds init, scheduling retry")
+                    isMobileAdsInitializing = false
+                    CoroutineScope(Dispatchers.Main).launch {
+                        delay(1000)
+                        initializeMobileAds()
+                    }
+                    return@withContext
                 }
 
                 // Use application context for initialization but ensure activity context for ad
@@ -408,18 +407,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     private fun initializeConsent(activity: Activity) {
         val paramsBuilder = com.google.android.ump.ConsentRequestParameters.Builder()
 
-        if (BuildConfig.DEBUG) {
-            val debugSettings =
-                com.google.android.ump.ConsentDebugSettings.Builder(this)
-                    .addTestDeviceHashedId("AF635FCF25F0A2F4F2631DE103049E7D")
-                    .build()
-            paramsBuilder.setConsentDebugSettings(debugSettings)
-        }
-
         val params = paramsBuilder.build()
 
         consentInformation =
-            com.google.android.ump.UserMessagingPlatform.getConsentInformation(this)
+            com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
         consentInformation.requestConsentInfoUpdate(
             activity,
             params,

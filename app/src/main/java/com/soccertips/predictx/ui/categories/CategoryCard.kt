@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +49,7 @@ fun ImageListItem(
     colorHex: String? = null,
     onClick: () -> Unit,
 ) {
-    val cardElevation = LocalCardElevation.current
+    val cardElevation = CardDefaults.elevatedCardElevation(2.dp)
 
     // Use custom color if provided or extract from icon
     val iconTint = colorHex?.let { Color(it.toColorInt()) }
@@ -61,13 +62,13 @@ fun ImageListItem(
         contentColor = iconTint
     )
 
-    Card(
+    ElevatedCard(
         onClick = onClick,
         colors = customCardColors,
         elevation = cardElevation,
         modifier = Modifier
             .padding(horizontal = 12.dp)
-            .padding(bottom = 26.dp),
+            .padding(bottom = 12.dp),
     ) {
         Column(Modifier.fillMaxWidth()) {
             Image(
@@ -75,7 +76,7 @@ fun ImageListItem(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(150.dp)
                     .padding(24.dp),
                 contentScale = ContentScale.Fit,
                 colorFilter = ColorFilter.tint(iconTint)
@@ -98,7 +99,7 @@ fun ImageListItem(
 
 
 @RequiresApi(Build.VERSION_CODES.S)
-@Preview("Dark Theme", uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Preview("Dark Theme")
 @Composable
 private fun ImageListItemPreview() {
     PredictXTheme {

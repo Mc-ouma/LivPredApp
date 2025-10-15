@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.FiberManualRecord
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,7 +58,6 @@ fun ItemCard(
     val cardElevation = LocalCardElevation.current
     var isFavorite by remember { mutableStateOf(false) }
 
-
     // Use key parameter to prevent unnecessary recompositions
     LaunchedEffect(item.fixtureId) {
         isFavorite = viewModel.isFavorite(item)
@@ -68,19 +66,21 @@ fun ItemCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable(
                 onClick = onClick,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple()
             ),
         colors = cardColors,
-        elevation = cardElevation
+        elevation = cardElevation,
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(0.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Header with league info and favorite button
             MatchHeader(
                 league = item.league?.split(",")?.firstOrNull() ?: "Unknown",
                 leagueLogo = item.leagueLogo,
@@ -93,21 +93,18 @@ fun ItemCard(
                 }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
+            // Main content - teams and score
             TeamsRow(
                 homeTeam = TeamDetails(item.hLogoPath, item.homeTeam),
                 awayTeam = TeamDetails(item.aLogoPath, item.awayTeam),
                 matchTime = item.mTime ?: "TBD",
-                score = item.result
+                score = item.result,
+                statusColor = item.color
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
+            // Footer with pick only
             MatchStatusRow(
-                pick = item.pick,
-                status = item.mStatus,
-                statusColor = item.color
+                pick = item.pick
             )
         }
     }
@@ -121,59 +118,52 @@ fun MatchHeader(
     isFavorite: Boolean,
     onFavoriteClick: () -> Unit
 ) {
-    var favoriteState by remember { mutableStateOf(isFavorite) }
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // League info in its own row
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+        shape = MaterialTheme.shapes.small
+    ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 4.dp)
-        ) {
-            AsyncImage(
-                model = leagueLogo,
-                contentDescription = "League Logo",
-                modifier = Modifier.size(24.dp),
-                contentScale = ContentScale.Fit,
-                placeholder = painterResource(R.drawable.placeholder)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = league,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-
-        // Date and favorite in a separate row
-        Row(
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = date,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            // League info with logo
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                AsyncImage(
+                    model = leagueLogo,
+                    contentDescription = "League Logo",
+                    modifier = Modifier.size(24.dp),
+                    contentScale = ContentScale.Fit,
+                    placeholder = painterResource(R.drawable.placeholder)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = league,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Favorite button
             IconButton(
-                onClick = {
-                    favoriteState = !favoriteState
-                    onFavoriteClick()
-                },
-                modifier = Modifier.size(36.dp)
+                onClick = onFavoriteClick,
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = 0.6f
-                    )
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -185,12 +175,11 @@ fun TeamsRow(
     homeTeam: TeamDetails,
     awayTeam: TeamDetails,
     matchTime: String,
-    score: String?
+    score: String?,
+    statusColor: Color = Color.Unspecified
 ) {
     val displayScore = score?.let { rawScore ->
-
         val parts = rawScore.split(":")
-
         parts.find { part ->
             val trimmed = part.trim()
             trimmed.matches(Regex(".*\\d+\\s*-\\s*\\d+.*"))
@@ -199,39 +188,67 @@ fun TeamsRow(
             scoreMatch?.value
         }
     } ?: "-"
+
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        // Home Team
         EnhancedTeamInfo(
             teamDetails = homeTeam,
             alignment = Alignment.Start,
-            modifier = Modifier.weight(2f)
+            modifier = Modifier.weight(1f)
         )
 
+        // Center - Score/Time with better styling
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .weight(0.7f)
         ) {
-            Text(
-                text = matchTime,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
-            )
-            if (!score.isNullOrBlank() && score != "Unknown") {
+            if (!score.isNullOrBlank() && score != "Unknown" && displayScore != "-") {
                 Text(
                     text = displayScore,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = when (statusColor) {
+                        Color.Green -> MaterialTheme.colorScheme.primary
+                        Color.Red -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.onSurface
+                    },
+                    textAlign = TextAlign.Center
                 )
+                Text(
+                    text = "FT",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Medium
+                )
+            } else {
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        text = matchTime,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
 
+        // Away Team
         EnhancedTeamInfo(
             teamDetails = awayTeam,
             alignment = Alignment.End,
-            modifier = Modifier.weight(2f)
+            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -242,53 +259,35 @@ fun EnhancedTeamInfo(
     alignment: Alignment.Horizontal,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (alignment == Alignment.Start) Arrangement.Start else Arrangement.End,
+    Column(
+        horizontalAlignment = alignment,
+        verticalArrangement = Arrangement.Center,
         modifier = modifier
     ) {
-        if (alignment == Alignment.End) {
-            Text(
-                text = teamDetails.teamName ?: "Unknown",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            AsyncImage(
-                model = teamDetails.teamLogo,
-                contentDescription = "${teamDetails.teamName} logo",
-                modifier = Modifier.size(32.dp),
-                contentScale = ContentScale.Fit
-            )
-        } else {
-            AsyncImage(
-                model = teamDetails.teamLogo,
-                contentDescription = "${teamDetails.teamName} logo",
-                modifier = Modifier.size(32.dp),
-                contentScale = ContentScale.Fit
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = teamDetails.teamName ?: "Unknown",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        AsyncImage(
+            model = teamDetails.teamLogo,
+            contentDescription = "${teamDetails.teamName} logo",
+            modifier = Modifier.size(36.dp),
+            contentScale = ContentScale.Fit,
+            placeholder = painterResource(R.drawable.placeholder)
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = teamDetails.teamName ?: "Unknown",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = if (alignment == Alignment.Start) TextAlign.Start else TextAlign.End,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
 @Composable
 fun MatchStatusRow(
-    pick: String?,
-    status: String?,
-    statusColor: Color
+    pick: String?
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -298,33 +297,21 @@ fun MatchStatusRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Pick: ${pick ?: "TBD"}",
+                text = "Pick: ",
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                fontWeight = FontWeight.Medium
             )
-            Spacer(modifier = Modifier.width(12.dp))
-            if (statusColor != Color.Unspecified) {
-                Icon(
-                    imageVector = Icons.Outlined.FiberManualRecord,
-                    contentDescription = null,
-                    tint = statusColor,
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-            }
             Text(
-                text = status ?: "TBD",
+                text = pick ?: "TBD",
                 style = MaterialTheme.typography.labelMedium,
-                color = when (statusColor) {
-                    Color.Green -> MaterialTheme.colorScheme.primary
-                    Color.Red -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                }
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -422,15 +409,14 @@ private fun ItemCardPreview() {
                 homeTeam = TeamDetails(mockItem.hLogoPath, mockItem.homeTeam),
                 awayTeam = TeamDetails(mockItem.aLogoPath, mockItem.awayTeam),
                 matchTime = mockItem.mTime ?: "TBD",
-                score = mockItem.result
+                score = mockItem.result,
+                statusColor = mockItem.color
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             MatchStatusRow(
-                pick = mockItem.pick,
-                status = mockItem.mStatus,
-                statusColor = mockItem.color
+                pick = mockItem.pick
             )
         }
     }

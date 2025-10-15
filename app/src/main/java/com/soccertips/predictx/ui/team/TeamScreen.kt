@@ -410,6 +410,11 @@ fun TeamsTab(
     //Lift the scroll state up to the parent composable
     val lazyListState = rememberLazyListState()
 
+    // Synchronize pager state with tab selection callback
+    LaunchedEffect(pagerState.currentPage) {
+        currentOnTabSelected(pages[pagerState.currentPage])
+    }
+
     // Observe scroll state to hide/show the team info card
     LaunchedEffect(lazyListState) {
         snapshotFlow { lazyListState.firstVisibleItemIndex }
@@ -434,6 +439,9 @@ fun TeamsTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
+            userScrollEnabled = true,
+            beyondViewportPageCount = 0,
+            key = { pages[it] }
         ) { page ->
             val selectedTab = pages[page]
 

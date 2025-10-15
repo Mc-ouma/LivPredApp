@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,58 +52,63 @@ fun TransferScreen(
     lazyListState: LazyListState
 ) {
 
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        when (transfers.loadState.refresh) {
-            is LoadState.Error -> {
+    when (transfers.loadState.refresh) {
+        is LoadState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     text = "Error loading transfers",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+        }
 
-            is LoadState.Loading -> {
+        is LoadState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator()
             }
+        }
 
-            else -> {
-                LazyColumn(
-                    state = lazyListState,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    items(transfers.itemCount) { index ->
-                        transfers[index]?.let { transfer ->
-                            TransferItem(
-                                transfer = transfer.transfers.first(),
-                                teamId = teamId,
-                                playerName = transfer.player.name ?: "Unknown Player",
-                                modifier = Modifier.fillMaxWidth()
-                            )
+        else -> {
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(transfers.itemCount) { index ->
+                    transfers[index]?.let { transfer ->
+                        TransferItem(
+                            transfer = transfer.transfers.first(),
+                            teamId = teamId,
+                            playerName = transfer.player.name ?: "Unknown Player",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                item {
+                    if (transfers.loadState.append is LoadState.Loading) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
                     }
 
-                    item {
-                        if (transfers.loadState.append is LoadState.Loading) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
-
-                        if (transfers.loadState.append is LoadState.Error) {
-                            Text(
-                                text = "Error loading more transfers",
-                                modifier = Modifier.padding(8.dp),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                    if (transfers.loadState.append is LoadState.Error) {
+                        Text(
+                            text = "Error loading more transfers",
+                            modifier = Modifier.padding(8.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             }

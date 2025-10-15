@@ -3,14 +3,17 @@ package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,8 +32,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.statistics.Response
 import com.soccertips.predictx.data.model.statistics.Team
-import com.soccertips.predictx.ui.theme.LocalCardColors
-import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.util.StatisticsUtils
 
 @Composable
@@ -39,49 +40,57 @@ fun FixtureStatisticsScreen(statistics: List<Response>) {
 
     val team1 = statistics[0]
     val team2 = statistics[1]
-    LocalContext.current
 
-    LocalCardColors.current
-    LocalCardElevation.current
-
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-                modifier = Modifier.padding(16.dp).wrapContentHeight().fillMaxWidth(),
-        ) {
-            // Display team headers
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                TeamHeader(team1.team)
-                Text(
-                        text = stringResource(R.string.stats),
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                )
-                TeamHeader(team2.team)
-            }
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .wrapContentHeight()
+                        .fillMaxWidth(),
+                ) {
+                    // Display team headers
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TeamHeader(team1.team)
+                        Text(
+                            text = stringResource(R.string.stats),
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                        )
+                        TeamHeader(team2.team)
+                    }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            // Display shared statistics in rows
-            team1.statistics.forEachIndexed { index, stat ->
-                val team1Value = stat.value?.toString() ?: stringResource(R.string.na)
-                val statType = stat.type
-                val team2Value = team2.statistics.getOrNull(index)?.value?.toString() ?: stringResource(R.string.na)
+                    // Display shared statistics in rows
+                    team1.statistics.forEachIndexed { index, stat ->
+                        val team1Value = stat.value?.toString() ?: stringResource(R.string.na)
+                        val statType = stat.type
+                        val team2Value = team2.statistics.getOrNull(index)?.value?.toString()
+                            ?: stringResource(R.string.na)
 
-                SharedStatisticRow(
-                        team1Value = team1Value,
-                        statType = statType,
-                        team2Value = team2Value
-                )
+                        SharedStatisticRow(
+                            team1Value = team1Value,
+                            statType = statType,
+                            team2Value = team2Value
+                        )
+                    }
+                }
             }
         }
     }
@@ -90,22 +99,22 @@ fun FixtureStatisticsScreen(statistics: List<Response>) {
 @Composable
 fun TeamHeader(team: Team) {
     Column(
-            modifier = Modifier.width(100.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(100.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-                painter = rememberAsyncImagePainter(model = team.logo),
-                contentDescription = stringResource(R.string.team_logo_format, team.name),
-                modifier = Modifier.size(40.dp),
+            painter = rememberAsyncImagePainter(model = team.logo),
+            contentDescription = stringResource(R.string.team_logo_format, team.name),
+            modifier = Modifier.size(40.dp),
         )
     }
 }
 
 @Composable
 fun SharedStatisticRow(
-        team1Value: String,
-        statType: String,
-        team2Value: String,
+    team1Value: String,
+    statType: String,
+    team2Value: String,
 ) {
     LocalContext.current
 
@@ -121,16 +130,18 @@ fun SharedStatisticRow(
     val resourceId = StatisticsUtils.getLocalizedStatTypeResourceId(statType)
 
     Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(text = formattedTeam1Value, textAlign = TextAlign.Center, style = team1Style)
         Text(
-                text = stringResource(resourceId),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.weight(1f),
+            text = stringResource(resourceId),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
         )
         Text(text = formattedTeam2Value, textAlign = TextAlign.Center, style = team2Style)
     }
@@ -147,20 +158,23 @@ fun getTextStyle(value1: String, value2: String): TextStyle {
                 numericValue1 > numericValue2 -> {
                     // If value1 is greater, highlight value1
                     MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
+
                 numericValue2 > numericValue1 -> {
                     // If value2 is greater, highlight value2
                     MaterialTheme.typography.bodyMedium
                 }
+
                 else -> {
                     // If both are equal, no highlighting
                     MaterialTheme.typography.bodyMedium
                 }
             }
         }
+
         else -> {
             // For non-numeric values, apply default style (no highlight)
             MaterialTheme.typography.bodyMedium

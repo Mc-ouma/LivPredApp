@@ -3,8 +3,8 @@ package com.soccertips.predictx.ui.team
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,7 +36,6 @@ import com.soccertips.predictx.data.model.team.squad.Team
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.ui.theme.PredictXTheme
-import timber.log.Timber
 
 @Composable
 fun SquadScreen(
@@ -47,52 +45,30 @@ fun SquadScreen(
     val playersByPosition = squadResponse.flatMap { it.players }.groupBy { it.position }
 
     // Scrollable Content
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .onGloballyPositioned { layoutCoordinates ->
-                // Update the top padding of the LazyColumn based on the height of the team info
-                Timber.d("Squad Size: ${layoutCoordinates.size.height}")
-            }
+    LazyColumn(
+        state = lazyListState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp)
     ) {
-        // Display players for each position
-
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier
-                .fillMaxSize()
-                .height(1125.dp)
-                .onGloballyPositioned { layoutCoordinates ->
-                    // Update the top padding of the LazyColumn based on the height of the team info
-                    Timber.d("Squad Size: ${layoutCoordinates.size.height}")
-                },
-        ) {
-            playersByPosition.forEach { (position, players) ->
-                item {
-                    Text(
-                        text = if (position == "Goalkeeper") "Goalkeepers" else if (position == "Defender") "Defence" else if (position == "Midfielder") "Midfield" else if (position == "Attacker") "Attack" else position,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
-                items(players.size) { player ->
-                    PlayerItem(player = players[player])
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-            }
+        playersByPosition.forEach { (position, players) ->
             item {
-                Spacer(modifier = Modifier.height(200.dp))
+                Text(
+                    text = if (position == "Goalkeeper") "Goalkeepers" else if (position == "Defender") "Defence" else if (position == "Midfielder") "Midfield" else if (position == "Attacker") "Attack" else position,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            items(players.size) { player ->
+                PlayerItem(player = players[player])
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
-
-
 }
 
 
@@ -207,7 +183,8 @@ fun SquadScreenPreview() {
     )
 
     PredictXTheme {
-        SquadScreen(squadResponse = listOf(mockResponse),
+        SquadScreen(
+            squadResponse = listOf(mockResponse),
             lazyListState = rememberLazyListState()
         )
     }

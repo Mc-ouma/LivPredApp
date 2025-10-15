@@ -10,15 +10,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Sports
@@ -64,9 +67,9 @@ import com.soccertips.predictx.ui.components.ErrorMessage
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
 import com.soccertips.predictx.viewmodel.SharedViewModel
+import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import timber.log.Timber
 
 // Extension function to safely find the Activity from any Context
 fun Context.findActivity(): Activity? {
@@ -103,115 +106,125 @@ fun FixtureMatchDetailsScreen(
         return
     }
 
-    // Use regular Column instead of LazyColumn to avoid nested scrolling issues
-    Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-        Spacer(modifier = Modifier.height(8.dp))
-        // Prediction card section
-        if (predictions == null) {
-            Box(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    contentAlignment = Alignment.Center
-            ) {
-                Text(
-                        stringResource(R.string.no_predictions_available),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                )
-            }
-        } else {
-            val context = LocalContext.current
-            val showPredictions = remember { mutableStateOf(false) }
-            val activityContext = remember { context.findActivity() }
-            var adIsLoading by remember { mutableStateOf(false) }
-            var isButtonPressed by remember { mutableStateOf(false) }
-            val isAdReady by rewardedAdManager.isAdReady.collectAsState()
-
-            // Use LaunchedEffect to react to changes in ad readiness and loading state
-            LaunchedEffect(isAdReady, rewardedAdManager.isAdLoading()) {
-                adIsLoading = rewardedAdManager.isAdLoading()
-                if (activityContext != null && !isAdReady && !adIsLoading) {
-                    // If the ad is not ready and not currently loading, request one
-                    Timber.tag("RewardedAd")
-                            .d("FixtureMatchDetailsScreen: Ad not loaded, requesting a new one.")
-                    rewardedAdManager.loadRewardedAd()
+    // Use LazyColumn for consistent scrolling behavior
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            // Prediction card section
+            if (predictions == null) {
+                Box(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                            stringResource(R.string.no_predictions_available),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                    )
                 }
-            }
+            } else {
+                val context = LocalContext.current
+                val showPredictions = remember { mutableStateOf(false) }
+                val activityContext = remember { context.findActivity() }
+                var adIsLoading by remember { mutableStateOf(false) }
+                var isButtonPressed by remember { mutableStateOf(false) }
+                val isAdReady by rewardedAdManager.isAdReady.collectAsState()
 
-            if (!showPredictions.value && isAdReady) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Button(
-                            onClick = {
-                                if (activityContext != null && isAdReady && !isButtonPressed) {
-                                    isButtonPressed = true // Prevent multiple clicks
-                                    Timber.tag("RewardedAd")
-                                            .d(
-                                                    "Button clicked - showing rewarded ad from activity: ${activityContext.javaClass.simpleName}"
-                                            )
-                                    rewardedAdManager.showRewardedAd(
-                                            activity = activityContext,
-                                            onRewardEarned = {
-                                                showPredictions.value = true
-                                                isButtonPressed = false // Reset button state
-                                                Timber.tag("RewardedAd")
-                                                        .d("Reward earned callback executed")
-                                            },
-                                            onFailure = {
-                                                isButtonPressed =
-                                                        false // Reset button state on failure
-                                                Timber.tag("RewardedAd")
-                                                        .e("Failed to show rewarded ad")
-                                            }
-                                    )
-                                } else {
-                                    Timber.tag("RewardedAd")
-                                            .e(
-                                                    "Cannot show ad: activity=${activityContext != null}, adReady=$isAdReady, buttonPressed=$isButtonPressed"
-                                            )
-                                    Toast.makeText(
-                                                    context,
-                                                    "Ad not ready yet. Please try again later.",
-                                                    Toast.LENGTH_SHORT
-                                            )
-                                            .show()
-                                }
-                            },
-                            enabled = isAdReady && !isButtonPressed
-                    ) {
-                        Text(
-                                text =
-                                        when {
-                                            isButtonPressed -> stringResource(R.string.loading)
-                                            isAdReady ->
-                                                    stringResource(
-                                                            R.string.watch_ad_for_extra_predictions
-                                                    )
-                                            adIsLoading -> stringResource(R.string.loading)
-                                            else -> stringResource(R.string.ad_not_available)
-                                        }
-                        )
+                // Use LaunchedEffect to react to changes in ad readiness and loading state
+                LaunchedEffect(isAdReady, rewardedAdManager.isAdLoading()) {
+                    adIsLoading = rewardedAdManager.isAdLoading()
+                    if (activityContext != null && !isAdReady && !adIsLoading) {
+                        // If the ad is not ready and not currently loading, request one
+                        Timber.tag("RewardedAd")
+                                .d("FixtureMatchDetailsScreen: Ad not loaded, requesting a new one.")
+                        rewardedAdManager.loadRewardedAd()
                     }
                 }
-            }
 
-            if (showPredictions.value) {
-                PredictionCarousel(predictions, comparison, teams, h2h)
+                if (!showPredictions.value && isAdReady) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Button(
+                                onClick = {
+                                    if (activityContext != null && isAdReady && !isButtonPressed) {
+                                        isButtonPressed = true // Prevent multiple clicks
+                                        Timber.tag("RewardedAd")
+                                                .d(
+                                                        "Button clicked - showing rewarded ad from activity: ${activityContext.javaClass.simpleName}"
+                                                )
+                                        rewardedAdManager.showRewardedAd(
+                                                activity = activityContext,
+                                                onRewardEarned = {
+                                                    showPredictions.value = true
+                                                    isButtonPressed = false // Reset button state
+                                                    Timber.tag("RewardedAd")
+                                                            .d("Reward earned callback executed")
+                                                },
+                                                onFailure = {
+                                                    isButtonPressed =
+                                                            false // Reset button state on failure
+                                                    Timber.tag("RewardedAd")
+                                                            .e("Failed to show rewarded ad")
+                                                }
+                                        )
+                                    } else {
+                                        Timber.tag("RewardedAd")
+                                                .e(
+                                                        "Cannot show ad: activity=${activityContext != null}, adReady=$isAdReady, buttonPressed=$isButtonPressed"
+                                                )
+                                        Toast.makeText(
+                                                        context,
+                                                        "Ad not ready yet. Please try again later.",
+                                                        Toast.LENGTH_SHORT
+                                                )
+                                                .show()
+                                    }
+                                },
+                                enabled = isAdReady && !isButtonPressed
+                        ) {
+                            Text(
+                                    text =
+                                            when {
+                                                isButtonPressed -> stringResource(R.string.loading)
+                                                isAdReady ->
+                                                        stringResource(
+                                                                R.string.watch_ad_for_extra_predictions
+                                                        )
+                                                adIsLoading -> stringResource(R.string.loading)
+                                                else -> stringResource(R.string.ad_not_available)
+                                            }
+                            )
+                        }
+                    }
+                }
+
+                if (showPredictions.value) {
+                    PredictionCarousel(predictions, comparison, teams, h2h)
+                }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        // Fixture detail card
-        FixtureDetailCard(fixture = fixtureDetails.fixture)
-        Spacer(modifier = Modifier.height(16.dp))
-        InlineBannerAdView()
-        Spacer(modifier = Modifier.height(16.dp))
+        
+        item {
+            // Fixture detail card
+            FixtureDetailCard(fixture = fixtureDetails.fixture)
+        }
+        
+        item {
+            InlineBannerAdView()
+        }
 
-        // Home and away fixtures section
-        FixtureListScreen(
-                combinedFormData = fixtures,
-                homeTeamIdInt = homeTeamIdInt,
-                awayTeamIdInt = awayTeamIdInt,
-                fixtureDetails = fixtureDetails,
-                navController = navController
-        )
+        item {
+            // Home and away fixtures section
+            FixtureListScreen(
+                    combinedFormData = fixtures,
+                    homeTeamIdInt = homeTeamIdInt,
+                    awayTeamIdInt = awayTeamIdInt,
+                    fixtureDetails = fixtureDetails,
+                    navController = navController
+            )
+        }
     }
 }
 

@@ -4,11 +4,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Computer
@@ -36,7 +39,6 @@ import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.events.AssistInfo
 import com.soccertips.predictx.data.model.events.EventTime
 import com.soccertips.predictx.data.model.events.FixtureEvent
-
 import com.soccertips.predictx.data.model.events.PlayerInfo
 import com.soccertips.predictx.data.model.events.TeamInfo
 
@@ -45,30 +47,33 @@ fun FixtureSummaryScreen(events: List<FixtureEvent>, homeTeamId: Int, awayTeamId
     // Sort events by descending elapsed time
     val reversedEvents = events.sortedByDescending { it.time.elapsed }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            // Use remember to avoid unnecessary recomposition
-            val eventCount = reversedEvents.size
-
-            // Iterate over the sorted events and display them
-            reversedEvents.forEachIndexed { index, event ->
-                EventCard(
-                    event = event,
-                    homeTeamId = homeTeamId,
-                    awayTeamId = awayTeamId,
-                    drawLine = index < eventCount - 1 // Draw line only between events
-                )
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    // Iterate over the sorted events and display them
+                    reversedEvents.forEachIndexed { index, event ->
+                        EventCard(
+                            event = event,
+                            homeTeamId = homeTeamId,
+                            awayTeamId = awayTeamId,
+                            drawLine = index < reversedEvents.size - 1 // Draw line only between events
+                        )
+                    }
+                }
             }
         }
     }

@@ -372,7 +372,7 @@ private fun ItemCardPreview() {
         homeTeam = "Team A",
         awayTeam = "Team B",
         mDate = "2022-12-31",
-        league = "Premier League, England",
+        league = "Premier League Manchester United Manchester Ciry Copenhagen, England",
         mTime = "15:00",
         betOdds = "1.5",
         outcome = "win",

@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -50,7 +49,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,7 +57,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -194,12 +191,6 @@ fun FixtureDetailsScreen(
         }
     }
 
-    // Set up the scrollable state for detecting scroll events
-    val scrollState = rememberLazyListState()
-
-    // Track visibility of FixtureScoreAndScorers
-    val showFixtureScore by remember { derivedStateOf { scrollState.firstVisibleItemIndex == 0 } }
-
     Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
@@ -208,7 +199,7 @@ fun FixtureDetailsScreen(
                             val fixtureDetails =
                                     (uiState as? FixtureDetailsUiState.Success)?.fixtureDetails
                             if (fixtureDetails != null) {
-                                FixtureTopBarContent(showFixtureScore, fixtureDetails)
+                                FixtureTopBarContent(showFixtureScore = true, fixtureDetails = fixtureDetails)
                             }
                         },
                         navigationIcon = {
@@ -236,8 +227,7 @@ fun FixtureDetailsScreen(
                 val fixtureDetails = (uiState as FixtureDetailsUiState.Success).fixtureDetails
                 DataScreen(
                         paddingValues = paddingValues,
-                        scrollState = scrollState,
-                        showFixtureScore = showFixtureScore,
+                        showFixtureScore = true,
                         viewModel = viewModel,
                         sharedViewModel = sharedViewModel,
                         pages = pages,
@@ -394,6 +384,7 @@ fun FixtureDetailsTabs(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth(),
                 userScrollEnabled = true,
+                beyondViewportPageCount = 0,
                 key = { pages[it].name }
         ) { pageIndex ->
             // Only fetch data if moving to a different tab
@@ -480,18 +471,6 @@ fun FixtureDetailsTabs(
             }
         }
     }
-}
-
-@Composable
-fun Scorers(
-        playerName: String,
-        elapsed: String,
-) {
-    Text(
-            text = "$playerName $elapsed",
-            fontSize = 10.sp,
-            color = Color.Gray,
-    )
 }
 
 @Composable

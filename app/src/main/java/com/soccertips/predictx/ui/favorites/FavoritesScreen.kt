@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -67,7 +66,7 @@ import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.viewmodel.FavoritesViewModel
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun FavoritesScreen(
@@ -110,7 +109,7 @@ fun FavoritesScreen(
         }, // Start refresh gesture
         state = state,
         indicator = {
-            PullToRefreshDefaults.LoadingIndicator(
+            PullToRefreshDefaults.Indicator(
                 state = state,
                 isRefreshing = isRefreshing,
                 modifier = Modifier.align(Alignment.TopCenter)

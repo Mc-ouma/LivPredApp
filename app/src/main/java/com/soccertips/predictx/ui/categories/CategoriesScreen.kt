@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -21,12 +20,11 @@ import com.soccertips.predictx.ui.fixturedetails.EmptyScreen
 import com.soccertips.predictx.ui.fixturedetails.ErrorScreen
 import com.soccertips.predictx.viewmodel.CategoriesViewModel
 
-
 // CategoriesScreen.kt
 @Composable
 fun CategoriesScreen(
-    navController: NavController,
-    viewModel: CategoriesViewModel = hiltViewModel(),
+        navController: NavController,
+        viewModel: CategoriesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -34,67 +32,55 @@ fun CategoriesScreen(
         is UiState.Loading -> {
             LoadingIndicator()
         }
-
         is UiState.Error -> {
             ErrorScreen(
-                paddingValues = PaddingValues(0.dp),
-                message = "No internet connection. Please check your network.",
-                onRetry = { viewModel.retryLoadCategories() }
+                    paddingValues = PaddingValues(0.dp),
+                    message = "No internet connection. Please check your network.",
+                    onRetry = { viewModel.retryLoadCategories() }
             )
         }
-
         is UiState.Success -> {
             val categories = (uiState as UiState.Success<List<Category>>).data
             CategoriesContent(
-                navController = navController,
-                categories = categories,
+                    navController = navController,
+                    categories = categories,
             )
         }
-
-        UiState.Empty -> EmptyScreen(
-            paddingValues = PaddingValues(0.dp),
-            message = "No categories available. Join our Telegram channel for updates and support.",
-        )
-
+        UiState.Empty ->
+                EmptyScreen(
+                        paddingValues = PaddingValues(0.dp),
+                        message =
+                                "No categories available. Join our Telegram channel for updates and support.",
+                )
         else -> Unit
     }
 }
 
-
 @Composable
 fun CategoriesContent(
-    modifier: Modifier = Modifier,
-    navController: NavController,
-    categories: List<Category>
+        modifier: Modifier = Modifier,
+        navController: NavController,
+        categories: List<Category>
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 150.dp),
-        contentPadding = PaddingValues(16.dp),
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceAround,
-        horizontalArrangement = Arrangement.SpaceEvenly,
+            columns = GridCells.Adaptive(minSize = 150.dp),
+            contentPadding = PaddingValues(16.dp),
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceAround,
+            horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         items(
-            count = categories.size,
-            key = { index -> categories[index].url },
+                count = categories.size,
+                key = { index -> categories[index].url },
         ) { index ->
             val category = categories[index]
             CategoryCard(
-                category = category,
-                onClick = {
-                    val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
-                    navController.navigate(Routes.ItemsList.createRoute(encodedUrl))
-
-                },
+                    category = category,
+                    onClick = {
+                        val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
+                        navController.navigate(Routes.ItemsList.createRoute(encodedUrl))
+                    },
             )
         }
     }
-}
-
-@Preview
-@Composable
-private fun CategoryPreview() {
-    val category = Category("Premier League", "premier-league")
-    CategoryCard(category = category, onClick = {})
-
 }

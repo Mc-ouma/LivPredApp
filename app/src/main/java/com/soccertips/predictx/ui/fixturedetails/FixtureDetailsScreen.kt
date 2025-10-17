@@ -62,7 +62,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -199,7 +198,10 @@ fun FixtureDetailsScreen(
                             val fixtureDetails =
                                     (uiState as? FixtureDetailsUiState.Success)?.fixtureDetails
                             if (fixtureDetails != null) {
-                                FixtureTopBarContent(showFixtureScore = true, fixtureDetails = fixtureDetails)
+                                FixtureTopBarContent(
+                                        showFixtureScore = true,
+                                        fixtureDetails = fixtureDetails
+                                )
                             }
                         },
                         navigationIcon = {
@@ -514,21 +516,4 @@ fun TeamColumn(
                 textAlign = TextAlign.Center,
         )
     }
-}
-
-@Preview
-@Composable
-private fun TeamColumnPrev() {
-    TeamColumn(
-            team =
-                    Team(
-                            id = 1,
-                            name = "Team A",
-                            logo = "https://example.com/logo.png",
-                            winner = true
-                    ),
-            leagueId = "123",
-            season = "2023",
-            navController = NavController(LocalContext.current),
-    )
 }

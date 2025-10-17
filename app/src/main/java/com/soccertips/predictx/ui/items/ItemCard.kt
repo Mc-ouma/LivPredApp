@@ -36,7 +36,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
@@ -48,122 +47,115 @@ import com.soccertips.predictx.viewmodel.ItemsListViewModel
 
 @Composable
 fun ItemCard(
-    item: ServerResponse,
-    onClick: () -> Unit,
-    onFavoriteClick: (ServerResponse) -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: ItemsListViewModel
+        item: ServerResponse,
+        onClick: () -> Unit,
+        onFavoriteClick: (ServerResponse) -> Unit,
+        modifier: Modifier = Modifier,
+        viewModel: ItemsListViewModel
 ) {
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
     var isFavorite by remember { mutableStateOf(false) }
 
     // Use key parameter to prevent unnecessary recompositions
-    LaunchedEffect(item.fixtureId) {
-        isFavorite = viewModel.isFavorite(item)
-    }
+    LaunchedEffect(item.fixtureId) { isFavorite = viewModel.isFavorite(item) }
 
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-            .clickable(
-                onClick = onClick,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple()
-            ),
-        colors = cardColors,
-        elevation = cardElevation,
-        shape = MaterialTheme.shapes.medium
+            modifier =
+                    modifier.fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .clickable(
+                                    onClick = onClick,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = ripple()
+                            ),
+            colors = cardColors,
+            elevation = cardElevation,
+            shape = MaterialTheme.shapes.medium
     ) {
         Column(
-            modifier = Modifier.padding(0.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Header with league info and favorite button
             MatchHeader(
-                league = item.league?.split(",")?.firstOrNull() ?: "Unknown",
-                leagueLogo = item.leagueLogo,
-                date = item.mDate ?: "Unknown",
-                isFavorite = isFavorite,
-                onFavoriteClick = {
-                    isFavorite = !isFavorite
-                    onFavoriteClick(item)
-                    viewModel.toggleFavorite(item)
-                }
+                    league = item.league?.split(",")?.firstOrNull() ?: "Unknown",
+                    leagueLogo = item.leagueLogo,
+                    date = item.mDate ?: "Unknown",
+                    isFavorite = isFavorite,
+                    onFavoriteClick = {
+                        isFavorite = !isFavorite
+                        onFavoriteClick(item)
+                        viewModel.toggleFavorite(item)
+                    }
             )
 
             // Main content - teams and score
             TeamsRow(
-                homeTeam = TeamDetails(item.hLogoPath, item.homeTeam),
-                awayTeam = TeamDetails(item.aLogoPath, item.awayTeam),
-                matchTime = item.mTime ?: "TBD",
-                score = item.result,
-                statusColor = item.color
+                    homeTeam = TeamDetails(item.hLogoPath, item.homeTeam),
+                    awayTeam = TeamDetails(item.aLogoPath, item.awayTeam),
+                    matchTime = item.mTime ?: "TBD",
+                    score = item.result,
+                    statusColor = item.color
             )
 
             // Footer with pick only
-            MatchStatusRow(
-                pick = item.pick
-            )
+            MatchStatusRow(pick = item.pick)
         }
     }
 }
 
 @Composable
 fun MatchHeader(
-    league: String,
-    leagueLogo: String?,
-    date: String,
-    isFavorite: Boolean,
-    onFavoriteClick: () -> Unit
+        league: String,
+        leagueLogo: String?,
+        date: String,
+        isFavorite: Boolean,
+        onFavoriteClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-        shape = MaterialTheme.shapes.small
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+            shape = MaterialTheme.shapes.small
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // League info with logo
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 AsyncImage(
-                    model = leagueLogo,
-                    contentDescription = "League Logo",
-                    modifier = Modifier.size(24.dp),
-                    contentScale = ContentScale.Fit,
-                    placeholder = painterResource(R.drawable.placeholder)
+                        model = leagueLogo,
+                        contentDescription = "League Logo",
+                        modifier = Modifier.size(24.dp),
+                        contentScale = ContentScale.Fit,
+                        placeholder = painterResource(R.drawable.placeholder)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = league,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                        text = league,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
                 )
             }
 
             // Favorite button
-            IconButton(
-                onClick = onFavoriteClick,
-                modifier = Modifier.size(32.dp)
-            ) {
+            IconButton(onClick = onFavoriteClick, modifier = Modifier.size(32.dp)) {
                 Icon(
-                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    modifier = Modifier.size(18.dp)
+                        imageVector =
+                                if (isFavorite) Icons.Filled.Favorite
+                                else Icons.Outlined.FavoriteBorder,
+                        contentDescription =
+                                if (isFavorite) "Remove from favorites" else "Add to favorites",
+                        tint =
+                                if (isFavorite) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -172,73 +164,74 @@ fun MatchHeader(
 
 @Composable
 fun TeamsRow(
-    homeTeam: TeamDetails,
-    awayTeam: TeamDetails,
-    matchTime: String,
-    score: String?,
-    statusColor: Color = Color.Unspecified
+        homeTeam: TeamDetails,
+        awayTeam: TeamDetails,
+        matchTime: String,
+        score: String?,
+        statusColor: Color = Color.Unspecified
 ) {
-    val displayScore = score?.let { rawScore ->
-        val parts = rawScore.split(":")
-        parts.find { part ->
-            val trimmed = part.trim()
-            trimmed.matches(Regex(".*\\d+\\s*-\\s*\\d+.*"))
-        }?.let { scorePart ->
-            val scoreMatch = Regex("(\\d+\\s*-\\s*\\d+)").find(scorePart.trim())
-            scoreMatch?.value
-        }
-    } ?: "-"
+    val displayScore =
+            score?.let { rawScore ->
+                val parts = rawScore.split(":")
+                parts
+                        .find { part ->
+                            val trimmed = part.trim()
+                            trimmed.matches(Regex(".*\\d+\\s*-\\s*\\d+.*"))
+                        }
+                        ?.let { scorePart ->
+                            val scoreMatch = Regex("(\\d+\\s*-\\s*\\d+)").find(scorePart.trim())
+                            scoreMatch?.value
+                        }
+            }
+                    ?: "-"
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
     ) {
         // Home Team
         EnhancedTeamInfo(
-            teamDetails = homeTeam,
-            alignment = Alignment.Start,
-            modifier = Modifier.weight(1f)
+                teamDetails = homeTeam,
+                alignment = Alignment.Start,
+                modifier = Modifier.weight(1f)
         )
 
         // Center - Score/Time with better styling
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .weight(0.7f)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(horizontal = 8.dp).weight(0.7f)
         ) {
             if (!score.isNullOrBlank() && score != "Unknown" && displayScore != "-") {
                 Text(
-                    text = displayScore,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = when (statusColor) {
-                        Color.Green -> MaterialTheme.colorScheme.primary
-                        Color.Red -> MaterialTheme.colorScheme.error
-                        else -> MaterialTheme.colorScheme.onSurface
-                    },
-                    textAlign = TextAlign.Center
+                        text = displayScore,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color =
+                                when (statusColor) {
+                                    Color.Green -> MaterialTheme.colorScheme.primary
+                                    Color.Red -> MaterialTheme.colorScheme.error
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                },
+                        textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "FT",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontWeight = FontWeight.Medium
+                        text = "FT",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        fontWeight = FontWeight.Medium
                 )
             } else {
                 Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                 ) {
                     Text(
-                        text = matchTime,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        textAlign = TextAlign.Center
+                            text = matchTime,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            textAlign = TextAlign.Center
                     )
                 }
             }
@@ -246,177 +239,91 @@ fun TeamsRow(
 
         // Away Team
         EnhancedTeamInfo(
-            teamDetails = awayTeam,
-            alignment = Alignment.End,
-            modifier = Modifier.weight(1f)
+                teamDetails = awayTeam,
+                alignment = Alignment.End,
+                modifier = Modifier.weight(1f)
         )
     }
 }
 
 @Composable
 fun EnhancedTeamInfo(
-    teamDetails: TeamDetails,
-    alignment: Alignment.Horizontal,
-    modifier: Modifier = Modifier
+        teamDetails: TeamDetails,
+        alignment: Alignment.Horizontal,
+        modifier: Modifier = Modifier
 ) {
     Column(
-        horizontalAlignment = alignment,
-        verticalArrangement = Arrangement.Center,
-        modifier = modifier
+            horizontalAlignment = alignment,
+            verticalArrangement = Arrangement.Center,
+            modifier = modifier
     ) {
         AsyncImage(
-            model = teamDetails.teamLogo,
-            contentDescription = "${teamDetails.teamName} logo",
-            modifier = Modifier.size(36.dp),
-            contentScale = ContentScale.Fit,
-            placeholder = painterResource(R.drawable.placeholder)
+                model = teamDetails.teamLogo,
+                contentDescription = "${teamDetails.teamName} logo",
+                modifier = Modifier.size(36.dp),
+                contentScale = ContentScale.Fit,
+                placeholder = painterResource(R.drawable.placeholder)
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = teamDetails.teamName ?: "Unknown",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = if (alignment == Alignment.Start) TextAlign.Start else TextAlign.End,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.fillMaxWidth()
+                text = teamDetails.teamName ?: "Unknown",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = if (alignment == Alignment.Start) TextAlign.Start else TextAlign.End,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth()
         )
     }
 }
 
 @Composable
-fun MatchStatusRow(
-    pick: String?
-) {
+fun MatchStatusRow(pick: String?) {
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.fillMaxWidth()
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Pick: ",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                fontWeight = FontWeight.Medium
+                    text = "Pick: ",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium
             )
             Text(
-                text = pick ?: "TBD",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                    text = pick ?: "TBD",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
 
-data class TeamDetails(
-    val teamLogo: String?,
-    val teamName: String?
-)
+data class TeamDetails(val teamLogo: String?, val teamName: String?)
 
 // Reusable Composable for Team Info
 
 @Composable
-fun TeamInfo(
-    teamDetails: TeamDetails,
-    modifier: Modifier = Modifier
-) {
+fun TeamInfo(teamDetails: TeamDetails, modifier: Modifier = Modifier) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
         Image(
-            rememberAsyncImagePainter(teamDetails.teamLogo),
-            contentDescription = "Team Logo",
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .height(24.dp)
-                .width(24.dp),
-
-            )
+                rememberAsyncImagePainter(teamDetails.teamLogo),
+                contentDescription = "Team Logo",
+                modifier = Modifier.padding(horizontal = 8.dp).height(24.dp).width(24.dp),
+        )
         teamDetails.teamName?.let {
             Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun MatchHeaderPreview() {
-    MatchHeader(
-        league = "Premier League",
-        leagueLogo = "https://cdn.soccertips.com/assets/leagues/england-premier-league.png",
-        date = "2022-12-31",
-        isFavorite = false,
-        onFavoriteClick = {}
-    )
-
-}
-
-@Preview
-@Composable
-private fun ItemCardPreview() {
-    val mockItem = ServerResponse(
-        fixtureId = "12345",
-        pick = "Home Win",
-        homeTeam = "Team A",
-        awayTeam = "Team B",
-        mDate = "2022-12-31",
-        league = "Premier League Manchester United Manchester Ciry Copenhagen, England",
-        mTime = "15:00",
-        betOdds = "1.5",
-        outcome = "win",
-        htScore = "1-0",
-        result = "3-2:(Odds:1.250)" , // Example with odds format
-        hLogoPath = "https://cdn.soccertips.com/assets/teams/team-a.png",
-        aLogoPath = "https://cdn.soccertips.com/assets/teams/team-b.png",
-        leagueLogo = "https://cdn.soccertips.com/assets/leagues/england-premier-league.png",
-        mStatus = "Finished",
-        color = Color.Green
-    )
-
-    // Create a simple preview without the viewModel dependency
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            MatchHeader(
-                league = mockItem.league?.split(",")?.firstOrNull() ?: "Unknown",
-                leagueLogo = mockItem.leagueLogo,
-                date = mockItem.mDate ?: "Unknown",
-                isFavorite = false,
-                onFavoriteClick = {}
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TeamsRow(
-                homeTeam = TeamDetails(mockItem.hLogoPath, mockItem.homeTeam),
-                awayTeam = TeamDetails(mockItem.aLogoPath, mockItem.awayTeam),
-                matchTime = mockItem.mTime ?: "TBD",
-                score = mockItem.result,
-                statusColor = mockItem.color
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            MatchStatusRow(
-                pick = mockItem.pick
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
             )
         }
     }

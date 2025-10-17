@@ -1,5 +1,5 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
@@ -48,7 +48,7 @@ android {
         versionName = "2.0.0"
 
         testInstrumentationRunner =
-            "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
+                "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
 
         buildConfigField("boolean", "DEBUG", "true")
 
@@ -57,14 +57,14 @@ android {
         buildConfigField("String", "DEFAULT_API_HOST", "\"${dotEnvProps["API_HOST"] ?: ""}\"")
         buildConfigField("String", "API_BASE_URL", "\"${dotEnvProps["API_BASE_URL"] ?: ""}\"")
         buildConfigField(
-            "String",
-            "DAILY_BONUS_BASE_URL",
-            "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\""
+                "String",
+                "DAILY_BONUS_BASE_URL",
+                "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\""
         )
         buildConfigField(
-            "String",
-            "API_BASE_URL_VALUE",
-            "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\""
+                "String",
+                "API_BASE_URL_VALUE",
+                "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\""
         )
 
         javaCompileOptions {
@@ -78,8 +78,8 @@ android {
             // enableUnitTestCoverage = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             testProguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
-                "proguardTest-rules.pro",
+                    getDefaultProguardFile("proguard-android.txt"),
+                    "proguardTest-rules.pro",
             )
         }
 
@@ -88,8 +88,8 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             testProguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
-                "proguardTest-rules.pro",
+                    getDefaultProguardFile("proguard-android.txt"),
+                    "proguardTest-rules.pro",
             )
         }
     }
@@ -102,14 +102,14 @@ android {
             with(test) {
                 testLogging {
                     events =
-                        setOf(
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent
-                                .STANDARD_ERROR,
-                        )
+                            setOf(
+                                    org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED,
+                                    org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED,
+                                    org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED,
+                                    org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT,
+                                    org.gradle.api.tasks.testing.logging.TestLogEvent
+                                            .STANDARD_ERROR,
+                            )
                 }
             }
         }
@@ -121,8 +121,6 @@ android {
     }
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.15" }
-
-
 
     packaging { resources { excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1") } }
     buildToolsVersion = "36.0.0"
@@ -142,7 +140,8 @@ android {
         baseline = file("lint-baseline.xml")
     }
 }
-kotlin{
+
+kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
         freeCompilerArgs.addAll("-opt-in=kotlin.RequiresOptIn", "-opt-in=kotlin.Experimental")
@@ -288,30 +287,30 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     }
 
     val fileFilter =
-        listOf(
-            "**/R.class",
-            "**/R$*.class",
-            "**/BuildConfig.*",
-            "**/Manifest*.*",
-            "**/*Test*.*",
-            "android/**/*.*"
-        )
+            listOf(
+                    "**/R.class",
+                    "**/R$*.class",
+                    "**/BuildConfig.*",
+                    "**/Manifest*.*",
+                    "**/*Test*.*",
+                    "android/**/*.*"
+            )
 
     val debugTree =
-        fileTree("${layout.buildDirectory}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
+            fileTree("${layout.buildDirectory}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
 
     sourceDirectories.setFrom(
-        files("${project.projectDir}/src/main/java", "${project.projectDir}/src/main/kotlin")
+            files("${project.projectDir}/src/main/java", "${project.projectDir}/src/main/kotlin")
     )
     classDirectories.setFrom(files(debugTree))
     executionData.setFrom(
-        fileTree(layout.buildDirectory) { include("jacoco/testDebugUnitTest.exec") }
+            fileTree(layout.buildDirectory) { include("jacoco/testDebugUnitTest.exec") }
     )
 
     "${project.projectDir}/src/main/kotlin"
 
     classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(layout.buildDirectory) {
-        include("jacoco/testDebugUnitTest.exec")
-    })
+    executionData.setFrom(
+            fileTree(layout.buildDirectory) { include("jacoco/testDebugUnitTest.exec") }
+    )
 }

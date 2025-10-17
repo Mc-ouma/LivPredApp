@@ -23,3 +23,5 @@ Constants.kt
 /app/release/
 dot.env
 .vscode/settings.json
+teamstanding.json
+teamstatistics.json

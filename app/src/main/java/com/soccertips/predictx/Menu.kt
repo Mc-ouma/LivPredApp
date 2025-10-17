@@ -57,7 +57,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
@@ -74,102 +73,100 @@ fun Menu() {
     Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
         IconButton(onClick = { expanded = true }) {
             Icon(
-                Icons.Default.MoreVert,
-                contentDescription = "Localized description",
-                tint = MaterialTheme.colorScheme.primary
+                    Icons.Default.MoreVert,
+                    contentDescription = "Localized description",
+                    tint = MaterialTheme.colorScheme.primary
             )
         }
         DropdownMenu(
-            expanded = expanded,
-            shape = MaterialTheme.shapes.small,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            onDismissRequest = { expanded = false }
+                expanded = expanded,
+                shape = MaterialTheme.shapes.small,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                onDismissRequest = { expanded = false }
         ) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.share)) },
-                onClick = {
-                    showShare = true
-                    expanded = false
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Share,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    text = { Text(stringResource(R.string.share)) },
+                    onClick = {
+                        showShare = true
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Share,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
             )
 
-
-
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.rate_us)) },
-                onClick = {
-                    showRateus = true
-                    expanded = false
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.RateReview,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    text = { Text(stringResource(R.string.rate_us)) },
+                    onClick = {
+                        showRateus = true
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.RateReview,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.privacy_policy)) },
-                onClick = {
-                    openPrivacyPolicy(context)
-                    expanded = false
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Policy,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    text = { Text(stringResource(R.string.privacy_policy)) },
+                    onClick = {
+                        openPrivacyPolicy(context)
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Policy,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.telegram)) },
-                onClick = {
-                    val intent =
-                        Intent(Intent.ACTION_VIEW).apply {
-                            data = "https://t.me/+SlbFLBrgmVJiMQiG".toUri()
-                        }
-                    context.startActivity(intent)
-                    expanded = false
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Groups,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    text = { Text(stringResource(R.string.telegram)) },
+                    onClick = {
+                        val intent =
+                                Intent(Intent.ACTION_VIEW).apply {
+                                    data = "https://t.me/+SlbFLBrgmVJiMQiG".toUri()
+                                }
+                        context.startActivity(intent)
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Groups,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
             )
             HorizontalDivider()
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.send_feedback)) },
-                onClick = { showFeedback = true },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Email,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
+                    text = { Text(stringResource(R.string.send_feedback)) },
+                    onClick = { showFeedback = true },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Email,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.about_us)) },
-                onClick = { showAboutUs = true },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Groups,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
+                    text = { Text(stringResource(R.string.about_us)) },
+                    onClick = { showAboutUs = true },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Groups,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
             )
         }
     }
@@ -187,8 +184,8 @@ fun Menu() {
 
     if (showShare) {
         Share(
-            text = "Check out AI ScoreCast, the best football prediction app. ",
-            context = context
+                text = "Check out AI ScoreCast, the best football prediction app. ",
+                context = context
         )
     }
 }
@@ -205,85 +202,85 @@ fun Menu2(navController: androidx.navigation.NavController? = null) {
     Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
         IconButton(onClick = { expanded = true }) {
             Icon(
-                Icons.Default.MoreVert,
-                contentDescription = "Localized description",
-                tint = MaterialTheme.colorScheme.primary
+                    Icons.Default.MoreVert,
+                    contentDescription = "Localized description",
+                    tint = MaterialTheme.colorScheme.primary
             )
         }
         DropdownMenu(
-            expanded = expanded,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            shape = MaterialTheme.shapes.small,
-            onDismissRequest = { expanded = false }
+                expanded = expanded,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                shape = MaterialTheme.shapes.small,
+                onDismissRequest = { expanded = false }
         ) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.rate_us)) },
-                onClick = {
-                    showRateus = true
-                    expanded = false
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.RateReview,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    text = { Text(stringResource(R.string.rate_us)) },
+                    onClick = {
+                        showRateus = true
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.RateReview,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.privacy_policy)) },
-                onClick = {
-                    openPrivacyPolicy(context)
-                    expanded = false
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Policy,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    text = { Text(stringResource(R.string.privacy_policy)) },
+                    onClick = {
+                        openPrivacyPolicy(context)
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Policy,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.telegram)) },
-                onClick = {
-                    val intent =
-                        Intent(Intent.ACTION_VIEW).apply {
-                            data = "https://t.me/+SlbFLBrgmVJiMQiG".toUri()
-                        }
-                    context.startActivity(intent)
-                    expanded = false
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Groups,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                    text = { Text(stringResource(R.string.telegram)) },
+                    onClick = {
+                        val intent =
+                                Intent(Intent.ACTION_VIEW).apply {
+                                    data = "https://t.me/+SlbFLBrgmVJiMQiG".toUri()
+                                }
+                        context.startActivity(intent)
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Groups,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
             )
             HorizontalDivider()
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.send_feedback)) },
-                onClick = { showFeedback = true },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Email,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
+                    text = { Text(stringResource(R.string.send_feedback)) },
+                    onClick = { showFeedback = true },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Email,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.about_us)) },
-                onClick = { showAboutUs = true },
-                leadingIcon = {
-                    Icon(
-                        Icons.Outlined.Groups,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
+                    text = { Text(stringResource(R.string.about_us)) },
+                    onClick = { showAboutUs = true },
+                    leadingIcon = {
+                        Icon(
+                                Icons.Outlined.Groups,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
             )
         }
     }
@@ -300,8 +297,8 @@ fun Menu2(navController: androidx.navigation.NavController? = null) {
     }
     if (showShare) {
         Share(
-            text = "Check out AI ScoreCast, the best football prediction app. ",
-            context = context
+                text = "Check out AI ScoreCast, the best football prediction app. ",
+                context = context
         )
     }
 }
@@ -310,47 +307,52 @@ fun Menu2(navController: androidx.navigation.NavController? = null) {
 fun RateUs(onDismiss: () -> Unit) {
     val context = LocalContext.current
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Text(
-                    stringResource(R.string.rate_us),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.surface,
-        text = {
-            Text(
-                "If you enjoy using our app, please take a moment to rate us. Your feedback helps us improve and provide you with the best experience."
-            )
-        },
-        confirmButton = {
-
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Button(
-                    onClick = {
-                        val intent =
-                            Intent(Intent.ACTION_VIEW).apply {
-                                data =
-                                    "https://play.google.com/store/apps/details?id=com.soccertips.predictx".toUri()
-                            }
-                        context.startActivity(intent)
-                        onDismiss()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = MaterialTheme.shapes.small
+            onDismissRequest = onDismiss,
+            title = {
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        stringResource(R.string.ok),
-                        color = MaterialTheme.colorScheme.onPrimary
+                            stringResource(R.string.rate_us),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
                     )
                 }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            text = {
+                Text(
+                        "If you enjoy using our app, please take a moment to rate us. Your feedback helps us improve and provide you with the best experience."
+                )
+            },
+            confirmButton = {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Button(
+                            onClick = {
+                                val intent =
+                                        Intent(Intent.ACTION_VIEW).apply {
+                                            data =
+                                                    "https://play.google.com/store/apps/details?id=com.soccertips.predictx".toUri()
+                                        }
+                                context.startActivity(intent)
+                                onDismiss()
+                            },
+                            colors =
+                                    ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                    ),
+                            shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                                stringResource(R.string.ok),
+                                color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
             }
-        }
     )
 }
 
@@ -358,180 +360,176 @@ fun RateUs(onDismiss: () -> Unit) {
 fun AboutUs(onDismiss: () -> Unit) {
     val context = LocalContext.current
     AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = MaterialTheme.shapes.medium,
-        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
-        title = {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Text(
-                    "About AI ScoreCast",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.launcher),
-                    contentDescription = "App Icon",
-                    modifier =
-                        Modifier
-                            .size(80.dp)
-                            .align(Alignment.CenterHorizontally)
-                            .clip(CircleShape)
-                )
-
-                Text(
-                    "AI ScoreCast is your premier football prediction app, providing accurate betting tips and predictions for matches worldwide.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                )
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
-
-                Text(
-                    "Our Features:",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
-                )
-
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FeatureChip("Daily Tips")
-                    FeatureChip("Over/Under")
-                    FeatureChip("BTTS")
-                    FeatureChip("Daily 2 Odds")
-                    FeatureChip("Combo")
-                    FeatureChip("HT/FT")
-                }
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
-
+            onDismissRequest = onDismiss,
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.medium,
+            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
+            title = {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            "Version",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text =
-                                try {
-                                    context.packageManager.getPackageInfo(
-                                        context.packageName,
-                                        0
-                                    )
-                                        .versionName
-                                } catch (e: Exception) {
-                                    "Unknown"
-                                }.toString(),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Icon(
-                            Icons.Outlined.Email,
-                            contentDescription = "Contact us",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier =
-                                Modifier
-                                    .size(20.dp)
-                                    .clickable {
-                                        val intent =
-                                            Intent(Intent.ACTION_SENDTO).apply {
-                                                data =
-                                                    "mailto:ouma.monicasales@gmail.com".toUri()
-                                            }
-                                        context.startActivity(intent)
-                                        onDismiss()
-                                    }
-                        )
-                        Icon(
-                            Icons.Outlined.Policy,
-                            contentDescription = "Privacy Policy",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier =
-                                Modifier
-                                    .size(20.dp)
-                                    .clickable {
-                                        openPrivacyPolicy(context)
-                                        onDismiss()
-                                    }
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Button(
-                    onClick = onDismiss,
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                    shape = MaterialTheme.shapes.small
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        stringResource(R.string.close),
-                        color = MaterialTheme.colorScheme.onPrimary
+                            "About AI ScoreCast",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
                     )
                 }
+            },
+            text = {
+                Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                            painter = painterResource(id = R.drawable.launcher),
+                            contentDescription = "App Icon",
+                            modifier =
+                                    Modifier.size(80.dp)
+                                            .align(Alignment.CenterHorizontally)
+                                            .clip(CircleShape)
+                    )
+
+                    Text(
+                            "AI ScoreCast is your premier football prediction app, providing accurate betting tips and predictions for matches worldwide.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                    )
+
+                    HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    Text(
+                            "Our Features:",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center
+                    )
+
+                    FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FeatureChip("Daily Tips")
+                        FeatureChip("Over/Under")
+                        FeatureChip("BTTS")
+                        FeatureChip("Daily 2 Odds")
+                        FeatureChip("Combo")
+                        FeatureChip("HT/FT")
+                    }
+
+                    HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            thickness = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                    "Version",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                    text =
+                                            try {
+                                                        context.packageManager.getPackageInfo(
+                                                                        context.packageName,
+                                                                        0
+                                                                )
+                                                                .versionName
+                                                    } catch (e: Exception) {
+                                                        "Unknown"
+                                                    }.toString(),
+                                    style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Icon(
+                                    Icons.Outlined.Email,
+                                    contentDescription = "Contact us",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier =
+                                            Modifier.size(20.dp).clickable {
+                                                val intent =
+                                                        Intent(Intent.ACTION_SENDTO).apply {
+                                                            data =
+                                                                    "mailto:ouma.monicasales@gmail.com".toUri()
+                                                        }
+                                                context.startActivity(intent)
+                                                onDismiss()
+                                            }
+                            )
+                            Icon(
+                                    Icons.Outlined.Policy,
+                                    contentDescription = "Privacy Policy",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier =
+                                            Modifier.size(20.dp).clickable {
+                                                openPrivacyPolicy(context)
+                                                onDismiss()
+                                            }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Button(
+                            onClick = onDismiss,
+                            colors =
+                                    ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                    ),
+                            shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                                stringResource(R.string.close),
+                                color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
             }
-        }
     )
 }
 
 @Composable
 private fun FeatureChip(text: String) {
     Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.padding(end = 4.dp, bottom = 4.dp)
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier.padding(end = 4.dp, bottom = 4.dp)
     ) {
         Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }
 }
 
 fun openPrivacyPolicy(context: Context) {
     val intent =
-        Intent(Intent.ACTION_VIEW).apply {
-            data =
-                "https://predictd.blogspot.com/2025/04/data-custom-classbody-data-custom.html".toUri()
-        }
+            Intent(Intent.ACTION_VIEW).apply {
+                data =
+                        "https://predictd.blogspot.com/2025/04/data-custom-classbody-data-custom.html".toUri()
+            }
     context.startActivity(intent)
 }
 
@@ -539,15 +537,15 @@ fun openPrivacyPolicy(context: Context) {
 fun Share(text: String, context: Context) {
 
     val sendIntent: Intent =
-        Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(
-                Intent.EXTRA_TEXT,
-                text +
-                        "https://play.google.com/store/apps/details?id=com.soccertips.predictx"
-            )
-            type = "text/plain"
-        }
+            Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(
+                        Intent.EXTRA_TEXT,
+                        text +
+                                "https://play.google.com/store/apps/details?id=com.soccertips.predictx"
+                )
+                type = "text/plain"
+            }
     val shareIntent = Intent.createChooser(sendIntent, null)
     context.startActivity(shareIntent)
 }
@@ -563,36 +561,35 @@ fun ExpandableList(items: List<ExpandableItem>, onOtherSelected: () -> Unit) {
             var isExpanded = expandedIndex == index
 
             Column(
-                modifier =
-                    Modifier
-                        .animateContentSize(
-                            animationSpec =
-                                spring(
-                                    dampingRatio =
-                                        Spring.DampingRatioLowBouncy,
-                                    stiffness = Spring.StiffnessLow
-                                )
-                        )
-                        .fillMaxWidth()
-                        .clickable {
-                            if (item.title == "Other") {
-                                onOtherSelected() // Call the function with parentheses
-                            } else {
-                                expandedIndex = if (isExpanded) -1 else index
-                            }
-                        }
+                    modifier =
+                            Modifier.animateContentSize(
+                                            animationSpec =
+                                                    spring(
+                                                            dampingRatio =
+                                                                    Spring.DampingRatioLowBouncy,
+                                                            stiffness = Spring.StiffnessLow
+                                                    )
+                                    )
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (item.title == "Other") {
+                                            onOtherSelected() // Call the function with parentheses
+                                        } else {
+                                            expandedIndex = if (isExpanded) -1 else index
+                                        }
+                                    }
             ) {
                 Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(16.dp)
+                        text = item.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(16.dp)
                 )
                 if (isExpanded && item.title != "Other") {
                     Text(
-                        text = item.content,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                            text = item.content,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                     )
                 }
             }
@@ -605,50 +602,49 @@ fun ExpandableList(items: List<ExpandableItem>, onOtherSelected: () -> Unit) {
 fun Feedback(onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
     val items =
-        listOf(
-            ExpandableItem(
-                "App not responding?",
-                "Kindly ensure you the latest version of the app. Check for the latest version on the Play Store."
-            ),
-            ExpandableItem(
-                "Games not Loading?",
-                "Make sure you have an active internet connection. If the problem persists, please contact us."
-            ),
-            ExpandableItem(
-                "Too many ads?",
-                "We apologize for the inconvenience. We are working on reducing the number of ads in the app."
-            ),
-            ExpandableItem("Other", "Please describe the issue you are facing in detail.")
-        )
+            listOf(
+                    ExpandableItem(
+                            "App not responding?",
+                            "Kindly ensure you the latest version of the app. Check for the latest version on the Play Store."
+                    ),
+                    ExpandableItem(
+                            "Games not Loading?",
+                            "Make sure you have an active internet connection. If the problem persists, please contact us."
+                    ),
+                    ExpandableItem(
+                            "Too many ads?",
+                            "We apologize for the inconvenience. We are working on reducing the number of ads in the app."
+                    ),
+                    ExpandableItem("Other", "Please describe the issue you are facing in detail.")
+            )
     var showOtherDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     ModalBottomSheet(
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        onDismissRequest = { onDismiss() }) {
-        ExpandableList(items = items, onOtherSelected = { showOtherDialog = true })
-    }
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            onDismissRequest = { onDismiss() }
+    ) { ExpandableList(items = items, onOtherSelected = { showOtherDialog = true }) }
     if (showOtherDialog) {
         OtherFeedbackDialog(
-            onDismiss = { showOtherDialog = false },
-            onSubmit = { email, message ->
-                val appVersion =
-                    context.packageManager.getPackageInfo(context.packageName, 0)
-                        .versionName
-                val intent =
-                    Intent(Intent.ACTION_SEND).apply {
-                        data = "mailto:ouma.monicasales@gmail.com".toUri()
-                        putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
-                        putExtra(Intent.EXTRA_SUBJECT, "PredictX Feedback")
-                        putExtra(
-                            Intent.EXTRA_TEXT,
-                            "$message\n\nSent from PredictX App\nVersion: $appVersion"
-                        )
-                    }
+                onDismiss = { showOtherDialog = false },
+                onSubmit = { email, message ->
+                    val appVersion =
+                            context.packageManager.getPackageInfo(context.packageName, 0)
+                                    .versionName
+                    val intent =
+                            Intent(Intent.ACTION_SEND).apply {
+                                data = "mailto:ouma.monicasales@gmail.com".toUri()
+                                putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+                                putExtra(Intent.EXTRA_SUBJECT, "PredictX Feedback")
+                                putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        "$message\n\nSent from PredictX App\nVersion: $appVersion"
+                                )
+                            }
 
-                context.startActivity(Intent.createChooser(intent, "Send Email"))
-            }
+                    context.startActivity(Intent.createChooser(intent, "Send Email"))
+                }
         )
     }
 }
@@ -661,125 +657,100 @@ fun OtherFeedbackDialog(onDismiss: () -> Unit, onSubmit: (String, String) -> Uni
 
     val emailPattern = "[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}".toRegex()
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Text(
-                    stringResource(R.string.other_feedback),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = MaterialTheme.shapes.medium,
-        text = {
-            Column {
-                TextField(
-                    value = email,
-                    onValueChange = {
-                        email = it
-                        isEmailValid = emailPattern.matches(email)
-                    },
-                    label = { Text(stringResource(R.string.email_address)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(
-                            Icons.Outlined.Email,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    placeholder = {
-                        if (isEmailValid) {
-
-                            Text(stringResource(R.string.enter_email_placeholder))
-                        }
-                    },
-                    isError = !isEmailValid
-                )
-                if (!isEmailValid) {
-                    Text(
-                        text = "Please enter a valid email address",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                }
-                TextField(
-                    value = message,
-                    onValueChange = { message = it },
-                    label = { Text(stringResource(R.string.message)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.Message,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                )
-            }
-        },
-        confirmButton = {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.cancel))
-                }
-
-                Spacer(modifier = Modifier.size(16.dp))
-
-                Button(
-                    onClick = {
-                        if (isEmailValid) {
-                            onSubmit(email, message)
-                            onDismiss()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = MaterialTheme.shapes.small
+            onDismissRequest = onDismiss,
+            title = {
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        stringResource(R.string.submit),
-                        color = MaterialTheme.colorScheme.onPrimary,
-
-                        )
+                            stringResource(R.string.other_feedback),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                    )
                 }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.medium,
+            text = {
+                Column {
+                    TextField(
+                            value = email,
+                            onValueChange = {
+                                email = it
+                                isEmailValid = emailPattern.matches(email)
+                            },
+                            label = { Text(stringResource(R.string.email_address)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(
+                                        Icons.Outlined.Email,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            placeholder = {
+                                if (isEmailValid) {
 
+                                    Text(stringResource(R.string.enter_email_placeholder))
+                                }
+                            },
+                            isError = !isEmailValid
+                    )
+                    if (!isEmailValid) {
+                        Text(
+                                text = "Please enter a valid email address",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
+                    TextField(
+                            value = message,
+                            onValueChange = { message = it },
+                            label = { Text(stringResource(R.string.message)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(
+                                        Icons.AutoMirrored.Outlined.Message,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                    )
+                }
+            },
+            confirmButton = {
+                Row(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.Center
+                ) {
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
 
-            }
-        },
-        dismissButton = {}
+                    Spacer(modifier = Modifier.size(16.dp))
+
+                    Button(
+                            onClick = {
+                                if (isEmailValid) {
+                                    onSubmit(email, message)
+                                    onDismiss()
+                                }
+                            },
+                            colors =
+                                    ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                    ),
+                            shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                                stringResource(R.string.submit),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
+                }
+            },
+            dismissButton = {}
     )
-}
-
-@Preview
-@Composable
-private fun AboutUsPreview() {
-    AboutUs(onDismiss = {})
-}
-
-
-@Preview
-@Composable
-private fun RateUsPreview() {
-    RateUs(onDismiss = {})
-}
-
-@Preview
-@Composable
-private fun FeedbackPreview() {
-    Feedback(onDismiss = {})
-}
-
-@Preview
-@Composable
-private fun OtherFeedbackDialogPreview() {
-    OtherFeedbackDialog(onDismiss = {}, onSubmit = { _, _ -> })
 }

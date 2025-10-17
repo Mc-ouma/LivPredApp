@@ -57,7 +57,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.team.teamscreen.AverageGoals
@@ -1336,124 +1335,6 @@ fun DefensiveStatsCard(statistics: TeamStatistics) {
                     }
                 }
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TeamStatsPreview() {
-    val mockStatistics = TeamStatistics(
-        league = com.soccertips.predictx.data.model.team.teamscreen.League(
-            id = 39,
-            name = "Premier League",
-            country = "England",
-            logo = "https://media.api-sports.io/football/leagues/39.png",
-            flag = "https://media.api-sports.io/flags/gb.svg",
-            season = 2020
-        ),
-        team = com.soccertips.predictx.data.model.team.teamscreen.Team(
-            id = 33,
-            name = "Manchester United",
-            logo = "https://media.api-sports.io/football/teams/33.png"
-        ),
-        form = "LWLWDLWWWWDWWDWWWDWLDWDDWDDWWW",
-        fixtures = Fixtures(
-            played = Played(home = 15, away = 15, total = 30),
-            wins = Played(home = 8, away = 9, total = 17),
-            draws = Played(home = 3, away = 6, total = 9),
-            loses = Played(home = 4, away = 0, total = 4)
-        ),
-        goals = Goals(
-            `for` = ForAgainstGoals(
-                total = Played(home = 31, away = 27, total = 58),
-                average = AverageGoals(home = "2.1", away = "1.8", total = "1.9"),
-                minute = mapOf(
-                    "0-15" to GoalMinute(total = 5, percentage = "8.77%"),
-                    "16-30" to GoalMinute(total = 10, percentage = "17.54%"),
-                    "31-45" to GoalMinute(total = 7, percentage = "12.28%"),
-                    "46-60" to GoalMinute(total = 6, percentage = "10.53%"),
-                    "61-75" to GoalMinute(total = 14, percentage = "24.56%"),
-                    "76-90" to GoalMinute(total = 9, percentage = "15.79%"),
-                    "91-105" to GoalMinute(total = 6, percentage = "10.53%")
-                ),
-                under_over = mapOf(
-                    "0.5" to UnderOver(under = 3, over = 27),
-                    "1.5" to UnderOver(under = 8, over = 22),
-                    "2.5" to UnderOver(under = 15, over = 15),
-                    "3.5" to UnderOver(under = 22, over = 8),
-                    "4.5" to UnderOver(under = 26, over = 4)
-                )
-            ),
-            against = ForAgainstGoals(
-                total = Played(home = 20, away = 13, total = 33),
-                average = AverageGoals(home = "1.3", away = "0.9", total = "1.1"),
-                minute = mapOf(
-                    "0-15" to GoalMinute(total = 7, percentage = "20.59%"),
-                    "16-30" to GoalMinute(total = 4, percentage = "11.76%"),
-                    "31-45" to GoalMinute(total = 9, percentage = "26.47%"),
-                    "46-60" to GoalMinute(total = 5, percentage = "14.71%"),
-                    "61-75" to GoalMinute(total = 4, percentage = "11.76%"),
-                    "76-90" to GoalMinute(total = 3, percentage = "8.82%"),
-                    "91-105" to GoalMinute(total = 2, percentage = "5.88%")
-                ),
-                under_over = mapOf(
-                    "0.5" to UnderOver(under = 12, over = 18),
-                    "1.5" to UnderOver(under = 18, over = 12),
-                    "2.5" to UnderOver(under = 24, over = 6),
-                    "3.5" to UnderOver(under = 28, over = 2),
-                    "4.5" to UnderOver(under = 29, over = 1)
-                )
-            )
-        ),
-        biggest = Biggest(
-            streak = Streak(wins = 4, draws = 2, loses = 1),
-            wins = HomeAway(home = "9-0", away = "1-4"),
-            loses = HomeAway(home = "1-6", away = "0-3"),
-            goals = com.soccertips.predictx.data.model.team.teamscreen.HomeAwayGoals(
-                `for` = HomeAway(home = "9", away = "4"),
-                against = HomeAway(home = "6", away = "2")
-            )
-        ),
-        clean_sheet = CleanSheet(home = 6, away = 6, total = 12),
-        failed_to_score = FailedToScore(home = 3, away = 4, total = 7),
-        penalty = Penalty(
-            scored = PenaltyDetails(total = 8, percentage = "100.00%"),
-            missed = PenaltyDetails(total = 0, percentage = "0%"),
-            total = 8
-        ),
-        lineups = listOf(
-            Lineup(formation = "4-2-3-1", played = 28),
-            Lineup(formation = "4-3-1-2", played = 2)
-        ),
-        cards = Cards(
-            yellow = mapOf(
-                "0-15" to CardDetail(total = 1, percentage = "2.00%"),
-                "16-30" to CardDetail(total = 2, percentage = "4.00%"),
-                "31-45" to CardDetail(total = 10, percentage = "20.00%"),
-                "46-60" to CardDetail(total = 14, percentage = "28.00%"),
-                "61-75" to CardDetail(total = 6, percentage = "12.00%"),
-                "76-90" to CardDetail(total = 16, percentage = "32.00%"),
-                "91-105" to CardDetail(total = 1, percentage = "2.00%")
-            ),
-            red = mapOf(
-                "16-30" to CardDetail(total = 1, percentage = "100.00%"),
-                "0-15" to CardDetail(total = null, percentage = null),
-                "31-45" to CardDetail(total = null, percentage = null),
-                "46-60" to CardDetail(total = null, percentage = null),
-                "61-75" to CardDetail(total = null, percentage = null),
-                "76-90" to CardDetail(total = null, percentage = null),
-                "91-105" to CardDetail(total = null, percentage = null)
-            )
-        )
-    )
-
-    PredictXTheme {
-        Surface {
-            TeamStatisticsContent(
-                statistics = mockStatistics,
-                lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
-            )
         }
     }
 }

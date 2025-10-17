@@ -25,3 +25,4 @@ dot.env
 .vscode/settings.json
 teamstanding.json
 teamstatistics.json
+ADMOB_CRASH_FIX.md

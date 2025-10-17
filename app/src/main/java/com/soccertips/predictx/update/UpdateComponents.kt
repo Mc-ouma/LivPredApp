@@ -2,8 +2,10 @@ package com.soccertips.predictx.update
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,96 +45,104 @@ fun UpdateHandler(updateManager: CustomAppUpdateManager) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // Show update progress indicator when downloading
-    UpdateProgressIndicator(
-        isDownloading = updateState.isDownloading,
-        modifier = Modifier.padding(16.dp)
-    )
+    // Wrap everything in a Box to properly position the SnackbarHost at the bottom
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Show update progress indicator when downloading
+        UpdateProgressIndicator(
+                isDownloading = updateState.isDownloading,
+                modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
+        )
 
-    // Handle update downloaded state
-    LaunchedEffect(updateState.isDownloaded) {
-        if (updateState.isDownloaded) {
-            scope.launch {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = "Update downloaded. Restart to complete installation.",
-                        actionLabel = "RESTART",
-                        duration = SnackbarDuration.Indefinite
-                    )
-                if (result == SnackbarResult.ActionPerformed) {
-                    updateManager.completeUpdate()
+        // Handle update downloaded state
+        LaunchedEffect(updateState.isDownloaded) {
+            if (updateState.isDownloaded) {
+                scope.launch {
+                    val result =
+                            snackbarHostState.showSnackbar(
+                                    message =
+                                            "Update downloaded. Restart to complete installation.",
+                                    actionLabel = "RESTART",
+                                    duration = SnackbarDuration.Indefinite
+                            )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        updateManager.completeUpdate()
+                    }
                 }
             }
         }
-    }
 
-    // Show mandatory update dialog
-    if (updateState.isAvailable && updateState.isMandatory) {
-        MandatoryUpdateDialog(
-            onUpdateClick = {
-                val activity = context as? ComponentActivity
-                activity?.let { updateManager.startUpdateFlow(it) }
+        // Show mandatory update dialog
+        if (updateState.isAvailable && updateState.isMandatory) {
+            MandatoryUpdateDialog(
+                    onUpdateClick = {
+                        val activity = context as? ComponentActivity
+                        activity?.let { updateManager.startUpdateFlow(it) }
+                    }
+            )
+        }
+
+        // Show optional update snackbar
+        LaunchedEffect(updateState.isAvailable) {
+            if (updateState.isAvailable && !updateState.isMandatory) {
+                scope.launch {
+                    val result =
+                            snackbarHostState.showSnackbar(
+                                    message = "App update available",
+                                    actionLabel = "UPDATE",
+                                    duration = SnackbarDuration.Long
+                            )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        val activity = context as? ComponentActivity
+                        activity?.let { updateManager.startUpdateFlow(it) }
+                    }
+                }
             }
+        }
+
+        // Position SnackbarHost at the bottom
+        SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
         )
     }
-
-    // Show optional update snackbar
-    LaunchedEffect(updateState.isAvailable) {
-        if (updateState.isAvailable && !updateState.isMandatory) {
-            scope.launch {
-                val result =
-                    snackbarHostState.showSnackbar(
-                        message = "App update available",
-                        actionLabel = "UPDATE",
-                        duration = SnackbarDuration.Long
-                    )
-                if (result == SnackbarResult.ActionPerformed) {
-                    val activity = context as? ComponentActivity
-                    activity?.let { updateManager.startUpdateFlow(it) }
-                }
-            }
-        }
-    }
-
-    SnackbarHost(hostState = snackbarHostState)
 }
 
 @Composable
 private fun MandatoryUpdateDialog(onUpdateClick: () -> Unit) {
     AlertDialog(
-        onDismissRequest = { /* Cannot dismiss mandatory update */ },
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Update,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+            onDismissRequest = { /* Cannot dismiss mandatory update */},
+            title = {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                            imageVector = Icons.Default.Update,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(text = "Update Required", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                        text =
+                                "A critical update is available. Please update the app to continue using it.",
+                        style = MaterialTheme.typography.bodyMedium
                 )
-                Text(text = "Update Required", fontWeight = FontWeight.Bold)
-            }
-        },
-        text = {
-            Text(
-                text =
-                    "A critical update is available. Please update the app to continue using it.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        },
-        confirmButton = {
-            Button(onClick = onUpdateClick, modifier = Modifier.fillMaxWidth()) {
-                Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Update Now")
-            }
-        },
-        dismissButton = null // No dismiss button for mandatory updates
+            },
+            confirmButton = {
+                Button(onClick = onUpdateClick, modifier = Modifier.fillMaxWidth()) {
+                    Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Update Now")
+                }
+            },
+            dismissButton = null // No dismiss button for mandatory updates
     )
 }
 
@@ -140,21 +150,19 @@ private fun MandatoryUpdateDialog(onUpdateClick: () -> Unit) {
 fun UpdateProgressIndicator(isDownloading: Boolean, modifier: Modifier = Modifier) {
     if (isDownloading) {
         Card(
-            modifier = modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                modifier = modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                 Text(
-                    text = "Downloading update...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
+                        text = "Downloading update...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
                 )
             }
         }

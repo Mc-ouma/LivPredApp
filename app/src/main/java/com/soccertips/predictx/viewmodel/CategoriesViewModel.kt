@@ -2,8 +2,10 @@ package com.soccertips.predictx.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.soccertips.predictx.data.model.Announcement
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.repository.FirebaseRepository
+import com.soccertips.predictx.repository.RemoteConfigRepository
 import com.soccertips.predictx.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -14,17 +16,41 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @HiltViewModel
-class CategoriesViewModel @Inject constructor(private val firebaseRepository: FirebaseRepository) :
-        ViewModel() {
+class CategoriesViewModel
+@Inject
+constructor(
+        private val firebaseRepository: FirebaseRepository,
+        private val remoteConfigRepository: RemoteConfigRepository
+) : ViewModel() {
 
     private val telegramMessage = "        context.getString(R.string.no_categories_available)"
     // Private mutable state that holds the UI state (loading, success, error)
     private val _uiState = MutableStateFlow<UiState<List<Category>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Category>>> = _uiState.asStateFlow()
 
+    // State for announcements
+    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
+    val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
+
     // Initialize by loading categories from a local source when the ViewModel is first created
     init {
         loadCategories()
+        loadAnnouncements()
+    }
+
+    // Function to load announcements from Remote Config
+    private fun loadAnnouncements() {
+        viewModelScope.launch {
+            try {
+                remoteConfigRepository.getAnnouncements().collect { announcements ->
+                    Timber.d("Announcements loaded: ${announcements.size}")
+                    _announcements.value = announcements
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error loading announcements")
+                _announcements.value = emptyList()
+            }
+        }
     }
 
     // Function to load categories from a local source

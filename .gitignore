@@ -26,3 +26,5 @@ dot.env
 teamstanding.json
 teamstatistics.json
 ADMOB_CRASH_FIX.md
+IN_APP_UPDATE_REVIEW.md
+UPDATE_SNACKBAR_FIX.md

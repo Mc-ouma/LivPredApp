@@ -8,6 +8,8 @@ import androidx.work.WorkerFactory
 import com.google.android.play.core.review.ReviewManager
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.gson.Gson
 import com.soccertips.predictx.data.local.AppDatabase
 import com.soccertips.predictx.data.local.dao.FavoriteDao
 import com.soccertips.predictx.network.ApiService
@@ -393,5 +395,17 @@ object AppModule {
     @Singleton
     fun provideFirebaseAnalytics(@ApplicationContext context: Context): FirebaseAnalytics {
         return FirebaseAnalytics.getInstance(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
+        return FirebaseRemoteConfig.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return Gson()
     }
 }

@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.soccertips.predictx.R
 
 @Composable
 fun LoadingIndicator(modifier: Modifier = Modifier) {
@@ -22,10 +21,3 @@ fun LoadingIndicator(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun ErrorIndicator(modifier: Modifier = Modifier) {
-    Box(
-            contentAlignment = Alignment.Center,
-            modifier = modifier.fillMaxSize(),
-    ) { LottieLoader(resId = R.raw.animation) }
-}

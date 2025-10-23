@@ -1,6 +1,5 @@
 package com.soccertips.predictx.ui.items
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +37,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.ServerResponse
 import com.soccertips.predictx.ui.theme.LocalCardColors
@@ -310,21 +308,3 @@ data class TeamDetails(val teamLogo: String?, val teamName: String?)
 
 // Reusable Composable for Team Info
 
-@Composable
-fun TeamInfo(teamDetails: TeamDetails, modifier: Modifier = Modifier) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
-        Image(
-                rememberAsyncImagePainter(teamDetails.teamLogo),
-                contentDescription = "Team Logo",
-                modifier = Modifier.padding(horizontal = 8.dp).height(24.dp).width(24.dp),
-        )
-        teamDetails.teamName?.let {
-            Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}

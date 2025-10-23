@@ -234,10 +234,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun shouldShowReview(): Boolean {
-        return splashViewModel.shouldShowReview()
-    }
-
     private fun launchReviewFlow(reviewInfo: ReviewInfo) {
         try {
             reviewManager.launchReviewFlow(this, reviewInfo).addOnCompleteListener {
@@ -374,38 +370,6 @@ class MainActivity : ComponentActivity() {
                 putBoolean("force_navigate_from_foreground", true)
             }
         }
-    }
-
-    private fun showBettingSuccessDialog(
-            date: String,
-            matchCount: String,
-            winCount: String,
-            successRate: String,
-            matchesDetails: String,
-            summary: String
-    ) {
-        AlertDialog.Builder(this)
-                .setTitle("🎉 Perfect Betting Day!")
-                .setMessage(
-                        """
-                    📅 Date: $date
-                    🏆 Matches Won: $winCount/$matchCount
-                    🎯 Success Rate: $successRate%
-    
-                    📊 Summary: $summary
-    
-                    📋 Match Results:
-                    $matchesDetails
-                    """.trimIndent()
-                )
-                .setPositiveButton("View History") { _, _ ->
-                    handleBettingHistoryIntent(Intent().apply { putExtra("filter_date", date) })
-                }
-                .setNegativeButton("Share Success") { _, _ ->
-                    shareSuccess(matchCount, successRate, date)
-                }
-                .setNeutralButton("Close", null)
-                .show()
     }
 
     private fun shareSuccess(matchCount: String, successRate: String, date: String) {

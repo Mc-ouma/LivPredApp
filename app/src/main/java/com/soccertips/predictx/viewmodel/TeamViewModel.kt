@@ -41,7 +41,6 @@ constructor(
     val isPlayersLoading: StateFlow<Boolean> = _isPlayersLoading.asStateFlow()
 
     private val _transfersPaging = MutableStateFlow<PagingData<Response2>>(PagingData.empty())
-    val transfersPaging: StateFlow<PagingData<Response2>> = _transfersPaging.asStateFlow()
 
     private val _fixtures = MutableStateFlow<UiState<List<FixtureDetails>>>(UiState.Loading)
     val fixtures: StateFlow<UiState<List<FixtureDetails>>> = _fixtures.asStateFlow()

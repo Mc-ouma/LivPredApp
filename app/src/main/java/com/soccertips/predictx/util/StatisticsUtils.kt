@@ -1,6 +1,5 @@
 package com.soccertips.predictx.util
 
-import android.content.Context
 import com.soccertips.predictx.R
 
 /**
@@ -52,13 +51,4 @@ object StatisticsUtils {
         }
     }
 
-    /**
-     * Format the value for display, handling null cases appropriately
-     */
-    fun formatValue(value: String?, context: Context): String {
-        if (value == null || value == "null" || value.isEmpty()) {
-            return context.getString(R.string.na)
-        }
-        return value
-    }
 }

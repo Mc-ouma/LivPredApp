@@ -3,8 +3,6 @@ package com.soccertips.predictx.util
 import android.net.TrafficStats
 import android.os.Build
 import timber.log.Timber
-import java.lang.reflect.Method
-import java.net.Socket
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -60,40 +58,7 @@ class NetworkTaggingInitializer @Inject constructor() {
         // This approach is more compatible across different Android versions
     }
 
-    /**
-     * Tag network traffic for Firebase operations
-     */
-    fun tagFirebaseTraffic() {
-        try {
-            TrafficStats.setThreadStatsTag(FIREBASE_SOCKET_TAG)
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to tag Firebase traffic")
-        }
-    }
-
-         private fun createSocketTagger(socketTaggerClass: Class<*>, setThreadStatsTagMethod: Method): Any {
-             // Create a proxy that implements the SocketTagger class
-             return java.lang.reflect.Proxy.newProxyInstance(
-                 socketTaggerClass.classLoader,
-                 arrayOf(socketTaggerClass)
-             ) { _, method, args ->
-                 if (method.name == "tag" && args?.size == 1 && args[0] is Socket?) {
-                     // Our custom tagging logic when tag() is called
-                     val stackTrace = Thread.currentThread().stackTrace
-                     val tag = determineTagFromStackTrace(stackTrace)
-
-                     // Set the thread tag before the socket gets tagged
-                     setThreadStatsTagMethod.invoke(null, tag)
-
-                     // The original tag method returns void/Unit
-                     return@newProxyInstance null
-                 }
-                 // For any other method calls, handle accordingly
-                 null
-             }
-         }
-
-         private fun determineTagFromStackTrace(stackTrace: Array<StackTraceElement>): Int {
+    private fun determineTagFromStackTrace(stackTrace: Array<StackTraceElement>): Int {
              // Check stack trace to identify the source of the socket connection
              for (element in stackTrace) {
                  when {

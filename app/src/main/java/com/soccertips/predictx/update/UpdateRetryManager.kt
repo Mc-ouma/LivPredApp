@@ -85,13 +85,4 @@ class UpdateRetryManager @Inject constructor(private val sharedPrefs: SharedPref
         sharedPrefs.edit { remove(RETRY_COUNT_KEY).remove(LAST_RETRY_TIME_KEY) }
     }
 
-    fun getNextRetryTime(): Long? {
-        val retryCount = getRetryCount()
-        if (retryCount >= MAX_RETRY_COUNT) return null
-
-        val lastRetryTime = getLastRetryTime()
-        val requiredDelay = calculateBackoffDelay(retryCount)
-
-        return lastRetryTime + requiredDelay
-    }
 }

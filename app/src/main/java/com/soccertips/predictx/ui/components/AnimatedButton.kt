@@ -7,8 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
@@ -118,41 +116,3 @@ fun AnimatedButton(
     }
 }
 
-@Composable
-fun ButtomExamples() {
-    Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // primary button example
-        AnimatedButton(
-                text = "Primary Button",
-                onClick = { /* Handle click */},
-        )
-
-        // secondary button example
-        AnimatedButton(
-                text = "Secondary Button",
-                onClick = { /* Handle click */},
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
-                elevation =
-                        ButtonDefaults.buttonElevation(
-                                defaultElevation = 4.dp,
-                                pressedElevation = 2.dp,
-                                hoveredElevation = 6.dp
-                        ),
-                pulseEnabled = true
-        )
-        // Tertiary button example
-        AnimatedButton(
-                text = "Tertiary Button",
-                onClick = { /* Handle click */},
-                containerColor = MaterialTheme.colorScheme.tertiary,
-                contentColor = MaterialTheme.colorScheme.onTertiary,
-                elevation =
-                        ButtonDefaults.elevatedButtonElevation(
-                                defaultElevation = 4.dp,
-                                pressedElevation = 2.dp,
-                                hoveredElevation = 6.dp
-                        ),
-        )
-    }
-}

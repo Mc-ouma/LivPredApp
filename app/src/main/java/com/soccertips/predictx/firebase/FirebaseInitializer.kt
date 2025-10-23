@@ -1,14 +1,11 @@
 package com.soccertips.predictx.firebase
 
 import android.content.Context
-import android.content.pm.PackageManager
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
-import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
-import timber.log.Timber
-import java.security.MessageDigest
 
 /** Helper class to properly initialize Firebase services */
 @Singleton
@@ -90,18 +87,4 @@ class FirebaseInitializer @Inject constructor() {
         }
     }
 
-    /** Force refresh Firebase configuration */
-    fun refreshFirebaseConfiguration(context: Context) {
-        try {
-            // Delete existing FirebaseApp instance
-            FirebaseApp.getInstance().delete()
-
-            // Reinitialize
-            initializeFirebase(context)
-
-            Timber.d("Firebase configuration refreshed")
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to refresh Firebase configuration")
-        }
-    }
 }

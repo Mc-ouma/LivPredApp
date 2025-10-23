@@ -38,7 +38,6 @@ constructor(
 
     private val _initializationState =
             MutableStateFlow<InitializationState>(InitializationState.Starting)
-    val initializationState: StateFlow<InitializationState> = _initializationState.asStateFlow()
 
     // Cache review info
     private var cachedReviewInfo: ReviewInfo? = null

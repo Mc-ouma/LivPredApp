@@ -9,7 +9,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +29,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Checklist
@@ -68,16 +66,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -722,59 +718,3 @@ fun TeamInfoItem(icon: ImageVector, title: String, value: String, modifier: Modi
     }
 }
 
-@Composable
-fun Table(headers: List<String>, rows: List<List<String>>) {
-    Column(
-            modifier =
-                    Modifier.border(
-                            2.dp,
-                            MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(8.dp)
-                    )
-    ) {
-        // Headers
-        Row(
-                modifier =
-                        Modifier.fillMaxWidth()
-                                .background(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
-                                ),
-                horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            headers.forEach { header ->
-                Text(
-                        text = header,
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        // Rows
-        rows.forEachIndexed { index, row ->
-            Row(
-                    modifier =
-                            Modifier.fillMaxWidth()
-                                    .background(
-                                            if (index % 2 == 0)
-                                                    MaterialTheme.colorScheme.surfaceVariant
-                                            else Color.Transparent
-                                    ),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                row.forEach { cell ->
-                    Text(
-                            text = cell,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-    }
-}

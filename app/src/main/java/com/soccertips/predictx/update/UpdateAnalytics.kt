@@ -47,24 +47,6 @@ class UpdateAnalytics @Inject constructor(private val firebaseAnalytics: Firebas
         logEvent("update_failed", bundle)
     }
 
-    fun logUpdateCancelled(updateType: String, stage: String) {
-        val bundle =
-            Bundle().apply {
-                putString("update_type", updateType)
-                putString("cancelled_at", stage)
-            }
-        logEvent("update_cancelled", bundle)
-    }
-
-    fun logUpdateRetry(retryCount: Int, updateType: String) {
-        val bundle =
-            Bundle().apply {
-                putInt("retry_count", retryCount)
-                putString("update_type", updateType)
-            }
-        logEvent("update_retry", bundle)
-    }
-
     private fun logEvent(eventName: String, bundle: Bundle) {
         try {
             firebaseAnalytics.logEvent(eventName, bundle)

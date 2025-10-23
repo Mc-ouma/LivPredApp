@@ -41,7 +41,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,27 +58,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.soccertips.predictx.R
-import com.soccertips.predictx.data.model.team.teamscreen.AverageGoals
-import com.soccertips.predictx.data.model.team.teamscreen.Biggest
-import com.soccertips.predictx.data.model.team.teamscreen.CardDetail
-import com.soccertips.predictx.data.model.team.teamscreen.Cards
-import com.soccertips.predictx.data.model.team.teamscreen.CleanSheet
-import com.soccertips.predictx.data.model.team.teamscreen.FailedToScore
-import com.soccertips.predictx.data.model.team.teamscreen.Fixtures
-import com.soccertips.predictx.data.model.team.teamscreen.ForAgainstGoals
-import com.soccertips.predictx.data.model.team.teamscreen.GoalMinute
-import com.soccertips.predictx.data.model.team.teamscreen.Goals
-import com.soccertips.predictx.data.model.team.teamscreen.HomeAway
-import com.soccertips.predictx.data.model.team.teamscreen.Lineup
-import com.soccertips.predictx.data.model.team.teamscreen.Penalty
-import com.soccertips.predictx.data.model.team.teamscreen.PenaltyDetails
-import com.soccertips.predictx.data.model.team.teamscreen.Played
-import com.soccertips.predictx.data.model.team.teamscreen.Streak
 import com.soccertips.predictx.data.model.team.teamscreen.TeamStatistics
-import com.soccertips.predictx.data.model.team.teamscreen.UnderOver
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
-import com.soccertips.predictx.ui.theme.PredictXTheme
 import timber.log.Timber
 import kotlin.math.roundToInt
 

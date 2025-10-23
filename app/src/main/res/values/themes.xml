@@ -11,21 +11,5 @@
         <item name="postSplashScreenTheme">@style/Theme.PredictX</item>
     </style>
 
-    <!-- Theme for AdMob AdActivity - Fixed to prevent crashes -->
-    <!-- This theme is isolated from edge-to-edge to ensure proper window structure -->
-    <style name="Theme.PredictX.Admob" parent="android:Theme.Material.NoActionBar.Fullscreen">
-        <!-- Ensure window has proper content view -->
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowIsFloating">false</item>
-        <item name="android:backgroundDimEnabled">true</item>
-        <!-- Force standard window insets behavior for AdActivity -->
-        <item name="android:windowLayoutInDisplayCutoutMode">default</item>
-        <item name="android:enforceNavigationBarContrast">true</item>
-        <item name="android:enforceStatusBarContrast">true</item>
-    </style>
 
 </resources>

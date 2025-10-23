@@ -1,3 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="Theme.PredictX.Admob" parent="@android:style/Theme.Translucent.NoTitleBar.Fullscreen">
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.6</item>
+    </style>
 </resources>

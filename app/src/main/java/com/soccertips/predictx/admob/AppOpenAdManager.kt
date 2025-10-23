@@ -244,6 +244,16 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
     }
 
     fun showAdIfAvailable(activity: Activity, onShowAdCompleteListener: () -> Unit) {
+        // CRITICAL: Check if device is safe for full screen ads
+        if (!adStateManager.isSafeForFullScreenAds()) {
+            Timber.Forest.tag("AppOpenAd").w("Skipping ad on problematic device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+            try {
+                FirebaseCrashlytics.getInstance().log("AppOpen: Skipped on ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} (Android ${android.os.Build.VERSION.SDK_INT})")
+            } catch (_: Exception) {}
+            onShowAdCompleteListener()
+            return
+        }
+
         // CRITICAL: Validate activity state before showing ad to prevent crashes
         if (activity.isFinishing || activity.isDestroyed) {
             Timber.Forest.tag("AppOpenAd").w("Cannot show ad - activity is finishing or destroyed")

@@ -47,6 +47,7 @@
 
 # AdMob optimizations
 -keep class com.google.android.gms.ads.** { *; }
+-keep public class com.google.android.gms.ads.AdActivity
 -dontwarn com.google.android.gms.ads.**
 -keep class com.google.android.gms.common.** { *; }
 -keep class com.google.android.gms.internal.** { *; }

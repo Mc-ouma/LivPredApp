@@ -2,6 +2,7 @@ package com.soccertips.predictx.admob
 
 import android.app.Activity
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,35 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 
+// Helper function to check if device/manufacturer has known AdActivity issues
+private fun isProblematicDeviceForFullScreenAds(): Boolean {
+    val manufacturer = Build.MANUFACTURER.lowercase()
+    val model = Build.MODEL.lowercase()
+    val brand = Build.BRAND.lowercase()
+    
+    // Known problematic manufacturers/devices for AdActivity
+    val problematicManufacturers = listOf(
+        "huawei",  // HwPhoneWindow issues
+        "honor",   // Huawei sub-brand
+        "oppo",    // ColorOS modifications
+        "vivo",    // FuntouchOS modifications  
+        "realme"   // RealmeUI modifications
+    )
+    
+    // Check if manufacturer is in the problematic list
+    if (problematicManufacturers.any { manufacturer.contains(it) || brand.contains(it) }) {
+        Timber.tag("AdSafety").w("Detected potentially problematic device: $manufacturer $model")
+        return true
+    }
+    
+    // Additional check for specific Android versions with high crash rates
+    if (Build.VERSION.SDK_INT in 28..30) { // Android 9, 10, 11
+        Timber.tag("AdSafety").d("Device on Android ${Build.VERSION.SDK_INT} - monitoring for issues")
+    }
+    
+    return false
+}
+
 // Global singleton to track ad state across different ad types
 @Singleton
 class AdStateManager @Inject constructor() {
@@ -49,6 +79,11 @@ class AdStateManager @Inject constructor() {
     // Check if any full screen ad is currently showing
     fun isFullScreenAdShowing(): Boolean {
         return isAnyFullScreenAdShowing
+    }
+    
+    // Check if device is safe for full screen ads
+    fun isSafeForFullScreenAds(): Boolean {
+        return !isProblematicDeviceForFullScreenAds()
     }
 }
 
@@ -273,6 +308,16 @@ constructor(private val applicationContext: Context, private val adStateManager:
         Timber.tag("InterstitialAd")
                 .d("Ad state manager showing: ${adStateManager.isFullScreenAdShowing()}")
         Timber.tag("InterstitialAd").d("Interstitial ad object: $interstitialAd")
+
+        // CRITICAL: Check if device is safe for full screen ads
+        if (!adStateManager.isSafeForFullScreenAds()) {
+            Timber.tag("InterstitialAd").w("Skipping ad on problematic device: ${Build.MANUFACTURER} ${Build.MODEL}")
+            try {
+                FirebaseCrashlytics.getInstance().log("Interstitial: Skipped on ${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.SDK_INT})")
+            } catch (_: Exception) {}
+            onAdDismissed()
+            return
+        }
 
         // CRITICAL: Validate activity state before showing ad to prevent crashes
         if (activity.isFinishing || activity.isDestroyed) {
@@ -523,6 +568,16 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
         Timber.tag("RewardedAd")
                 .d("Ad state manager showing: ${adStateManager.isFullScreenAdShowing()}")
         Timber.tag("RewardedAd").d("Rewarded ad object: $rewardedAd")
+
+        // CRITICAL: Check if device is safe for full screen ads
+        if (!adStateManager.isSafeForFullScreenAds()) {
+            Timber.tag("RewardedAd").w("Skipping ad on problematic device: ${Build.MANUFACTURER} ${Build.MODEL}")
+            try {
+                FirebaseCrashlytics.getInstance().log("Rewarded: Skipped on ${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.SDK_INT})")
+            } catch (_: Exception) {}
+            onFailure()
+            return
+        }
 
         // Check MobileAds initialization status
         try {

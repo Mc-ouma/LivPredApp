@@ -5,12 +5,9 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -95,9 +92,21 @@ fun CategoriesContent(
         onDismissAnnouncement: (String) -> Unit = {},
         onAnnouncementActionClick: (String) -> Unit = {}
 ) {
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        // Show announcements at the top
-        items(items = announcements, key = { it.id }) { announcement ->
+    // Use a single LazyVerticalGrid to avoid nested scrollables and fixed heights
+    LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 150.dp),
+            contentPadding = PaddingValues(16.dp),
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        // Announcements span full width (all columns)
+        items(
+                count = announcements.size,
+                key = { index -> announcements[index].id },
+                span = { GridItemSpan(maxLineSpan) }
+        ) { index ->
+            val announcement = announcements[index]
             AnnouncementCard(
                     announcement = announcement,
                     onDismiss = { onDismissAnnouncement(announcement.id) },
@@ -105,29 +114,19 @@ fun CategoriesContent(
             )
         }
 
-        // Categories grid
-        item {
-            LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 150.dp),
-                    contentPadding = PaddingValues(16.dp),
-                    modifier = Modifier.fillMaxWidth().height(600.dp), // Adjust based on your needs
-                    verticalArrangement = Arrangement.SpaceAround,
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                items(
-                        count = categories.size,
-                        key = { index -> categories[index].url },
-                ) { index ->
-                    val category = categories[index]
-                    CategoryCard(
-                            category = category,
-                            onClick = {
-                                val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
-                                navController.navigate(Routes.ItemsList.createRoute(encodedUrl))
-                            },
-                    )
-                }
-            }
+        // Category items
+        items(
+                count = categories.size,
+                key = { index -> categories[index].url },
+        ) { index ->
+            val category = categories[index]
+            CategoryCard(
+                    category = category,
+                    onClick = {
+                        val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
+                        navController.navigate(Routes.ItemsList.createRoute(encodedUrl))
+                    },
+            )
         }
     }
 }

@@ -254,6 +254,23 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
             return
         }
 
+        // Check consent status before showing ad
+        try {
+            val consentInfo = com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
+            if (!consentInfo.canRequestAds()) {
+                Timber.Forest.tag("AppOpenAd").w("Cannot show ad - consent not granted")
+                try {
+                    FirebaseCrashlytics.getInstance().log("AppOpen: Skipped - no consent")
+                } catch (_: Exception) {}
+                onShowAdCompleteListener()
+                return
+            }
+        } catch (e: Exception) {
+            Timber.Forest.tag("AppOpenAd").e("Error checking consent: ${e.message}")
+            onShowAdCompleteListener()
+            return
+        }
+
         // CRITICAL: Validate activity state before showing ad to prevent crashes
         if (activity.isFinishing || activity.isDestroyed) {
             Timber.Forest.tag("AppOpenAd").w("Cannot show ad - activity is finishing or destroyed")

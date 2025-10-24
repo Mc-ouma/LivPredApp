@@ -11,6 +11,7 @@ import com.soccertips.predictx.data.model.ServerResponse
 import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.ui.UiState
 import com.soccertips.predictx.utils.OutcomeCalculator
+import com.soccertips.predictx.utils.TimeZoneConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -101,6 +102,13 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                     "lose" -> Color.Red
                                                     else -> Color.Unspecified
                                                 }
+
+                                        // Convert UTC time to local timezone
+                                        val localTime = TimeZoneConverter.convertUtcToLocal(
+                                            serverResponse.mTime,
+                                            serverResponse.mDate
+                                        )
+
                                         ServerResponse(
                                                 fixtureId = serverResponse.fixtureId ?: "",
                                                 pick = serverResponse.pick ?: "Unknown",
@@ -108,7 +116,7 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 awayTeam = serverResponse.awayTeam ?: "Unknown",
                                                 mDate = serverResponse.mDate ?: "Unknown",
                                                 league = serverResponse.league ?: "Unknown",
-                                                mTime = serverResponse.mTime ?: "Unknown",
+                                                mTime = localTime,
                                                 betOdds = serverResponse.betOdds ?: "Unknown",
                                                 outcome = calculatedOutcome,
                                                 htScore = serverResponse.htScore ?: "Unknown",

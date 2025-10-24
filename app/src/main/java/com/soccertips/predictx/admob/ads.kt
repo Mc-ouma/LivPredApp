@@ -35,6 +35,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 
+// Helper function to check consent status efficiently
+private fun canShowAdsWithConsent(activity: Activity): Boolean {
+    return try {
+        val consentInfo = com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
+        val canRequest = consentInfo.canRequestAds()
+        Timber.d("Consent check: canRequestAds = $canRequest, status = ${consentInfo.consentStatus}")
+        canRequest
+    } catch (e: Exception) {
+        Timber.e("Error checking consent: ${e.message}")
+        // Default to false for safety - don't show ads if we can't verify consent
+        false
+    }
+}
+
 // Helper function to check if device/manufacturer has known AdActivity issues
 private fun isProblematicDeviceForFullScreenAds(): Boolean {
     val manufacturer = Build.MANUFACTURER.lowercase()
@@ -356,21 +370,11 @@ constructor(private val applicationContext: Context, private val adStateManager:
             Timber.tag("InterstitialAd").e("Error checking MobileAds init status: ${e.message}")
         }
 
-        // Check consent status
-        try {
-            val consentInformation =
-                    com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
-            val canRequestAds = consentInformation.canRequestAds()
-            Timber.tag("InterstitialAd").d("Consent status - can request ads: $canRequestAds")
-            Timber.tag("InterstitialAd").d("Consent status: ${consentInformation.consentStatus}")
-
-            if (!canRequestAds) {
-                Timber.tag("InterstitialAd").w("Cannot show ad - consent not granted")
-                onAdDismissed() // Execute callback since we can't show ad
-                return
-            }
-        } catch (e: Exception) {
-            Timber.tag("InterstitialAd").e("Error checking consent status: ${e.message}")
+        // Check consent status before showing ad
+        if (!canShowAdsWithConsent(activity)) {
+            Timber.tag("InterstitialAd").w("Cannot show ad - consent not granted or not available")
+            onAdDismissed()
+            return
         }
 
         // Don't show if another full screen ad is showing
@@ -595,42 +599,11 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
             return
         }
 
-        // Validate that activity has a valid window and decor view
-        try {
-            val window = activity.window
-            if (window == null) {
-                Timber.tag("RewardedAd").w("Cannot show ad - activity window is null")
-                onFailure()
-                return
-            }
-
-            val decorView = window.decorView
-            if (decorView == null || !decorView.isAttachedToWindow) {
-                Timber.tag("RewardedAd").w("Cannot show ad - decor view not attached to window")
-                onFailure()
-                return
-            }
-        } catch (e: Exception) {
-            Timber.tag("RewardedAd").e("Error validating activity window state: ${e.message}")
+        // Check consent status before showing ad
+        if (!canShowAdsWithConsent(activity)) {
+            Timber.tag("RewardedAd").w("Cannot show ad - consent not granted or not available")
             onFailure()
             return
-        }
-
-        // Check consent status
-        try {
-            val consentInformation =
-                    com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
-            val canRequestAds = consentInformation.canRequestAds()
-            Timber.tag("RewardedAd").d("Consent status - can request ads: $canRequestAds")
-            Timber.tag("RewardedAd").d("Consent status: ${consentInformation.consentStatus}")
-
-            if (!canRequestAds) {
-                Timber.tag("RewardedAd").w("Cannot show ad - consent not granted")
-                onFailure()
-                return
-            }
-        } catch (e: Exception) {
-            Timber.tag("RewardedAd").e("Error checking consent status: ${e.message}")
         }
 
         // Don't show if another full screen ad is showing

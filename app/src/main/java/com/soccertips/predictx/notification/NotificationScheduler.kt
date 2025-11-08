@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.soccertips.predictx.data.local.entities.FavoriteItem
@@ -66,9 +67,9 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
             )
             return notificationTime
         } catch (e: Exception) {
-            Timber.e(e, "Error parsing date/time for match ${item.fixtureId}, using fallback time")
-            // Fallback to 1 minute from now
-            return System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)
+            Timber.e(e, "Error parsing date/time for match ${item.fixtureId}")
+            // Return a time in the past to prevent scheduling
+            return 0L
         }
     }
 
@@ -160,19 +161,21 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
                         .putLong("completedTimestamp", item.completedTimestamp)
                         .build()
 
-        // Create a unique tag based on fixture ID and notification time
-        val tag = "match_notification_${item.fixtureId}_${notificationTime % 10000}"
+        // Create a unique work name based on fixture ID
+        val uniqueWorkName = "match_notification_${item.fixtureId}"
 
         val notificationWork =
                 OneTimeWorkRequestBuilder<DelayedNotificationWorker>()
                         .setInputData(inputData)
                         .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-                        .addTag(tag)
+                        .addTag(uniqueWorkName)
                         .build()
 
-        WorkManager.getInstance(context).enqueue(notificationWork)
+        // Use enqueueUniqueWork with REPLACE policy to prevent duplicate jobs
+        WorkManager.getInstance(context)
+                .enqueueUniqueWork(uniqueWorkName, ExistingWorkPolicy.REPLACE, notificationWork)
         Timber.d(
-                "Scheduled notification for ${item.fixtureId} with WorkManager (DelayedNotificationWorker) with delay: $delay ms, tag: $tag"
+                "Scheduled notification for ${item.fixtureId} with WorkManager (DelayedNotificationWorker) with delay: $delay ms, uniqueWorkName: $uniqueWorkName"
         )
     }
 
@@ -194,11 +197,12 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             alarmManager.cancel(pendingIntent)
 
-            // Cancel WorkManager notifications with both old and new tag formats for compatibility
-            WorkManager.getInstance(context).cancelAllWorkByTag("match_notification_$fixtureId")
+            // Cancel WorkManager notification using unique work name
+            val uniqueWorkName = "match_notification_$fixtureId"
+            WorkManager.getInstance(context).cancelUniqueWork(uniqueWorkName)
 
-            // Also cancel any notifications with the new timestamp-based tags
-            WorkManager.getInstance(context).cancelAllWorkByTag("match_notification_${fixtureId}_")
+            // Also cancel by tag for backward compatibility
+            WorkManager.getInstance(context).cancelAllWorkByTag(uniqueWorkName)
 
             Timber.d("Cancelled all notifications for fixture $fixtureId")
         } catch (e: Exception) {

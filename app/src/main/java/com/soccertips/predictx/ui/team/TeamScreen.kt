@@ -220,14 +220,14 @@ fun TeamScreen(
                                             // Team Name and Country
                                             Column {
                                                 Text(
-                                                        text = data.team.name,
+                                                        text = data.team.name ?: "",
                                                         style =
                                                                 MaterialTheme.typography
                                                                         .titleMedium,
                                                         fontWeight = FontWeight.Bold
                                                 )
                                                 Text(
-                                                        text = data.team.country,
+                                                        text = data.team.country ?: "-",
                                                         style = MaterialTheme.typography.bodySmall,
                                                         color =
                                                                 MaterialTheme.colorScheme.onSurface
@@ -592,7 +592,7 @@ fun TeamInfoCard(statistics: Response, modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth()
             ) {
                 Image(
-                        painter = rememberAsyncImagePainter(statistics.team.logo),
+                        painter = rememberAsyncImagePainter(statistics.team.logo ?: ""),
                         contentDescription = "Team Logo",
                         modifier = Modifier.size(80.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop
@@ -600,17 +600,17 @@ fun TeamInfoCard(statistics: Response, modifier: Modifier = Modifier) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                            text = statistics.team.name,
+                            text = statistics.team.name ?: "Unknown",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold
                     )
                     Text(
-                            text = stringResource(R.string.founded, statistics.team.founded),
+                            text = stringResource(R.string.founded, statistics.team.founded ?: 0),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                            text = stringResource(R.string.country, statistics.team.country),
+                            text = stringResource(R.string.country, statistics.team.country ?: "-"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -640,35 +640,38 @@ fun TeamInfoCard(statistics: Response, modifier: Modifier = Modifier) {
                                                 TeamInfoItem(
                                                         icon = Icons.Default.LocationOn,
                                                         title = "Stadium",
-                                                        value = statistics.venue.name
+                                                        value = statistics.venue.name ?: ""
                                                 )
                                             },
                                             {
                                                 TeamInfoItem(
                                                         icon = Icons.Default.LocationCity,
                                                         title = "City",
-                                                        value = statistics.venue.city
+                                                        value = statistics.venue.city ?: ""
                                                 )
                                             },
                                             {
                                                 TeamInfoItem(
                                                         icon = Icons.Default.Home,
                                                         title = "Address",
-                                                        value = statistics.venue.address
+                                                        value = statistics.venue.address ?: ""
                                                 )
                                             },
                                             {
                                                 TeamInfoItem(
                                                         icon = Icons.Default.Grass,
                                                         title = "Surface",
-                                                        value = statistics.venue.surface
+                                                        value = statistics.venue.surface ?: ""
                                                 )
                                             },
                                             {
                                                 TeamInfoItem(
                                                         icon = Icons.Default.People,
                                                         title = "Capacity",
-                                                        value = statistics.venue.capacity.toString()
+                                                        value =
+                                                                statistics.venue.capacity
+                                                                        ?.toString()
+                                                                        ?: ""
                                                 )
                                             }
                                     )
@@ -717,4 +720,3 @@ fun TeamInfoItem(icon: ImageVector, title: String, value: String, modifier: Modi
         }
     }
 }
-

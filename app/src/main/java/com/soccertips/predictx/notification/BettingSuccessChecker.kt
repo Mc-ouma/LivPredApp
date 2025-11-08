@@ -8,7 +8,6 @@ import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.data.model.ServerResponse
 import com.soccertips.predictx.repository.FirebaseRepository
 import com.soccertips.predictx.repository.PredictionRepository
-import com.soccertips.predictx.utils.OutcomeCalculator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -158,39 +157,33 @@ constructor(
             if (hasResult) {
                 matchesWithResults++
 
-                // Use OutcomeCalculator to determine the outcome dynamically
-                val calculatedOutcome =
-                        OutcomeCalculator.calculateOutcome(
-                                pick = match.pick,
-                                result = match.result,
-                                originalOutcome = match.outcome
-                        )
+                // Use outcome directly from server
+                val outcome = (match.outcome ?: "Unknown").lowercase()
 
-                val outcome = calculatedOutcome.lowercase()
                 when (outcome) {
                     "win" -> {
                         winningMatches++
                         matchDetails.add(
-                                "✅ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - Calculated: $calculatedOutcome"
+                                "✅ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - ${match.outcome}"
                         )
                         Timber.d(
-                                "WIN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}"
+                                "WIN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
                         )
                     }
                     "lose" -> {
                         losingMatches++
                         matchDetails.add(
-                                "❌ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - Calculated: $calculatedOutcome"
+                                "❌ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - ${match.outcome}"
                         )
                         Timber.d(
-                                "LOSE: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}"
+                                "LOSE: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
                         )
                     }
                     else -> {
                         // Treat unknown outcomes as not completed
                         matchesWithResults--
                         Timber.d(
-                                "UNKNOWN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Calculated: $calculatedOutcome, Original: ${match.outcome}"
+                                "UNKNOWN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
                         )
                     }
                 }

@@ -6,6 +6,8 @@ import android.os.Bundle
 import androidx.core.content.edit
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.google.android.gms.ads.MobileAds
 import com.google.android.ump.ConsentInformation
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -16,6 +18,9 @@ import com.soccertips.predictx.repository.PreloadRepository
 import com.soccertips.predictx.util.NetworkTaggingInitializer
 import com.soccertips.predictx.util.StartupTimeTracker
 import dagger.hilt.android.HiltAndroidApp
+import java.io.IOException
+import java.util.UUID
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -24,43 +29,29 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
-import java.io.IOException
-import java.util.UUID
-import javax.inject.Inject
 
 @HiltAndroidApp
 class App : Application(), Configuration.Provider, Application.ActivityLifecycleCallbacks {
 
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var workerFactory: HiltWorkerFactory
 
-    @Inject
-    lateinit var preloadRepository: PreloadRepository
+    @Inject lateinit var preloadRepository: PreloadRepository
 
-    @Inject
-    lateinit var predictionRepository: PredictionRepository
+    @Inject lateinit var predictionRepository: PredictionRepository
 
-    @Inject
-    lateinit var firebaseRepository: com.soccertips.predictx.repository.FirebaseRepository
+    @Inject lateinit var firebaseRepository: com.soccertips.predictx.repository.FirebaseRepository
 
-    @Inject
-    lateinit var tokenRepository: com.soccertips.predictx.notification.TokenRepository
+    @Inject lateinit var tokenRepository: com.soccertips.predictx.notification.TokenRepository
 
-    @Inject
-    lateinit var apiConfigProvider: com.soccertips.predictx.repository.ApiConfigProvider
+    @Inject lateinit var apiConfigProvider: com.soccertips.predictx.repository.ApiConfigProvider
 
-    @Inject
-    lateinit var networkTaggingInitializer: NetworkTaggingInitializer
+    @Inject lateinit var networkTaggingInitializer: NetworkTaggingInitializer
 
-    @Inject
-    lateinit var appOpenAdManager: AppOpenAdManager
+    @Inject lateinit var appOpenAdManager: AppOpenAdManager
 
-    @Inject
-    lateinit var startupTimeTracker: StartupTimeTracker
+    @Inject lateinit var startupTimeTracker: StartupTimeTracker
 
-    @Inject
-    lateinit var firebaseInitializer: com.soccertips.predictx.firebase.FirebaseInitializer
-
+    @Inject lateinit var firebaseInitializer: com.soccertips.predictx.firebase.FirebaseInitializer
 
     @Inject
     lateinit var bettingSuccessScheduler:
@@ -139,8 +130,67 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // MobileAds will be initialized in onActivityCreated with proper Activity context
     }
 
+    /**
+     * Cleans up old and stale WorkManager jobs to prevent the 100-job limit from being exceeded.
+     * This method cancels finished/failed jobs and removes old notification jobs.
+     */
+    private fun cleanupOldWorkManagerJobs() {
+        try {
+            Timber.d("WorkManager: Starting cleanup of old jobs")
+
+            val workManager = WorkManager.getInstance(this@App)
+
+            var cancelledCount = 0
+
+            // Cancel all work by tags for match notifications (old format)
+            workManager.cancelAllWorkByTag("match_notification")
+
+            // Get and cancel finished manual betting check jobs
+            workManager.getWorkInfosByTag("manual_betting_check").get()?.forEach { workInfo ->
+                if (workInfo.state == WorkInfo.State.SUCCEEDED ||
+                                workInfo.state == WorkInfo.State.FAILED ||
+                                workInfo.state == WorkInfo.State.CANCELLED
+                ) {
+                    try {
+                        workManager.cancelWorkById(workInfo.id)
+                        cancelledCount++
+                    } catch (e: Exception) {
+                        Timber.w(
+                                "Failed to cancel manual betting work ${workInfo.id}: ${e.message}"
+                        )
+                    }
+                }
+            }
+
+            // Get and cancel finished end-of-day check jobs
+            workManager.getWorkInfosByTag("end_of_day_check").get()?.forEach { workInfo ->
+                if (workInfo.state == WorkInfo.State.SUCCEEDED ||
+                                workInfo.state == WorkInfo.State.FAILED ||
+                                workInfo.state == WorkInfo.State.CANCELLED
+                ) {
+                    try {
+                        workManager.cancelWorkById(workInfo.id)
+                        cancelledCount++
+                    } catch (e: Exception) {
+                        Timber.w("Failed to cancel end-of-day work ${workInfo.id}: ${e.message}")
+                    }
+                }
+            }
+
+            // Prune completed work from the database
+            workManager.pruneWork()
+
+            Timber.d("WorkManager: Cleanup completed - cancelled $cancelledCount old jobs")
+        } catch (e: Exception) {
+            Timber.e(e, "WorkManager: Error during cleanup")
+        }
+    }
+
     private suspend fun initializeInBackground() {
         withContext(Dispatchers.IO) {
+            // Clean up old/stale WorkManager jobs first
+            cleanupOldWorkManagerJobs()
+
             // Initialize non-critical components in background
             NotificationHelper.createNotificationChannels(this@App)
 
@@ -160,7 +210,6 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Initialize Firebase messaging with delay
             delay(1000) // Let UI start first
             initFirebaseMessaging()
-
 
             // Delay preloading until app UI is ready
             delay(2000)
@@ -186,31 +235,30 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             try {
                 isMobileAdsInitializing = true
                 Timber.d(
-                    "Initializing MobileAds with activity context: ${activity.javaClass.simpleName}"
+                        "Initializing MobileAds with activity context: ${activity.javaClass.simpleName}"
                 )
 
                 // Additional validation before calling MobileAds.initialize
                 var checks = 0
-                while (
-                    (!activity.hasWindowFocus() ||
-                            activity.window?.decorView?.isAttachedToWindow != true) &&
-                    checks < 5
-                ) {
+                while ((!activity.hasWindowFocus() ||
+                        activity.window?.decorView?.isAttachedToWindow != true) && checks < 5) {
                     Timber.w(
-                        "Activity not ready for MobileAds init (focus=${activity.hasWindowFocus()}, attached=${activity.window?.decorView?.isAttachedToWindow}). Retrying..."
+                            "Activity not ready for MobileAds init (focus=${activity.hasWindowFocus()}, attached=${activity.window?.decorView?.isAttachedToWindow}). Retrying..."
                     )
                     delay(300)
                     checks++
 
                     if (activity.isFinishing || activity.isDestroyed) {
-                        Timber.w("Activity became invalid during readiness wait, aborting MobileAds init")
+                        Timber.w(
+                                "Activity became invalid during readiness wait, aborting MobileAds init"
+                        )
                         isMobileAdsInitializing = false
                         return@withContext
                     }
                 }
 
                 if (!activity.hasWindowFocus() ||
-                    activity.window?.decorView?.isAttachedToWindow != true
+                                activity.window?.decorView?.isAttachedToWindow != true
                 ) {
                     Timber.w("Activity still not ready for MobileAds init, scheduling retry")
                     isMobileAdsInitializing = false
@@ -234,7 +282,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                 setupAppOpenAdManager()
                             } else {
                                 Timber.w(
-                                    "Activity invalid after MobileAds init, skipping ad manager setup"
+                                        "Activity invalid after MobileAds init, skipping ad manager setup"
                                 )
                             }
 
@@ -246,12 +294,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                             if (!isFirstLaunch()) {
                                 isInitialAppStart = false
                                 Timber.d(
-                                    "AppOpenAdManager: Ready for ads after MobileAds initialization"
+                                        "AppOpenAdManager: Ready for ads after MobileAds initialization"
                                 )
                             }
 
                             Timber.d(
-                                "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
+                                    "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
                             )
 
                             // Load first ad with additional delay to ensure everything is stable
@@ -261,9 +309,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                 // Re-check currentActivity to ensure we have the most recent one
                                 val currentValidActivity = currentActivity
                                 if (currentValidActivity != null &&
-                                    !currentValidActivity.isFinishing &&
-                                    !currentValidActivity.isDestroyed &&
-                                    !isFirstAdLoadAttempted
+                                                !currentValidActivity.isFinishing &&
+                                                !currentValidActivity.isDestroyed &&
+                                                !isFirstAdLoadAttempted
                                 ) {
 
                                     Timber.d("Loading first App Open ad after initialization delay")
@@ -275,33 +323,33 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                     } catch (e: Exception) {
                                         Timber.e("Error loading first app open ad: ${e.message}")
                                         if (e.message?.contains("ViewConfiguration") == true ||
-                                            e.message?.contains("WindowManager") ==
-                                            true ||
-                                            e.message?.contains("visual Context") ==
-                                            true
+                                                        e.message?.contains("WindowManager") ==
+                                                                true ||
+                                                        e.message?.contains("visual Context") ==
+                                                                true
                                         ) {
 
                                             Timber.e(
-                                                "Context error during ad loading - will retry later"
+                                                    "Context error during ad loading - will retry later"
                                             )
                                             // Retry after additional delay
                                             CoroutineScope(Dispatchers.Main).launch {
                                                 delay(5000)
                                                 val retryActivity = currentActivity
                                                 if (retryActivity != null &&
-                                                    !retryActivity.isFinishing &&
-                                                    !retryActivity.isDestroyed
+                                                                !retryActivity.isFinishing &&
+                                                                !retryActivity.isDestroyed
                                                 ) {
                                                     try {
                                                         // Update context again before retry
                                                         appOpenAdManager.setActivityContext(
-                                                            retryActivity
+                                                                retryActivity
                                                         )
                                                         appOpenAdManager.loadAppOpenAd()
                                                         isFirstAdLoadAttempted = true
                                                     } catch (retryError: Exception) {
                                                         Timber.e(
-                                                            "Retry failed: ${retryError.message}"
+                                                                "Retry failed: ${retryError.message}"
                                                         )
                                                     }
                                                 }
@@ -322,20 +370,20 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
                 // Special handling for context-related errors
                 if (e.message?.contains("ViewConfiguration") == true ||
-                    e.message?.contains("context") == true ||
-                    e.message?.contains("WindowManager") == true ||
-                    e.message?.contains("visual Context") == true
+                                e.message?.contains("context") == true ||
+                                e.message?.contains("WindowManager") == true ||
+                                e.message?.contains("visual Context") == true
                 ) {
 
                     Timber.e("Context error detected - will retry with longer delay")
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(5000) // Wait 5 seconds before retry
                         if (currentActivity != null &&
-                            !currentActivity!!.isFinishing &&
-                            !currentActivity!!.isDestroyed
+                                        !currentActivity!!.isFinishing &&
+                                        !currentActivity!!.isDestroyed
                         ) {
                             Timber.d(
-                                "Retrying MobileAds initialization after ViewConfiguration error"
+                                    "Retrying MobileAds initialization after ViewConfiguration error"
                             )
                             initializeMobileAds()
                         }
@@ -372,10 +420,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     private fun initApiConfig() {
         // First set default values in case Firebase fails
         val defaultConfig =
-            mapOf(
-                "API_KEY" to BuildConfig.DEFAULT_API_KEY,
-                "API_HOST" to BuildConfig.DEFAULT_API_HOST
-            )
+                mapOf(
+                        "API_KEY" to BuildConfig.DEFAULT_API_KEY,
+                        "API_HOST" to BuildConfig.DEFAULT_API_HOST
+                )
         // Set default values immediately to prevent crashes
         apiConfigProvider.updateConfig(defaultConfig)
         Timber.d("Set default API config: $defaultConfig")
@@ -385,19 +433,17 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.d("Starting to fetch API config from Firebase...")
             firebaseRepository.getApiConfig().collect { result ->
                 result
-                    .onSuccess { configMap ->
-                        Timber.d("API config successfully fetched from Firebase")
+                        .onSuccess { configMap ->
+                            Timber.d("API config successfully fetched from Firebase")
 
-                        apiConfigProvider.updateConfig(configMap)
-                        Timber.d(
-                            "ApiConfigProvider updated"
-                        )
-                    }
-                    .onFailure { error ->
-                        Timber.e(error, "Failed to fetch API config from Firebase")
-                        // We already have default values set, so no need to handle failure
-                        // specifically
-                    }
+                            apiConfigProvider.updateConfig(configMap)
+                            Timber.d("ApiConfigProvider updated")
+                        }
+                        .onFailure { error ->
+                            Timber.e(error, "Failed to fetch API config from Firebase")
+                            // We already have default values set, so no need to handle failure
+                            // specifically
+                        }
             }
         }
     }
@@ -409,100 +455,110 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     private fun initializeConsent(activity: Activity) {
         // Build consent request parameters
         val paramsBuilder = com.google.android.ump.ConsentRequestParameters.Builder()
-        
+
         // Configure debug settings for testing (only in debug builds)
         if (BuildConfig.DEBUG) {
-            val debugSettings = com.google.android.ump.ConsentDebugSettings.Builder(activity)
-                // Set debug geography to test GDPR consent in EEA
-                .setDebugGeography(com.google.android.ump.ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
-                // Add test device IDs if needed
-                 .addTestDeviceHashedId("B3EEABB8EE11C2BE770B684D95219ECB")
-                .build()
-            
+            val debugSettings =
+                    com.google.android.ump.ConsentDebugSettings.Builder(activity)
+                            // Set debug geography to test GDPR consent in EEA
+                            .setDebugGeography(
+                                    com.google.android.ump.ConsentDebugSettings.DebugGeography
+                                            .DEBUG_GEOGRAPHY_EEA
+                            )
+                            // Add test device IDs if needed
+                            .addTestDeviceHashedId("B3EEABB8EE11C2BE770B684D95219ECB")
+                            .build()
+
             paramsBuilder.setConsentDebugSettings(debugSettings)
             Timber.d("Consent: Debug mode enabled with EEA geography")
         }
-        
+
         // Set tag for under age of consent if applicable
         // paramsBuilder.setTagForUnderAgeOfConsent(false)
-        
+
         val params = paramsBuilder.build()
 
         // Get consent information instance
         consentInformation =
-            com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
-        
+                com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
+
         Timber.d("Consent: Requesting consent info update...")
         Timber.d("Consent: Current status = ${consentInformation.consentStatus}")
-        
+
         consentInformation.requestConsentInfoUpdate(
-            activity,
-            params,
-            {
-                // Consent information updated successfully
-                Timber.d("Consent: Info update successful")
-                Timber.d("Consent: Status = ${consentInformation.consentStatus}")
-                Timber.d("Consent: Can request ads = ${consentInformation.canRequestAds()}")
-                Timber.d("Consent: Form available = ${consentInformation.isConsentFormAvailable}")
-                
-                // Log privacy options requirement (useful for CMP verification)
-                try {
-                    val privacyOptionsRequired = consentInformation.privacyOptionsRequirementStatus
-                    Timber.d("Consent: Privacy options required = $privacyOptionsRequired")
-                } catch (e: Exception) {
-                    Timber.w("Consent: Could not check privacy options requirement: ${e.message}")
-                }
-                
-                // Check if consent form is available and show if required
-                if (consentInformation.isConsentFormAvailable) {
-                    Timber.d("Consent: Form is available - showing if required")
-                    loadAndShowConsentFormIfRequired(activity)
-                } else {
-                    Timber.d("Consent: Form is NOT available")
-                    Timber.i("Consent: This means either:")
-                    Timber.i("  1. User is not in a region requiring consent (non-EEA)")
-                    Timber.i("  2. Funding Choices message not configured in AdMob console")
-                    Timber.i("  3. Consent already obtained in previous session")
-                    
-                    // No form needed, mark as complete and proceed
+                activity,
+                params,
+                {
+                    // Consent information updated successfully
+                    Timber.d("Consent: Info update successful")
+                    Timber.d("Consent: Status = ${consentInformation.consentStatus}")
+                    Timber.d("Consent: Can request ads = ${consentInformation.canRequestAds()}")
+                    Timber.d(
+                            "Consent: Form available = ${consentInformation.isConsentFormAvailable}"
+                    )
+
+                    // Log privacy options requirement (useful for CMP verification)
+                    try {
+                        val privacyOptionsRequired =
+                                consentInformation.privacyOptionsRequirementStatus
+                        Timber.d("Consent: Privacy options required = $privacyOptionsRequired")
+                    } catch (e: Exception) {
+                        Timber.w(
+                                "Consent: Could not check privacy options requirement: ${e.message}"
+                        )
+                    }
+
+                    // Check if consent form is available and show if required
+                    if (consentInformation.isConsentFormAvailable) {
+                        Timber.d("Consent: Form is available - showing if required")
+                        loadAndShowConsentFormIfRequired(activity)
+                    } else {
+                        Timber.d("Consent: Form is NOT available")
+                        Timber.i("Consent: This means either:")
+                        Timber.i("  1. User is not in a region requiring consent (non-EEA)")
+                        Timber.i("  2. Funding Choices message not configured in AdMob console")
+                        Timber.i("  3. Consent already obtained in previous session")
+
+                        // No form needed, mark as complete and proceed
+                        isConsentComplete = true
+                        initializeMobileAdsIfReady()
+                    }
+                },
+                { requestError ->
+                    // Handle consent update error
+                    Timber.e("Consent: Failed to request info update: ${requestError.message}")
+                    Timber.e("Consent: Error code = ${requestError.errorCode}")
+
+                    // Specific error handling based on error code
+                    when (requestError.errorCode) {
+                        1 -> Timber.e("Consent: INTERNAL_ERROR - Retry may help")
+                        2 -> Timber.e("Consent: INTERNET_ERROR - Check network connection")
+                        3 -> Timber.e("Consent: INVALID_OPERATION - Check AdMob configuration")
+                        4 -> Timber.e("Consent: TIME_OUT - Network too slow")
+                        else -> Timber.e("Consent: Unknown error code")
+                    }
+
+                    Timber.w("Consent: ⚠️ If error persists, verify:")
+                    Timber.w("  1. Funding Choices message is published in AdMob console")
+                    Timber.w("  2. App is correctly linked to AdMob account")
+                    Timber.w("  3. Internet connection is stable")
+
+                    // Mark consent as complete even on error to not block the app
+                    // In production, consider your privacy policy requirements
                     isConsentComplete = true
+
+                    // Try to initialize ads anyway (they won't show in regions requiring consent)
                     initializeMobileAdsIfReady()
                 }
-            },
-            { requestError ->
-                // Handle consent update error
-                Timber.e("Consent: Failed to request info update: ${requestError.message}")
-                Timber.e("Consent: Error code = ${requestError.errorCode}")
-                
-                // Specific error handling based on error code
-                when (requestError.errorCode) {
-                    1 -> Timber.e("Consent: INTERNAL_ERROR - Retry may help")
-                    2 -> Timber.e("Consent: INTERNET_ERROR - Check network connection")
-                    3 -> Timber.e("Consent: INVALID_OPERATION - Check AdMob configuration")
-                    4 -> Timber.e("Consent: TIME_OUT - Network too slow")
-                    else -> Timber.e("Consent: Unknown error code")
-                }
-                
-                Timber.w("Consent: ⚠️ If error persists, verify:")
-                Timber.w("  1. Funding Choices message is published in AdMob console")
-                Timber.w("  2. App is correctly linked to AdMob account")
-                Timber.w("  3. Internet connection is stable")
-                
-                // Mark consent as complete even on error to not block the app
-                // In production, consider your privacy policy requirements
-                isConsentComplete = true
-                
-                // Try to initialize ads anyway (they won't show in regions requiring consent)
-                initializeMobileAdsIfReady()
-            }
         )
     }
 
     /** Loads and shows the consent form if it's required. */
     private fun loadAndShowConsentFormIfRequired(activity: Activity) {
         Timber.d("Consent: Loading and showing form if required...")
-        
-        com.google.android.ump.UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { loadAndShowError ->
+
+        com.google.android.ump.UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {
+                loadAndShowError ->
             if (loadAndShowError != null) {
                 Timber.e("Consent: Failed to load or show form: ${loadAndShowError.message}")
                 Timber.e("Consent: Error code = ${loadAndShowError.errorCode}")
@@ -513,28 +569,29 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Consent has been gathered or there was an error, or form was not required.
             // Check if we can now request ads
             val canRequestAds =
-                try {
-                    consentInformation.canRequestAds()
-                } catch (e: Exception) {
-                    Timber.e("Consent: Error checking canRequestAds: ${e.message}")
-                    // Default to false for safety in case of error
-                    false
-                }
+                    try {
+                        consentInformation.canRequestAds()
+                    } catch (e: Exception) {
+                        Timber.e("Consent: Error checking canRequestAds: ${e.message}")
+                        // Default to false for safety in case of error
+                        false
+                    }
 
-            val consentStatus = try {
-                consentInformation.consentStatus
-            } catch (e: Exception) {
-                Timber.e("Consent: Error checking consent status: ${e.message}")
-                com.google.android.ump.ConsentInformation.ConsentStatus.UNKNOWN
-            }
+            val consentStatus =
+                    try {
+                        consentInformation.consentStatus
+                    } catch (e: Exception) {
+                        Timber.e("Consent: Error checking consent status: ${e.message}")
+                        com.google.android.ump.ConsentInformation.ConsentStatus.UNKNOWN
+                    }
 
             Timber.d("Consent: Process completed")
             Timber.d("Consent: Status = $consentStatus")
             Timber.d("Consent: Can request ads = $canRequestAds")
-            
+
             // Mark consent as complete
             isConsentComplete = true
-            
+
             // Log consent decision for debugging
             when (consentStatus) {
                 com.google.android.ump.ConsentInformation.ConsentStatus.OBTAINED -> {
@@ -570,10 +627,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
         }
     }
-    
-    /**
-     * Helper function to initialize MobileAds only if all conditions are met
-     */
+
+    /** Helper function to initialize MobileAds only if all conditions are met */
     private fun initializeMobileAdsIfReady() {
         if (!isMobileAdsInitialized && !isMobileAdsInitializing && isConsentComplete) {
             CoroutineScope(Dispatchers.Main).launch {
@@ -590,13 +645,15 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 }
             }
         } else {
-            Timber.d("Consent: Not initializing MobileAds yet (initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete)")
+            Timber.d(
+                    "Consent: Not initializing MobileAds yet (initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete)"
+            )
         }
     }
-    
+
     /**
-     * Reset consent information - useful for testing or if user wants to change consent
-     * Call this from your settings/privacy screen
+     * Reset consent information - useful for testing or if user wants to change consent Call this
+     * from your settings/privacy screen
      */
     fun resetConsent(activity: Activity) {
         Timber.d("Consent: Resetting consent information")
@@ -606,10 +663,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
             isConsentInitialized = false
             isConsentComplete = false
-            
+
             // Re-initialize consent
             initializeConsent(activity)
-            
+
             Timber.d("Consent: Reset successful")
             try {
                 FirebaseCrashlytics.getInstance().log("Consent: Manual reset by user")
@@ -618,10 +675,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.e("Consent: Error during reset: ${e.message}")
         }
     }
-    
-    /**
-     * Check if user can request ads (has provided consent or consent not required)
-     */
+
+    /** Check if user can request ads (has provided consent or consent not required) */
     fun canShowAds(): Boolean {
         return try {
             if (::consentInformation.isInitialized) {
@@ -639,13 +694,14 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         currentActivity = activity
         try {
             FirebaseCrashlytics.getInstance().log("onActivityCreated: ${activity.javaClass.name}")
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
 
         // Initialize consent only once (first activity creation)
         if (!isConsentInitialized) {
             isConsentInitialized = true
-            Timber.d("Consent: Initializing for first time with activity: ${activity.javaClass.simpleName}")
+            Timber.d(
+                    "Consent: Initializing for first time with activity: ${activity.javaClass.simpleName}"
+            )
             initializeConsent(activity)
         } else {
             Timber.d("Consent: Already initialized, skipping")
@@ -661,9 +717,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         }
         try {
             FirebaseCrashlytics.getInstance()
-                .log("onActivityDestroyed: ${'$'}{activity.javaClass.name}")
-        } catch (_: Exception) {
-        }
+                    .log("onActivityDestroyed: ${'$'}{activity.javaClass.name}")
+        } catch (_: Exception) {}
     }
 
     override fun onActivityPaused(activity: Activity) {
@@ -682,8 +737,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         appOpenAdManager.setActivityContext(activity)
         try {
             FirebaseCrashlytics.getInstance().log("onActivityResumed: ${activity.javaClass.name}")
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
 
         // Initialize MobileAds with delay after activity is fully resumed and stable
         // Only if consent is complete and MobileAds is not already initialized
@@ -698,12 +752,14 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                     initializeMobileAds()
                 } else {
                     Timber.w(
-                        "Activity no longer valid after stabilization delay, skipping MobileAds init"
+                            "Activity no longer valid after stabilization delay, skipping MobileAds init"
                     )
                 }
             }
         } else {
-            Timber.d("MobileAds init check: initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete")
+            Timber.d(
+                    "MobileAds init check: initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete"
+            )
         }
 
         // Mark app as in foreground
@@ -723,7 +779,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 }
             } else {
                 Timber.d(
-                    "AppOpenAdManager: Not showing ad on resume (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart})"
+                        "AppOpenAdManager: Not showing ad on resume (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart})"
                 )
             }
         }
@@ -740,11 +796,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         currentActivity = activity
         try {
             FirebaseCrashlytics.getInstance()
-                .log(
-                    "onActivityStarted: firstLaunch=${'$'}isFirstLaunchCheck activity=${'$'}{activity.javaClass.name}"
-                )
-        } catch (_: Exception) {
-        }
+                    .log(
+                            "onActivityStarted: firstLaunch=${'$'}isFirstLaunchCheck activity=${'$'}{activity.javaClass.name}"
+                    )
+        } catch (_: Exception) {}
 
         // Determine if we should show app open ad on start
         if (isMobileAdsInitialized && !isInitialAppStart && !isFirstLaunchCheck) {
@@ -757,7 +812,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
         } else {
             Timber.d(
-                "AppOpenAdManager: Not showing app open ad on start (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart}, firstLaunch=${isFirstLaunchCheck})"
+                    "AppOpenAdManager: Not showing app open ad on start (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart}, firstLaunch=${isFirstLaunchCheck})"
             )
         }
     }
@@ -770,11 +825,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         }
         try {
             FirebaseCrashlytics.getInstance()
-                .log(
-                    "onActivityStopped: finishing=${'$'}{activity.isFinishing} activity=${'$'}{activity.javaClass.name}"
-                )
-        } catch (_: Exception) {
-        }
+                    .log(
+                            "onActivityStopped: finishing=${'$'}{activity.isFinishing} activity=${'$'}{activity.javaClass.name}"
+                    )
+        } catch (_: Exception) {}
     }
 
     private fun isFirstLaunch(): Boolean {
@@ -794,26 +848,23 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.d("AppOpenAdManager: Showing app open ad")
             try {
                 FirebaseCrashlytics.getInstance()
-                    .log(
-                        "showAppOpenAd: available=true activity=${'$'}{activity.javaClass.name}"
-                    )
-            } catch (_: Exception) {
-            }
+                        .log(
+                                "showAppOpenAd: available=true activity=${'$'}{activity.javaClass.name}"
+                        )
+            } catch (_: Exception) {}
             appOpenAdManager.showAdIfAvailable(activity) {
                 Timber.d("AppOpenAdManager: App open ad shown or dismissed")
                 try {
                     FirebaseCrashlytics.getInstance().log("showAppOpenAd: onShowAdComplete")
-                } catch (_: Exception) {
-                }
+                } catch (_: Exception) {}
                 // Any post-ad display actions can go here
             }
         } else {
             Timber.d("AppOpenAdManager: No app open ad available to show")
             try {
                 FirebaseCrashlytics.getInstance()
-                    .log("showAppOpenAd: available=false -> loadAppOpenAd")
-            } catch (_: Exception) {
-            }
+                        .log("showAppOpenAd: available=false -> loadAppOpenAd")
+            } catch (_: Exception) {}
             // Ensure we have an ad ready for next time
             appOpenAdManager.loadAppOpenAd()
         }
@@ -855,7 +906,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         val delayMillis = if (attempt == 0) 0L else (1L shl attempt) * 1000
 
         Timber.d(
-            "Attempting to get FCM token (attempt ${attempt + 1}/$maxAttempts), delay: $delayMillis ms"
+                "Attempting to get FCM token (attempt ${attempt + 1}/$maxAttempts), delay: $delayMillis ms"
         )
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -865,75 +916,72 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 // Use withTimeout to avoid waiting too long
                 withTimeout(20_000) {
                     com.google.firebase.messaging.FirebaseMessaging.getInstance()
-                        .token
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                // Got the token successfully
-                                val token = task.result
-                                Timber.d("FCM Token retrieved successfully: $token")
+                            .token
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    // Got the token successfully
+                                    val token = task.result
+                                    Timber.d("FCM Token retrieved successfully: $token")
 
-                                // Save the token to repository
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    tokenRepository.saveToken(token)
-                                }
-                            } else {
-                                val exception = task.exception
-                                when {
-                                    exception is IOException &&
-                                            exception.message?.contains(
-                                                "SERVICE_NOT_AVAILABLE"
-                                            ) == true -> {
-                                        Timber.w(
-                                            exception,
-                                            "FCM service not available (attempt ${attempt + 1}/$maxAttempts), will retry..."
-                                        )
-                                        // Retry with increased attempt counter
-                                        requestFcmTokenWithRetry(attempt + 1, maxAttempts)
+                                    // Save the token to repository
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        tokenRepository.saveToken(token)
                                     }
-
-                                    exception?.message?.contains("AUTHENTICATION_FAILED") ==
-                                            true -> {
-                                        Timber.e(
-                                            exception,
-                                            "FCM authentication failed - check Firebase configuration"
-                                        )
-
-                                        // Don't retry on authentication failures, generate
-                                        // placeholder immediately
-                                        generatePlaceholderToken()
-                                    }
-
-                                    exception?.message?.contains("ExecutionException") ==
-                                            true &&
-                                            exception.message?.contains(
-                                                "AUTHENTICATION_FAILED"
-                                            ) == true -> {
-                                        Timber.e(
-                                            exception,
-                                            "FCM authentication failed (wrapped in ExecutionException) - check Firebase configuration"
-                                        )
-
-                                        // Don't retry on authentication failures, generate
-                                        // placeholder immediately
-                                        generatePlaceholderToken()
-                                    }
-
-                                    else -> {
-                                        Timber.e(
-                                            exception,
-                                            "Failed to get FCM token with error ${exception?.message}"
-                                        )
-                                        // For other errors, try at least one more time
-                                        if (attempt == 0) {
+                                } else {
+                                    val exception = task.exception
+                                    when {
+                                        exception is IOException &&
+                                                exception.message?.contains(
+                                                        "SERVICE_NOT_AVAILABLE"
+                                                ) == true -> {
+                                            Timber.w(
+                                                    exception,
+                                                    "FCM service not available (attempt ${attempt + 1}/$maxAttempts), will retry..."
+                                            )
+                                            // Retry with increased attempt counter
                                             requestFcmTokenWithRetry(attempt + 1, maxAttempts)
-                                        } else {
-                                            // Generate a placeholder after exhausting retries
+                                        }
+                                        exception?.message?.contains("AUTHENTICATION_FAILED") ==
+                                                true -> {
+                                            Timber.e(
+                                                    exception,
+                                                    "FCM authentication failed - check Firebase configuration"
+                                            )
+
+                                            // Don't retry on authentication failures, generate
+                                            // placeholder immediately
                                             generatePlaceholderToken()
+                                        }
+                                        exception?.message?.contains("ExecutionException") ==
+                                                true &&
+                                                exception.message?.contains(
+                                                        "AUTHENTICATION_FAILED"
+                                                ) == true -> {
+                                            Timber.e(
+                                                    exception,
+                                                    "FCM authentication failed (wrapped in ExecutionException) - check Firebase configuration"
+                                            )
+
+                                            // Don't retry on authentication failures, generate
+                                            // placeholder immediately
+                                            generatePlaceholderToken()
+                                        }
+                                        else -> {
+                                            Timber.e(
+                                                    exception,
+                                                    "Failed to get FCM token with error ${exception?.message}"
+                                            )
+                                            // For other errors, try at least one more time
+                                            if (attempt == 0) {
+                                                requestFcmTokenWithRetry(attempt + 1, maxAttempts)
+                                            } else {
+                                                // Generate a placeholder after exhausting retries
+                                                generatePlaceholderToken()
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
                 }
             } catch (e: TimeoutCancellationException) {
                 Timber.w(e, "FCM token request timed out (attempt ${attempt + 1}/$maxAttempts)")

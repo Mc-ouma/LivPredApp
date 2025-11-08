@@ -70,7 +70,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-import com.soccertips.predictx.Menu2
+import com.soccertips.predictx.Menu
 import com.soccertips.predictx.R
 import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.ResponseData
@@ -212,7 +212,7 @@ fun FixtureDetailsScreen(
                                 )
                             }
                         },
-                        actions = { Menu2() },
+                        actions = { Menu() },
                         colors =
                                 TopAppBarDefaults.topAppBarColors(
                                         containerColor =

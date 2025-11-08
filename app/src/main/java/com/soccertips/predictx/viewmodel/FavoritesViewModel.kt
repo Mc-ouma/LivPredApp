@@ -1,10 +1,8 @@
 package com.soccertips.predictx.viewmodel
 
 import android.app.Application
-import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Data
@@ -123,8 +121,25 @@ constructor(
     @RequiresApi(Build.VERSION_CODES.S)
     private fun scheduleNotification(items: List<FavoriteItem>) {
         items.forEach { item ->
-            notificationScheduler.scheduleMatchNotification(item)
-            scheduleNotificationUpdates(item) // Schedule updates
+            // Skip finished matches (status is "FT" or similar completed statuses)
+            val isFinished =
+                    item.mStatus?.uppercase()?.let { status ->
+                        status == "FT" ||
+                                status == "AET" ||
+                                status == "PEN" ||
+                                status == "FINISHED" ||
+                                status == "COMPLETE"
+                    }
+                            ?: false
+
+            if (!isFinished) {
+                notificationScheduler.scheduleMatchNotification(item)
+                scheduleNotificationUpdates(item) // Schedule updates
+            } else {
+                Timber.d(
+                        "Skipping notification for finished match ${item.fixtureId} with status ${item.mStatus}"
+                )
+            }
         }
     }
 
@@ -138,16 +153,6 @@ constructor(
     @RequiresApi(Build.VERSION_CODES.S)
     fun loadFavorites() {
         viewModelScope.launch {
-
-            // use a flag to check if the notification is already scheduled in this session
-            val sharedPrefs =
-                    getApplication<Application>()
-                            .getSharedPreferences("notification_tracking", Context.MODE_PRIVATE)
-
-            // For testing: Always reset the notification scheduled flag
-            sharedPrefs.edit { putBoolean("is_notification_scheduled", false) }
-            val isNotificationScheduled = sharedPrefs.getBoolean("is_notification_scheduled", false)
-
             favoriteItemDao.getAllFavoritesFlow().distinctUntilChanged().collect { favoriteItems ->
                 val sortedItems =
                         favoriteItems.sortedBy { item ->
@@ -156,15 +161,21 @@ constructor(
                         }
                 _uiState.value = UiState.Success(sortedItems)
 
-                // Schedule notifications since we reset the flag
-                if (!isNotificationScheduled) {
+                // Only schedule notifications once per app session
+                if (!notificationsScheduledThisSession) {
                     Timber.d("Scheduling notifications for ${sortedItems.size} favorites")
                     scheduleNotification(sortedItems)
-                    // Update the flag to indicate that notifications have been scheduled
-                    sharedPrefs.edit { putBoolean("is_notification_scheduled", true) }
+                    notificationsScheduledThisSession = true
                 }
             }
         }
+    }
+
+    companion object {
+        // Use a companion object flag to track if notifications have been scheduled in this app
+        // session
+        // This resets when the app process is killed but persists across configuration changes
+        private var notificationsScheduledThisSession = false
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -185,7 +196,10 @@ constructor(
                 scheduleNotification(currentFavorites)
             } catch (e: Exception) {
                 _uiState.value =
-                        UiState.Error(getApplication<Application>().getString(R.string.an_unexpected_error_occurred))
+                        UiState.Error(
+                                getApplication<Application>()
+                                        .getString(R.string.an_unexpected_error_occurred)
+                        )
                 Timber.e("Error restoring favorites: ${e.localizedMessage}")
             }
         }
@@ -208,7 +222,9 @@ constructor(
                                 }
                         )
                 showSnackbar(
-                        message = getApplication<Application>().getString(R.string.removed_from_favorites),
+                        message =
+                                getApplication<Application>()
+                                        .getString(R.string.removed_from_favorites),
                         actionLabel = getApplication<Application>().getString(R.string.undo),
                         onActionPerformed = { restoreFavorites(item) }
                 )
@@ -217,7 +233,8 @@ constructor(
                 _uiState.value =
                         UiState.Error(
                                 e.localizedMessage
-                                        ?: getApplication<Application>().getString(R.string.an_unexpected_error_occurred)
+                                        ?: getApplication<Application>()
+                                                .getString(R.string.an_unexpected_error_occurred)
                         )
             }
         }

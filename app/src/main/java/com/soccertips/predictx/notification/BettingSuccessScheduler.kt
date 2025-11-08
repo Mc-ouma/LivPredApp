@@ -3,6 +3,7 @@ package com.soccertips.predictx.notification
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
@@ -26,6 +27,7 @@ constructor(
     companion object {
         private const val BETTING_SUCCESS_WORK_NAME = "betting_success_check"
         private const val MANUAL_CHECK_WORK_PREFIX = "manual_betting_check"
+        private const val END_OF_DAY_WORK_NAME = "end_of_day_check"
     }
 
     /**
@@ -68,6 +70,8 @@ constructor(
             val constraints =
                     Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
+            val uniqueWorkName = "${MANUAL_CHECK_WORK_PREFIX}_$date"
+
             val manualCheckWork =
                     OneTimeWorkRequestBuilder<BettingSuccessWorker>()
                             .setConstraints(constraints)
@@ -76,7 +80,8 @@ constructor(
                             .addTag("date_$date")
                             .build()
 
-            WorkManager.getInstance(context).enqueue(manualCheckWork)
+            WorkManager.getInstance(context)
+                    .enqueueUniqueWork(uniqueWorkName, ExistingWorkPolicy.REPLACE, manualCheckWork)
 
             Timber.d(
                     "Scheduled manual betting success check for date: $date with delay: $delayMinutes minutes"
@@ -133,7 +138,12 @@ constructor(
                                 .addTag("end_of_day_check")
                                 .build()
 
-                WorkManager.getInstance(context).enqueue(endOfDayWork)
+                WorkManager.getInstance(context)
+                        .enqueueUniqueWork(
+                                END_OF_DAY_WORK_NAME,
+                                ExistingWorkPolicy.REPLACE,
+                                endOfDayWork
+                        )
 
                 Timber.d("Scheduled end-of-day betting success check for: $targetTime")
             }
@@ -146,11 +156,10 @@ constructor(
     fun cancelAllChecks() {
         try {
             WorkManager.getInstance(context).cancelUniqueWork(BETTING_SUCCESS_WORK_NAME)
+            WorkManager.getInstance(context).cancelUniqueWork(END_OF_DAY_WORK_NAME)
 
             WorkManager.getInstance(context).cancelAllWorkByTag("betting_success")
-
             WorkManager.getInstance(context).cancelAllWorkByTag("manual_betting_check")
-
             WorkManager.getInstance(context).cancelAllWorkByTag("end_of_day_check")
 
             Timber.d("Cancelled all betting success checks")

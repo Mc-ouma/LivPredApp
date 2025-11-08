@@ -10,7 +10,6 @@ import com.soccertips.predictx.data.local.entities.FavoriteItem
 import com.soccertips.predictx.data.model.ServerResponse
 import com.soccertips.predictx.repository.PredictionRepository
 import com.soccertips.predictx.ui.UiState
-import com.soccertips.predictx.utils.OutcomeCalculator
 import com.soccertips.predictx.utils.TimeZoneConverter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -88,26 +87,22 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 }
                                     }
                                     .map { serverResponse ->
-                                        // Calculate outcome if not provided
-                                        val calculatedOutcome =
-                                                OutcomeCalculator.calculateOutcome(
-                                                        pick = serverResponse.pick,
-                                                        result = serverResponse.result,
-                                                        originalOutcome = serverResponse.outcome
-                                                )
+                                        // Use outcome directly from server
+                                        val outcome = serverResponse.outcome ?: "Unknown"
 
                                         val color =
-                                                when (calculatedOutcome) {
+                                                when (outcome.lowercase()) {
                                                     "win" -> Color.Green
                                                     "lose" -> Color.Red
                                                     else -> Color.Unspecified
                                                 }
 
                                         // Convert UTC time to local timezone
-                                        val localTime = TimeZoneConverter.convertUtcToLocal(
-                                            serverResponse.mTime,
-                                            serverResponse.mDate
-                                        )
+                                        val localTime =
+                                                TimeZoneConverter.convertUtcToLocal(
+                                                        serverResponse.mTime,
+                                                        serverResponse.mDate
+                                                )
 
                                         ServerResponse(
                                                 fixtureId = serverResponse.fixtureId ?: "",
@@ -118,7 +113,7 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 league = serverResponse.league ?: "Unknown",
                                                 mTime = localTime,
                                                 betOdds = serverResponse.betOdds ?: "Unknown",
-                                                outcome = calculatedOutcome,
+                                                outcome = outcome,
                                                 htScore = serverResponse.htScore ?: "Unknown",
                                                 result = serverResponse.result ?: "Unknown",
                                                 hLogoPath = serverResponse.hLogoPath ?: "Unknown",
@@ -128,7 +123,7 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 color = color,
                                         )
                                     }
-                                .sortedBy { it.mTime }
+                                    .sortedBy { it.mTime }
                         }
 
                 cachedData.put(cacheKey, System.currentTimeMillis() to items)

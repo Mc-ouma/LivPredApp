@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -281,7 +282,16 @@ class MainActivity : ComponentActivity() {
                 )
                 .setPositiveButton("Go to Settings") { _, _ ->
                     val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    startActivity(intent)
+                    try {
+                        startActivity(intent)
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        android.util.Log.e(
+                                "MainActivity",
+                                "No activity found to handle intent: $intent",
+                                e
+                        )
+                        Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()

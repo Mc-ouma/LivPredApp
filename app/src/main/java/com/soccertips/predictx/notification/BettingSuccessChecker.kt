@@ -22,10 +22,10 @@ import timber.log.Timber
 class BettingSuccessChecker
 @Inject
 constructor(
-        @ApplicationContext private val context: Context,
-        private val predictionRepository: PredictionRepository,
-        private val notificationBuilder: NotificationBuilder,
-        private val firebaseRepository: FirebaseRepository
+    @ApplicationContext private val context: Context,
+    private val predictionRepository: PredictionRepository,
+    private val notificationBuilder: NotificationBuilder,
+    private val firebaseRepository: FirebaseRepository
 ) {
 
     companion object {
@@ -52,16 +52,16 @@ constructor(
     /** Fallback categories if Firebase is unavailable */
     private fun getFallbackCategories(): List<Category> {
         return listOf(
-                Category(url = "today", name = context.getString(R.string.category_today_tips)),
-                Category(url = "1", name = context.getString(R.string.category_home_win)),
-                Category(url = "2", name = context.getString(R.string.category_away_win)),
-                Category(url = "x", name = context.getString(R.string.category_draw)),
-                Category(url = "1x", name = context.getString(R.string.category_home_win_or_draw)),
-                Category(url = "2x", name = context.getString(R.string.category_away_win_or_draw)),
-                Category(url = "over", name = context.getString(R.string.category_over_goals)),
-                Category(url = "under", name = context.getString(R.string.category_under_goals)),
-                Category(url = "gg", name = context.getString(R.string.category_both_teams_score)),
-                Category(url = "ng", name = context.getString(R.string.category_clean_sheet))
+            Category(url = "today", name = context.getString(R.string.category_today_tips)),
+            Category(url = "1", name = context.getString(R.string.category_home_win)),
+            Category(url = "2", name = context.getString(R.string.category_away_win)),
+            Category(url = "x", name = context.getString(R.string.category_draw)),
+            Category(url = "1x", name = context.getString(R.string.category_home_win_or_draw)),
+            Category(url = "2x", name = context.getString(R.string.category_away_win_or_draw)),
+            Category(url = "over", name = context.getString(R.string.category_over_goals)),
+            Category(url = "under", name = context.getString(R.string.category_under_goals)),
+            Category(url = "gg", name = context.getString(R.string.category_both_teams_score)),
+            Category(url = "ng", name = context.getString(R.string.category_clean_sheet))
         )
     }
 
@@ -76,7 +76,7 @@ constructor(
 
                 // Check if we've already notified for this date
                 val notifiedDates =
-                        sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet()) ?: emptySet()
+                    sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet()) ?: emptySet()
                 if (notifiedDates.contains(dateString)) {
                     Timber.d("Already notified for date: $dateString, skipping check")
                     return@withContext
@@ -93,9 +93,9 @@ constructor(
 
                         // Filter matches for the specific date
                         val matchesForDate =
-                                categoryData.serverResponse.filter { match ->
-                                    match.mDate == dateString
-                                }
+                            categoryData.serverResponse.filter { match ->
+                                match.mDate == dateString
+                            }
 
                         if (matchesForDate.isNotEmpty()) {
                             // Remove duplicates based on fixtureId within this category
@@ -106,20 +106,20 @@ constructor(
 
                             if (analysis.shouldSendCongratulations) {
                                 categoryResults.add(
-                                        CategoryResult(
-                                                categoryName = category.name,
-                                                categoryUrl = category.url,
-                                                analysis = analysis
-                                        )
+                                    CategoryResult(
+                                        categoryName = category.name,
+                                        categoryUrl = category.url,
+                                        analysis = analysis
+                                    )
                                 )
                                 Timber.d(
-                                        "Category '${category.name}' achieved perfect results for $dateString"
+                                    "Category '${category.name}' achieved perfect results for $dateString"
                                 )
                             }
                         }
 
                         Timber.d(
-                                "Category ${category.name}: Found ${matchesForDate.size} matches for $dateString"
+                            "Category ${category.name}: Found ${matchesForDate.size} matches for $dateString"
                         )
                     } catch (e: Exception) {
                         Timber.e(e, "Failed to fetch data from category: ${category.name}")
@@ -149,10 +149,10 @@ constructor(
 
         for (match in matches) {
             val hasResult =
-                    !match.result.isNullOrBlank() &&
-                            match.result != "-" &&
-                            match.result != "Unknown" &&
-                            match.result != "vs"
+                !match.result.isNullOrBlank() &&
+                        match.result != "-" &&
+                        match.result != "Unknown" &&
+                        match.result != "vs"
 
             if (hasResult) {
                 matchesWithResults++
@@ -164,26 +164,28 @@ constructor(
                     "win" -> {
                         winningMatches++
                         matchDetails.add(
-                                "✅ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - ${match.outcome}"
+                            "✅ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - ${match.outcome}"
                         )
                         Timber.d(
-                                "WIN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
+                            "WIN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
                         )
                     }
+
                     "lose" -> {
                         losingMatches++
                         matchDetails.add(
-                                "❌ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - ${match.outcome}"
+                            "❌ ${match.homeTeam} vs ${match.awayTeam}: ${match.result} (${match.pick}) - ${match.outcome}"
                         )
                         Timber.d(
-                                "LOSE: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
+                            "LOSE: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
                         )
                     }
+
                     else -> {
                         // Treat unknown outcomes as not completed
                         matchesWithResults--
                         Timber.d(
-                                "UNKNOWN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
+                            "UNKNOWN: ${match.homeTeam} vs ${match.awayTeam} - Pick: ${match.pick}, Result: ${match.result}, Outcome: ${match.outcome}"
                         )
                     }
                 }
@@ -191,25 +193,25 @@ constructor(
         }
 
         val allMatchesCompleted =
-                matchesWithResults >= totalMatches * 0.8 // At least 80% have results
+            matchesWithResults >= totalMatches * 0.8 // At least 80% have results
         val allWins =
-                winningMatches > 0 && losingMatches == 0 && matchesWithResults == winningMatches
+            winningMatches > 0 && losingMatches == 0 && matchesWithResults == winningMatches
         val successRate =
-                if (matchesWithResults > 0) (winningMatches * 100) / matchesWithResults else 0
+            if (matchesWithResults > 0) (winningMatches * 100) / matchesWithResults else 0
 
         Timber.d(
-                "Analysis for $date: Total=$totalMatches, WithResults=$matchesWithResults, Wins=$winningMatches, Losses=$losingMatches, Rate=$successRate%"
+            "Analysis for $date: Total=$totalMatches, WithResults=$matchesWithResults, Wins=$winningMatches, Losses=$losingMatches, Rate=$successRate%"
         )
 
         return BettingAnalysis(
-                totalMatches = totalMatches,
-                matchesWithResults = matchesWithResults,
-                winningMatches = winningMatches,
-                losingMatches = losingMatches,
-                successRate = successRate,
-                shouldSendCongratulations =
-                        allMatchesCompleted && allWins && winningMatches >= 3, // At least 3 wins
-                matchDetails = matchDetails
+            totalMatches = totalMatches,
+            matchesWithResults = matchesWithResults,
+            winningMatches = winningMatches,
+            losingMatches = losingMatches,
+            successRate = successRate,
+            shouldSendCongratulations =
+                allMatchesCompleted && allWins && winningMatches >= 3, // At least 3 wins
+            matchDetails = matchDetails
         )
     }
 
@@ -217,30 +219,41 @@ constructor(
     private fun sendCongratulationsNotification(categoryResult: CategoryResult, date: String) {
         try {
             val notification =
-                    notificationBuilder
-                            .buildBettingSuccessNotification(
-                                    date = date,
-                                    categoryName = categoryResult.categoryName,
-                                    categoryUrl = categoryResult.categoryUrl,
-                                    totalMatches = categoryResult.analysis.totalMatches,
-                                    winningMatches = categoryResult.analysis.winningMatches,
-                                    successRate = categoryResult.analysis.successRate,
-                                    matchDetails = categoryResult.analysis.matchDetails
-                            )
-                            .build()
+                notificationBuilder
+                    .buildBettingSuccessNotification(
+                        date = date,
+                        categoryName = categoryResult.categoryName,
+                        categoryUrl = categoryResult.categoryUrl,
+                        totalMatches = categoryResult.analysis.totalMatches,
+                        winningMatches = categoryResult.analysis.winningMatches,
+                        successRate = categoryResult.analysis.successRate,
+                        matchDetails = categoryResult.analysis.matchDetails
+                    )
+                    .build()
 
             val notificationManager = NotificationManagerCompat.from(context)
             val notificationId = "betting_success_${categoryResult.categoryUrl}_$date".hashCode()
 
-            notificationManager.notify(notificationId, notification)
+            if (notificationManager.areNotificationsEnabled()) {
 
-            Timber.i(
+                notificationManager.notify(notificationId, notification)
+
+                Timber.i(
                     "Sent congratulations notification for perfect betting day in '${categoryResult.categoryName}': $date"
+                )
+            } else {
+                Timber.w("Notification permission not granted, cannot send betting success notification for '${categoryResult.categoryName}' on date: $date")
+            }
+
+        } catch (e: SecurityException) {
+            Timber.e(
+                e,
+                "Security exception when sending notification for category '${categoryResult.categoryName}' on date: $date"
             )
         } catch (e: Exception) {
             Timber.e(
-                    e,
-                    "Failed to send congratulations notification for category '${categoryResult.categoryName}' on date: $date"
+                e,
+                "Failed to send congratulations notification for category '${categoryResult.categoryName}' on date: $date"
             )
         }
     }
@@ -248,13 +261,13 @@ constructor(
     /** Mark a date as already notified to avoid duplicate notifications */
     private fun markDateAsNotified(date: String) {
         val notifiedDates =
-                sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet())?.toMutableSet()
-                        ?: mutableSetOf()
+            sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet())?.toMutableSet()
+                ?: mutableSetOf()
         notifiedDates.add(date)
 
         // Keep only last 30 days to prevent unlimited growth
         val dateLimit =
-                LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         notifiedDates.removeAll { it < dateLimit }
 
         sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates) }
@@ -277,8 +290,8 @@ constructor(
 
             // Force check by temporarily removing from notified dates
             val notifiedDates =
-                    sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet())?.toMutableSet()
-                            ?: mutableSetOf()
+                sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet())?.toMutableSet()
+                    ?: mutableSetOf()
             notifiedDates.remove(date)
             sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates) }
 
@@ -293,19 +306,19 @@ constructor(
      * monitoring when all matches in a category are completed
      */
     suspend fun checkBettingSuccessForCategory(
-            categoryUrl: String,
-            date: String,
-            categoryName: String
+        categoryUrl: String,
+        date: String,
+        categoryName: String
     ): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 // Check if we've already notified for this category and date
                 val notificationKey = "betting_success_${categoryUrl}_$date"
                 val notifiedDates =
-                        sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet()) ?: emptySet()
+                    sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet()) ?: emptySet()
                 if (notifiedDates.contains(notificationKey)) {
                     Timber.d(
-                            "Already notified for category $categoryName on date: $date, skipping check"
+                        "Already notified for category $categoryName on date: $date, skipping check"
                     )
                     return@withContext false
                 }
@@ -315,7 +328,7 @@ constructor(
 
                 // Filter matches for the specific date
                 val matchesForDate =
-                        categoryData.serverResponse.filter { match -> match.mDate == date }
+                    categoryData.serverResponse.filter { match -> match.mDate == date }
 
                 if (matchesForDate.isEmpty()) {
                     Timber.d("No matches found for category $categoryName on date $date")
@@ -330,11 +343,11 @@ constructor(
 
                 if (analysis.shouldSendCongratulations) {
                     val categoryResult =
-                            CategoryResult(
-                                    categoryName = categoryName,
-                                    categoryUrl = categoryUrl,
-                                    analysis = analysis
-                            )
+                        CategoryResult(
+                            categoryName = categoryName,
+                            categoryUrl = categoryUrl,
+                            analysis = analysis
+                        )
 
                     // Send immediate notification
                     sendCongratulationsNotification(categoryResult, date)
@@ -343,21 +356,21 @@ constructor(
                     markCategoryDateAsNotified(notificationKey)
 
                     Timber.i(
-                            "Sent immediate betting success notification for category '$categoryName' on $date"
+                        "Sent immediate betting success notification for category '$categoryName' on $date"
                     )
                     return@withContext true
                 } else {
                     Timber.d(
-                            "Category '$categoryName' on $date does not meet criteria for congratulations: " +
-                                    "Total=${analysis.totalMatches}, WithResults=${analysis.matchesWithResults}, " +
-                                    "Wins=${analysis.winningMatches}, Losses=${analysis.losingMatches}"
+                        "Category '$categoryName' on $date does not meet criteria for congratulations: " +
+                                "Total=${analysis.totalMatches}, WithResults=${analysis.matchesWithResults}, " +
+                                "Wins=${analysis.winningMatches}, Losses=${analysis.losingMatches}"
                     )
                     return@withContext false
                 }
             } catch (e: Exception) {
                 Timber.e(
-                        e,
-                        "Error checking betting success for category $categoryName on date: $date"
+                    e,
+                    "Error checking betting success for category $categoryName on date: $date"
                 )
                 return@withContext false
             }
@@ -367,13 +380,13 @@ constructor(
     /** Mark a specific category-date combination as already notified */
     private fun markCategoryDateAsNotified(notificationKey: String) {
         val notifiedDates =
-                sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet())?.toMutableSet()
-                        ?: mutableSetOf()
+            sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet())?.toMutableSet()
+                ?: mutableSetOf()
         notifiedDates.add(notificationKey)
 
         // Keep only last 30 days to prevent unlimited growth
         val dateLimit =
-                LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
         notifiedDates.removeAll { key -> key.substringAfterLast("_") < dateLimit }
 
         sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates) }
@@ -382,18 +395,18 @@ constructor(
 
 /** Data class to hold betting analysis results */
 data class BettingAnalysis(
-        val totalMatches: Int,
-        val matchesWithResults: Int,
-        val winningMatches: Int,
-        val losingMatches: Int,
-        val successRate: Int,
-        val shouldSendCongratulations: Boolean,
-        val matchDetails: List<String>
+    val totalMatches: Int,
+    val matchesWithResults: Int,
+    val winningMatches: Int,
+    val losingMatches: Int,
+    val successRate: Int,
+    val shouldSendCongratulations: Boolean,
+    val matchDetails: List<String>
 )
 
 /** Data class to hold category-specific betting results */
 data class CategoryResult(
-        val categoryName: String,
-        val categoryUrl: String,
-        val analysis: BettingAnalysis
+    val categoryName: String,
+    val categoryUrl: String,
+    val analysis: BettingAnalysis
 )

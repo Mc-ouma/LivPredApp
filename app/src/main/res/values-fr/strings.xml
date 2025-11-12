@@ -298,5 +298,11 @@
     <string name="failed_to_fetch_games_please_try_again_later">Échec de la récupération des matchs,
         veuillez réessayer plus tard.</string>
     <string name="ad_not_available">La publicité n\'est pas disponible.</string>
+    <string name="ad_not_available_message">Aucune publicité n\'est disponible pour le moment. Veuillez réessayer plus tard.</string>
+    
+    <!-- Reward Ad for Categories -->
+    <string name="watch_ad_to_unlock">Regarder une Publicité pour Déverrouiller</string>
+    <string name="watch_ad_unlock_24h">Regardez une courte publicité pour déverrouiller la catégorie %1$s pendant 24 heures</string>
+    <string name="watch_ad">Regarder la Pub</string>
 
 </resources>

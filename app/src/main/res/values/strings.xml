@@ -349,5 +349,11 @@
     <string name="failed_to_fetch_games_please_try_again_later">Failed to fetch games, please try
         again later.</string>
     <string name="ad_not_available">Ad not available</string>
+    <string name="ad_not_available_message">No ads are currently available. Please try again later.</string>
     <string name="team_player">Team Player</string>
+    
+    <!-- Reward Ad for Categories -->
+    <string name="watch_ad_to_unlock">Watch Ad to Unlock</string>
+    <string name="watch_ad_unlock_24h">Watch a short ad to unlock %1$s category for 24 hours</string>
+    <string name="watch_ad">Watch Ad</string>
 </resources>

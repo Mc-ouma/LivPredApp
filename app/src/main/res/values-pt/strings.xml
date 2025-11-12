@@ -316,5 +316,11 @@
     <string name="failed_to_fetch_games_please_try_again_later">Falha ao buscar jogos, por favor
         tente novamente mais tarde.</string>
     <string name="ad_not_available">Anúncio não disponível.</string>
+    <string name="ad_not_available_message">Nenhum anúncio está disponível no momento. Por favor, tente novamente mais tarde.</string>
+    
+    <!-- Reward Ad for Categories -->
+    <string name="watch_ad_to_unlock">Assista ao Anúncio para Desbloquear</string>
+    <string name="watch_ad_unlock_24h">Assista a um anúncio curto para desbloquear a categoria %1$s por 24 horas</string>
+    <string name="watch_ad">Assistir Anúncio</string>
 
 </resources>

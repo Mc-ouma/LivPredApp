@@ -211,6 +211,7 @@ dependencies {
 
     // Admob
     implementation(libs.play.services.ads)
+    implementation(libs.facebook)
 
     // User Messaging Platform (UMP) for consent management
     implementation(libs.user.messaging.platform)

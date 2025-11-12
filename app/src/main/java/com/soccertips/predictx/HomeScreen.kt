@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onPlaced
@@ -76,7 +77,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -207,7 +208,6 @@ fun HomeScreen(navController: NavController) {
                         selectedColor = MaterialTheme.colorScheme.primary,
                         unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-
                 /*NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                     items.forEachIndexed { index, item ->
                         NavigationBarItem(
@@ -367,29 +367,16 @@ fun AnimatedNavigationBar(
                 )
             }
 
-    Box {
-        Circle(
-                modifier =
-                        Modifier.offset { circleOffset }
-                                // the circle should be above the bar for accessibility reasons
-                                .zIndex(1f),
-                color = circleColor,
-                radius = circleRadius,
-                button = buttons[selectedItem],
-                iconColor = selectedColor,
-        )
+    Box(modifier = Modifier.fillMaxWidth().graphicsLayer { clip = false }) {
         Row(
                 modifier =
-                        Modifier.onPlaced { barSize = it.size }
-                                .fillMaxWidth()
-                                .background(Color.Transparent)
-                                .drawBehind {
-                                    val outline =
-                                            barShape.createOutline(size, layoutDirection, this)
-                                    if (outline is Outline.Generic) {
-                                        drawPath(path = outline.path, color = barColor)
-                                    }
-                                },
+                        Modifier.onPlaced { barSize = it.size }.fillMaxWidth().drawBehind {
+                            // Draw the bar shape directly behind the row
+                            val outline = barShape.createOutline(size, layoutDirection, this)
+                            if (outline is Outline.Generic) {
+                                drawPath(path = outline.path, color = barColor)
+                            }
+                        },
                 horizontalArrangement = Arrangement.SpaceAround,
         ) {
             buttons.forEachIndexed { index, button ->
@@ -447,6 +434,14 @@ fun AnimatedNavigationBar(
                 )
             }
         }
+        // Circle on top, completely independent of the row
+        Circle(
+                modifier = Modifier.offset { circleOffset }.zIndex(2f),
+                color = circleColor,
+                radius = circleRadius,
+                button = buttons[selectedItem],
+                iconColor = selectedColor,
+        )
     }
 }
 

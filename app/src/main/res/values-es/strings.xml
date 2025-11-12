@@ -317,5 +317,11 @@
     <string name="failed_to_fetch_games_please_try_again_later">No se pudieron obtener los partidos,
         por favor intenta de nuevo más tarde.</string>
     <string name="ad_not_available">El anuncio no está disponible en este momento.</string>
+    <string name="ad_not_available_message">No hay anuncios disponibles en este momento. Por favor, inténtalo de nuevo más tarde.</string>
+    
+    <!-- Reward Ad for Categories -->
+    <string name="watch_ad_to_unlock">Ver Anuncio para Desbloquear</string>
+    <string name="watch_ad_unlock_24h">Mira un anuncio corto para desbloquear la categoría %1$s durante 24 horas</string>
+    <string name="watch_ad">Ver Anuncio</string>
 
 </resources>

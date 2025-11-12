@@ -87,22 +87,20 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 }
                                     }
                                     .map { serverResponse ->
-                                        // Use outcome directly from server
-                                        val outcome = serverResponse.outcome ?: "Unknown"
+                                        // Calculate outcome if not provided
 
                                         val color =
-                                                when (outcome.lowercase()) {
+                                                when (serverResponse.outcome?.lowercase()) {
                                                     "win" -> Color.Green
                                                     "lose" -> Color.Red
                                                     else -> Color.Unspecified
                                                 }
 
                                         // Convert UTC time to local timezone
-                                        val localTime =
-                                                TimeZoneConverter.convertUtcToLocal(
-                                                        serverResponse.mTime,
-                                                        serverResponse.mDate
-                                                )
+                                        val localTime = TimeZoneConverter.convertUtcToLocal(
+                                            serverResponse.mTime,
+                                            serverResponse.mDate
+                                        )
 
                                         ServerResponse(
                                                 fixtureId = serverResponse.fixtureId ?: "",
@@ -113,7 +111,7 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 league = serverResponse.league ?: "Unknown",
                                                 mTime = localTime,
                                                 betOdds = serverResponse.betOdds ?: "Unknown",
-                                                outcome = outcome,
+                                                outcome = serverResponse.outcome ?: "Unknown",
                                                 htScore = serverResponse.htScore ?: "Unknown",
                                                 result = serverResponse.result ?: "Unknown",
                                                 hLogoPath = serverResponse.hLogoPath ?: "Unknown",
@@ -123,7 +121,7 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                                 color = color,
                                         )
                                     }
-                                    .sortedBy { it.mTime }
+                                .sortedBy { it.mTime }
                         }
 
                 cachedData.put(cacheKey, System.currentTimeMillis() to items)

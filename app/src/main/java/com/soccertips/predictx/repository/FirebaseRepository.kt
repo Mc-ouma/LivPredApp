@@ -7,12 +7,12 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.Category
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import timber.log.Timber
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @Singleton
 class FirebaseRepository @Inject constructor() {
@@ -23,65 +23,84 @@ class FirebaseRepository @Inject constructor() {
     private val apiConfigRef = database.child("api-config")
 
     fun getCategories(): Flow<Result<List<Category>>> = callbackFlow {
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                try {
-                    val categories = mutableListOf<Category>()
-                    for (categorySnapshot in snapshot.children) {
-                        val url = categorySnapshot.child("url").getValue(String::class.java) ?: ""
-                        val name = categorySnapshot.child("name").getValue(String::class.java) ?: ""
-                        val iconResIdString = categorySnapshot.child("iconResId")
-                            .getValue(String::class.java)
-                        val colorHex = categorySnapshot.child("colorHex")
-                            .getValue(String::class.java)
+        val listener =
+                object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        try {
+                            val categories = mutableListOf<Category>()
+                            for (categorySnapshot in snapshot.children) {
+                                val url =
+                                        categorySnapshot.child("url").getValue(String::class.java)
+                                                ?: ""
+                                val name =
+                                        categorySnapshot.child("name").getValue(String::class.java)
+                                                ?: ""
+                                val iconResIdString =
+                                        categorySnapshot
+                                                .child("iconResId")
+                                                .getValue(String::class.java)
+                                val colorHex =
+                                        categorySnapshot
+                                                .child("colorHex")
+                                                .getValue(String::class.java)
+                                val requiresRewardAd =
+                                        categorySnapshot
+                                                .child("requiresRewardAd")
+                                                .getValue(Boolean::class.java)
+                                                ?: false
 
-                        val iconResId = getIconResourceId(iconResIdString)
+                                val iconResId = getIconResourceId(iconResIdString)
 
-                        categories.add(Category(url, name, iconResId, colorHex))
+                                categories.add(
+                                        Category(url, name, iconResId, colorHex, requiresRewardAd)
+                                )
+                            }
+                            trySend(Result.success(categories))
+                        } catch (e: Exception) {
+                            Timber.e(e, "Error parsing categories from Firebase")
+                            trySend(Result.failure(e))
+                        }
                     }
-                    trySend(Result.success(categories))
-                } catch (e: Exception) {
-                    Timber.e(e, "Error parsing categories from Firebase")
-                    trySend(Result.failure(e))
-                }
-            }
 
-            override fun onCancelled(error: DatabaseError) {
-                Timber.e("Firebase Database error: ${error.message}")
-                trySend(Result.failure(error.toException()))
-            }
-        }
+                    override fun onCancelled(error: DatabaseError) {
+                        Timber.e("Firebase Database error: ${error.message}")
+                        trySend(Result.failure(error.toException()))
+                    }
+                }
 
         categoriesRef.addValueEventListener(listener)
         awaitClose { categoriesRef.removeEventListener(listener) }
     }
 
     fun getApiConfig() = callbackFlow {
-        val configListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                try {
-                    val configMap = mutableMapOf<String, String>()
+        val configListener =
+                object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        try {
+                            val configMap = mutableMapOf<String, String>()
 
-                    // Get API key and host using the correct property names from your DB
-                    val apiKey = snapshot.child("API-KEY").getValue(String::class.java) ?: ""
-                    val apiHost = snapshot.child("API-HOST").getValue(String::class.java) ?: ""
+                            // Get API key and host using the correct property names from your DB
+                            val apiKey =
+                                    snapshot.child("API-KEY").getValue(String::class.java) ?: ""
+                            val apiHost =
+                                    snapshot.child("API-HOST").getValue(String::class.java) ?: ""
 
-                    // Map to standard names used in the rest of your app
-                    if (apiKey.isNotEmpty()) configMap["API_KEY"] = apiKey
-                    if (apiHost.isNotEmpty()) configMap["API_HOST"] = apiHost
+                            // Map to standard names used in the rest of your app
+                            if (apiKey.isNotEmpty()) configMap["API_KEY"] = apiKey
+                            if (apiHost.isNotEmpty()) configMap["API_HOST"] = apiHost
 
-                    trySend(Result.success(configMap))
-                } catch (e: Exception) {
-                    Timber.e(e, "Error fetching API config from Firebase: ${e.message}")
-                    trySend(Result.failure(e))
+                            trySend(Result.success(configMap))
+                        } catch (e: Exception) {
+                            Timber.e(e, "Error fetching API config from Firebase: ${e.message}")
+                            trySend(Result.failure(e))
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Timber.e("Firebase Database error fetching config: ${error.message}")
+                        trySend(Result.failure(error.toException()))
+                    }
                 }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Timber.e("Firebase Database error fetching config: ${error.message}")
-                trySend(Result.failure(error.toException()))
-            }
-        }
 
         apiConfigRef.addValueEventListener(configListener)
         awaitClose { apiConfigRef.removeEventListener(configListener) }

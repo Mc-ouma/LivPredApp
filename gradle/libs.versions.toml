@@ -3,7 +3,7 @@ accompanist = "0.36.0"
 accompanistNavigationMaterial = "0.36.0"
 accompanistPermissions = "0.37.3"
 annotation = "1.9.1"
-androidGradlePlugin = "8.13.0"
+androidGradlePlugin = "8.13.1"
 androidxActivity = "1.11.0"
 
 androidxComposeBom = "2025.10.00"
@@ -21,6 +21,7 @@ compileSdk = "36"
 converterGson = "3.0.0"
 coreSplashscreen = "1.0.1"
 dotenvKotlin = "6.5.1"
+facebook = "6.20.0.2"
 firebaseConfig = "23.0.1"
 gson = "2.13.2"
 hilt = "2.57.2"
@@ -95,6 +96,7 @@ app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.re
 coil-kt-coil-compose-v240 = { module = "io.coil-kt:coil-compose", version.ref = "coilComposeVersion" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }
+facebook = { module = "com.google.ads.mediation:facebook", version.ref = "facebook" }
 firebase-config = { module = "com.google.firebase:firebase-config", version.ref = "firebaseConfig" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android-core = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }

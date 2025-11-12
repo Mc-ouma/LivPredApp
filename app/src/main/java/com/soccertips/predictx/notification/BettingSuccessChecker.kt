@@ -361,9 +361,8 @@ constructor(
                     return@withContext true
                 } else {
                     Timber.d(
-                        "Category '$categoryName' on $date does not meet criteria for congratulations: " +
-                                "Total=${analysis.totalMatches}, WithResults=${analysis.matchesWithResults}, " +
-                                "Wins=${analysis.winningMatches}, Losses=${analysis.losingMatches}"
+                        "%snull", "Category '$categoryName' on $date does not meet criteria for congratulations: " +
+                                "Total=${analysis.totalMatches}, WithResults=${analysis.matchesWithResults}, "
                     )
                     return@withContext false
                 }

@@ -15,10 +15,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class WorkManagerModule {
+
     @Binds
-    abstract fun bindWorkManagerWrapper(
-        workManagerWrapperImpl: WorkManagerWrapperImpl
-    ): WorkManagerWrapper
+    @Singleton
+    abstract fun bindWorkManagerWrapper(impl: WorkManagerWrapperImpl): WorkManagerWrapper
 
     companion object {
         @Provides

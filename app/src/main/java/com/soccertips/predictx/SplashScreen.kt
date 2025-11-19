@@ -1,7 +1,6 @@
 package com.soccertips.predictx
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -36,7 +35,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.soccertips.predictx.navigation.Routes
@@ -44,9 +42,9 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    navController: NavController,
-    initialFixtureId: String?,
-    onSplashCompleted: () -> Unit
+        navController: NavController,
+        initialFixtureId: String?,
+        onSplashCompleted: () -> Unit
 ) {
     // Animation state management - simplified to reduce state changes
     var animationState by remember { mutableStateOf(SplashAnimationState.Initial) }
@@ -55,54 +53,54 @@ fun SplashScreen(
     // Simplified theming
     val isDarkTheme = isSystemInDarkTheme()
     val primaryColor = MaterialTheme.colorScheme.primary
-    val backgroundColor = if (isDarkTheme) {
-        MaterialTheme.colorScheme.surface
-    } else {
-        MaterialTheme.colorScheme.background
-    }
+    val backgroundColor =
+            if (isDarkTheme) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.background
+            }
 
     val context = LocalContext.current
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .semantics {
-                contentDescription = context.getString(R.string.splash_screen)
-            },
-        contentAlignment = Alignment.Center
+            modifier =
+                    Modifier.fillMaxSize().background(backgroundColor).semantics {
+                        contentDescription = context.getString(R.string.splash_screen)
+                    },
+            contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(16.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(16.dp)
         ) {
             // Show logo immediately without animation delay
             Image(
-                painter = painterResource(id = R.drawable.launcher),
-                contentDescription = context.getString(R.string.app_logo),
-                modifier = Modifier
-                    .size(180.dp)
-                    .scale(0.95f)
+                    painter = painterResource(id = R.drawable.launcher),
+                    contentDescription = context.getString(R.string.app_logo),
+                    modifier = Modifier.size(180.dp).scale(0.95f)
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
             // Tagline with slide-in animation - only appears when needed
             AnimatedVisibility(
-                visible = animationState >= SplashAnimationState.ShowTagline,
-                enter = fadeIn(tween(300)) +
-                        slideInVertically(
-                            initialOffsetY = { with(density) { 20.dp.roundToPx() } },
-                            animationSpec = tween(300)
-                        )
+                    visible = animationState >= SplashAnimationState.ShowTagline,
+                    enter =
+                            fadeIn(tween(300)) +
+                                    slideInVertically(
+                                            initialOffsetY = {
+                                                with(density) { 20.dp.roundToPx() }
+                                            },
+                                            animationSpec = tween(300)
+                                    )
             ) {
                 Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
                 )
             }
 
@@ -110,13 +108,13 @@ fun SplashScreen(
 
             // Loading indicator with fade-in
             AnimatedVisibility(
-                visible = animationState >= SplashAnimationState.ShowLoading,
-                enter = fadeIn(tween(200))
+                    visible = animationState >= SplashAnimationState.ShowLoading,
+                    enter = fadeIn(tween(200))
             ) {
                 CircularProgressIndicator(
-                    color = primaryColor,
-                    modifier = Modifier.size(32.dp),
-                    strokeWidth = 2.dp
+                        color = primaryColor,
+                        modifier = Modifier.size(32.dp),
+                        strokeWidth = 2.dp
                 )
             }
         }
@@ -137,15 +135,14 @@ fun SplashScreen(
         onSplashCompleted()
 
         // Navigate to next screen
-        val destination = if (!initialFixtureId.isNullOrEmpty()) {
-            Routes.FixtureDetails.createRoute(initialFixtureId)
-        } else {
-            Routes.Home.route
-        }
+        val destination =
+                if (!initialFixtureId.isNullOrEmpty()) {
+                    Routes.FixtureDetails.createRoute(initialFixtureId)
+                } else {
+                    Routes.Home.route
+                }
 
-        navController.navigate(destination) {
-            popUpTo(Routes.Splash.route) { inclusive = true }
-        }
+        navController.navigate(destination) { popUpTo(Routes.Splash.route) { inclusive = true } }
     }
 }
 
@@ -153,15 +150,4 @@ enum class SplashAnimationState {
     Initial,
     ShowTagline,
     ShowLoading
-}
-
-@Preview(uiMode = 1)
-@Composable
-private fun SplashScreenPreview() {
-    SplashScreen(
-        navController =
-            NavController(context = LocalContext.current),
-        initialFixtureId = null,
-        onSplashCompleted = {}
-    )
 }

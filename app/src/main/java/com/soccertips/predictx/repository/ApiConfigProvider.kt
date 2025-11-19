@@ -9,14 +9,22 @@ import javax.inject.Singleton
 class ApiConfigProvider @Inject constructor() {
     private val _apiConfig = MutableStateFlow<Map<String, String>>(emptyMap())
 
+    // Default values for API configuration
+    private val defaultApiKey = ""
+    private val defaultApiHost = ""
+
     fun updateConfig(config: Map<String, String>) {
-        Timber.Forest.d("Updating API config: $config")
+        Timber.d("Updating API config: $config")
         _apiConfig.value = config
     }
 
-    fun getApiKey(): String = _apiConfig.value["API_KEY"]
-        ?: throw IllegalStateException("API_KEY not found in config")
-    fun getApiHost(): String = _apiConfig.value["API_HOST"]
-        ?: throw IllegalStateException("API_HOST not found in config")
+    /**
+     * Get API key or return default value instead of throwing an exception
+     */
+    fun getApiKey(): String = _apiConfig.value["API_KEY"] ?: defaultApiKey
 
+    /**
+     * Get API host or return default value instead of throwing an exception
+     */
+    fun getApiHost(): String = _apiConfig.value["API_HOST"] ?: defaultApiHost
 }

@@ -96,7 +96,37 @@
     <string name="league_format">Ligue : %s</string>
     <string name="date_format">Date : %s Heure : %s</string>
     <string name="your_pick_format">Votre choix : %s</string>
-    <string name="vs">VS</string>    <!-- App Update -->
+    <string name="vs">VS</string>
+
+    <!-- Betting Success Notification Messages -->
+    <string name="perfect_day_in_category">🎉 Journée Parfaite en %s !</string>
+    <string name="perfect_betting_day">🎉 Journée Parfaite de Paris !</string>
+    <string name="all_matches_won_with_rate">Tous les %d matchs gagnés avec %d%% de réussite !</string>
+    <string name="betting_success_share_text">🎉 Journée parfaite de paris en %1$s ! Tous les %2$d
+        matchs gagnés avec %3$d%% de réussite le %4$s ! 🎯</string>
+    <string name="betting_success_fallback_share_text">🎉 Journée parfaite de paris ! Tous les %1$d
+        matchs gagnés avec %2$d%% de réussite le %3$s ! 🎯</string>
+    <string name="category_label">🏆 Catégorie : %s</string>
+    <string name="success_rate_label">🎯 Taux de réussite : %d%%</string>
+    <string name="perfect_day_stats">📊 Journée parfaite avec %1$d/%2$d matchs gagnés</string>
+    <string name="date_label">📅 Date : %s</string>
+    <string name="match_results_label">📋 Résultats des matchs :</string>
+    <string name="and_more_matches">… et %d matchs de plus</string>
+    <string name="category_matches_won">%1$s - %2$d matchs gagnés</string>
+    <string name="betting_success_detailed_stats">🎯 Taux de réussite : %1$d%%\n📊 Journée parfaite
+        avec %2$d/%3$d matchs gagnés\n📅 Date : %4$s\n\n📋 Résultats des matchs :\n</string>
+
+    <!-- Betting Category Names -->
+    <string name="category_today_tips">Conseils d\'Aujourd\'hui</string>
+    <string name="category_home_win">Victoire à Domicile</string>
+    <string name="category_away_win">Victoire à l\'Extérieur</string>
+    <string name="category_draw">Match Nul</string>
+    <string name="category_home_win_or_draw">Victoire à Domicile ou Match Nul</string>
+    <string name="category_away_win_or_draw">Victoire à l\'Extérieur ou Match Nul</string>
+    <string name="category_over_goals">Plus de Buts</string>
+    <string name="category_under_goals">Moins de Buts</string>
+    <string name="category_both_teams_score">Les Deux Équipes Marquent</string>
+    <string name="category_clean_sheet">Clean Sheet</string>    <!-- App Update -->
     <string name="an_update_has_been_downloaded">Une mise à jour vient d\'être téléchargée.</string>
     <string name="restart">REDÉMARRER</string>
     <string name="update_downloaded_restart">Mise à jour téléchargée. Redémarrez pour installer.</string>
@@ -263,7 +293,33 @@
     <string name="position_midfielder_short">MIL</string>
     <string name="position_forward_short">ATT</string>
 
-    <string name="no_games_found_for_the_selected_date">Aucun match trouvé pour la date sélectionnée.</string>
-    <string name="failed_to_fetch_games_please_try_again_later">Échec de la récupération des matchs, veuillez réessayer plus tard.</string>
+    <string name="no_games_found_for_the_selected_date">Aucun match trouvé pour la date
+        sélectionnée.</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Échec de la récupération des matchs,
+        veuillez réessayer plus tard.</string>
+    <string name="ad_not_available">La publicité n\'est pas disponible.</string>
+    <string name="ad_not_available_message">Aucune publicité n\'est disponible pour le moment. Veuillez réessayer plus tard.</string>
+    
+    <!-- Reward Ad for Categories -->
+    <string name="watch_ad_to_unlock">Regarder une Publicité pour Déverrouiller</string>
+    <string name="watch_ad_unlock_24h">Regardez une courte publicité pour déverrouiller la catégorie %1$s pendant 24 heures</string>
+    <string name="watch_ad">Regarder la Pub</string>
+    
+    <!-- Unlock Pass System -->
+    <string name="unlock_passes">Passes de Déverrouillage</string>
+    <string name="passes_balance">%1$d/%2$d</string>
+    <string name="unlock_category_title">Déverrouiller la Catégorie</string>
+    <string name="unlock_category_message">Utiliser 1 passe pour déverrouiller %1$s pendant 24 heures?\n\nVos passes: %2$d/%3$d</string>
+    <string name="use_pass">Utiliser le Pass</string>
+    <string name="earn_more_passes">Gagner Plus</string>
+    <string name="no_passes_title">Aucun Pass Disponible</string>
+    <string name="no_passes_message">Vous avez %1$d/%2$d passes.\n\nRegardez une courte publicité pour gagner 1 passe de déverrouillage!</string>
+    <string name="watch_ad_to_earn">Regarder une Pub pour Gagner un Passe</string>
+    <string name="pass_earned_title">Passe Gagné!</string>
+    <string name="pass_earned_message">Vous avez maintenant %1$d/%2$d passes de déverrouillage</string>
+    <string name="use_now">Utiliser Maintenant</string>
+    <string name="save_for_later">Garder pour Plus Tard</string>
+    <string name="max_passes_title">Maximum de Passes Atteint!</string>
+    <string name="max_passes_message">Vous avez déjà %1$d/%2$d passes.\n\nUtilisez vos passes pour déverrouiller des catégories!</string>
 
 </resources>

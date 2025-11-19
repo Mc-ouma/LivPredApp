@@ -1,7 +1,6 @@
 package com.soccertips.predictx.ui.components
 
 import android.content.Context
-import android.content.res.Resources
 import com.soccertips.predictx.R
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter

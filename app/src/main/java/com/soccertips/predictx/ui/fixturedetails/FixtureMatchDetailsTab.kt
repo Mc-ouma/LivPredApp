@@ -53,7 +53,7 @@ fun FixtureMatchDetailsTab(
                 navController = navController,
                 rewardedAdManager = rewardedAdManager
             )
-            Timber.Forest.tag("FixtureMatchDetailsTab")
+            Timber.tag("FixtureMatchDetailsTab")
                 .d("FixtureMatchDetailsTab: ${formState.data} ")
         }
 
@@ -168,7 +168,7 @@ fun FixtureStandingsTab(
                 teamId1 = fixtureDetails.teams.home.id,
                 teamId2 = fixtureDetails.teams.away.id,
             )
-            Timber.Forest.tag("FixtureStandingsTab")
+            Timber.tag("FixtureStandingsTab")
                 .d("FixtureStandingsTab: ${standingsState.data}")
         }
 
@@ -201,7 +201,7 @@ fun FixtureSummaryTab(
                 homeTeamId = fixtureDetails.teams.home.id,
                 awayTeamId = fixtureDetails.teams.away.id
             )
-            Timber.Forest.tag("FixtureSummaryTab")
+            Timber.tag("FixtureSummaryTab")
                 .d("FixtureSummaryTab: ${fixtureEventsState.data}")
         }
 

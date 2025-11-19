@@ -8,26 +8,51 @@ import androidx.core.app.NotificationManagerCompat
 object NotificationHelper {
     const val MATCH_REMINDER_CHANNEL_ID = "match_reminders"
     const val MATCH_UPDATES_CHANNEL_ID = "match_updates"
+    const val FCM_DEFAULT_CHANNEL_ID = "fcm_default_channel"
+    const val BETTING_SUCCESS_CHANNEL_ID = "betting_success_channel"
 
     fun createNotificationChannels(context: Context) {
-        val channels = listOf(
-            NotificationChannel(
-                MATCH_REMINDER_CHANNEL_ID,
-                "Match Reminders",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for upcoming matches"
-                enableVibration(true)
-                enableLights(true)
-            },
-            NotificationChannel(
-                MATCH_UPDATES_CHANNEL_ID,
-                "Match Updates",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Live match updates and scores"
-            }
-        )
+        val channels =
+                listOf(
+                        NotificationChannel(
+                                        MATCH_REMINDER_CHANNEL_ID,
+                                        "Match Reminders",
+                                        NotificationManager.IMPORTANCE_HIGH
+                                )
+                                .apply {
+                                    description = "Notifications for upcoming matches"
+                                    enableVibration(true)
+                                    enableLights(true)
+                                },
+                        NotificationChannel(
+                                        MATCH_UPDATES_CHANNEL_ID,
+                                        "Match Updates",
+                                        NotificationManager.IMPORTANCE_DEFAULT
+                                )
+                                .apply { description = "Live match updates and scores" },
+                        NotificationChannel(
+                                        FCM_DEFAULT_CHANNEL_ID,
+                                        "FCM Notifications",
+                                        NotificationManager.IMPORTANCE_HIGH
+                                )
+                                .apply {
+                                    description = "Notifications from Firebase Cloud Messaging"
+                                    enableLights(true)
+                                    enableVibration(true)
+                                },
+                        NotificationChannel(
+                                        BETTING_SUCCESS_CHANNEL_ID,
+                                        "Betting Success Notifications",
+                                        NotificationManager.IMPORTANCE_HIGH
+                                )
+                                .apply {
+                                    description = "Notifications for successful betting days"
+                                    enableLights(true)
+                                    lightColor = android.graphics.Color.GREEN
+                                    enableVibration(true)
+                                    vibrationPattern = longArrayOf(0, 500, 200, 500)
+                                }
+                )
 
         NotificationManagerCompat.from(context).createNotificationChannels(channels)
     }

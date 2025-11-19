@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Card
@@ -30,7 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.soccertips.predictx.R
 import com.soccertips.predictx.ui.FixtureDetailsUiState
@@ -43,11 +40,11 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun FixtureScoreAndScorers(
-        viewModel: FixtureDetailsViewModel,
-        modifier: Modifier = Modifier,
-        navController: NavController,
-        leagueId: String,
-        season: String,
+    viewModel: FixtureDetailsViewModel,
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    leagueId: String,
+    season: String,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -55,11 +52,12 @@ fun FixtureScoreAndScorers(
     when (uiState) {
         is FixtureDetailsUiState.Loading -> {
             Text(
-                    text = stringResource(R.string.loading),
-                    modifier = Modifier.padding(16.dp),
-                    color = Color.Gray,
+                text = stringResource(R.string.loading),
+                modifier = Modifier.padding(16.dp),
+                color = Color.Gray,
             )
         }
+
         is FixtureDetailsUiState.Success -> {
             val response = (uiState as FixtureDetailsUiState.Success).fixtureDetails
             val homeTeamId = response.teams.home.id
@@ -68,11 +66,11 @@ fun FixtureScoreAndScorers(
             val awayGoalScorers = viewModel.getAwayGoalScorers(response.events, awayTeamId)
             viewModel.formatTimestamp(response.fixture.timestamp)
             val initialMatchStatusText =
-                    viewModel.getMatchStatusText(
-                            response.fixture.status.short,
-                            response.fixture.status.elapsed,
-                            response.fixture.timestamp,
-                    )
+                viewModel.getMatchStatusText(
+                    response.fixture.status.short,
+                    response.fixture.status.elapsed,
+                    response.fixture.timestamp,
+                )
             val cardColors = LocalCardColors.current
             val cardElevation = LocalCardElevation.current
 
@@ -95,117 +93,159 @@ fun FixtureScoreAndScorers(
             }
 
             Card(
-                    modifier.wrapContentHeight()
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                    colors = cardColors,
-                    elevation = cardElevation
+                modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                colors = cardColors,
+                elevation = cardElevation,
+                shape = MaterialTheme.shapes.medium
             ) {
                 Column(
-                        modifier.padding(8.dp).wrapContentHeight(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(0.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Row(
-                            modifier = Modifier.fillMaxWidth().padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                    // Header with match status
+                    androidx.compose.material3.Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        shape = MaterialTheme.shapes.small
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            response.teams.home.let { homeTeam ->
-                                TeamColumn(
-                                        team = homeTeam,
-                                        leagueId = leagueId,
-                                        season = season,
-                                        navController = navController
-                                )
-                            }
-                        }
                         Column(
-                                modifier =
-                                        Modifier.weight(1f)
-                                                .wrapContentHeight()
-                                                .padding(horizontal = 8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                    text = response.fixture.status.short,
-                                    fontSize = 18.sp,
+                                text = response.fixture.status.short,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             )
-                            Text(
-                                    text = "${response.goals.home} - ${response.goals.away}",
-                                    fontSize = 16.sp
-                            )
-
                             if (matchStatusText.isNotEmpty()) {
                                 Text(
-                                        text = matchStatusText,
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(top = 4.dp),
-                                        textAlign = TextAlign.Center,
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            response.teams.away.let { awayTeam ->
-                                TeamColumn(
-                                        team = awayTeam,
-                                        leagueId = leagueId,
-                                        season = season,
-                                        navController = navController
+                                    text = matchStatusText,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    textAlign = TextAlign.Center,
                                 )
                             }
                         }
                     }
+
+                    // Teams and Score Row
                     Row(
-                            modifier =
-                                    Modifier.wrapContentWidth()
-                                            .wrapContentHeight()
-                                            .padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            homeGoalScorers.forEach { (playerName, elapsed) ->
-                                Scorers(
-                                        playerName = playerName,
-                                        elapsed = elapsed,
+                            response.teams.home.let { homeTeam ->
+                                TeamColumn(
+                                    team = homeTeam,
+                                    leagueId = leagueId,
+                                    season = season,
+                                    navController = navController
                                 )
                             }
                         }
-                        Box(
-                                modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.Center,
+
+                        // Score in center
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .weight(0.7f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
                         ) {
-                            if (homeGoalScorers.isNotEmpty() || awayGoalScorers.isNotEmpty()) {
-                                Icon(
+                            Text(
+                                text = "${response.goals.home} - ${response.goals.away}",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            response.teams.away.let { awayTeam ->
+                                TeamColumn(
+                                    team = awayTeam,
+                                    leagueId = leagueId,
+                                    season = season,
+                                    navController = navController
+                                )
+                            }
+                        }
+                    }
+
+                    // Goal Scorers Section
+                    if (homeGoalScorers.isNotEmpty() || awayGoalScorers.isNotEmpty()) {
+                        androidx.compose.material3.Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            shape = MaterialTheme.shapes.small,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    homeGoalScorers.forEach { (playerName, elapsed) ->
+                                        Scorers(
+                                            playerName = playerName,
+                                            elapsed = elapsed,
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
                                         imageVector = Icons.Default.SportsSoccer,
                                         contentDescription = stringResource(R.string.soccer_ball),
-                                        tint = Color.Gray,
-                                        modifier = Modifier.size(24.dp),
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            awayGoalScorers.forEach { (playerName, elapsed) ->
-                                Scorers(
-                                        playerName = playerName,
-                                        elapsed = elapsed,
-                                )
+                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    awayGoalScorers.forEach { (playerName, elapsed) ->
+                                        Scorers(
+                                            playerName = playerName,
+                                            elapsed = elapsed,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
         is FixtureDetailsUiState.Error -> {
             ErrorScreen(
-                    paddingValues = PaddingValues(0.dp),
-                    message = stringResource(R.string.no_data_available),
-                    // (uiState as FixtureDetailsUiState.Error).message
-                    onRetry = {}
+                paddingValues = PaddingValues(0.dp),
+                message = stringResource(R.string.no_data_available),
+                // (uiState as FixtureDetailsUiState.Error).message
+                onRetry = {}
             )
         }
     }
+}
+
+@Composable
+fun Scorers(
+    playerName: String,
+    elapsed: String,
+) {
+    Text(
+        text = "$playerName $elapsed'",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+    )
 }

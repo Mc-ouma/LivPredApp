@@ -12,7 +12,6 @@
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
 
-
     <application
         android:networkSecurityConfig="@xml/network_security_config"
         android:name=".App"
@@ -25,15 +24,28 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PredictX"
         tools:targetApi="31">
+
+        <!-- Firebase Cloud Messaging Service -->
+        <service
+            android:name=".notification.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <receiver android:name=".notification.NotificationReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="com.soccertips.predictx.ACTION_MATCH_REMINDER" />
             </intent-filter>
         </receiver>
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-8504414839434291~8215753517" />
-
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+            android:value="true" />
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
@@ -45,8 +57,11 @@
                 tools:node="remove" />
         </provider>
 
+        <!-- Google AdActivity is automatically declared by the Google Mobile Ads SDK -->
+        <!-- The SDK's default configuration is used to avoid manifest merger issues -->
 
-        <activity
+
+        <activity 
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.PredictX.Splash">
@@ -59,10 +74,27 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="app" android:host="com.soccertips.predictx" android:pathPrefix="/fixture" />
+                <data android:scheme="app" android:host="com.soccertips.predictx"
+                    android:pathPrefix="/fixture" />
+            </intent-filter>
+            <!-- Intent filters for notification actions (Android 15+ compliance) -->
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_VIEW_MATCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_VIEW_BETTING_SUCCESS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
     </application>
 
 </manifest>
-

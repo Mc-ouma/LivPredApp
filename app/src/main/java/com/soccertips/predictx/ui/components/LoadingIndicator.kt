@@ -7,40 +7,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.soccertips.predictx.R
 
 @Composable
 fun LoadingIndicator(modifier: Modifier = Modifier) {
     Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+            modifier = modifier.fillMaxSize(),
     ) {
         CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.primary,
         )
-       // LottieLoader(resId = R.raw.loader)
+        // LottieLoader(resId = R.raw.loader)
     }
 }
 
-@Composable
-fun ErrorIndicator(modifier: Modifier = Modifier) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier.fillMaxSize(),
-    ) {
-        LottieLoader(resId = R.raw.animation)
-    }
-    
-}
-@Preview()
-@Composable
-fun LoadingIndicatorPreview() {
-    LoadingIndicator()
-
-}
-@Preview()
-@Composable
-fun ErrorIndicatorPreview() {
-    ErrorIndicator()
-}

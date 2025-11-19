@@ -1,14 +1,11 @@
 package com.soccertips.predictx
 
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.LinearEasing
@@ -29,16 +26,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.edit
 import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import com.soccertips.predictx.admob.AppOpenAdManager
-import com.soccertips.predictx.admob.InterstitialAdManager
-import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.UiState
@@ -54,15 +48,13 @@ import java.net.URLDecoder
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun AppNavigation(
-    fixtureId: String? = null,
-    forceNavigate: Boolean = false,
-    interstitialAdManager: InterstitialAdManager,
-    rewardedAdManager: RewardedAdManager,
-    context: Context = LocalContext.current,
+        fixtureId: String? = null,
+        forceNavigate: Boolean = false,
 ) {
     val navController = rememberNavController()
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()
     val uiState by categoriesViewModel.uiState.collectAsState()
+    val adStrategy by categoriesViewModel.adStrategy.collectAsState() // Get ad strategy
     val sharedViewModel: SharedViewModel = hiltViewModel()
     val context = LocalContext.current
 
@@ -72,6 +64,16 @@ fun AppNavigation(
         mutableStateOf(activity.sharedPrefs.getString("pending_navigation_fixture_id", null))
     }
 
+    // Check for pending category navigation from betting success notification
+    val pendingCategoryUrl = remember {
+        mutableStateOf(activity.sharedPrefs.getString("pending_navigation_category_url", null))
+    }
+    val pendingFromBettingSuccess = remember {
+        mutableStateOf(
+                activity.sharedPrefs.getBoolean("pending_navigation_from_betting_success", false)
+        )
+    }
+
     // If there's a pending navigation, use it; otherwise use the provided fixture ID
     val targetFixtureId = remember { mutableStateOf(pendingFixtureId.value ?: fixtureId) }
 
@@ -79,177 +81,138 @@ fun AppNavigation(
     if (uiState is UiState.Error) {
         val errorMessage = (uiState as UiState.Error).message
         AlertDialog(
-            onDismissRequest = { categoriesViewModel.retryLoadCategories() },
-            title = { Text(stringResource(R.string.information)) },
-            text = { Text(errorMessage) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // Open Telegram channel
-                        val telegramUrl =
-                            "https://t.me/+SlbFLBrgmVJiMQiG" // Replace with your actual channel
-                        val intent = Intent(Intent.ACTION_VIEW, telegramUrl.toUri())
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Could not open link", Toast.LENGTH_SHORT)
-                                .show()
-                        }
+                onDismissRequest = { categoriesViewModel.retryLoadCategories() },
+                title = { Text(stringResource(R.string.information)) },
+                text = { Text(errorMessage) },
+                confirmButton = {
+                    Button(
+                            onClick = {
+                                // Open Telegram channel
+                                val telegramUrl =
+                                        "https://t.me/+SlbFLBrgmVJiMQiG" // Replace with your actual
+                                // channel
+                                val intent = Intent(Intent.ACTION_VIEW, telegramUrl.toUri())
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(
+                                                    context,
+                                                    "Could not open link",
+                                                    Toast.LENGTH_SHORT
+                                            )
+                                            .show()
+                                }
+                            }
+                    ) { Text(stringResource(R.string.join_our_telegram_channel)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { categoriesViewModel.retryLoadCategories() }) {
+                        Text(stringResource(R.string.retry))
                     }
-                ) {
-                    Text(stringResource(R.string.join_our_telegram_channel))
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { categoriesViewModel.retryLoadCategories() }) {
-                    Text(stringResource(R.string.retry))
-                }
-            }
         )
     }
 
     NavHost(
-        navController = navController,
-        enterTransition = { EnterTransition.Companion.None },
-        exitTransition = { ExitTransition.Companion.None },
-        startDestination = Routes.Splash.route
+            navController = navController,
+            enterTransition = {
+                fadeIn(animationSpec = tween(300, easing = LinearEasing)) +
+                        slideIntoContainer(
+                                animationSpec = tween(300, easing = EaseIn),
+                                towards = AnimatedContentTransitionScope.SlideDirection.Start
+                        )
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(300, easing = LinearEasing)) +
+                        slideOutOfContainer(
+                                animationSpec = tween(300, easing = EaseOut),
+                                towards = AnimatedContentTransitionScope.SlideDirection.End
+                        )
+            },
+            startDestination = Routes.Splash.route
     ) {
         // Splash Screen
         composable(Routes.Splash.route) {
             SplashScreen(
-                navController = navController,
-                initialFixtureId = fixtureId,
-                onSplashCompleted = {
-                    sharedViewModel.markSplashCompleted()
-                },
-
-                )
+                    navController = navController,
+                    initialFixtureId = fixtureId,
+                    onSplashCompleted = { sharedViewModel.markSplashCompleted() },
+            )
         }
 
-        composable(Routes.Home.route) {
-            HomeScreen(navController = navController)
-        }
-        composable(Routes.Categories.route) {
-            CategoriesScreen(navController = navController)
-        }
-        composable(
-            Routes.Favorites.route
-        ) {
-            FavoritesScreen(navController = navController)
-        }
+        composable(Routes.Home.route) { HomeScreen(navController = navController) }
+        composable(Routes.Categories.route) { CategoriesScreen(navController = navController) }
+        composable(Routes.Favorites.route) { FavoritesScreen(navController = navController) }
 
         composable(
-            Routes.ItemsList.route,
-            arguments = listOf(navArgument("categoryId") { type = NavType.Companion.StringType }),
-            enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
-            },
-            exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
-            },
-
-            ) { backStackEntry ->
-
+                Routes.ItemsList.route,
+                arguments =
+                        listOf(navArgument("categoryId") { type = NavType.Companion.StringType }),
+        ) { backStackEntry ->
             val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
             val decodeUrl = URLDecoder.decode(categoryId, "UTF-8")
             if (uiState is UiState.Success) {
                 val categories = (uiState as UiState.Success<List<Category>>).data
                 ItemsListScreen(
-                    navController = navController,
-                    categoryId = decodeUrl,
-                    categories = categories,
-                    interstitialAdManager = interstitialAdManager,
+                        navController = navController,
+                        categoryId = decodeUrl,
+                        categories = categories,
+                        adStrategy = adStrategy, // Pass ad strategy
                 )
             }
         }
         composable(
-            Routes.FixtureDetails.route,
-            arguments = listOf(navArgument("fixtureId") { type = NavType.Companion.StringType }),
-            deepLinks = listOf(navDeepLink {
-                uriPattern = "app://com.soccertips.predictx/fixture/{fixtureId}"
-                action = Intent.ACTION_VIEW
-            }),
-            enterTransition = {
-                fadeIn(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideIntoContainer(
-                    animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
-                )
-            },
-            exitTransition = {
-                fadeOut(
-                    animationSpec = tween(
-                        300, easing = LinearEasing
-                    )
-                ) + slideOutOfContainer(
-                    animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
-                )
-            },
+                Routes.FixtureDetails.route,
+                arguments =
+                        listOf(navArgument("fixtureId") { type = NavType.Companion.StringType }),
+                deepLinks =
+                        listOf(
+                                navDeepLink {
+                                    uriPattern = "app://com.soccertips.predictx/fixture/{fixtureId}"
+                                    action = Intent.ACTION_VIEW
+                                }
+                        ),
         ) { backStackEntry ->
             val fixtureIdArgument = backStackEntry.arguments?.getString("fixtureId") ?: ""
 
             FixtureDetailsScreen(
-                navController = navController,
-                fixtureId = fixtureIdArgument,
-                rewardedAdManager = rewardedAdManager,
+                    navController = navController,
+                    fixtureId = fixtureIdArgument,
             )
         }
         composable(
-            Routes.TeamDetails.route,
-            arguments = listOf(
-                navArgument("teamId") { type = NavType.Companion.StringType },
-                navArgument("leagueId") { type = NavType.Companion.StringType },
-                navArgument("season") { type = NavType.Companion.StringType }),
-
-            )
-        { backStackEntry ->
+                Routes.TeamDetails.route,
+                arguments =
+                        listOf(
+                                navArgument("teamId") { type = NavType.Companion.StringType },
+                                navArgument("leagueId") { type = NavType.Companion.StringType },
+                                navArgument("season") { type = NavType.Companion.StringType }
+                        ),
+        ) { backStackEntry ->
             val teamId = backStackEntry.arguments?.getString("teamId") ?: ""
             val leagueId = backStackEntry.arguments?.getString("leagueId") ?: ""
             val season = backStackEntry.arguments?.getString("season") ?: ""
 
             TeamScreen(
-                navController = navController,
-                teamId = teamId,
-                leagueId = leagueId,
-                season = season,
-
-
-                )
+                    navController = navController,
+                    teamId = teamId,
+                    leagueId = leagueId,
+                    season = season,
+            )
         }
     }
-    // Handle deep links after splash screen - improved to handle pending navigation and forced navigation
+    // Handle deep links after splash screen - improved to handle pending navigation and forced
+    // navigation
     val shouldForceNavigate = remember {
         mutableStateOf(
-            forceNavigate || activity.sharedPrefs.getBoolean(
-                "force_navigate_from_foreground",
-                false
-            )
+                forceNavigate ||
+                        activity.sharedPrefs.getBoolean("force_navigate_from_foreground", false)
         )
     }
 
     // Clear the force navigate flag after reading it
     if (activity.sharedPrefs.getBoolean("force_navigate_from_foreground", false)) {
-        activity.sharedPrefs.edit {
-            remove("force_navigate_from_foreground")
-        }
+        activity.sharedPrefs.edit { remove("force_navigate_from_foreground") }
     }
 
     // Handle immediate navigation when forced (from notification click in foreground)
@@ -258,16 +221,13 @@ fun AppNavigation(
             val idToNavigate = targetFixtureId.value!!
 
             // Make sure we're not already on this screen
-            if (navController.currentDestination?.route != Routes.FixtureDetails.createRoute(
-                    idToNavigate
-                )
+            if (navController.currentDestination?.route !=
+                            Routes.FixtureDetails.createRoute(idToNavigate)
             ) {
                 // First navigate to Home to set it as the back destination
                 navController.navigate(Routes.Home.route) {
                     // Clear the back stack
-                    popUpTo(navController.graph.id) {
-                        inclusive = true
-                    }
+                    popUpTo(navController.graph.id) { inclusive = true }
                     launchSingleTop = true
                 }
 
@@ -277,9 +237,7 @@ fun AppNavigation(
                 }
 
                 // Clear any pending navigation IDs
-                activity.sharedPrefs.edit {
-                    remove("pending_navigation_fixture_id")
-                }
+                activity.sharedPrefs.edit { remove("pending_navigation_fixture_id") }
                 pendingFixtureId.value = null
             }
 
@@ -293,16 +251,13 @@ fun AppNavigation(
             val idToNavigate = targetFixtureId.value
 
             if (!idToNavigate.isNullOrEmpty() &&
-                navController.currentDestination?.route != Routes.FixtureDetails.createRoute(
-                    idToNavigate
-                )
+                            navController.currentDestination?.route !=
+                                    Routes.FixtureDetails.createRoute(idToNavigate)
             ) {
                 // First navigate to Home to set it as the back destination
                 navController.navigate(Routes.Home.route) {
                     // Clear the back stack
-                    popUpTo(navController.graph.id) {
-                        inclusive = true
-                    }
+                    popUpTo(navController.graph.id) { inclusive = true }
                     launchSingleTop = true
                 }
 
@@ -313,11 +268,42 @@ fun AppNavigation(
 
                 // Clear the pending navigation
                 if (pendingFixtureId.value != null) {
-                    activity.sharedPrefs.edit {
-                        remove("pending_navigation_fixture_id")
-                    }
+                    activity.sharedPrefs.edit { remove("pending_navigation_fixture_id") }
                     pendingFixtureId.value = null
                 }
+            }
+        }
+    }
+
+    // Handle category navigation from betting success notification
+    LaunchedEffect(pendingFromBettingSuccess.value) {
+        if (pendingFromBettingSuccess.value && !pendingCategoryUrl.value.isNullOrEmpty()) {
+            val categoryUrlToNavigate = pendingCategoryUrl.value!!
+
+            // Encode the URL for navigation
+            val encodedUrl = java.net.URLEncoder.encode(categoryUrlToNavigate, "UTF-8")
+            val targetRoute = Routes.ItemsList.createRoute(encodedUrl)
+
+            // Make sure we're not already on this screen
+            if (navController.currentDestination?.route != targetRoute) {
+                // First navigate to Home to set it as the back destination
+                navController.navigate(Routes.Home.route) {
+                    // Clear the back stack
+                    popUpTo(navController.graph.id) { inclusive = true }
+                    launchSingleTop = true
+                }
+
+                // Then navigate to ItemsList for the specific category
+                navController.navigate(targetRoute) { launchSingleTop = true }
+
+                // Clear any pending category navigation
+                activity.sharedPrefs.edit {
+                    remove("pending_navigation_category_url")
+                    remove("pending_navigation_date")
+                    remove("pending_navigation_from_betting_success")
+                }
+                pendingCategoryUrl.value = null
+                pendingFromBettingSuccess.value = false
             }
         }
     }

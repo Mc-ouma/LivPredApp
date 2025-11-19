@@ -9,9 +9,11 @@ import android.graphics.Color
 import android.graphics.Paint
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.scale
 import androidx.core.graphics.toColorInt
-import com.bumptech.glide.Glide
+import coil.imageLoader
+import coil.request.ImageRequest
 import com.soccertips.predictx.MainActivity
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.local.entities.FavoriteItem
@@ -31,66 +33,103 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
     }
 
     suspend fun buildMatchNotification(item: FavoriteItem): NotificationCompat.Builder {
-        val homeTeamLogo = loadTeamLogo(item.hLogoPath)
-        val awayTeamLogo = loadTeamLogo(item.aLogoPath)
+        return try {
+            val homeTeamLogo = loadTeamLogo(item.hLogoPath)
+            val awayTeamLogo = loadTeamLogo(item.aLogoPath)
 
-        val largeIcon = createVersusIcon(homeTeamLogo, awayTeamLogo)
+            val largeIcon = createVersusIcon(homeTeamLogo, awayTeamLogo)
 
-        return NotificationCompat.Builder(context, NotificationHelper.MATCH_REMINDER_CHANNEL_ID)
-                .setContentTitle("${item.homeTeam} vs ${item.awayTeam}")
-                .setContentText(context.getString(R.string.match_starts_in_15_minutes))
-                .setSmallIcon(R.drawable.launcher)
-                .setLargeIcon(largeIcon ?: homeTeamLogo)
-                .setAutoCancel(true)
-                .setStyle(createBigTextStyle(item))
-                .setContentIntent(createPendingIntent(item))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_EVENT)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setGroup(GROUP_KEY_MATCHES)
-                .setTimeoutAfter(item.mTime?.let { calculateTimeoutDuration(it) } ?: 3600000L)
-                .addAction(R.drawable.ic_view_match, "View Details", createPendingIntent(item))
+            NotificationCompat.Builder(context, NotificationHelper.MATCH_REMINDER_CHANNEL_ID)
+                    .setContentTitle(
+                            "${item.homeTeam ?: "Unknown"} vs ${item.awayTeam ?: "Unknown"}"
+                    )
+                    .setContentText(context.getString(R.string.match_starts_in_15_minutes))
+                    .setSmallIcon(R.drawable.launcher)
+                    .setLargeIcon(largeIcon ?: homeTeamLogo)
+                    .setAutoCancel(true)
+                    .setStyle(createBigTextStyle(item))
+                    .setContentIntent(createPendingIntent(item))
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setCategory(NotificationCompat.CATEGORY_EVENT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setGroup(GROUP_KEY_MATCHES)
+                    .setTimeoutAfter(item.mTime?.let { calculateTimeoutDuration(it) } ?: 3600000L)
+                    .addAction(R.drawable.ic_view_match, "View Details", createPendingIntent(item))
+        } catch (e: Exception) {
+            Timber.e(
+                    e,
+                    "Failed to build match notification for fixture ${item.fixtureId}, creating fallback notification"
+            )
+            // Create a fallback notification with minimal data
+            NotificationCompat.Builder(context, NotificationHelper.MATCH_REMINDER_CHANNEL_ID)
+                    .setContentTitle(
+                            "${item.homeTeam ?: "Unknown"} vs ${item.awayTeam ?: "Unknown"}"
+                    )
+                    .setContentText(context.getString(R.string.match_starts_in_15_minutes))
+                    .setSmallIcon(R.drawable.launcher)
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setCategory(NotificationCompat.CATEGORY_EVENT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setGroup(GROUP_KEY_MATCHES)
+                    .setContentIntent(createSafePendingIntent(item))
+        }
     }
 
     fun buildMatchUpdateNotification(fixtureResponse: FixtureResponse): NotificationCompat.Builder {
-        val fixture = fixtureResponse.response.first()
-        val homeGoals = fixture.goals?.home ?: 0
-        val awayGoals = fixture.goals?.away ?: 0
-        val matchStatus = fixture.fixture.status.short
+        return try {
+            val fixture = fixtureResponse.response.first()
+            val homeGoals = fixture.goals.home
+            val awayGoals = fixture.goals.away
+            val matchStatus = fixture.fixture.status.short
 
-        val homeTeam = fixture.teams?.home?.name ?: ""
-        val awayTeam = fixture.teams?.away?.name ?: ""
+            val homeTeam = fixture.teams.home.name
+            val awayTeam = fixture.teams.away.name
 
-        // Create content text based on match status
-        val contentText =
-                when {
-                    matchStatus == "1H" -> "1st Half: $homeGoals - $awayGoals"
-                    matchStatus == "HT" -> "Half Time: $homeGoals - $awayGoals"
-                    matchStatus == "2H" -> "2nd Half: $homeGoals - $awayGoals"
-                    matchStatus in setOf("FT", "AET", "PEN") ->
-                            "Final Score: $homeGoals - $awayGoals"
-                    matchStatus in setOf("PST", "CANC", "SUSP", "ABD") ->
-                            "Match ${getStatusDescription(matchStatus)}"
-                    else -> "Score: $homeGoals - $awayGoals"
-                }
+            // Create content text based on match status
+            val contentText =
+                    when {
+                        matchStatus == "1H" -> "1st Half: $homeGoals - $awayGoals"
+                        matchStatus == "HT" -> "Half Time: $homeGoals - $awayGoals"
+                        matchStatus == "2H" -> "2nd Half: $homeGoals - $awayGoals"
+                        matchStatus in setOf("FT", "AET", "PEN") ->
+                                "Final Score: $homeGoals - $awayGoals"
+                        matchStatus in setOf("PST", "CANC", "SUSP", "ABD") ->
+                                "Match ${getStatusDescription(matchStatus)}"
+                        else -> "Score: $homeGoals - $awayGoals"
+                    }
 
-        val style =
-                NotificationCompat.BigTextStyle()
-                        .setBigContentTitle("$homeTeam vs $awayTeam")
-                        .bigText("$contentText\n${getStatusDescription(matchStatus)}")
-                        .setSummaryText(fixture.league?.name)
+            val style =
+                    NotificationCompat.BigTextStyle()
+                            .setBigContentTitle("$homeTeam vs $awayTeam")
+                            .bigText("$contentText\n${getStatusDescription(matchStatus)}")
+                            .setSummaryText(fixture.league.name)
 
-        return NotificationCompat.Builder(context, NotificationHelper.MATCH_UPDATES_CHANNEL_ID)
-                .setContentTitle("$homeTeam vs $awayTeam")
-                .setContentText(contentText)
-                .setSmallIcon(R.drawable.launcher)
-                .setAutoCancel(true)
-                .setStyle(style)
-                .setContentIntent(createPendingIntent(fixture.fixture.id.toString()))
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setCategory(NotificationCompat.CATEGORY_EVENT)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setGroup(GROUP_KEY_UPDATES)
+            NotificationCompat.Builder(context, NotificationHelper.MATCH_UPDATES_CHANNEL_ID)
+                    .setContentTitle("$homeTeam vs $awayTeam")
+                    .setContentText(contentText)
+                    .setSmallIcon(R.drawable.launcher)
+                    .setAutoCancel(true)
+                    .setStyle(style)
+                    .setContentIntent(createPendingIntent(fixture.fixture.id.toString()))
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setCategory(NotificationCompat.CATEGORY_EVENT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setGroup(GROUP_KEY_UPDATES)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to build match update notification, creating fallback")
+            // Create a fallback notification with minimal data
+            NotificationCompat.Builder(context, NotificationHelper.MATCH_UPDATES_CHANNEL_ID)
+                    .setContentTitle("Match Update")
+                    .setContentText("A match has been updated. Tap to view details.")
+                    .setSmallIcon(R.drawable.launcher)
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setCategory(NotificationCompat.CATEGORY_EVENT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setGroup(GROUP_KEY_UPDATES)
+                    .setContentIntent(createDefaultPendingIntent())
+        }
     }
 
     fun buildSummaryNotification(matchCount: Int, groupKey: String): NotificationCompat.Builder {
@@ -118,10 +157,131 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
                 .setAutoCancel(true)
     }
 
+    /** Build a congratulatory notification for perfect betting days */
+    fun buildBettingSuccessNotification(
+            date: String,
+            categoryName: String,
+            categoryUrl: String,
+            totalMatches: Int,
+            winningMatches: Int,
+            successRate: Int,
+            matchDetails: List<String>
+    ): NotificationCompat.Builder {
+        return try {
+            val title = context.getString(R.string.perfect_day_in_category, categoryName)
+            val shortText =
+                    context.getString(
+                            R.string.all_matches_won_with_rate,
+                            winningMatches,
+                            successRate
+                    )
+
+            // Create detailed content for expanded view
+            val detailedContent =
+                    StringBuilder()
+                            .apply {
+                                append(
+                                        context.getString(R.string.category_label, categoryName) +
+                                                "\n"
+                                )
+                                append(
+                                        context.getString(
+                                                R.string.success_rate_label,
+                                                successRate
+                                        ) + "\n"
+                                )
+                                append(
+                                        context.getString(
+                                                R.string.perfect_day_stats,
+                                                winningMatches,
+                                                totalMatches
+                                        ) + "\n"
+                                )
+                                append(context.getString(R.string.date_label, date) + "\n\n")
+                                append(context.getString(R.string.match_results_label) + "\n")
+                                matchDetails.take(10).forEach { detail
+                                    -> // Limit to 10 matches for readability
+                                    append("$detail\n")
+                                }
+                                if (matchDetails.size > 10) {
+                                    append(
+                                            context.getString(
+                                                    R.string.and_more_matches,
+                                                    matchDetails.size - 10
+                                            )
+                                    )
+                                }
+                            }
+                            .toString()
+
+            val bigTextStyle =
+                    NotificationCompat.BigTextStyle()
+                            .setBigContentTitle(title)
+                            .bigText(detailedContent)
+                            .setSummaryText(
+                                    context.getString(
+                                            R.string.category_matches_won,
+                                            categoryName,
+                                            winningMatches
+                                    )
+                            )
+
+            // Create intent to open results screen for this specific category
+            val viewResultsIntent = createBettingSuccessIntent(categoryUrl, date)
+
+            // Create share intent
+            val shareText =
+                    context.getString(
+                            R.string.betting_success_share_text,
+                            categoryName,
+                            winningMatches,
+                            successRate,
+                            date
+                    )
+            val shareIntent = createShareIntent(shareText)
+
+            NotificationCompat.Builder(context, NotificationHelper.BETTING_SUCCESS_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.launcher)
+                    .setContentTitle(title)
+                    .setContentText(shortText)
+                    .setStyle(bigTextStyle)
+                    .setAutoCancel(true)
+                    .setContentIntent(viewResultsIntent)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setCategory(NotificationCompat.CATEGORY_EVENT)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setColor(context.getColor(R.color.success_green))
+                    .addAction(R.drawable.ic_visibility, "View Results", viewResultsIntent)
+                    .addAction(R.drawable.ic_share, "Share Success", shareIntent)
+                    .setLights(Color.GREEN, 1000, 1000)
+                    .setVibrate(longArrayOf(0, 500, 200, 500))
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to build betting success notification")
+            // Create a simple fallback notification
+            NotificationCompat.Builder(context, NotificationHelper.BETTING_SUCCESS_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.launcher)
+                    .setContentTitle(context.getString(R.string.perfect_betting_day))
+                    .setContentText(
+                            context.getString(
+                                    R.string.all_matches_won_with_rate,
+                                    winningMatches,
+                                    successRate
+                            )
+                    )
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(createDefaultPendingIntent())
+        }
+    }
+
     private suspend fun loadTeamLogo(logoUrl: String?): Bitmap? =
             withContext(Dispatchers.IO) {
                 try {
-                    logoUrl?.let { Glide.with(context).asBitmap().load(it).submit().get() }
+                    logoUrl?.let {
+                        val imageRequest = ImageRequest.Builder(context).data(it).build()
+                        val drawable = context.imageLoader.execute(imageRequest).drawable
+                        drawable?.toBitmap()
+                    }
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to load team logo: $logoUrl")
                     null
@@ -168,16 +328,28 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
     }
 
     private fun createBigTextStyle(item: FavoriteItem): NotificationCompat.BigTextStyle {
-        val leagueInfo = item.league?.let { "League: $it" } ?: ""
-        val matchTime = "Date: ${item.mDate} Time: ${item.mTime}"
-        val pickInfo = item.pick?.let { "Your Pick: $it" } ?: ""
+        return try {
+            val leagueInfo = item.league?.let { "League: $it" } ?: ""
+            val matchTime = "Date: ${item.mDate ?: "TBD"} Time: ${item.mTime ?: "TBD"}"
+            val pickInfo = item.pick?.let { "Your Pick: $it" } ?: ""
 
-        return NotificationCompat.BigTextStyle()
-                .setBigContentTitle("${item.homeTeam} vs ${item.awayTeam}")
-                .bigText(
-                        context.getString(R.string.match_starts_in_15_minutes) +
-                                "\n$leagueInfo\n$matchTime${if (pickInfo.isNotEmpty()) "\n$pickInfo" else ""}"
-                )
+            NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(
+                            "${item.homeTeam ?: "Unknown"} vs ${item.awayTeam ?: "Unknown"}"
+                    )
+                    .bigText(
+                            context.getString(R.string.match_starts_in_15_minutes) +
+                                    "\n$leagueInfo\n$matchTime${if (pickInfo.isNotEmpty()) "\n$pickInfo" else ""}"
+                    )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create big text style for fixture ${item.fixtureId}")
+            // Return a simple style as fallback
+            NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(
+                            "${item.homeTeam ?: "Unknown"} vs ${item.awayTeam ?: "Unknown"}"
+                    )
+                    .bigText(context.getString(R.string.match_starts_in_15_minutes))
+        }
     }
 
     private fun createPendingIntent(item: FavoriteItem): PendingIntent {
@@ -202,24 +374,119 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
     }
 
     private fun createPendingIntent(fixtureId: String): PendingIntent {
-        val intent =
-                Intent(context, MainActivity::class.java).apply {
-                    action = "com.soccertips.predictx.ACTION_VIEW_MATCH"
-                    flags =
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                                    Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    putExtra("fixtureId", fixtureId)
-                    // Add explicit flag to indicate this is from a notification
-                    putExtra("fromNotification", true)
-                }
+        return try {
+            val intent =
+                    Intent(context, MainActivity::class.java).apply {
+                        action = "com.soccertips.predictx.ACTION_VIEW_MATCH"
+                        flags =
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra("fixtureId", fixtureId)
+                        // Add explicit flag to indicate this is from a notification
+                        putExtra("fromNotification", true)
+                    }
 
-        return PendingIntent.getActivity(
-                context,
-                fixtureId.hashCode(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+            PendingIntent.getActivity(
+                    context,
+                    fixtureId.hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create pending intent for fixture $fixtureId")
+            createDefaultPendingIntent()
+        }
+    }
+
+    /** Creates a safe PendingIntent for match notifications with enhanced error handling */
+    private fun createSafePendingIntent(item: FavoriteItem): PendingIntent {
+        return try {
+            createPendingIntent(item)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create safe pending intent for fixture ${item.fixtureId}")
+            createDefaultPendingIntent()
+        }
+    }
+
+    /** Creates a default PendingIntent as a fallback when specific intents fail */
+    private fun createDefaultPendingIntent(): PendingIntent {
+        return try {
+            val intent =
+                    Intent(context, MainActivity::class.java).apply {
+                        action = "com.soccertips.predictx.ACTION_MAIN"
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                        putExtra("fromNotification", true)
+                    }
+
+            PendingIntent.getActivity(
+                    context,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create default pending intent")
+            // As a last resort, create a basic intent to the main activity
+            PendingIntent.getActivity(
+                    context,
+                    0,
+                    Intent(context, MainActivity::class.java),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+    }
+
+    /** Create a PendingIntent for betting success notification that opens results */
+    private fun createBettingSuccessIntent(categoryUrl: String, date: String): PendingIntent {
+        return try {
+            val intent =
+                    Intent(context, MainActivity::class.java).apply {
+                        action = "com.soccertips.predictx.ACTION_VIEW_BETTING_SUCCESS"
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                        putExtra("fromNotification", true)
+                        putExtra("betting_date", date)
+                        putExtra("category_url", categoryUrl)
+                        putExtra("show_results", true)
+                    }
+
+            PendingIntent.getActivity(
+                    context,
+                    ("betting_success_${categoryUrl}_$date").hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } catch (e: Exception) {
+            Timber.e(
+                    e,
+                    "Failed to create betting success intent for category: $categoryUrl, date: $date"
+            )
+            createDefaultPendingIntent()
+        }
+    }
+
+    /** Create a PendingIntent for sharing success */
+    private fun createShareIntent(shareText: String): PendingIntent {
+        return try {
+            val shareIntent =
+                    Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, shareText)
+                    }
+
+            val chooserIntent = Intent.createChooser(shareIntent, "Share Success")
+
+            PendingIntent.getActivity(
+                    context,
+                    shareText.hashCode(),
+                    chooserIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create share intent")
+            createDefaultPendingIntent()
+        }
     }
 
     private fun calculateTimeoutDuration(matchTime: String): Long {

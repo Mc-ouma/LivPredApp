@@ -1,9 +1,10 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    //alias(libs.plugins.kapt)
+    // alias(libs.plugins.kapt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.compose)
@@ -11,12 +12,12 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"*/
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.google.firebase.crashlytics)
-    id("jacoco")
 }
 
 // Load values from dot.env file
 val dotEnvFile = file("${project.rootDir}/dot.env")
 val dotEnvProps = Properties()
+
 if (dotEnvFile.exists()) {
     dotEnvFile.inputStream().reader().use {
         val content = it.readText()
@@ -31,10 +32,7 @@ if (dotEnvFile.exists()) {
 
 android {
     namespace = "com.soccertips.predictx"
-    compileSdk =
-        libs.versions.compileSdk
-            .get()
-            .toInt()
+    compileSdkVersion(libs.versions.compileSdk.get().toInt())
 
     buildFeatures {
         buildConfig = true
@@ -43,19 +41,10 @@ android {
 
     defaultConfig {
         applicationId = "com.soccertips.predictx"
-        minSdk =
-            libs.versions.minSdk
-                .get()
-                .toInt()
-        targetSdk =
-            libs.versions.targetSdk
-                .get()
-                .toInt()
-        versionCode = 10
-        versionName = "1.1.0"
-
-        testInstrumentationRunner =
-            "com.example.android.architecture.blueprints.todoapp.CustomTestRunner"
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
+        versionCode = 25
+        versionName = "2.0.5"
 
         buildConfigField("boolean", "DEBUG", "true")
 
@@ -63,55 +52,33 @@ android {
         buildConfigField("String", "DEFAULT_API_KEY", "\"${dotEnvProps["API_KEY"] ?: ""}\"")
         buildConfigField("String", "DEFAULT_API_HOST", "\"${dotEnvProps["API_HOST"] ?: ""}\"")
         buildConfigField("String", "API_BASE_URL", "\"${dotEnvProps["API_BASE_URL"] ?: ""}\"")
-        buildConfigField("String", "DAILY_BONUS_BASE_URL", "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\"")
-        buildConfigField("String", "API_BASE_URL_VALUE", "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\"")
+        buildConfigField(
+                "String",
+                "DAILY_BONUS_BASE_URL",
+                "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\""
+        )
+        buildConfigField(
+                "String",
+                "API_BASE_URL_VALUE",
+                "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\""
+        )
 
         javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += "room.incremental" to "true"
-            }
+            annotationProcessorOptions { arguments += "room.incremental" to "true" }
         }
     }
 
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
-            //enableUnitTestCoverage = true
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
-            testProguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
-                "proguardTest-rules.pro",
-            )
+            // enableUnitTestCoverage = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
 
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
-            testProguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
-                "proguardTest-rules.pro",
-            )
-        }
-    }
-
-    // Always show the result of every unit test, even if it passes.
-    testOptions.unitTests {
-        isIncludeAndroidResources = true
-
-        all { test ->
-            with(test) {
-                testLogging {
-                    events =
-                        setOf(
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT,
-                            org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR,
-                        )
-                }
-            }
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
@@ -120,22 +87,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.15" }
 
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
-
-    kotlinOptions {
-        jvmTarget = "11"
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
-        freeCompilerArgs += "-opt-in=kotlin.Experimental"
-    }
-    packaging {
-        resources {
-            excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1")
-        }
-    }
+    packaging { resources { excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1") } }
     buildToolsVersion = "36.0.0"
 
     /*composeOptions {
@@ -154,31 +108,25 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+        freeCompilerArgs.addAll("-opt-in=kotlin.RequiresOptIn", "-opt-in=kotlin.Experimental")
+    }
+}
+
 /*
- Dependency versions are defined in the top level build.gradle file. This helps keeping track of
- all versions in a single place. This improves readability and helps managing project complexity.
- */
+Dependency versions are defined in the top level build.gradle file. This helps keeping track of
+all versions in a single place. This improves readability and helps managing project complexity.
+*/
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
 
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.database)
     implementation(libs.firebase.analytics)
-    // Unit testing dependencies
-    testImplementation(libs.junit)
-    testImplementation(libs.mockito.inline)
-    testImplementation(libs.androidx.core.testing)
-    testImplementation(libs.mockito.kotlin)
-    testImplementation(libs.turbine)
-
-    // AndroidX Test - JVM testing
-    testImplementation(libs.androidx.core)
-    testImplementation(libs.androidx.junit)
-    testImplementation(libs.androidx.runner)
-    testImplementation(libs.androidx.rules)
-
-    // AndroidX Test - Instrumented testing
-    androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.firebase.messaging)
+    implementation(libs.androidx.foundation.layout)
 
     implementation(libs.androidx.annotation)
     implementation(libs.timber)
@@ -186,13 +134,11 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.kotlinx.coroutines.guava)
 
-
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.androidx.lifecycle.runtimeCompose)
-    implementation(libs.androidx.lifecycle.viewModelCompose)
 
     implementation(libs.hilt.android.core)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -224,7 +170,6 @@ dependencies {
 
     debugImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.tooling.core)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
@@ -236,8 +181,6 @@ dependencies {
 
     implementation(libs.coil.kt.coil.compose.v240)
     implementation(libs.androidx.compiler)
-
-    implementation(libs.compose)
 
     implementation(libs.sheets.m3)
 
@@ -251,70 +194,25 @@ dependencies {
     implementation(libs.review)
     implementation(libs.review.ktx)
 
-    //shared elements
+    // shared elements
     implementation(libs.accompanist.navigation.material)
 
-    // WorkManager
-    //implementation(libs.work.runtime)
 
-    testImplementation(libs.androidx.work.testing)
-    testImplementation(libs.kotlinx.coroutines.test)
-
-    //Splash Screen
+    // Splash Screen
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.dotenv.kotlin)
 
-    //paging
+    // paging
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
 
     // Firebase remote config
     implementation(libs.firebase.config)
 
-    //Admob
+    // Admob
     implementation(libs.play.services.ads)
+    implementation(libs.facebook)
 
-    //User Messaging Platform (UMP) for consent management
+    // User Messaging Platform (UMP) for consent management
     implementation(libs.user.messaging.platform)
-
-
-}
-tasks.withType<Test> {
-    configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf("jdk.internal.*")
-    }
-}
-
-tasks.register<JacocoReport>("jacocoTestReport") {
-    dependsOn("testDebugUnitTest")
-
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-
-    val fileFilter = listOf(
-        "**/R.class",
-        "**/R$*.class",
-        "**/BuildConfig.*",
-        "**/Manifest*.*",
-        "**/*Test*.*",
-        "android/**/*.*"
-    )
-
-    val debugTree = fileTree("${layout.buildDirectory}/tmp/kotlin-classes/debug") {
-        exclude(fileFilter)
-    }
-
-    sourceDirectories.setFrom(
-        files(
-            "${project.projectDir}/src/main/java",
-            "${project.projectDir}/src/main/kotlin"
-        )
-    )
-    classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(layout.buildDirectory) {
-        include("jacoco/testDebugUnitTest.exec")
-    })
 }

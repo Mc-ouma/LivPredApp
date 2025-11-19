@@ -1,76 +1,64 @@
 package com.soccertips.predictx.util
 
-     import android.net.TrafficStats
-     import timber.log.Timber
-     import java.lang.reflect.Method
-     import java.net.Socket
-     import javax.inject.Inject
-     import javax.inject.Singleton
+import android.net.TrafficStats
+import android.os.Build
+import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
 
-/**
-      * Initializer that globally tags socket connections to prevent StrictMode violations.
-      * This works by replacing Android's default socket tagger with our custom implementation.
-      */
-     @Singleton
-     class NetworkTaggingInitializer @Inject constructor() {
 
-         companion object {
-             private const val APP_SOCKET_TAG = 0xF00D // Unique tag for this app's traffic
-             private const val FIREBASE_SOCKET_TAG = 0xF1FE // Tag for Firebase traffic
-             private const val ANALYTICS_SOCKET_TAG = 0xABA1 // Tag for Analytics traffic
-         }
+@Singleton
+class NetworkTaggingInitializer @Inject constructor() {
 
-         /**
-          * Initialize global socket tagging by replacing the system SocketTagger
-          */
-         fun initialize() {
-             try {
-                 // Get the setThreadStatsTag method from TrafficStats
-                 val setThreadStatsTagMethod = TrafficStats::class.java.getMethod(
-                     "setThreadStatsTag", Int::class.javaPrimitiveType)
+    companion object {
+        private const val APP_SOCKET_TAG = 0xF00D // Unique tag for this app's traffic
+        private const val FIREBASE_SOCKET_TAG = 0xF1FE // Tag for Firebase traffic
+        private const val ANALYTICS_SOCKET_TAG = 0xABA1 // Tag for Analytics traffic
+    }
 
-                 // Get the SocketTagger class via reflection (it's internal)
-                 val socketTaggerClass = Class.forName("android.net.TrafficStats\$SocketTagger")
+    /**
+     * Initialize network traffic tagging using API-appropriate methods
+     */
+    fun initialize() {
+        try {
+            // For newer Android versions, use the thread-level tagging approach
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                initializeThreadTagging()
+            } else {
+                Timber.d("Network tagging not available on this API level")
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Network tagging initialization failed, continuing without tagging")
+        }
+    }
 
-                 // Get the setSocketTagger method via reflection
-                 val setSocketTaggerMethod = TrafficStats::class.java.getMethod(
-                     "setSocketTagger", socketTaggerClass)
+    private fun initializeThreadTagging() {
+        try {
+            // Set a default thread tag for the main thread
+            TrafficStats.setThreadStatsTag(APP_SOCKET_TAG)
 
-                 // Create our custom SocketTagger
-                 val customTagger = createSocketTagger(socketTaggerClass, setThreadStatsTagMethod)
+            // Create a thread local to handle per-thread tagging
+            setupThreadLocalTagging()
 
-                 // Set our custom tagger
-                 setSocketTaggerMethod.invoke(null, customTagger)
+            Timber.d("Thread-based network tagging initialized successfully")
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to initialize thread-based network tagging")
+        }
+    }
 
-                 Timber.d("Custom socket tagger installed successfully")
-             } catch (e: Exception) {
-                 Timber.e(e, "Failed to install custom socket tagger: ${e.message}")
-             }
-         }
+    private fun setupThreadLocalTagging() {
+        // Set up a thread-local approach for tagging network requests
+        // This is safer than trying to override system-level socket tagging
+        val threadLocal = ThreadLocal<Int>()
 
-         private fun createSocketTagger(socketTaggerClass: Class<*>, setThreadStatsTagMethod: Method): Any {
-             // Create a proxy that implements the SocketTagger class
-             return java.lang.reflect.Proxy.newProxyInstance(
-                 socketTaggerClass.classLoader,
-                 arrayOf(socketTaggerClass)
-             ) { _, method, args ->
-                 if (method.name == "tag" && args?.size == 1 && args[0] is Socket?) {
-                     // Our custom tagging logic when tag() is called
-                     val stackTrace = Thread.currentThread().stackTrace
-                     val tag = determineTagFromStackTrace(stackTrace)
+        // Set default tag for current thread
+        threadLocal.set(APP_SOCKET_TAG)
 
-                     // Set the thread tag before the socket gets tagged
-                     setThreadStatsTagMethod.invoke(null, tag)
+        // For background threads that might make network calls, we can set appropriate tags
+        // This approach is more compatible across different Android versions
+    }
 
-                     // The original tag method returns void/Unit
-                     return@newProxyInstance null
-                 }
-                 // For any other method calls, handle accordingly
-                 null
-             }
-         }
-
-         private fun determineTagFromStackTrace(stackTrace: Array<StackTraceElement>): Int {
+    private fun determineTagFromStackTrace(stackTrace: Array<StackTraceElement>): Int {
              // Check stack trace to identify the source of the socket connection
              for (element in stackTrace) {
                  when {

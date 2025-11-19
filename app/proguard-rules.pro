@@ -24,3 +24,34 @@
 # to prevent ProGuard from renaming the classes.
 #keep models classes
 -keep class com.soccertips.predictx.data.**{*;}
+
+# Performance optimizations
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 5
+-allowaccessmodification
+-dontpreverify
+
+# Keep essential classes for faster startup
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Activity
+-keep public class * extends androidx.fragment.app.Fragment
+
+# Hilt optimizations
+-keep class dagger.hilt.** { *; }
+-keep class javax.inject.** { *; }
+-keep class * extends dagger.hilt.android.lifecycle.HiltViewModel
+
+# Firebase optimizations
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+
+# AdMob optimizations
+-keep class com.google.android.gms.ads.** { *; }
+-keep public class com.google.android.gms.ads.AdActivity
+-dontwarn com.google.android.gms.ads.**
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.internal.** { *; }
+
+# User Messaging Platform (UMP)
+-keep class com.google.android.ump.** { *; }
+-dontwarn com.google.android.ump.**

@@ -100,6 +100,7 @@ fun ItemsListScreen(
         categoryId: String,
         categories: List<Category>,
         viewModel: ItemsListViewModel = hiltViewModel(),
+        adStrategy: String = "rewarded", // Default to rewarded strategy
 ) {
     // Access the interstitial ad manager via LocalContext and get the application context
     val context = LocalContext.current
@@ -172,39 +173,51 @@ fun ItemsListScreen(
 
     // Function to handle back navigation with an interstitial ad
     val navigateBackWithAd: () -> Unit = {
-        val isAdCurrentlyLoading = interstitialAdManager.isCurrentlyLoading()
-        Timber.tag("InterstitialAd")
-                .d("Back navigation: isAdReady = $isAdReady, isAdLoading = $isAdCurrentlyLoading")
-        if (isAdReady && !isAdCurrentlyLoading) {
-            try {
-                val activity = navController.context as? Activity
-                activity?.let {
-                    Timber.tag("InterstitialAd").d("Showing interstitial ad for back navigation")
-                    interstitialAdManager.showInterstitialAdWithCallback(
-                            it,
-                            onAdDismissed = {
-                                // Navigate back after ad is dismissed
-                                Timber.tag("InterstitialAd").d("Ad dismissed, navigating back")
-                                navController.popBackStack()
-                            }
+        // Only show interstitial ad if strategy is "interstitial"
+        if (adStrategy == "interstitial") {
+            val isAdCurrentlyLoading = interstitialAdManager.isCurrentlyLoading()
+            Timber.tag("InterstitialAd")
+                    .d(
+                            "Back navigation: isAdReady = $isAdReady, isAdLoading = $isAdCurrentlyLoading, strategy = $adStrategy"
                     )
+            if (isAdReady && !isAdCurrentlyLoading) {
+                try {
+                    val activity = navController.context as? Activity
+                    activity?.let {
+                        Timber.tag("InterstitialAd")
+                                .d("Showing interstitial ad for back navigation")
+                        interstitialAdManager.showInterstitialAdWithCallback(
+                                it,
+                                onAdDismissed = {
+                                    // Navigate back after ad is dismissed
+                                    Timber.tag("InterstitialAd").d("Ad dismissed, navigating back")
+                                    navController.popBackStack()
+                                }
+                        )
+                    }
+                            ?: run {
+                                Timber.tag("InterstitialAd")
+                                        .w("Activity is null, fallback navigation")
+                                navController.popBackStack() // Fallback if activity is null
+                            }
+                } catch (e: Exception) {
+                    Timber.tag("InterstitialAd").e("Error showing ad: ${e.message}")
+                    e.printStackTrace()
+                    navController.popBackStack() // Fallback on error
                 }
-                        ?: run {
-                            Timber.tag("InterstitialAd").w("Activity is null, fallback navigation")
-                            navController.popBackStack() // Fallback if activity is null
-                        }
-            } catch (e: Exception) {
-                Timber.tag("InterstitialAd").e("Error showing ad: ${e.message}")
-                e.printStackTrace()
-                navController.popBackStack() // Fallback on error
+            } else {
+                // If no ad is ready, just navigate back
+                if (isAdCurrentlyLoading) {
+                    Timber.tag("InterstitialAd")
+                            .d("Ad is loading, direct navigation without waiting")
+                } else {
+                    Timber.tag("InterstitialAd").d("No ad ready, direct navigation")
+                }
+                navController.popBackStack()
             }
         } else {
-            // If no ad is ready, just navigate back
-            if (isAdCurrentlyLoading) {
-                Timber.tag("InterstitialAd").d("Ad is loading, direct navigation without waiting")
-            } else {
-                Timber.tag("InterstitialAd").d("No ad ready, direct navigation")
-            }
+            // Strategy is "rewarded" - skip interstitial ad, navigate directly
+            Timber.tag("InterstitialAd").d("Ad strategy is $adStrategy, skipping interstitial ad")
             navController.popBackStack()
         }
     }

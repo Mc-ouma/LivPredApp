@@ -54,6 +54,7 @@ fun AppNavigation(
     val navController = rememberNavController()
     val categoriesViewModel: CategoriesViewModel = hiltViewModel()
     val uiState by categoriesViewModel.uiState.collectAsState()
+    val adStrategy by categoriesViewModel.adStrategy.collectAsState() // Get ad strategy
     val sharedViewModel: SharedViewModel = hiltViewModel()
     val context = LocalContext.current
 
@@ -156,6 +157,7 @@ fun AppNavigation(
                         navController = navController,
                         categoryId = decodeUrl,
                         categories = categories,
+                        adStrategy = adStrategy, // Pass ad strategy
                 )
             }
         }

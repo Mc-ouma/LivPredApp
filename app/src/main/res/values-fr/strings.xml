@@ -304,5 +304,22 @@
     <string name="watch_ad_to_unlock">Regarder une Publicité pour Déverrouiller</string>
     <string name="watch_ad_unlock_24h">Regardez une courte publicité pour déverrouiller la catégorie %1$s pendant 24 heures</string>
     <string name="watch_ad">Regarder la Pub</string>
+    
+    <!-- Unlock Pass System -->
+    <string name="unlock_passes">Passes de Déverrouillage</string>
+    <string name="passes_balance">%1$d/%2$d</string>
+    <string name="unlock_category_title">Déverrouiller la Catégorie</string>
+    <string name="unlock_category_message">Utiliser 1 passe pour déverrouiller %1$s pendant 24 heures?\n\nVos passes: %2$d/%3$d</string>
+    <string name="use_pass">Utiliser le Pass</string>
+    <string name="earn_more_passes">Gagner Plus</string>
+    <string name="no_passes_title">Aucun Pass Disponible</string>
+    <string name="no_passes_message">Vous avez %1$d/%2$d passes.\n\nRegardez une courte publicité pour gagner 1 passe de déverrouillage!</string>
+    <string name="watch_ad_to_earn">Regarder une Pub pour Gagner un Passe</string>
+    <string name="pass_earned_title">Passe Gagné!</string>
+    <string name="pass_earned_message">Vous avez maintenant %1$d/%2$d passes de déverrouillage</string>
+    <string name="use_now">Utiliser Maintenant</string>
+    <string name="save_for_later">Garder pour Plus Tard</string>
+    <string name="max_passes_title">Maximum de Passes Atteint!</string>
+    <string name="max_passes_message">Vous avez déjà %1$d/%2$d passes.\n\nUtilisez vos passes pour déverrouiller des catégories!</string>
 
 </resources>

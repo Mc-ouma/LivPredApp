@@ -43,8 +43,8 @@ android {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 24
-        versionName = "2.0.4"
+        versionCode = 25
+        versionName = "2.0.5"
 
         buildConfigField("boolean", "DEBUG", "true")
 

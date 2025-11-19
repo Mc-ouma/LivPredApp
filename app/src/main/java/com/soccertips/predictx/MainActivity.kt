@@ -29,6 +29,7 @@ import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.messaging.FirebaseMessaging
 import com.soccertips.predictx.admob.AdStateManager
 import com.soccertips.predictx.admob.AppOpenAdManager
 import com.soccertips.predictx.admob.InterstitialAdManager
@@ -129,6 +130,9 @@ class MainActivity : ComponentActivity() {
 
         // Add lifecycle observation for custom update manager
         lifecycle.addObserver(customAppUpdateManager)
+
+        // Get FCM token for testing
+        getFCMToken()
 
         // Start initialization process
         splashViewModel.initialize()
@@ -449,6 +453,31 @@ class MainActivity : ComponentActivity() {
                 Timber.d("Update flow result: $resultCode")
                 logAnalyticsEventWithResultCode("update_flow_unknown_result", resultCode)
             }
+        }
+    }
+
+    /**
+     * Get FCM token for testing Remote Config and Firebase features The token will be logged to
+     * Logcat with tag "FCM_TOKEN"
+     */
+    private fun getFCMToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Timber.tag("FCM_TOKEN").w(task.exception, "Failed to get FCM token")
+                return@addOnCompleteListener
+            }
+
+            // Get the FCM token
+            val token = task.result
+
+            // Log token with special tag for easy filtering
+            Timber.tag("FCM_TOKEN").d("═══════════════════════════════════════════════════════")
+            Timber.tag("FCM_TOKEN").d("FCM Token: $token")
+            Timber.tag("FCM_TOKEN").d("═══════════════════════════════════════════════════════")
+
+            // Also show as Toast for easy visibility
+            Toast.makeText(this, "FCM Token copied to Logcat (tag: FCM_TOKEN)", Toast.LENGTH_LONG)
+                    .show()
         }
     }
 }

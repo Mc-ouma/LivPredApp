@@ -356,4 +356,21 @@
     <string name="watch_ad_to_unlock">Watch Ad to Unlock</string>
     <string name="watch_ad_unlock_24h">Watch a short ad to unlock %1$s category for 24 hours</string>
     <string name="watch_ad">Watch Ad</string>
+    
+    <!-- Unlock Pass System -->
+    <string name="unlock_passes">Unlock Passes</string>
+    <string name="passes_balance">%1$d/%2$d</string>
+    <string name="unlock_category_title">Unlock Category</string>
+    <string name="unlock_category_message">Use 1 pass to unlock %1$s for 24 hours?\n\nYour passes: %2$d/%3$d</string>
+    <string name="use_pass">Use Pass</string>
+    <string name="earn_more_passes">Earn More</string>
+    <string name="no_passes_title">No Passes Available</string>
+    <string name="no_passes_message">You have %1$d/%2$d passes.\n\nWatch a short ad to earn 1 unlock pass!</string>
+    <string name="watch_ad_to_earn">Watch Ad to Earn Pass</string>
+    <string name="pass_earned_title">Pass Earned!</string>
+    <string name="pass_earned_message">You now have %1$d/%2$d unlock passes</string>
+    <string name="use_now">Use Now</string>
+    <string name="save_for_later">Save for Later</string>
+    <string name="max_passes_title">Maximum Passes Reached!</string>
+    <string name="max_passes_message">You already have %1$d/%2$d passes.\n\nUse your passes to unlock categories!</string>
 </resources>

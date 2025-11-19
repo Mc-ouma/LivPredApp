@@ -323,5 +323,22 @@
     <string name="watch_ad_to_unlock">Ver Anuncio para Desbloquear</string>
     <string name="watch_ad_unlock_24h">Mira un anuncio corto para desbloquear la categoría %1$s durante 24 horas</string>
     <string name="watch_ad">Ver Anuncio</string>
+    
+    <!-- Unlock Pass System -->
+    <string name="unlock_passes">Pases de Desbloqueo</string>
+    <string name="passes_balance">%1$d/%2$d</string>
+    <string name="unlock_category_title">Desbloquear Categoría</string>
+    <string name="unlock_category_message">¿Usar 1 pase para desbloquear %1$s durante 24 horas?\n\nTus pases: %2$d/%3$d</string>
+    <string name="use_pass">Usar Pase</string>
+    <string name="earn_more_passes">Ganar Más</string>
+    <string name="no_passes_title">Sin Pases Disponibles</string>
+    <string name="no_passes_message">Tienes %1$d/%2$d pases.\n\n¡Mira un anuncio corto para ganar 1 pase de desbloqueo!</string>
+    <string name="watch_ad_to_earn">Ver Anuncio para Ganar Pase</string>
+    <string name="pass_earned_title">¡Pase Ganado!</string>
+    <string name="pass_earned_message">Ahora tienes %1$d/%2$d pases de desbloqueo</string>
+    <string name="use_now">Usar Ahora</string>
+    <string name="save_for_later">Guardar para Después</string>
+    <string name="max_passes_title">¡Máximo de Pases Alcanzado!</string>
+    <string name="max_passes_message">Ya tienes %1$d/%2$d pases.\n\n¡Usa tus pases para desbloquear categorías!</string>
 
 </resources>

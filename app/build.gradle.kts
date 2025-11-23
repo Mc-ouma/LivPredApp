@@ -213,6 +213,10 @@ dependencies {
     implementation(libs.play.services.ads)
     implementation(libs.facebook)
 
+    // Facebook SDK annotation dependencies (compile-only to avoid R8 errors)
+    compileOnly(libs.infer.annotation)
+    compileOnly(libs.javax.annotation.api)
+
     // User Messaging Platform (UMP) for consent management
     implementation(libs.user.messaging.platform)
 }

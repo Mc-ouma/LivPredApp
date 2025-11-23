@@ -27,6 +27,8 @@ gson = "2.13.2"
 hilt = "2.57.2"
 hiltCompiler = "1.3.0"
 hiltWork = "1.3.0"
+inferAnnotation = "0.18.0"
+javaxAnnotationApi = "1.3.2"
 kotlin = "2.2.10"
 kotlinStdlib = "2.2.20"
 kotlinxCoroutinesCore = "1.10.2"
@@ -102,6 +104,8 @@ gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hilt-android-core = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 
+infer-annotation = { module = "com.facebook.infer.annotation:infer-annotation", version.ref = "inferAnnotation" }
+javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javaxAnnotationApi" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlinStdlib" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinxCoroutinesGuava" }

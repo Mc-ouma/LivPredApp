@@ -55,3 +55,22 @@
 # User Messaging Platform (UMP)
 -keep class com.google.android.ump.** { *; }
 -dontwarn com.google.android.ump.**
+
+# Facebook Audience Network
+-dontwarn com.facebook.infer.annotation.**
+-dontwarn com.facebook.ads.**
+-dontwarn com.facebook.**
+-keep class com.facebook.ads.** { *; }
+-keep interface com.facebook.ads.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.facebook.** { *; }
+
+# Ignore warnings about missing Facebook annotations
+-dontwarn javax.annotation.**
+-dontwarn org.checkerframework.**
+
+# Additional rules to prevent R8 errors
+-dontwarn com.facebook.infer.**
+-dontwarn com.google.errorprone.annotations.**
+

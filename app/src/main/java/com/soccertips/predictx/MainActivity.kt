@@ -431,31 +431,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Deprecated("Using onActivityResult is deprecated in favor of ActivityResultContracts")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        // Custom update manager (handle flexible update downloads with new approach)
-        when (resultCode) {
-            RESULT_OK -> {
-                Timber.d("Update flow completed successfully")
-                logAnalyticsEvent("update_flow_completed")
-            }
-            RESULT_CANCELED -> {
-                Timber.d("Update flow cancelled by user")
-                logAnalyticsEvent("update_flow_cancelled")
-            }
-            ActivityResult.RESULT_IN_APP_UPDATE_FAILED -> {
-                Timber.e("Update flow failed")
-                logAnalyticsEvent("update_flow_failed")
-            }
-            else -> {
-                Timber.d("Update flow result: $resultCode")
-                logAnalyticsEventWithResultCode("update_flow_unknown_result", resultCode)
-            }
-        }
-    }
-
     /**
      * Get FCM token for testing Remote Config and Firebase features The token will be logged to
      * Logcat with tag "FCM_TOKEN"

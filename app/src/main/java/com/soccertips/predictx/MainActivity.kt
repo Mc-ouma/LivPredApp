@@ -54,9 +54,9 @@ import timber.log.Timber
  */
 @Composable
 private fun AdInitializedContent(
-        interstitialAdManager: InterstitialAdManager,
-        rewardedAdManager: RewardedAdManager,
-        content: @Composable () -> Unit
+    interstitialAdManager: InterstitialAdManager,
+    rewardedAdManager: RewardedAdManager,
+    content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
     val activity = LocalContext.current as? ComponentActivity
@@ -74,10 +74,12 @@ private fun AdInitializedContent(
             rewardedAdManager.setActivityContext(it)
             rewardedAdManager.useActivityContextForAdLoading(true)
 
-            // Load initial ads once after app startup (not on every screen open)
+            // PRELOAD BOTH ad types immediately for faster availability
+            // This significantly reduces latency when ads are needed
             interstitialAdManager.loadAdIfNeeded()
+            rewardedAdManager.loadAdIfNeeded()
 
-            Timber.d("Ad managers initialized after UI rendering completed")
+            Timber.d("Ad managers initialized - preloading interstitial and rewarded ads")
         }
     }
 
@@ -92,16 +94,22 @@ class MainActivity : ComponentActivity() {
     private val splashViewModel: SplashViewModel by viewModels()
 
     // Admob
-    @Inject lateinit var appOpenAdManager: AppOpenAdManager
+    @Inject
+    lateinit var appOpenAdManager: AppOpenAdManager
 
-    @Inject lateinit var startupTimeTracker: StartupTimeTracker
+    @Inject
+    lateinit var startupTimeTracker: StartupTimeTracker
 
-    @Inject lateinit var adStateManager: AdStateManager
-    @Inject lateinit var interstitialAdManager: InterstitialAdManager
-    @Inject lateinit var rewardedAdManager: RewardedAdManager
+    @Inject
+    lateinit var adStateManager: AdStateManager
+    @Inject
+    lateinit var interstitialAdManager: InterstitialAdManager
+    @Inject
+    lateinit var rewardedAdManager: RewardedAdManager
 
     // Custom Update Manager
-    @Inject lateinit var customAppUpdateManager: CustomAppUpdateManager
+    @Inject
+    lateinit var customAppUpdateManager: CustomAppUpdateManager
 
     // Lazy initialize for review functionality
     private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(this) }
@@ -145,16 +153,16 @@ class MainActivity : ComponentActivity() {
             if (isReady) {
                 // Initialize ad managers after UI is ready
                 AdInitializedContent(
-                        interstitialAdManager = interstitialAdManager,
-                        rewardedAdManager = rewardedAdManager,
+                    interstitialAdManager = interstitialAdManager,
+                    rewardedAdManager = rewardedAdManager,
                 ) {
                     PredictXTheme {
                         Surface(
-                                modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.surface
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.surface
                         ) {
                             AppNavigation(
-                                    fixtureId = fixtureId.value,
+                                fixtureId = fixtureId.value,
                             )
                         }
 
@@ -232,9 +240,9 @@ class MainActivity : ComponentActivity() {
                 launchReviewFlow(reviewInfo)
             } else {
                 reviewManager
-                        .requestReviewFlow()
-                        .addOnSuccessListener { launchReviewFlow(it) }
-                        .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
+                    .requestReviewFlow()
+                    .addOnSuccessListener { launchReviewFlow(it) }
+                    .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
             }
         }
     }
@@ -280,25 +288,25 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun showExactAlarmPermissionDialog() {
         AlertDialog.Builder(this)
-                .setTitle("Exact Alarm Permission Required")
-                .setMessage(
-                        "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
-                )
-                .setPositiveButton("Go to Settings") { _, _ ->
-                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    try {
-                        startActivity(intent)
-                    } catch (e: android.content.ActivityNotFoundException) {
-                        android.util.Log.e(
-                                "MainActivity",
-                                "No activity found to handle intent: $intent",
-                                e
-                        )
-                        Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show()
-                    }
+            .setTitle("Exact Alarm Permission Required")
+            .setMessage(
+                "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
+            )
+            .setPositiveButton("Go to Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                try {
+                    startActivity(intent)
+                } catch (e: android.content.ActivityNotFoundException) {
+                    android.util.Log.e(
+                        "MainActivity",
+                        "No activity found to handle intent: $intent",
+                        e
+                    )
+                    Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -311,7 +319,12 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNotificationIntent(intent: Intent) {
         Timber.d(
-                "handleNotificationIntent called with action: ${intent.action}, fromNotification: ${intent.getBooleanExtra("fromNotification", false)}"
+            "handleNotificationIntent called with action: ${intent.action}, fromNotification: ${
+                intent.getBooleanExtra(
+                    "fromNotification",
+                    false
+                )
+            }"
         )
 
         if (!intent.getBooleanExtra("fromNotification", false)) return
@@ -326,10 +339,12 @@ class MainActivity : ComponentActivity() {
                     Timber.d("Handling betting success intent")
                     handleBettingSuccessIntent(intent)
                 }
+
                 action == "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" -> {
                     Timber.d("Handling betting history intent")
                     handleBettingHistoryIntent(intent)
                 }
+
                 action == "com.soccertips.predictx.ACTION_VIEW_MATCH" -> {
                     Timber.d("Handling match intent")
                     handleMatchIntent(intent)
@@ -388,7 +403,7 @@ class MainActivity : ComponentActivity() {
 
     private fun shareSuccess(matchCount: String, successRate: String, date: String) {
         val shareText =
-                """
+            """
                 🎉 Perfect Betting Day! 🎉
     
                 📅 Date: $date
@@ -399,32 +414,32 @@ class MainActivity : ComponentActivity() {
             """.trimIndent()
 
         startActivity(
-                Intent.createChooser(
-                        Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, shareText)
-                        },
-                        "Share Betting Success"
-                )
+            Intent.createChooser(
+                Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                },
+                "Share Betting Success"
+            )
         )
     }
 
     private fun logBettingSuccessEvent(
-            date: String,
-            matchCount: String,
-            winCount: String,
-            successRate: String
+        date: String,
+        matchCount: String,
+        winCount: String,
+        successRate: String
     ) {
         try {
             analytics.logEvent(
-                    "betting_success_notification",
-                    Bundle().apply {
-                        putString("date", date)
-                        putLong("match_count", matchCount.toLongOrNull() ?: 0L)
-                        putLong("win_count", winCount.toLongOrNull() ?: 0L)
-                        putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
-                    }
+                "betting_success_notification",
+                Bundle().apply {
+                    putString("date", date)
+                    putLong("match_count", matchCount.toLongOrNull() ?: 0L)
+                    putLong("win_count", winCount.toLongOrNull() ?: 0L)
+                    putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
+                }
             )
         } catch (e: Exception) {
             Timber.e(e, "Failed to log betting success event")
@@ -449,10 +464,6 @@ class MainActivity : ComponentActivity() {
             Timber.tag("FCM_TOKEN").d("═══════════════════════════════════════════════════════")
             Timber.tag("FCM_TOKEN").d("FCM Token: $token")
             Timber.tag("FCM_TOKEN").d("═══════════════════════════════════════════════════════")
-
-            // Also show as Toast for easy visibility
-            Toast.makeText(this, "FCM Token copied to Logcat (tag: FCM_TOKEN)", Toast.LENGTH_LONG)
-                    .show()
         }
     }
 }

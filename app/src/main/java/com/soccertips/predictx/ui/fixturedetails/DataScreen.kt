@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.ResponseData
 import com.soccertips.predictx.ui.UiState
 import com.soccertips.predictx.viewmodel.FixtureDetailsViewModel
@@ -29,8 +28,7 @@ fun DataScreen(
     pages: Array<FixtureDetailsScreenPage>,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
     fixtureDetails: ResponseData,
-    navController: NavController,
-    rewardedAdManager: RewardedAdManager
+    navController: NavController
 ) {
 
     Column(
@@ -64,7 +62,6 @@ fun DataScreen(
             viewModel = viewModel,
             sharedViewModel = sharedViewModel,
             navController = navController,
-            rewardedAdManager = rewardedAdManager,
         )
     }
 }

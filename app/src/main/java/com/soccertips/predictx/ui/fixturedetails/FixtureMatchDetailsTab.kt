@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.data.model.ResponseData
 import com.soccertips.predictx.data.model.events.FixtureEvent
 import com.soccertips.predictx.data.model.headtohead.FixtureDetails
@@ -32,8 +31,7 @@ fun FixtureMatchDetailsTab(
     fixturePredictionsState: UiState<List<Response>>,
     fixtureDetails: ResponseData,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
-    navController: NavController,
-    rewardedAdManager: RewardedAdManager
+    navController: NavController
 ) {
     when {
         formState is UiState.Loading || fixturePredictionsState is UiState.Loading -> {
@@ -50,8 +48,7 @@ fun FixtureMatchDetailsTab(
                 fixtureDetails = fixtureDetails,
                 homeTeamId = fixtureDetails.teams.home.id.toString(),
                 awayTeamId = fixtureDetails.teams.away.id.toString(),
-                navController = navController,
-                rewardedAdManager = rewardedAdManager
+                navController = navController
             )
             Timber.tag("FixtureMatchDetailsTab")
                 .d("FixtureMatchDetailsTab: ${formState.data} ")
@@ -135,7 +132,12 @@ fun FixtureLineupsTab(lineupsState: UiState<List<TeamLineup>>) {
                     lineups = Pair(lineupsState.data[0], lineupsState.data[1])
                 )
             } else {
-                Text(text = "No data available", color = Color.Gray, modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
+                Text(
+                    text = "No data available",
+                    color = Color.Gray,
+                    modifier = Modifier.padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
             }
         }
 

@@ -17,7 +17,7 @@ import timber.log.Timber
 class UnlockPassManager @Inject constructor(private val sharedPreferences: SharedPreferences) {
     companion object {
         private const val PASS_BALANCE_KEY = "unlock_passes"
-        private const val MAX_PASSES = 5
+        private const val MAX_PASSES = 10
         private const val UNLOCK_DURATION_MS = 24 * 60 * 60 * 1000L // 24 hours
         private const val UNLOCK_PREFIX = "unlock_"
     }

@@ -45,6 +45,7 @@ okhttpVersion = "5.2.1"
 pagingRuntime = "3.3.6"
 pagingCompose = "3.3.6"
 playServicesAds = "24.7.0"
+profileInstaller = "1.4.1"
 retrofitVersion = "3.0.0"
 review = "2.0.2"
 reviewKtx = "2.0.2"
@@ -113,6 +114,7 @@ logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", ver
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttpVersion" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
+profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileInstaller" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofitVersion" }
 review = { module = "com.google.android.play:review", version.ref = "review" }
 review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "reviewKtx" }

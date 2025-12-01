@@ -37,6 +37,7 @@ import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
 import com.soccertips.predictx.update.CustomAppUpdateManager
 import com.soccertips.predictx.update.UpdateHandler
+import com.soccertips.predictx.util.DevicePerformanceManager
 import com.soccertips.predictx.util.StartupTimeTracker
 import com.soccertips.predictx.viewmodel.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -51,11 +52,14 @@ import timber.log.Timber
  * Composable that ensures ad managers are properly initialized with Activity context only after the
  * Compose UI has been fully rendered and is stable. This prevents "Window couldn't find content
  * container view" errors.
+ *
+ * On low-memory devices, ad preloading is deferred to reduce cold start time.
  */
 @Composable
 private fun AdInitializedContent(
     interstitialAdManager: InterstitialAdManager,
     rewardedAdManager: RewardedAdManager,
+    devicePerformanceManager: DevicePerformanceManager,
     content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
@@ -63,8 +67,15 @@ private fun AdInitializedContent(
 
     // Use LaunchedEffect to initialize ad managers after first composition
     LaunchedEffect(Unit) {
-        // Delay to ensure the Compose UI has fully rendered its first frame
-        delay(100)
+        // Device-aware delay - longer on low-memory devices to prioritize UI
+        val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
+        val initDelay = if (isLowMemory) {
+            devicePerformanceManager.getStartupConfig().deferAdInitializationMs
+        } else {
+            100L
+        }
+
+        delay(initDelay)
 
         // Initialize ad managers with Activity context
         activity?.let {
@@ -74,12 +85,21 @@ private fun AdInitializedContent(
             rewardedAdManager.setActivityContext(it)
             rewardedAdManager.useActivityContextForAdLoading(true)
 
-            // PRELOAD BOTH ad types immediately for faster availability
-            // This significantly reduces latency when ads are needed
-            interstitialAdManager.loadAdIfNeeded()
-            rewardedAdManager.loadAdIfNeeded()
-
-            Timber.d("Ad managers initialized - preloading interstitial and rewarded ads")
+            // On low-memory devices, skip aggressive preloading during startup
+            // Ads will be loaded when needed
+            if (!isLowMemory) {
+                // PRELOAD BOTH ad types immediately for faster availability
+                // This significantly reduces latency when ads are needed
+                interstitialAdManager.loadAdIfNeeded()
+                rewardedAdManager.loadAdIfNeeded()
+                Timber.d("Ad managers initialized - preloading interstitial and rewarded ads")
+            } else {
+                Timber.d("Ad managers initialized - skipping preload on low-memory device")
+                // Defer preloading on low-memory devices
+                delay(devicePerformanceManager.getStartupConfig().deferPreloadingMs)
+                interstitialAdManager.loadAdIfNeeded()
+                // Only preload rewarded ads if really needed (they're used less frequently)
+            }
         }
     }
 
@@ -102,10 +122,15 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var adStateManager: AdStateManager
+
     @Inject
     lateinit var interstitialAdManager: InterstitialAdManager
+
     @Inject
     lateinit var rewardedAdManager: RewardedAdManager
+
+    @Inject
+    lateinit var devicePerformanceManager: DevicePerformanceManager
 
     // Custom Update Manager
     @Inject
@@ -155,6 +180,7 @@ class MainActivity : ComponentActivity() {
                 AdInitializedContent(
                     interstitialAdManager = interstitialAdManager,
                     rewardedAdManager = rewardedAdManager,
+                    devicePerformanceManager = devicePerformanceManager,
                 ) {
                     PredictXTheme {
                         Surface(

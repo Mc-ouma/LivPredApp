@@ -1,6 +1,7 @@
 package com.soccertips.predictx.ui.categories
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -180,7 +181,6 @@ fun CategoriesContent(
     // State for dialogs
     var showUnlockDialog by remember { mutableStateOf(false) }
     var showEarnPassDialog by remember { mutableStateOf(false) }
-    var showPassEarnedDialog by remember { mutableStateOf(false) }
     var showMaxPassesDialog by remember { mutableStateOf(false) }
     var pendingCategory by remember { mutableStateOf<Category?>(null) }
     var isLoadingAd by remember { mutableStateOf(false) }
@@ -222,8 +222,18 @@ fun CategoriesContent(
                                     )
                             // Add pass to balance
                             if (viewModel.addPass()) {
-                                // Show success dialog
-                                showPassEarnedDialog = true
+                                Toast.makeText(
+                                        context,
+                                        context.getString(
+                                                R.string.pass_earned_message,
+                                                passBalance,
+                                                viewModel.getMaxPasses()
+                                        ),
+                                        Toast.LENGTH_SHORT
+                                ).show()
+                                if (pendingCategory != null) {
+                                    showUnlockDialog = true
+                                }
                             }
                         },
                         onFailure = {
@@ -336,8 +346,18 @@ fun CategoriesContent(
                                                             )
                                                     // Add pass to balance
                                                     if (viewModel.addPass()) {
-                                                        // Show success dialog
-                                                        showPassEarnedDialog = true
+                                                        Toast.makeText(
+                                                                context,
+                                                                context.getString(
+                                                                        R.string.pass_earned_message,
+                                                                        passBalance,
+                                                                        viewModel.getMaxPasses()
+                                                                ),
+                                                                Toast.LENGTH_SHORT
+                                                        ).show()
+                                                        if (pendingCategory != null) {
+                                                            showUnlockDialog = true
+                                                        }
                                                     }
                                                 },
                                                 onFailure = {
@@ -368,42 +388,6 @@ fun CategoriesContent(
                                 isLoadingAd = false
                             }
                     ) { Text(stringResource(R.string.cancel)) }
-                }
-        )
-    }
-
-    // Dialog for pass earned successfully
-    if (showPassEarnedDialog) {
-        AlertDialog(
-                onDismissRequest = { showPassEarnedDialog = false },
-                title = { Text(stringResource(R.string.pass_earned_title)) },
-                text = {
-                    Text(
-                            stringResource(
-                                    R.string.pass_earned_message,
-                                    passBalance,
-                                    viewModel.getMaxPasses()
-                            )
-                    )
-                },
-                confirmButton = {
-                    Button(
-                            onClick = {
-                                showPassEarnedDialog = false
-                                // Show unlock dialog if category is pending
-                                if (pendingCategory != null) {
-                                    showUnlockDialog = true
-                                }
-                            }
-                    ) { Text(stringResource(R.string.use_now)) }
-                },
-                dismissButton = {
-                    TextButton(
-                            onClick = {
-                                showPassEarnedDialog = false
-                                pendingCategory = null
-                            }
-                    ) { Text(stringResource(R.string.save_for_later)) }
                 }
         )
     }

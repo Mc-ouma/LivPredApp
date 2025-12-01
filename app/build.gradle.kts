@@ -202,6 +202,9 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.dotenv.kotlin)
 
+    // Baseline Profile for faster cold starts
+    implementation(libs.profileinstaller)
+
     // paging
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)

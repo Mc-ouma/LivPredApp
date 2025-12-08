@@ -46,7 +46,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predictx.Menu
 import com.soccertips.predictx.R
-import com.soccertips.predictx.admob.BannerAdView
+import com.soccertips.predictx.admob.CollapsibleBannerAdView
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
@@ -84,7 +84,7 @@ fun Context.findActivity(): Activity? {
 object Last5DaysSelectableDates : SelectableDates {
     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
         val fiveDaysAgo =
-                System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000) // 5 days in milliseconds
+            System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000) // 5 days in milliseconds
         return utcTimeMillis >= fiveDaysAgo && utcTimeMillis <= System.currentTimeMillis()
     }
 
@@ -96,32 +96,40 @@ object Last5DaysSelectableDates : SelectableDates {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemsListScreen(
-        navController: NavController,
-        categoryId: String,
-        categories: List<Category>,
-        viewModel: ItemsListViewModel = hiltViewModel(),
-        adStrategy: String = "rewarded", // Default to rewarded strategy
+    navController: NavController,
+    categoryId: String,
+    categories: List<Category>,
+    viewModel: ItemsListViewModel = hiltViewModel(),
+    adStrategy: String = "rewarded", // Default to rewarded strategy
 ) {
     // Access the interstitial ad manager via LocalContext and get the application context
     val context = LocalContext.current
     val interstitialAdManager = remember {
         EntryPointAccessors.fromApplication(
-                        context.applicationContext,
-                        AdManagerEntryPoint::class.java
-                )
-                .interstitialAdManager()
+            context.applicationContext,
+            AdManagerEntryPoint::class.java
+        )
+            .interstitialAdManager()
     }
 
     // Get the real-time ad readiness state
     val isAdReady by interstitialAdManager.isAdReady.collectAsState()
 
     // Ensure the activity context is set on the interstitial ad manager
-    LaunchedEffect(interstitialAdManager) {
+    // and preload ad if strategy is "interstitial"
+    LaunchedEffect(interstitialAdManager, adStrategy) {
         val activity = context.findActivity()
         if (activity != null) {
             interstitialAdManager.setActivityContext(activity)
             interstitialAdManager.useActivityContextForAdLoading(true)
-            // Don't load ad here - it should only load after dismissal, failure, or when stale
+
+            // Proactively load interstitial ad when strategy is "interstitial"
+            // This ensures the ad is ready when the user navigates back
+            if (adStrategy == "interstitial") {
+                Timber.tag("InterstitialAd").d("Strategy is interstitial - preloading ad for back navigation")
+                interstitialAdManager.loadAdIfNeeded()
+            }
+
             Timber.d("InterstitialAdManager activity context set in ItemsListScreen")
         } else {
             Timber.w("Could not find Activity context in ItemsListScreen")
@@ -133,7 +141,7 @@ fun ItemsListScreen(
         Timber.tag("InterstitialAd").d("ItemsListScreen: Ad ready state changed to $isAdReady")
     }
     val category =
-            remember(categoryId) { categories.find { it.url == categoryId } } ?: categories.first()
+        remember(categoryId) { categories.find { it.url == categoryId } } ?: categories.first()
 
     val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
@@ -146,25 +154,25 @@ fun ItemsListScreen(
     // Initialize selectedDate with pending navigation date if available, otherwise use today
     var selectedDate by rememberSaveable {
         mutableStateOf(
-                if (!pendingNavigationDate.isNullOrEmpty()) {
-                    try {
-                        val parsedDate = LocalDate.parse(pendingNavigationDate)
-                        Timber.d(
-                                "ItemsListScreen: Using pending navigation date: $pendingNavigationDate"
-                        )
-                        // Clear the pending navigation date after using it
-                        sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
-                        parsedDate
-                    } catch (e: Exception) {
-                        Timber.w(
-                                "ItemsListScreen: Failed to parse pending navigation date: $pendingNavigationDate"
-                        )
-                        LocalDate.now()
-                    }
-                } else {
-                    Timber.d("ItemsListScreen: No pending navigation date, using today")
+            if (!pendingNavigationDate.isNullOrEmpty()) {
+                try {
+                    val parsedDate = LocalDate.parse(pendingNavigationDate)
+                    Timber.d(
+                        "ItemsListScreen: Using pending navigation date: $pendingNavigationDate"
+                    )
+                    // Clear the pending navigation date after using it
+                    sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
+                    parsedDate
+                } catch (e: Exception) {
+                    Timber.w(
+                        "ItemsListScreen: Failed to parse pending navigation date: $pendingNavigationDate"
+                    )
                     LocalDate.now()
                 }
+            } else {
+                Timber.d("ItemsListScreen: No pending navigation date, using today")
+                LocalDate.now()
+            }
         )
     }
 
@@ -177,29 +185,29 @@ fun ItemsListScreen(
         if (adStrategy == "interstitial") {
             val isAdCurrentlyLoading = interstitialAdManager.isCurrentlyLoading()
             Timber.tag("InterstitialAd")
-                    .d(
-                            "Back navigation: isAdReady = $isAdReady, isAdLoading = $isAdCurrentlyLoading, strategy = $adStrategy"
-                    )
+                .d(
+                    "Back navigation: isAdReady = $isAdReady, isAdLoading = $isAdCurrentlyLoading, strategy = $adStrategy"
+                )
             if (isAdReady && !isAdCurrentlyLoading) {
                 try {
                     val activity = navController.context as? Activity
                     activity?.let {
                         Timber.tag("InterstitialAd")
-                                .d("Showing interstitial ad for back navigation")
+                            .d("Showing interstitial ad for back navigation")
                         interstitialAdManager.showInterstitialAdWithCallback(
-                                it,
-                                onAdDismissed = {
-                                    // Navigate back after ad is dismissed
-                                    Timber.tag("InterstitialAd").d("Ad dismissed, navigating back")
-                                    navController.popBackStack()
-                                }
+                            it,
+                            onAdDismissed = {
+                                // Navigate back after ad is dismissed
+                                Timber.tag("InterstitialAd").d("Ad dismissed, navigating back")
+                                navController.popBackStack()
+                            }
                         )
                     }
-                            ?: run {
-                                Timber.tag("InterstitialAd")
-                                        .w("Activity is null, fallback navigation")
-                                navController.popBackStack() // Fallback if activity is null
-                            }
+                        ?: run {
+                            Timber.tag("InterstitialAd")
+                                .w("Activity is null, fallback navigation")
+                            navController.popBackStack() // Fallback if activity is null
+                        }
                 } catch (e: Exception) {
                     Timber.tag("InterstitialAd").e("Error showing ad: ${e.message}")
                     e.printStackTrace()
@@ -209,7 +217,7 @@ fun ItemsListScreen(
                 // If no ad is ready, just navigate back
                 if (isAdCurrentlyLoading) {
                     Timber.tag("InterstitialAd")
-                            .d("Ad is loading, direct navigation without waiting")
+                        .d("Ad is loading, direct navigation without waiting")
                 } else {
                     Timber.tag("InterstitialAd").d("No ad ready, direct navigation")
                 }
@@ -231,70 +239,72 @@ fun ItemsListScreen(
     }
 
     Scaffold(
-            Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                    text = formattedDate,
-                            )
-                        },
-                        // show  interstitial ad when the back button is pressed
-                        navigationIcon = {
-                            IconButton(onClick = navigateBackWithAd) {
-                                Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
-                                        contentDescription = "Back"
-                                )
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Icon(
-                                        imageVector = Icons.Filled.Today,
-                                        contentDescription = "Select Date",
-                                        tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Menu()
-                        },
-                        scrollBehavior = scrollBehavior,
-                )
-            },
-            bottomBar = { BannerAdView() }
+        Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = formattedDate,
+                    )
+                },
+                // show  interstitial ad when the back button is pressed
+                navigationIcon = {
+                    IconButton(onClick = navigateBackWithAd) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Today,
+                            contentDescription = "Select Date",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Menu()
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        bottomBar = { CollapsibleBannerAdView() }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             when (val uiState = viewModel.uiState.collectAsState().value) {
                 is UiState.Loading -> {
                     LoadingIndicator(
-                            modifier = Modifier.align(Alignment.Center).padding(paddingValues)
+                        modifier = Modifier.align(Alignment.Center).padding(paddingValues)
                     )
                 }
+
                 is UiState.Error -> {
                     ErrorMessage(
-                            message =
-                                    stringResource(
-                                            R.string.failed_to_fetch_games_please_try_again_later
-                                    ),
-                            onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                            modifier = Modifier.align(Alignment.Center).padding(paddingValues),
+                        message =
+                            stringResource(
+                                R.string.failed_to_fetch_games_please_try_again_later
+                            ),
+                        onRetry = { viewModel.fetchItems(category.url, selectedDate) },
+                        modifier = Modifier.align(Alignment.Center).padding(paddingValues),
                     )
                 }
+
                 is UiState.Success -> {
                     val items = uiState.data
                     if (items.isEmpty()) {
                         ErrorMessage(
-                                message =
-                                        stringResource(
-                                                R.string.no_games_found_for_the_selected_date
-                                        ),
-                                onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                                modifier = Modifier.align(Alignment.Center).padding(paddingValues),
+                            message =
+                                stringResource(
+                                    R.string.no_games_found_for_the_selected_date
+                                ),
+                            onRetry = { viewModel.fetchItems(category.url, selectedDate) },
+                            modifier = Modifier.align(Alignment.Center).padding(paddingValues),
                         )
                     } else {
                         LazyColumn(
-                                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxSize().padding(paddingValues),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(items) { item ->
                                 // Check if the item is a favorite
@@ -302,22 +312,23 @@ fun ItemsListScreen(
                                 LaunchedEffect(item) { isFavorite = viewModel.isFavorite(item) }
 
                                 ItemCard(
-                                        item = item,
-                                        onClick = {
-                                            navController.navigate(
-                                                    Routes.FixtureDetails.createRoute(
-                                                            item.fixtureId ?: ""
-                                                    ),
-                                            )
-                                        },
-                                        onFavoriteClick = { viewModel.toggleFavorite(item) },
-                                        viewModel = viewModel
+                                    item = item,
+                                    onClick = {
+                                        navController.navigate(
+                                            Routes.FixtureDetails.createRoute(
+                                                item.fixtureId ?: ""
+                                            ),
+                                        )
+                                    },
+                                    onFavoriteClick = { viewModel.toggleFavorite(item) },
+                                    viewModel = viewModel
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
                 }
+
                 else -> {
                     /* No Action */
                 }
@@ -327,27 +338,27 @@ fun ItemsListScreen(
         // Date picker dialog
         if (showDatePicker) {
             DatePickerDialog(
-                    onDismissRequest = { showDatePicker = false },
-                    confirmButton = {
-                        TextButton(
-                                onClick = {
-                                    val selectedDateMillis = datePickerState.selectedDateMillis
-                                    if (selectedDateMillis != null) {
-                                        selectedDate =
-                                                LocalDate.ofEpochDay(
-                                                        selectedDateMillis / (24 * 60 * 60 * 1000)
-                                                )
-                                    }
-                                    showDatePicker = false
-                                }
-                        ) { Text(stringResource(R.string.ok)) }
-                    },
-                    content = { DatePicker(state = datePickerState) },
-                    dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) {
-                            Text(stringResource(R.string.cancel))
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val selectedDateMillis = datePickerState.selectedDateMillis
+                            if (selectedDateMillis != null) {
+                                selectedDate =
+                                    LocalDate.ofEpochDay(
+                                        selectedDateMillis / (24 * 60 * 60 * 1000)
+                                    )
+                            }
+                            showDatePicker = false
                         }
-                    },
+                    ) { Text(stringResource(R.string.ok)) }
+                },
+                content = { DatePicker(state = datePickerState) },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                },
             )
         }
     }

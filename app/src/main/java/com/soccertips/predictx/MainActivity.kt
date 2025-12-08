@@ -323,11 +323,7 @@ class MainActivity : ComponentActivity() {
                 try {
                     startActivity(intent)
                 } catch (e: android.content.ActivityNotFoundException) {
-                    android.util.Log.e(
-                        "MainActivity",
-                        "No activity found to handle intent: $intent",
-                        e
-                    )
+                    Timber.e(e, "No activity found to handle intent: $intent")
                     Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show()
                 }
             }

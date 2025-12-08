@@ -13,7 +13,7 @@ HSPLcom/soccertips/predictx/MainActivity;-><init>()V
 HSPLcom/soccertips/predictx/MainActivity;->onCreate(Landroid/os/Bundle;)V
 
 # Splash ViewModel - critical for splash screen
-HSPLcom/soccertips/predictx/viewmodel/SplashViewModel;-><init>(***)V
+HSPLcom/soccertips/predictx/viewmodel/SplashViewModel;-><init>()V
 HSPLcom/soccertips/predictx/viewmodel/SplashViewModel;->initialize()V
 
 # Device Performance Manager - used early in startup
@@ -31,39 +31,3 @@ HSPLcom/soccertips/predictx/util/StartupTimeTracker$Companion;->recordProcessSta
 # Network Tagging Initializer - early initialization
 HSPLcom/soccertips/predictx/util/NetworkTaggingInitializer;-><init>()V
 HSPLcom/soccertips/predictx/util/NetworkTaggingInitializer;->initialize()V
-
-# Hilt injection - critical for DI
-HSPLdagger/hilt/android/internal/managers/ActivityComponentManager;->**(***)***
-HSPLdagger/hilt/android/internal/managers/ViewComponentManager;->**(***)***
-
-# Compose critical paths
-HSPLandroidx/compose/runtime/CompositionKt;->**(***)***
-HSPLandroidx/compose/ui/platform/AndroidComposeView;->**(***)***
-HSPLandroidx/compose/material3/MaterialTheme_androidKt;->**(***)***
-HSPLandroidx/activity/compose/ComponentActivityKt;->**(***)***
-
-# Navigation
-HSPLandroidx/navigation/compose/NavHostKt;->**(***)***
-
-# Splash Screen
-HSPLandroidx/core/splashscreen/SplashScreen;->**(***)***
-HSPLandroidx/core/splashscreen/SplashScreen$Companion;->**(***)***
-
-# Coroutines - used heavily in startup
-HSPLkotlinx/coroutines/CoroutineScope;->**(***)***
-HSPLkotlinx/coroutines/Dispatchers;->**(***)***
-HSPLkotlinx/coroutines/BuildersKt;->**(***)***
-
-# SharedPreferences - used in startup checks
-HSPLandroid/content/Context;->getSharedPreferences(***)***
-HSPLandroid/app/SharedPreferencesImpl;->**(***)***
-
-# Firebase - deferred but still commonly used
-Lcom/google/firebase/FirebaseApp;->**(***)***
-
-# AdMob - may be initialized during startup
-Lcom/google/android/gms/ads/MobileAds;->**(***)***
-
-# WorkManager - used in background
-Landroidx/work/WorkManager;->**(***)***
-Landroidx/work/impl/WorkManagerImpl;->**(***)***

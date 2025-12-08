@@ -3,17 +3,24 @@ package com.soccertips.predictx.admob
 import android.app.Activity
 import android.content.Context
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -123,6 +130,80 @@ fun BannerAdView(
                 this.adUnitId = adUnitId
                 loadAd(AdRequest.Builder().build())
             }
+        }
+    )
+}
+
+/**
+ * Collapsible Banner Ad that starts expanded and can be collapsed by the user.
+ * The banner will automatically expand when the ad loads and collapse when closed.
+ *
+ * @param modifier Modifier for the composable
+ * @param adUnitId The AdMob ad unit ID for the collapsible banner
+ * @param collapsiblePosition Position of the collapsible banner - "bottom" or "top"
+ */
+@Composable
+fun CollapsibleBannerAdView(
+    modifier: Modifier = Modifier,
+    adUnitId: String = stringResource(R.string.banner_id),
+    collapsiblePosition: String = "bottom"
+) {
+    val context = LocalContext.current
+    var adView by remember { mutableStateOf<AdView?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            adView?.destroy()
+        }
+    }
+
+    AndroidView(
+        modifier = modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(
+                androidx.compose.foundation.layout.WindowInsets.navigationBars
+            ),
+        factory = { factoryContext ->
+            AdView(factoryContext).apply {
+                setAdSize(
+                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
+                )
+                this.adUnitId = adUnitId
+
+                // Set up ad listener to track load state
+                adListener = object : AdListener() {
+                    override fun onAdLoaded() {
+                        Timber.d("Collapsible banner ad loaded")
+                    }
+
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        Timber.e("Collapsible banner ad failed to load: ${error.message}")
+                    }
+
+                    override fun onAdClosed() {
+                        Timber.d("Collapsible banner ad closed by user")
+                    }
+
+                    override fun onAdOpened() {
+                        Timber.d("Collapsible banner ad opened/expanded")
+                    }
+                }
+
+                // Build ad request with collapsible banner extras
+                val extras = Bundle().apply {
+                    putString("collapsible", collapsiblePosition)
+                }
+
+                val adRequest = AdRequest.Builder()
+                    .addNetworkExtrasBundle(com.google.ads.mediation.admob.AdMobAdapter::class.java, extras)
+                    .build()
+
+                loadAd(adRequest)
+                adView = this
+            }
+        },
+        update = { view ->
+            adView = view
         }
     )
 }

@@ -20,7 +20,7 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
         private const val ANNOUNCEMENTS_KEY = "app_announcements"
         private const val CATEGORY_AD_STRATEGY_KEY = "category_ad_strategy"
         private const val FETCH_INTERVAL = 1800L // 30 minutes in seconds
-        
+
         // Ad strategy variants
         const val AD_STRATEGY_REWARDED = "rewarded"
         const val AD_STRATEGY_INTERSTITIAL = "interstitial"
@@ -61,7 +61,7 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
 
                 // Filter visible announcements and sort by priority
                 val visibleAnnouncements =
-                        announcements.filter { it.isVisible }.sortedByDescending { it.priority }
+                    announcements.filter { it.isVisible }.sortedByDescending { it.priority }
 
                 emit(visibleAnnouncements)
             } else {
@@ -72,7 +72,7 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
             emit(emptyList())
         }
     }
-    
+
     /**
      * Get the ad strategy for category unlocking
      * Returns either "rewarded" or "interstitial"

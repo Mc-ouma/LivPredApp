@@ -173,4 +173,15 @@
     <string name="daily_reminder_body">🔥 Sıcak tahminler hazır! Bugünün kazanan bahislerini kaçırma 🏆</string>
     <string name="afternoon_reminder_title">🎯 Maçlar Yakında Başlıyor!</string>
     <string name="afternoon_reminder_body">⏰ Ana yayın saati yaklaşıyor! Çok geç olmadan tahminlerini kontrol et 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Bildirimleri Etkinleştir</string>
+    <string name="notification_permission_message">🔔 Tahminler ve günlük hatırlatmalarla güncel kal!\n\nBildirimler sana yardımcı olur:\n• Günlük tahmin uyarıları al\n• Önemli maçları asla kaçırma\n• Kazanan ipuçlarını zamanında al</string>
+    <string name="notification_permission_enable">Etkinleştir</string>
+    <string name="notification_permission_not_now">Şimdi Değil</string>
+    <string name="notification_disabled_title">Bildirimler Devre Dışı</string>
+    <string name="notification_disabled_message">🔕 Bildirimleri devre dışı bıraktın.\n\nMaç uyarıları ve günlük tahminleri almak için Ayarlar\'da bildirimleri etkinleştir.</string>
+    <string name="notification_open_settings">Ayarları Aç</string>
+    <string name="notification_enabled_toast">Bildirimler etkinleştirildi! 🎉</string>
+    <string name="notification_disabled_toast">Bildirimler devre dışı. Ayarlar\'da etkinleştirebilirsin.</string>
 </resources>

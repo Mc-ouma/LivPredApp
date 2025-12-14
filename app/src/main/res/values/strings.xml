@@ -431,4 +431,15 @@
     <string name="daily_reminder_body">🔥 Hot predictions are ready! Don\'t miss today\'s winning picks 🏆</string>
     <string name="afternoon_reminder_title">🎯 Matches Starting Soon!</string>
     <string name="afternoon_reminder_body">⏰ Prime time kicks off soon! Check your predictions before it\'s too late 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Enable Notifications</string>
+    <string name="notification_permission_message">🔔 Stay updated with match predictions and daily reminders!\n\nNotifications help you:\n• Get daily prediction alerts\n• Never miss important matches\n• Receive winning tips on time</string>
+    <string name="notification_permission_enable">Enable</string>
+    <string name="notification_permission_not_now">Not Now</string>
+    <string name="notification_disabled_title">Notifications Disabled</string>
+    <string name="notification_disabled_message">🔕 You\'ve disabled notifications.\n\nTo receive match alerts and daily predictions, please enable notifications in Settings.</string>
+    <string name="notification_open_settings">Open Settings</string>
+    <string name="notification_enabled_toast">Notifications enabled! 🎉</string>
+    <string name="notification_disabled_toast">Notifications disabled. You can enable them in Settings.</string>
 </resources>

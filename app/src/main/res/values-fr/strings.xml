@@ -343,5 +343,16 @@
     <string name="daily_reminder_body">🔥 Les pronostics chauds sont prêts ! Ne manquez pas les paris gagnants d\'aujourd\'hui 🏆</string>
     <string name="afternoon_reminder_title">🎯 Matchs Bientôt !</string>
     <string name="afternoon_reminder_body">⏰ L\'heure de pointe approche ! Vérifiez vos pronostics avant qu\'il ne soit trop tard 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Activer les Notifications</string>
+    <string name="notification_permission_message">🔔 Restez informé des prédictions et rappels quotidiens !\n\nLes notifications vous aident à :\n• Recevoir des alertes de prédictions quotidiennes\n• Ne jamais manquer de matchs importants\n• Recevoir des conseils gagnants à temps</string>
+    <string name="notification_permission_enable">Activer</string>
+    <string name="notification_permission_not_now">Pas Maintenant</string>
+    <string name="notification_disabled_title">Notifications Désactivées</string>
+    <string name="notification_disabled_message">🔕 Vous avez désactivé les notifications.\n\nPour recevoir des alertes de matchs et des prédictions quotidiennes, activez les notifications dans les Paramètres.</string>
+    <string name="notification_open_settings">Ouvrir Paramètres</string>
+    <string name="notification_enabled_toast">Notifications activées ! 🎉</string>
+    <string name="notification_disabled_toast">Notifications désactivées. Vous pouvez les activer dans les Paramètres.</string>
 
 </resources>

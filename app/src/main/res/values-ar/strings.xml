@@ -173,4 +173,15 @@
     <string name="daily_reminder_body">🔥 التوقعات الساخنة جاهزة! لا تفوت الرهانات الرابحة اليوم 🏆</string>
     <string name="afternoon_reminder_title">🎯 المباريات تبدأ قريباً!</string>
     <string name="afternoon_reminder_body">⏰ وقت الذروة يبدأ قريباً! تحقق من توقعاتك قبل فوات الأوان 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">تفعيل الإشعارات</string>
+    <string name="notification_permission_message">🔔 ابقَ على اطلاع بالتوقعات والتذكيرات اليومية!\n\nالإشعارات تساعدك على:\n• تلقي تنبيهات التوقعات اليومية\n• عدم تفويت المباريات المهمة\n• تلقي النصائح الرابحة في الوقت المناسب</string>
+    <string name="notification_permission_enable">تفعيل</string>
+    <string name="notification_permission_not_now">ليس الآن</string>
+    <string name="notification_disabled_title">الإشعارات معطلة</string>
+    <string name="notification_disabled_message">🔕 لقد عطّلت الإشعارات.\n\nلتلقي تنبيهات المباريات والتوقعات اليومية، فعّل الإشعارات في الإعدادات.</string>
+    <string name="notification_open_settings">فتح الإعدادات</string>
+    <string name="notification_enabled_toast">تم تفعيل الإشعارات! 🎉</string>
+    <string name="notification_disabled_toast">الإشعارات معطلة. يمكنك تفعيلها في الإعدادات.</string>
 </resources>

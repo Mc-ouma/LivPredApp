@@ -240,10 +240,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkPermissions() {
+        Timber.d("Checking permissions...")
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 if (!splashViewModel.canScheduleExactAlarms()) {
+                    Timber.d("Exact alarm permission not granted, showing dialog")
                     showExactAlarmPermissionDialog()
+                } else {
+                    Timber.d("Exact alarm permission already granted")
                 }
             } catch (e: Exception) {
                 Timber.e("Error checking alarm permission: ${e.message}")
@@ -252,9 +257,99 @@ class MainActivity : ComponentActivity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!splashViewModel.hasNotificationPermission()) {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
+                Timber.d("Notification permission not granted, checking rationale...")
+                
+                // Check if we should show rationale (user denied before but didn't select "Don't ask again")
+                if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) {
+                    // User denied before - show explanation dialog
+                    Timber.d("Showing notification permission rationale dialog")
+                    showNotificationPermissionRationale()
+                } else {
+                    // First time asking OR user selected "Don't ask again"
+                    // Check if we've asked before
+                    val hasAskedBefore = sharedPrefs.getBoolean("notification_permission_asked", false)
+                    
+                    if (!hasAskedBefore) {
+                        // First time - just request
+                        Timber.d("First time requesting notification permission")
+                        sharedPrefs.edit { putBoolean("notification_permission_asked", true) }
+                        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
+                    } else {
+                        // User selected "Don't ask again" - show settings dialog
+                        Timber.d("User previously denied with 'Don't ask again', showing settings dialog")
+                        showNotificationSettingsDialog()
+                    }
+                }
+            } else {
+                Timber.d("Notification permission already granted")
             }
         }
+    }
+
+    private fun showNotificationPermissionRationale() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.notification_permission_title))
+            .setMessage(getString(R.string.notification_permission_message))
+            .setPositiveButton(getString(R.string.notification_permission_enable)) { _, _ ->
+                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
+            }
+            .setNegativeButton(getString(R.string.notification_permission_not_now), null)
+            .show()
+    }
+
+    private fun showNotificationSettingsDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.notification_disabled_title))
+            .setMessage(getString(R.string.notification_disabled_message))
+            .setPositiveButton(getString(R.string.notification_open_settings)) { _, _ ->
+                openNotificationSettings()
+            }
+            .setNegativeButton(getString(R.string.notification_permission_not_now), null)
+            .show()
+    }
+
+    private fun openNotificationSettings() {
+        try {
+            val intent = Intent().apply {
+                action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Timber.e(e, "Could not open notification settings")
+            // Fallback to app settings
+            try {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
+            } catch (e2: Exception) {
+                Timber.e(e2, "Could not open app settings")
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    Timber.d("Notification permission granted by user")
+                    Toast.makeText(this, getString(R.string.notification_enabled_toast), Toast.LENGTH_SHORT).show()
+                } else {
+                    Timber.w("Notification permission denied by user")
+                    Toast.makeText(this, getString(R.string.notification_disabled_toast), Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
     }
 
     private fun maybeShowReview() {

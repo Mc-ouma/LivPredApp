@@ -173,4 +173,15 @@
     <string name="daily_reminder_body">🔥 Utabiri wa moto uko tayari! Usikose ubashiri wa kushinda wa leo 🏆</string>
     <string name="afternoon_reminder_title">🎯 Mechi Zinaanza Hivi Karibuni!</string>
     <string name="afternoon_reminder_body">⏰ Wakati mkuu unaanza hivi karibuni! Angalia utabiri wako kabla haijachelewa 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Washa Arifa</string>
+    <string name="notification_permission_message">🔔 Kaa na habari za utabiri na vikumbusho vya kila siku!\n\nArifa zinakusaidia:\n• Kupata tahadhari za utabiri wa kila siku\n• Kutokosa mechi muhimu\n• Kupata vidokezo vya kushinda kwa wakati</string>
+    <string name="notification_permission_enable">Washa</string>
+    <string name="notification_permission_not_now">Si Sasa</string>
+    <string name="notification_disabled_title">Arifa Zimezimwa</string>
+    <string name="notification_disabled_message">🔕 Umezima arifa.\n\nIli kupata tahadhari za mechi na utabiri wa kila siku, washa arifa katika Mipangilio.</string>
+    <string name="notification_open_settings">Fungua Mipangilio</string>
+    <string name="notification_enabled_toast">Arifa zimewashwa! 🎉</string>
+    <string name="notification_disabled_toast">Arifa zimezimwa. Unaweza kuziwasha katika Mipangilio.</string>
 </resources>

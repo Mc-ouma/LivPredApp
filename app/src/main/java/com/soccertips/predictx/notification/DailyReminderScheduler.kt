@@ -17,6 +17,9 @@ import timber.log.Timber
 /**
  * Schedules daily reminder notifications using WorkManager.
  * Notifications are localized based on the user's app language preference.
+ * 
+ * Uses KEEP policy to avoid resetting schedules on app restart.
+ * WorkManager persists the work across app restarts automatically.
  */
 @Singleton
 class DailyReminderScheduler @Inject constructor(
@@ -33,6 +36,7 @@ class DailyReminderScheduler @Inject constructor(
 
     /**
      * Schedule both morning (9 AM) and afternoon (3:30 PM) daily reminder notifications.
+     * Uses KEEP policy - if work already exists, it won't be replaced (prevents reset on restart).
      */
     fun scheduleDailyReminder() {
         scheduleMorningReminder()
@@ -64,14 +68,15 @@ class DailyReminderScheduler @Inject constructor(
                 .addTag("morning_reminder")
                 .build()
 
+            // KEEP policy: only schedule if not already scheduled (persists across restarts)
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(
                     MORNING_REMINDER_WORK_NAME,
-                    ExistingPeriodicWorkPolicy.UPDATE,
+                    ExistingPeriodicWorkPolicy.KEEP,
                     morningReminderWork
                 )
 
-            Timber.d("Scheduled morning reminder at $MORNING_HOUR:$MORNING_MINUTE, initial delay: ${initialDelay / 1000 / 60} minutes")
+            Timber.d("Morning reminder scheduled/kept at $MORNING_HOUR:$MORNING_MINUTE")
         } catch (e: Exception) {
             Timber.e(e, "Failed to schedule morning reminder")
         }
@@ -102,14 +107,15 @@ class DailyReminderScheduler @Inject constructor(
                 .addTag("afternoon_reminder")
                 .build()
 
+            // KEEP policy: only schedule if not already scheduled (persists across restarts)
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(
                     AFTERNOON_REMINDER_WORK_NAME,
-                    ExistingPeriodicWorkPolicy.UPDATE,
+                    ExistingPeriodicWorkPolicy.KEEP,
                     afternoonReminderWork
                 )
 
-            Timber.d("Scheduled afternoon reminder at $AFTERNOON_HOUR:$AFTERNOON_MINUTE, initial delay: ${initialDelay / 1000 / 60} minutes")
+            Timber.d("Afternoon reminder scheduled/kept at $AFTERNOON_HOUR:$AFTERNOON_MINUTE")
         } catch (e: Exception) {
             Timber.e(e, "Failed to schedule afternoon reminder")
         }

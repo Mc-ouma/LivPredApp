@@ -173,4 +173,15 @@
     <string name="daily_reminder_body">🔥 Heiße Vorhersagen sind bereit! Verpasse nicht die Gewinner-Tipps von heute 🏆</string>
     <string name="afternoon_reminder_title">🎯 Spiele Starten Bald!</string>
     <string name="afternoon_reminder_body">⏰ Prime Time beginnt gleich! Prüfe deine Vorhersagen bevor es zu spät ist 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Benachrichtigungen Aktivieren</string>
+    <string name="notification_permission_message">🔔 Bleibe auf dem Laufenden mit Vorhersagen und täglichen Erinnerungen!\n\nBenachrichtigungen helfen dir:\n• Tägliche Vorhersage-Alerts erhalten\n• Wichtige Spiele nie verpassen\n• Gewinner-Tipps rechtzeitig erhalten</string>
+    <string name="notification_permission_enable">Aktivieren</string>
+    <string name="notification_permission_not_now">Nicht Jetzt</string>
+    <string name="notification_disabled_title">Benachrichtigungen Deaktiviert</string>
+    <string name="notification_disabled_message">🔕 Du hast Benachrichtigungen deaktiviert.\n\nUm Spiel-Alerts und tägliche Vorhersagen zu erhalten, aktiviere Benachrichtigungen in den Einstellungen.</string>
+    <string name="notification_open_settings">Einstellungen Öffnen</string>
+    <string name="notification_enabled_toast">Benachrichtigungen aktiviert! 🎉</string>
+    <string name="notification_disabled_toast">Benachrichtigungen deaktiviert. Du kannst sie in den Einstellungen aktivieren.</string>
 </resources>

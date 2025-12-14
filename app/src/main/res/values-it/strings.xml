@@ -173,4 +173,15 @@
     <string name="daily_reminder_body">🔥 Le previsioni calde sono pronte! Non perdere le scommesse vincenti di oggi 🏆</string>
     <string name="afternoon_reminder_title">🎯 Partite in Arrivo!</string>
     <string name="afternoon_reminder_body">⏰ Il prime time sta per iniziare! Controlla le tue previsioni prima che sia troppo tardi 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Attiva Notifiche</string>
+    <string name="notification_permission_message">🔔 Rimani aggiornato con previsioni e promemoria giornalieri!\n\nLe notifiche ti aiutano a:\n• Ricevere avvisi di previsioni giornaliere\n• Non perdere partite importanti\n• Ricevere consigli vincenti in tempo</string>
+    <string name="notification_permission_enable">Attiva</string>
+    <string name="notification_permission_not_now">Non Ora</string>
+    <string name="notification_disabled_title">Notifiche Disattivate</string>
+    <string name="notification_disabled_message">🔕 Hai disattivato le notifiche.\n\nPer ricevere avvisi di partite e previsioni giornaliere, attiva le notifiche nelle Impostazioni.</string>
+    <string name="notification_open_settings">Apri Impostazioni</string>
+    <string name="notification_enabled_toast">Notifiche attivate! 🎉</string>
+    <string name="notification_disabled_toast">Notifiche disattivate. Puoi attivarle nelle Impostazioni.</string>
 </resources>

@@ -362,5 +362,16 @@
     <string name="daily_reminder_body">🔥 ¡Las predicciones están listas! No te pierdas las apuestas ganadoras de hoy 🏆</string>
     <string name="afternoon_reminder_title">🎯 ¡Partidos Próximamente!</string>
     <string name="afternoon_reminder_body">⏰ ¡La hora estelar comienza pronto! Revisa tus predicciones antes de que sea tarde 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Activar Notificaciones</string>
+    <string name="notification_permission_message">🔔 ¡Mantente actualizado con predicciones y recordatorios diarios!\n\nLas notificaciones te ayudan a:\n• Recibir alertas de predicciones diarias\n• No perderte partidos importantes\n• Recibir consejos ganadores a tiempo</string>
+    <string name="notification_permission_enable">Activar</string>
+    <string name="notification_permission_not_now">Ahora No</string>
+    <string name="notification_disabled_title">Notificaciones Desactivadas</string>
+    <string name="notification_disabled_message">🔕 Has desactivado las notificaciones.\n\nPara recibir alertas de partidos y predicciones diarias, activa las notificaciones en Configuración.</string>
+    <string name="notification_open_settings">Abrir Configuración</string>
+    <string name="notification_enabled_toast">¡Notificaciones activadas! 🎉</string>
+    <string name="notification_disabled_toast">Notificaciones desactivadas. Puedes activarlas en Configuración.</string>
 
 </resources>

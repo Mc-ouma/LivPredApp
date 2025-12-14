@@ -361,5 +361,16 @@
     <string name="daily_reminder_body">🔥 Previsões quentes estão prontas! Não perca as apostas vencedoras de hoje 🏆</string>
     <string name="afternoon_reminder_title">🎯 Partidas Começando em Breve!</string>
     <string name="afternoon_reminder_body">⏰ O horário nobre começa logo! Confira suas previsões antes que seja tarde 💪</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Ativar Notificações</string>
+    <string name="notification_permission_message">🔔 Fique atualizado com previsões e lembretes diários!\n\nAs notificações ajudam você a:\n• Receber alertas de previsões diárias\n• Não perder partidas importantes\n• Receber dicas vencedoras na hora certa</string>
+    <string name="notification_permission_enable">Ativar</string>
+    <string name="notification_permission_not_now">Agora Não</string>
+    <string name="notification_disabled_title">Notificações Desativadas</string>
+    <string name="notification_disabled_message">🔕 Você desativou as notificações.\n\nPara receber alertas de partidas e previsões diárias, ative as notificações nas Configurações.</string>
+    <string name="notification_open_settings">Abrir Configurações</string>
+    <string name="notification_enabled_toast">Notificações ativadas! 🎉</string>
+    <string name="notification_disabled_toast">Notificações desativadas. Você pode ativá-las nas Configurações.</string>
 
 </resources>

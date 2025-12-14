@@ -340,4 +340,26 @@
     <string name="max_passes_title">Máximo de Passes Atingido!</string>
     <string name="max_passes_message">Você já tem %1$d/%2$d passes.\n\nUse seus passes para desbloquear categorias!</string>
 
+    <!-- Language Picker -->
+    <string name="language">Idioma</string>
+    <string name="select_language">Selecionar Idioma</string>
+    <string name="language_english">Inglês</string>
+    <string name="language_spanish">Espanhol</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_french">Francês</string>
+    <string name="language_german">Alemão</string>
+    <string name="language_italian">Italiano</string>
+    <string name="language_arabic">Árabe</string>
+    <string name="language_turkish">Turco</string>
+    <string name="language_swahili">Suaíli</string>
+    <string name="language_system">Padrão do Sistema</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Lembretes Diários</string>
+    <string name="daily_reminder_channel_description">Lembretes diários sobre previsões e partidas</string>
+    <string name="daily_reminder_title">⚽ Alerta de Dia de Jogo!</string>
+    <string name="daily_reminder_body">🔥 Previsões quentes estão prontas! Não perca as apostas vencedoras de hoje 🏆</string>
+    <string name="afternoon_reminder_title">🎯 Partidas Começando em Breve!</string>
+    <string name="afternoon_reminder_body">⏰ O horário nobre começa logo! Confira suas previsões antes que seja tarde 💪</string>
+
 </resources>

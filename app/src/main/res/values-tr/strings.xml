@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Match-related strings -->
+    <string name="match_details">Detaylar</string>
+    <string name="result">Sonuç</string>
+    <string name="statistics">İstatistikler</string>
+    <string name="head_to_head">H2H</string>
+    <string name="lineups">Kadrolar</string>
+    <string name="standings">Puan Durumu</string>
+    <string name="summary">Özet</string>
+    <string name="squad">Kadro</string>
+    <string name="fixtures">Fikstür</string>
+    <string name="transfers">Transferler</string>
+    <string name="overview">Genel Bakış</string>
+
+    <!-- Date and time -->
+    <string name="today">Bugün</string>
+    <string name="tomorrow">Yarın</string>
+    <string name="yesterday">Dün</string>
+    <string name="unknown_date">Bilinmeyen Tarih</string>
+    <string name="type">Tür</string>
+    <string name="home">Ev Sahibi</string>
+    <string name="away">Deplasman</string>
+    <string name="total">Toplam</string>
+    <string name="for_">Lehine</string>
+    <string name="against">Aleyhine</string>
+    <string name="minute">Dakika</string>
+    <string name="percentage">Yüzde</string>
+    <string name="category">Kategori</string>
+
+    <!-- Navigation and UI -->
+    <string name="categories">Kategoriler</string>
+    <string name="favorites">Favoriler</string>
+    <string name="saved">Kaydedilenler</string>
+    <string name="information">Bilgi</string>
+    <string name="back">Geri</string>
+    <string name="close">Kapat</string>
+    <string name="retry">Tekrar Dene</string>
+    <string name="ok">Tamam</string>
+    <string name="cancel">İptal</string>
+    <string name="submit">Gönder</string>
+
+    <!-- Menu Items -->
+    <string name="share">Paylaş</string>
+    <string name="rate_us">Bizi Değerlendir</string>
+    <string name="privacy_policy">Gizlilik Politikası</string>
+    <string name="telegram">Telegram</string>
+    <string name="send_feedback">Geri Bildirim Gönder</string>
+    <string name="about_us">Hakkımızda</string>
+
+    <!-- Form Labels -->
+    <string name="email_address">E-posta Adresi</string>
+    <string name="message">Mesaj</string>
+    <string name="enter_email_placeholder">E-posta adresinizi girin</string>
+    <string name="other_feedback">Diğer Geri Bildirim</string>
+
+    <!-- Prediction Categories -->
+    <string name="over_under">Üst/Alt</string>
+    <string name="btts">KG Var</string>
+    <string name="daily_2_odds">Günlük 2 Oran</string>
+    <string name="combo">Kombine</string>
+    <string name="ht_ft">İY/MS</string>
+    <string name="home_away">Ev/Deplasman</string>
+    <string name="daily_bonus">Günlük Bonus</string>
+    <string name="extra_picks">Ekstra Seçimler</string>
+
+    <!-- Prediction Carousel -->
+    <string name="goals_for">Attığı Gol:</string>
+    <string name="goals_against">Yediği Gol:</string>
+    <string name="failed_to_score">Gol Atamadı:</string>
+    <string name="scored">Attı:</string>
+    <string name="conceded">Yedi:</string>
+    <string name="clean_sheets">Gol Yemedi:</string>
+    <string name="form">Form</string>
+    <string name="attack">Hücum</string>
+    <string name="defense">Savunma</string>
+    <string name="h2h">H2H</string>
+    <string name="overall">Genel</string>
+    <string name="last_5_matches_goals">Son 5 Maçtaki Goller</string>
+
+    <!-- Team Details -->
+    <string name="invalid_time">Geçersiz Zaman</string>
+
+    <!-- Error Messages -->
+    <string name="press_back_again_to_exit">Çıkmak için tekrar geri basın</string>
+    <string name="no_internet_connection">İnternet bağlantısı yok</string>
+    <string name="could_not_open_link">Bağlantı açılamadı</string>
+    <string name="invalid_team_ids">Geçersiz takım kimliği. Lütfen girişinizi kontrol edin.</string>
+    <string name="error_occurred_check_internet">Bir hata oluştu. Lütfen internet bağlantınızı kontrol edin</string>
+    <string name="error_occurred_fetching_data">Veri alınırken bir hata oluştu.</string>
+    <string name="no_data_available">Veri mevcut değil</string>
+    <string name="removed_from_favorites">Favorilerden kaldırıldı</string>
+    <string name="undo">Geri Al</string>
+    <string name="no_categories_available">Kategori mevcut değil. Güncellemeler için Telegram kanalımıza katılın.</string>
+    <string name="failed_to_fetch_data">Veri alınamadı</string>
+    <string name="error_loading_categories">Kategoriler yüklenirken hata</string>
+    <string name="no_standings_found">Puan durumu bulunamadı</string>
+    <string name="failed_to_fetch_standings">Puan durumu alınamadı</string>
+    <string name="an_error_occurred_while_fetching_fixtures">Fikstür alınırken bir hata oluştu.</string>
+    <string name="an_unexpected_error_occurred">Beklenmeyen bir hata oluştu.</string>
+    <string name="network_error_check_connection">Ağ hatası. Lütfen bağlantınızı kontrol edin.</string>
+
+    <!-- Notification Messages -->
+    <string name="match_starts_in_15_minutes">Maç 15 dakika içinde başlıyor!</string>
+    <string name="upcoming_matches">Yaklaşan Maçlar</string>
+    <string name="match_updates">Maç Güncellemeleri</string>
+    <string name="matches_count">%d maç</string>
+    <string name="final_score_format">Skor: %d - %d</string>
+    <string name="league_format">Lig: %s</string>
+    <string name="date_format">Tarih: %s Saat: %s</string>
+    <string name="your_pick_format">Seçiminiz: %s</string>
+    <string name="vs">VS</string>
+
+    <!-- Content Descriptions -->
+    <string name="localized_description">Yerelleştirilmiş açıklama</string>
+    <string name="app_icon">Uygulama Simgesi</string>
+    <string name="app_logo">Uygulama Logosu</string>
+    <string name="splash_screen">Açılış Ekranı</string>
+    <string name="contact_us">Bize Ulaşın</string>
+    <string name="home_team_logo">Ev Sahibi Takım Logosu</string>
+    <string name="away_team_logo">Deplasman Takımı Logosu</string>
+    <string name="team_logo_format">%s logosu</string>
+    <string name="home_logo">Ev Sahibi Logo</string>
+    <string name="away_logo">Deplasman Logo</string>
+    <string name="goal_icon">Gol Simgesi</string>
+    <string name="card_icon">Kart Simgesi</string>
+    <string name="substitution_icon">Oyuncu Değişikliği Simgesi</string>
+    <string name="var_icon">VAR Simgesi</string>
+    <string name="event_icon">Olay Simgesi</string>
+    <string name="soccer_ball">Futbol Topu</string>
+
+    <!-- Animation Labels -->
+    <string name="logo_pulse">logoPulse</string>
+    <string name="pulse_animation">pulseAnimation</string>
+    <string name="tab_content_transition">Sekme İçeriği Geçişi</string>
+    <string name="home_categories">Ana Sayfa</string>
+
+    <!-- Fixture Details Strings -->
+    <string name="loading">Yükleniyor…</string>
+    <string name="no_predictions_available">Tahmin mevcut değil.</string>
+    <string name="no_fixtures_available">Fikstür mevcut değil</string>
+    <string name="no_head_to_head_data_available">H2H verisi mevcut değil</string>
+    <string name="no_events_available">Olay mevcut değil</string>
+    <string name="no_standings_available">Puan durumu mevcut değil</string>
+    <string name="date_unavailable">Tarih mevcut değil</string>
+    <string name="watch_ad_for_extra_predictions">Ekstra tahminler için reklam izle</string>
+    <string name="stats">İstatistikler</string>
+    <string name="na">Yok</string>
+    <string name="substitutes">Yedekler</string>
+    <string name="coach_format">Teknik Direktör: %1$s</string>
+    <string name="coach_default">Teknik Direktör</string>
+    <string name="coach_photo">Teknik Direktör Fotoğrafı</string>
+    <string name="team_logo">Takım Logosu</string>
+
+    <!-- Language Picker -->
+    <string name="language">Dil</string>
+    <string name="select_language">Dil Seç</string>
+    <string name="language_english">İngilizce</string>
+    <string name="language_spanish">İspanyolca</string>
+    <string name="language_portuguese">Portekizce</string>
+    <string name="language_french">Fransızca</string>
+    <string name="language_german">Almanca</string>
+    <string name="language_italian">İtalyanca</string>
+    <string name="language_arabic">Arapça</string>
+    <string name="language_turkish">Türkçe</string>
+    <string name="language_swahili">Svahili</string>
+    <string name="language_system">Sistem Varsayılanı</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Günlük Hatırlatmalar</string>
+    <string name="daily_reminder_channel_description">Tahminler ve maçlar hakkında günlük hatırlatmalar</string>
+    <string name="daily_reminder_title">⚽ Maç Günü Uyarısı!</string>
+    <string name="daily_reminder_body">🔥 Sıcak tahminler hazır! Bugünün kazanan bahislerini kaçırma 🏆</string>
+    <string name="afternoon_reminder_title">🎯 Maçlar Yakında Başlıyor!</string>
+    <string name="afternoon_reminder_body">⏰ Ana yayın saati yaklaşıyor! Çok geç olmadan tahminlerini kontrol et 💪</string>
+</resources>

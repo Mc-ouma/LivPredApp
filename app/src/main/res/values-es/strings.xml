@@ -341,4 +341,26 @@
     <string name="max_passes_title">¡Máximo de Pases Alcanzado!</string>
     <string name="max_passes_message">Ya tienes %1$d/%2$d pases.\n\n¡Usa tus pases para desbloquear categorías!</string>
 
+    <!-- Language Picker -->
+    <string name="language">Idioma</string>
+    <string name="select_language">Seleccionar Idioma</string>
+    <string name="language_english">Inglés</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_portuguese">Portugués</string>
+    <string name="language_french">Francés</string>
+    <string name="language_german">Alemán</string>
+    <string name="language_italian">Italiano</string>
+    <string name="language_arabic">Árabe</string>
+    <string name="language_turkish">Turco</string>
+    <string name="language_swahili">Swahili</string>
+    <string name="language_system">Predeterminado del Sistema</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Recordatorios Diarios</string>
+    <string name="daily_reminder_channel_description">Recordatorios diarios sobre predicciones y partidos</string>
+    <string name="daily_reminder_title">⚽ ¡Alerta de Día de Partido!</string>
+    <string name="daily_reminder_body">🔥 ¡Las predicciones están listas! No te pierdas las apuestas ganadoras de hoy 🏆</string>
+    <string name="afternoon_reminder_title">🎯 ¡Partidos Próximamente!</string>
+    <string name="afternoon_reminder_body">⏰ ¡La hora estelar comienza pronto! Revisa tus predicciones antes de que sea tarde 💪</string>
+
 </resources>

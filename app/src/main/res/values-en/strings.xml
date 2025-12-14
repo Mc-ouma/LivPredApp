@@ -322,4 +322,18 @@
     <string name="watch_ad_unlock_24h">Watch a short ad to unlock %1$s category for 24 hours</string>
     <string name="watch_ad">Watch Ad</string>
 
+    <!-- Language Picker -->
+    <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
+    <string name="language_english">English</string>
+    <string name="language_spanish">Spanish</string>
+    <string name="language_portuguese">Portuguese</string>
+    <string name="language_french">French</string>
+    <string name="language_german">German</string>
+    <string name="language_italian">Italian</string>
+    <string name="language_arabic">Arabic</string>
+    <string name="language_turkish">Turkish</string>
+    <string name="language_swahili">Swahili</string>
+    <string name="language_system">System Default</string>
+
 </resources>

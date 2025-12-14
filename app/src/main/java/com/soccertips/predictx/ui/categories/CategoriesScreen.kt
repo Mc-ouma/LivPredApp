@@ -154,7 +154,7 @@ fun CategoriesScreen(
         is UiState.Error -> {
             ErrorScreen(
                 paddingValues = PaddingValues(0.dp),
-                message = "No internet connection. Please check your network.",
+                message = stringResource(R.string.no_internet_connection),
                 onRetry = { viewModel.retryLoadCategories() }
             )
         }

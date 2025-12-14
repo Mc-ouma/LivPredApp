@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Match-related strings -->
+    <string name="match_details">التفاصيل</string>
+    <string name="result">النتيجة</string>
+    <string name="statistics">الإحصائيات</string>
+    <string name="head_to_head">المواجهات</string>
+    <string name="lineups">التشكيلات</string>
+    <string name="standings">الترتيب</string>
+    <string name="summary">الملخص</string>
+    <string name="squad">الفريق</string>
+    <string name="fixtures">المباريات</string>
+    <string name="transfers">الانتقالات</string>
+    <string name="overview">نظرة عامة</string>
+
+    <!-- Date and time -->
+    <string name="today">اليوم</string>
+    <string name="tomorrow">غداً</string>
+    <string name="yesterday">أمس</string>
+    <string name="unknown_date">تاريخ غير معروف</string>
+    <string name="type">النوع</string>
+    <string name="home">داخلي</string>
+    <string name="away">خارجي</string>
+    <string name="total">المجموع</string>
+    <string name="for_">له</string>
+    <string name="against">عليه</string>
+    <string name="minute">دقيقة</string>
+    <string name="percentage">النسبة</string>
+    <string name="category">الفئة</string>
+
+    <!-- Navigation and UI -->
+    <string name="categories">الفئات</string>
+    <string name="favorites">المفضلة</string>
+    <string name="saved">المحفوظ</string>
+    <string name="information">معلومات</string>
+    <string name="back">رجوع</string>
+    <string name="close">إغلاق</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="ok">موافق</string>
+    <string name="cancel">إلغاء</string>
+    <string name="submit">إرسال</string>
+
+    <!-- Menu Items -->
+    <string name="share">مشاركة</string>
+    <string name="rate_us">قيمنا</string>
+    <string name="privacy_policy">سياسة الخصوصية</string>
+    <string name="telegram">تيليجرام</string>
+    <string name="send_feedback">إرسال ملاحظات</string>
+    <string name="about_us">عنا</string>
+
+    <!-- Form Labels -->
+    <string name="email_address">البريد الإلكتروني</string>
+    <string name="message">الرسالة</string>
+    <string name="enter_email_placeholder">أدخل بريدك الإلكتروني</string>
+    <string name="other_feedback">ملاحظات أخرى</string>
+
+    <!-- Prediction Categories -->
+    <string name="over_under">فوق/تحت</string>
+    <string name="btts">كلا الفريقين يسجل</string>
+    <string name="daily_2_odds">احتمالات يومية 2</string>
+    <string name="combo">مجمع</string>
+    <string name="ht_ft">شوط أول/نهائي</string>
+    <string name="home_away">داخلي/خارجي</string>
+    <string name="daily_bonus">مكافأة يومية</string>
+    <string name="extra_picks">اختيارات إضافية</string>
+
+    <!-- Prediction Carousel -->
+    <string name="goals_for">أهداف له:</string>
+    <string name="goals_against">أهداف عليه:</string>
+    <string name="failed_to_score">فشل في التسجيل:</string>
+    <string name="scored">سجل:</string>
+    <string name="conceded">استقبل:</string>
+    <string name="clean_sheets">شباك نظيفة:</string>
+    <string name="form">الفورمة</string>
+    <string name="attack">الهجوم</string>
+    <string name="defense">الدفاع</string>
+    <string name="h2h">مواجهات</string>
+    <string name="overall">الكلي</string>
+    <string name="last_5_matches_goals">أهداف آخر 5 مباريات</string>
+
+    <!-- Team Details -->
+    <string name="invalid_time">وقت غير صالح</string>
+
+    <!-- Error Messages -->
+    <string name="press_back_again_to_exit">اضغط رجوع مرة أخرى للخروج</string>
+    <string name="no_internet_connection">لا يوجد اتصال بالإنترنت</string>
+    <string name="could_not_open_link">تعذر فتح الرابط</string>
+    <string name="invalid_team_ids">معرف الفريق غير صالح. يرجى التحقق من إدخالك.</string>
+    <string name="error_occurred_check_internet">حدث خطأ. يرجى التحقق من اتصالك بالإنترنت</string>
+    <string name="error_occurred_fetching_data">حدث خطأ أثناء جلب البيانات.</string>
+    <string name="no_data_available">لا توجد بيانات متاحة</string>
+    <string name="removed_from_favorites">تمت الإزالة من المفضلة</string>
+    <string name="undo">تراجع</string>
+    <string name="no_categories_available">لا توجد فئات متاحة. انضم إلى قناتنا على تيليجرام للتحديثات.</string>
+    <string name="failed_to_fetch_data">فشل في جلب البيانات</string>
+    <string name="error_loading_categories">خطأ في تحميل الفئات</string>
+    <string name="no_standings_found">لم يتم العثور على ترتيب</string>
+    <string name="failed_to_fetch_standings">فشل في جلب الترتيب</string>
+    <string name="an_error_occurred_while_fetching_fixtures">حدث خطأ أثناء جلب المباريات.</string>
+    <string name="an_unexpected_error_occurred">حدث خطأ غير متوقع.</string>
+    <string name="network_error_check_connection">خطأ في الشبكة. يرجى التحقق من اتصالك.</string>
+
+    <!-- Notification Messages -->
+    <string name="match_starts_in_15_minutes">المباراة تبدأ خلال 15 دقيقة!</string>
+    <string name="upcoming_matches">المباريات القادمة</string>
+    <string name="match_updates">تحديثات المباريات</string>
+    <string name="matches_count">%d مباراة</string>
+    <string name="final_score_format">النتيجة النهائية: %d - %d</string>
+    <string name="league_format">الدوري: %s</string>
+    <string name="date_format">التاريخ: %s الوقت: %s</string>
+    <string name="your_pick_format">اختيارك: %s</string>
+    <string name="vs">ضد</string>
+
+    <!-- Content Descriptions -->
+    <string name="localized_description">وصف محلي</string>
+    <string name="app_icon">أيقونة التطبيق</string>
+    <string name="app_logo">شعار التطبيق</string>
+    <string name="splash_screen">شاشة البداية</string>
+    <string name="contact_us">اتصل بنا</string>
+    <string name="home_team_logo">شعار الفريق المضيف</string>
+    <string name="away_team_logo">شعار الفريق الضيف</string>
+    <string name="team_logo_format">شعار %s</string>
+    <string name="home_logo">شعار المضيف</string>
+    <string name="away_logo">شعار الضيف</string>
+    <string name="goal_icon">أيقونة الهدف</string>
+    <string name="card_icon">أيقونة البطاقة</string>
+    <string name="substitution_icon">أيقونة التبديل</string>
+    <string name="var_icon">أيقونة VAR</string>
+    <string name="event_icon">أيقونة الحدث</string>
+    <string name="soccer_ball">كرة القدم</string>
+
+    <!-- Animation Labels -->
+    <string name="logo_pulse">نبض الشعار</string>
+    <string name="pulse_animation">حركة النبض</string>
+    <string name="tab_content_transition">انتقال محتوى التبويب</string>
+    <string name="home_categories">الرئيسية</string>
+
+    <!-- Fixture Details Strings -->
+    <string name="loading">جار التحميل…</string>
+    <string name="no_predictions_available">لا توجد توقعات متاحة.</string>
+    <string name="no_fixtures_available">لا توجد مباريات متاحة</string>
+    <string name="no_head_to_head_data_available">لا توجد بيانات مواجهات متاحة</string>
+    <string name="no_events_available">لا توجد أحداث متاحة</string>
+    <string name="no_standings_available">لا يوجد ترتيب متاح</string>
+    <string name="date_unavailable">التاريخ غير متاح</string>
+    <string name="watch_ad_for_extra_predictions">شاهد إعلان للحصول على توقعات إضافية</string>
+    <string name="stats">إحصائيات</string>
+    <string name="na">غ/م</string>
+    <string name="substitutes">البدلاء</string>
+    <string name="coach_format">المدرب: %1$s</string>
+    <string name="coach_default">المدرب</string>
+    <string name="coach_photo">صورة المدرب</string>
+    <string name="team_logo">شعار الفريق</string>
+
+    <!-- Language Picker -->
+    <string name="language">اللغة</string>
+    <string name="select_language">اختر اللغة</string>
+    <string name="language_english">الإنجليزية</string>
+    <string name="language_spanish">الإسبانية</string>
+    <string name="language_portuguese">البرتغالية</string>
+    <string name="language_french">الفرنسية</string>
+    <string name="language_german">الألمانية</string>
+    <string name="language_italian">الإيطالية</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_turkish">التركية</string>
+    <string name="language_swahili">السواحيلية</string>
+    <string name="language_system">افتراضي النظام</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">التذكيرات اليومية</string>
+    <string name="daily_reminder_channel_description">تذكيرات يومية حول التوقعات والمباريات</string>
+    <string name="daily_reminder_title">⚽ تنبيه يوم المباراة!</string>
+    <string name="daily_reminder_body">🔥 التوقعات الساخنة جاهزة! لا تفوت الرهانات الرابحة اليوم 🏆</string>
+    <string name="afternoon_reminder_title">🎯 المباريات تبدأ قريباً!</string>
+    <string name="afternoon_reminder_body">⏰ وقت الذروة يبدأ قريباً! تحقق من توقعاتك قبل فوات الأوان 💪</string>
+</resources>

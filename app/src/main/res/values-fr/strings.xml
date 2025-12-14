@@ -322,4 +322,26 @@
     <string name="max_passes_title">Maximum de Passes Atteint!</string>
     <string name="max_passes_message">Vous avez déjà %1$d/%2$d passes.\n\nUtilisez vos passes pour déverrouiller des catégories!</string>
 
+    <!-- Language Picker -->
+    <string name="language">Langue</string>
+    <string name="select_language">Sélectionner la Langue</string>
+    <string name="language_english">Anglais</string>
+    <string name="language_spanish">Espagnol</string>
+    <string name="language_portuguese">Portugais</string>
+    <string name="language_french">Français</string>
+    <string name="language_german">Allemand</string>
+    <string name="language_italian">Italien</string>
+    <string name="language_arabic">Arabe</string>
+    <string name="language_turkish">Turc</string>
+    <string name="language_swahili">Swahili</string>
+    <string name="language_system">Valeur par défaut du système</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Rappels Quotidiens</string>
+    <string name="daily_reminder_channel_description">Rappels quotidiens sur les prédictions et les matchs</string>
+    <string name="daily_reminder_title">⚽ Alerte Jour de Match !</string>
+    <string name="daily_reminder_body">🔥 Les pronostics chauds sont prêts ! Ne manquez pas les paris gagnants d\'aujourd\'hui 🏆</string>
+    <string name="afternoon_reminder_title">🎯 Matchs Bientôt !</string>
+    <string name="afternoon_reminder_body">⏰ L\'heure de pointe approche ! Vérifiez vos pronostics avant qu\'il ne soit trop tard 💪</string>
+
 </resources>

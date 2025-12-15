@@ -22,8 +22,10 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class FirebaseMessagingService : FirebaseMessagingService() {
 
-    @Inject lateinit var tokenRepository: TokenRepository
-    @Inject lateinit var realTimeResultMonitor: RealTimeResultMonitor
+    @Inject
+    lateinit var tokenRepository: TokenRepository
+    @Inject
+    lateinit var realTimeResultMonitor: RealTimeResultMonitor
 
     // Use a SupervisorJob so that failure of one coroutine doesn't cancel others
     private val serviceJob = SupervisorJob()
@@ -56,11 +58,13 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                 "all_matches_won" -> {
                     handleBettingSuccessNotification(it.title, it.body, remoteMessage.data)
                 }
+
                 "match_result_update" -> {
                     // Handle match result updates and trigger real-time monitoring
                     handleMatchResultUpdate(remoteMessage.data)
                     sendNotification(it.title, it.body, remoteMessage.data)
                 }
+
                 else -> {
                     sendNotification(it.title, it.body, remoteMessage.data)
                 }
@@ -76,23 +80,25 @@ class FirebaseMessagingService : FirebaseMessagingService() {
             when (notificationType) {
                 "all_matches_won" -> {
                     handleBettingSuccessNotification(
-                            remoteMessage.data["title"] ?: "🎉 Perfect Betting Day!",
-                            remoteMessage.data["body"] ?: "All matches won today!",
-                            remoteMessage.data
+                        remoteMessage.data["title"] ?: "🎉 Perfect Betting Day!",
+                        remoteMessage.data["body"] ?: "All matches won today!",
+                        remoteMessage.data
                     )
                 }
+
                 "match_result_update" -> {
                     // Handle match result updates and trigger real-time monitoring
                     handleMatchResultUpdate(remoteMessage.data)
                     val fixtureId = remoteMessage.data["fixtureId"]
                     if (fixtureId != null) {
                         sendNotification(
-                                remoteMessage.data["title"] ?: "Match Result Update",
-                                remoteMessage.data["body"] ?: "A match result has been updated",
-                                remoteMessage.data
+                            remoteMessage.data["title"] ?: "Match Result Update",
+                            remoteMessage.data["body"] ?: "A match result has been updated",
+                            remoteMessage.data
                         )
                     }
                 }
+
                 else -> {
                     // Handle existing fixture notifications
                     val fixtureId = remoteMessage.data["fixtureId"]
@@ -100,16 +106,16 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                         // Also trigger real-time monitoring for any fixture updates
                         handleMatchResultUpdate(remoteMessage.data)
                         sendNotification(
-                                remoteMessage.data["title"] ?: "New Match Update",
-                                remoteMessage.data["body"] ?: "Check out the latest match details",
-                                remoteMessage.data
+                            remoteMessage.data["title"] ?: "New Match Update",
+                            remoteMessage.data["body"] ?: "Check out the latest match details",
+                            remoteMessage.data
                         )
                     } else {
                         // Handle other types of data messages
                         sendNotification(
-                                remoteMessage.data["title"] ?: "New Notification",
-                                remoteMessage.data["body"] ?: "You have a new notification",
-                                remoteMessage.data
+                            remoteMessage.data["title"] ?: "New Notification",
+                            remoteMessage.data["body"] ?: "You have a new notification",
+                            remoteMessage.data
                         )
                     }
                 }
@@ -118,9 +124,9 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun handleBettingSuccessNotification(
-            title: String?,
-            body: String?,
-            data: Map<String, String>
+        title: String?,
+        body: String?,
+        data: Map<String, String>
     ) {
         // Extract betting data
         val date = data["date"] ?: ""
@@ -131,48 +137,48 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         val summary = data["summary"] ?: ""
 
         Timber.d(
-                "Betting Success - Date: $date, Matches: $matchCount, Wins: $winCount, Rate: $successRate%"
+            "Betting Success - Date: $date, Matches: $matchCount, Wins: $winCount, Rate: $successRate%"
         )
 
         // Create enhanced intent for betting success
         val intent =
-                Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    action = "com.soccertips.predictx.ACTION_VIEW_BETTING_SUCCESS"
-                    putExtra("fromNotification", true)
-                    putExtra("notificationType", "betting_success")
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                action = "com.soccertips.predictx.ACTION_VIEW_BETTING_SUCCESS"
+                putExtra("fromNotification", true)
+                putExtra("notificationType", "betting_success")
 
-                    // Add all betting data
-                    putExtra("betting_date", date)
-                    putExtra("match_count", matchCount)
-                    putExtra("win_count", winCount)
-                    putExtra("success_rate", successRate)
-                    putExtra("matches_details", matches)
-                    putExtra("summary", summary)
+                // Add all betting data
+                putExtra("betting_date", date)
+                putExtra("match_count", matchCount)
+                putExtra("win_count", winCount)
+                putExtra("success_rate", successRate)
+                putExtra("matches_details", matches)
+                putExtra("summary", summary)
 
-                    // Add any other data from the message
-                    for ((key, value) in data) {
-                        putExtra(key, value)
-                    }
+                // Add any other data from the message
+                for ((key, value) in data) {
+                    putExtra(key, value)
                 }
+            }
 
         val pendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        System.currentTimeMillis().toInt(), // Unique request code
-                        intent,
-                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                )
+            PendingIntent.getActivity(
+                this,
+                System.currentTimeMillis().toInt(), // Unique request code
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
 
         // Create expanded notification for betting success
         createBettingSuccessNotification(title, body, data, pendingIntent)
     }
 
     private fun createBettingSuccessNotification(
-            title: String?,
-            body: String?,
-            data: Map<String, String>,
-            pendingIntent: PendingIntent
+        title: String?,
+        body: String?,
+        data: Map<String, String>,
+        pendingIntent: PendingIntent
     ) {
         val matchCount = data["match_count"] ?: "0"
         val successRate = data["success_rate"] ?: "0"
@@ -181,73 +187,73 @@ class FirebaseMessagingService : FirebaseMessagingService() {
 
         // Create big text style for expanded notification
         val bigTextStyle =
-                NotificationCompat.BigTextStyle()
-                        .bigText(
-                                "🎯 Success Rate: $successRate%\n📊 $summary\n\n📋 Match Results:\n$matches"
-                        )
-                        .setBigContentTitle(title ?: "🎉 Perfect Betting Day!")
-                        .setSummaryText("$matchCount matches won")
+            NotificationCompat.BigTextStyle()
+                .bigText(
+                    getString(R.string.success_rate_summary, successRate, summary, matches)
+                )
+                .setBigContentTitle(title ?: getString(R.string.perfect_betting_day_fallback))
+                .setSummaryText(getString(R.string.matches_won_summary, matchCount.toIntOrNull() ?: 0))
 
         // Create action buttons
         val viewDetailsIntent =
-                Intent(this, MainActivity::class.java).apply {
-                    action = "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY"
-                    putExtra("filter_date", data["date"])
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
+            Intent(this, MainActivity::class.java).apply {
+                action = "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY"
+                putExtra("filter_date", data["date"])
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
 
         val viewDetailsPendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        System.currentTimeMillis().toInt() + 1,
-                        viewDetailsIntent,
-                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                )
+            PendingIntent.getActivity(
+                this,
+                System.currentTimeMillis().toInt() + 1,
+                viewDetailsIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
 
         val shareIntent =
-                Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(
-                            Intent.EXTRA_TEXT,
-                            "🎉 Perfect betting day! All $matchCount matches won with $successRate% success rate! 🎯"
-                    )
-                }
+            Intent().apply {
+                action = Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    getString(R.string.share_betting_success, matchCount, successRate)
+                )
+            }
 
         val sharePendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        System.currentTimeMillis().toInt() + 2,
-                        Intent.createChooser(shareIntent, "Share Success"),
-                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                )
+            PendingIntent.getActivity(
+                this,
+                System.currentTimeMillis().toInt() + 2,
+                Intent.createChooser(shareIntent, getString(R.string.share_success)),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
 
         val notificationBuilder =
-                NotificationCompat.Builder(this, NotificationHelper.BETTING_SUCCESS_CHANNEL_ID)
-                        .setSmallIcon(R.drawable.launcher)
-                        .setContentTitle(title)
-                        .setContentText(body)
-                        .setStyle(bigTextStyle)
-                        .setAutoCancel(true)
-                        .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                        .setContentIntent(pendingIntent)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .setCategory(NotificationCompat.CATEGORY_EVENT)
-                        .setColor(
-                                ContextCompat.getColor(this, R.color.success_green)
-                        ) // Add this color resource
-                        .addAction(
-                                R.drawable.ic_visibility, // Add appropriate icon
-                                "View Details",
-                                viewDetailsPendingIntent
-                        )
-                        .addAction(
-                                R.drawable.ic_share, // Add appropriate icon
-                                "Share",
-                                sharePendingIntent
-                        )
-                        .setLights(Color.GREEN, 1000, 1000) // Green light for success
-                        .setVibrate(longArrayOf(0, 500, 200, 500)) // Custom vibration pattern
+            NotificationCompat.Builder(this, NotificationHelper.BETTING_SUCCESS_CHANNEL_ID)
+                .setSmallIcon(R.drawable.launcher)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(bigTextStyle)
+                .setAutoCancel(true)
+                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_EVENT)
+                .setColor(
+                    ContextCompat.getColor(this, R.color.success_green)
+                ) // Add this color resource
+                .addAction(
+                    R.drawable.ic_visibility, // Add appropriate icon
+                    getString(R.string.view_details),
+                    viewDetailsPendingIntent
+                )
+                .addAction(
+                    R.drawable.ic_share, // Add appropriate icon
+                    getString(R.string.share),
+                    sharePendingIntent
+                )
+                .setLights(Color.GREEN, 1000, 1000) // Green light for success
+                .setVibrate(longArrayOf(0, 500, 200, 500)) // Custom vibration pattern
 
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
@@ -270,38 +276,38 @@ class FirebaseMessagingService : FirebaseMessagingService() {
 
         // Create an explicit intent to launch the app's main activity
         val intent =
-                Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    action = "com.soccertips.predictx.ACTION_VIEW_MATCH"
-                    putExtra("fromNotification", true)
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                action = "com.soccertips.predictx.ACTION_VIEW_MATCH"
+                putExtra("fromNotification", true)
 
-                    // Add fixture ID if available
-                    fixtureId?.let { putExtra("fixtureId", it) }
+                // Add fixture ID if available
+                fixtureId?.let { putExtra("fixtureId", it) }
 
-                    // Add any other data from the message
-                    for ((key, value) in data) {
-                        putExtra(key, value)
-                    }
+                // Add any other data from the message
+                for ((key, value) in data) {
+                    putExtra(key, value)
                 }
+            }
 
         val pendingIntent =
-                PendingIntent.getActivity(
-                        this,
-                        0,
-                        intent,
-                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                )
+            PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
 
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder =
-                NotificationCompat.Builder(this, NotificationHelper.FCM_DEFAULT_CHANNEL_ID)
-                        .setSmallIcon(R.drawable.launcher)
-                        .setContentTitle(title)
-                        .setContentText(body)
-                        .setAutoCancel(true)
-                        .setSound(defaultSoundUri)
-                        .setContentIntent(pendingIntent)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+            NotificationCompat.Builder(this, NotificationHelper.FCM_DEFAULT_CHANNEL_ID)
+                .setSmallIcon(R.drawable.launcher)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setAutoCancel(true)
+                .setSound(defaultSoundUri)
+                .setContentIntent(pendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
 
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
@@ -362,7 +368,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         when (level) {
-             TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_UI_HIDDEN-> {
+            TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_UI_HIDDEN -> {
                 // Cancel non-essential operations when memory is low
                 Timber.d("Memory trim requested (level: $level), considering resource cleanup")
 

@@ -6,8 +6,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -63,7 +63,7 @@ private fun AdInitializedContent(
     content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
-    val activity = LocalContext.current as? ComponentActivity
+    val activity = LocalContext.current as? AppCompatActivity
 
     // Use LaunchedEffect to initialize ad managers after first composition
     LaunchedEffect(Unit) {
@@ -108,7 +108,7 @@ private fun AdInitializedContent(
 }
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     // ViewModels
     private val splashViewModel: SplashViewModel by viewModels()
@@ -241,7 +241,7 @@ class MainActivity : ComponentActivity() {
 
     private fun checkPermissions() {
         Timber.d("Checking permissions...")
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 if (!splashViewModel.canScheduleExactAlarms()) {
@@ -258,7 +258,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!splashViewModel.hasNotificationPermission()) {
                 Timber.d("Notification permission not granted, checking rationale...")
-                
+
                 // Check if we should show rationale (user denied before but didn't select "Don't ask again")
                 if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) {
                     // User denied before - show explanation dialog
@@ -268,12 +268,15 @@ class MainActivity : ComponentActivity() {
                     // First time asking OR user selected "Don't ask again"
                     // Check if we've asked before
                     val hasAskedBefore = sharedPrefs.getBoolean("notification_permission_asked", false)
-                    
+
                     if (!hasAskedBefore) {
                         // First time - just request
                         Timber.d("First time requesting notification permission")
                         sharedPrefs.edit { putBoolean("notification_permission_asked", true) }
-                        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
+                        requestPermissions(
+                            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                            NOTIFICATION_PERMISSION_REQUEST_CODE
+                        )
                     } else {
                         // User selected "Don't ask again" - show settings dialog
                         Timber.d("User previously denied with 'Don't ask again', showing settings dialog")
@@ -291,7 +294,10 @@ class MainActivity : ComponentActivity() {
             .setTitle(getString(R.string.notification_permission_title))
             .setMessage(getString(R.string.notification_permission_message))
             .setPositiveButton(getString(R.string.notification_permission_enable)) { _, _ ->
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIFICATION_PERMISSION_REQUEST_CODE
+                )
             }
             .setNegativeButton(getString(R.string.notification_permission_not_now), null)
             .show()
@@ -409,20 +415,18 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun showExactAlarmPermissionDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Exact Alarm Permission Required")
-            .setMessage(
-                "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
-            )
-            .setPositiveButton("Go to Settings") { _, _ ->
+            .setTitle(getString(R.string.exact_alarm_permission_title))
+            .setMessage(getString(R.string.exact_alarm_permission_message))
+            .setPositiveButton(getString(R.string.go_to_settings)) { _, _ ->
                 val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                 try {
                     startActivity(intent)
                 } catch (e: android.content.ActivityNotFoundException) {
                     Timber.e(e, "No activity found to handle intent: $intent")
-                    Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.unable_to_open_settings), Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 

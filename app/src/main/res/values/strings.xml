@@ -81,6 +81,9 @@
     <string name="h2h">h2h</string>
     <string name="overall">Overall</string>
     <string name="last_5_matches_goals">Last 5 Matches Goals</string>
+    <string name="win_or_draw_likely">Win or Draw: Likely</string>
+    <string name="goals_under_over_format">Goals Under/Over: %s</string>
+    <string name="team_form_comparison">Team Form Comparison</string>
 
     <!-- Team Details -->
     <string name="invalid_time">Invalid Time</string>
@@ -427,10 +430,31 @@
     <!-- Daily Reminder Notifications -->
     <string name="daily_reminder_channel_name">Daily Reminders</string>
     <string name="daily_reminder_channel_description">Daily reminders about predictions and matches</string>
+    
+    <!-- Notification Channels -->
+    <string name="match_reminder_channel_name">Match Reminders</string>
+    <string name="match_reminder_channel_description">Notifications for upcoming matches</string>
+    <string name="match_updates_channel_name">Match Updates</string>
+    <string name="match_updates_channel_description">Live match updates and scores</string>
+    <string name="fcm_channel_name">FCM Notifications</string>
+    <string name="fcm_channel_description">Notifications from Firebase Cloud Messaging</string>
+    <string name="betting_success_channel_name">Betting Success Notifications</string>
+    <string name="betting_success_channel_description">Notifications for successful betting days</string>
+    
     <string name="daily_reminder_title">⚽ Game Day Alert!</string>
     <string name="daily_reminder_body">🔥 Hot predictions are ready! Don\'t miss today\'s winning picks 🏆</string>
     <string name="afternoon_reminder_title">🎯 Matches Starting Soon!</string>
     <string name="afternoon_reminder_body">⏰ Prime time kicks off soon! Check your predictions before it\'s too late 💪</string>
+    
+    <!-- Notification Action Buttons -->
+    <string name="view_details">View Details</string>
+    <string name="share_success">Share Success</string>
+    <string name="match_update_title">Match Update</string>
+    <string name="match_update_fallback">A match has been updated. Tap to view details.</string>
+    <string name="perfect_betting_day_fallback">🎉 Perfect Betting Day!</string>
+    <string name="matches_won_summary">%d matches won</string>
+    <string name="success_rate_summary">🎯 Success Rate: %1$s%%\n📊 %2$s\n\n📋 Match Results:\n%3$s</string>
+    <string name="share_betting_success">🎉 Perfect betting day! All %1$s matches won with %2$s%% success rate! 🎯</string>
     
     <!-- Notification Permission Dialogs -->
     <string name="notification_permission_title">Enable Notifications</string>
@@ -442,4 +466,10 @@
     <string name="notification_open_settings">Open Settings</string>
     <string name="notification_enabled_toast">Notifications enabled! 🎉</string>
     <string name="notification_disabled_toast">Notifications disabled. You can enable them in Settings.</string>
+    
+    <!-- Exact Alarm Permission -->
+    <string name="exact_alarm_permission_title">Exact Alarm Permission Required</string>
+    <string name="exact_alarm_permission_message">This app requires permission to schedule exact alarms. Please grant the permission in the settings.</string>
+    <string name="go_to_settings">Go to Settings</string>
+    <string name="unable_to_open_settings">Unable to open settings</string>
 </resources>

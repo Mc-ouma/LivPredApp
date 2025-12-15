@@ -1,10 +1,12 @@
 package com.soccertips.predictx.repository
 
+import androidx.appcompat.app.AppCompatDelegate
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.soccertips.predictx.data.model.Announcement
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +38,19 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
             CATEGORY_AD_STRATEGY_KEY to AD_STRATEGY_REWARDED // Default to rewarded ads
         )
         remoteConfig.setDefaultsAsync(defaults)
+    }
+
+    /**
+     * Get the current app language code.
+     * Returns the app's locale if set, otherwise the system default.
+     */
+    private fun getCurrentLanguageCode(): String {
+        val appLocales = AppCompatDelegate.getApplicationLocales()
+        return if (!appLocales.isEmpty) {
+            appLocales.toLanguageTags().split("-").firstOrNull() ?: "en"
+        } else {
+            Locale.getDefault().language
+        }
     }
 
     suspend fun fetchAndActivate(): Boolean {
@@ -72,6 +87,12 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
             emit(emptyList())
         }
     }
+
+    /**
+     * Get the current language code for localization.
+     * Can be used by UI components to get localized announcement text.
+     */
+    fun getLanguageCode(): String = getCurrentLanguageCode()
 
     /**
      * Get the ad strategy for category unlocking

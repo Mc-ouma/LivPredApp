@@ -63,7 +63,11 @@
     <string name="defense">Défense</string>
     <string name="h2h">H2H</string>
     <string name="overall">Global</string>
-    <string name="last_5_matches_goals">Derniers 5 matchs - Buts</string>    <!-- Team Details -->
+    <string name="last_5_matches_goals">Derniers 5 matchs - Buts</string>
+    <string name="win_or_draw_likely">Victoire ou Nul : Probable</string>
+    <string name="goals_under_over_format">Buts Sous/Plus : %s</string>
+    <string name="team_form_comparison">Comparaison de Forme des Équipes</string>
+    <!-- Team Details -->
     <string name="invalid_date">Date invalide</string>
     <string name="invalid_time">Heure invalide</string>    <!-- Error Messages -->
     <string name="press_back_again_to_exit">Appuyez à nouveau sur retour pour quitter</string>
@@ -209,15 +213,18 @@
     <string name="card_type_red">Carton rouge</string>
 
     <!-- Prediction Carousel -->
-
-
     <string name="season_performance">Performance de la saison</string>
     <string name="head_to_head_history">Historique des confrontations</string>
     <string name="no_head_to_head_history_available">Aucun historique de confrontation disponible</string>
     <string name="draws_format">Nuls : %d</string>
     <string name="last_5_matches">5 derniers matchs</string>
     <string name="match_prediction_overview">Aperçu de la prédiction du match</string>
-    <string name="team_wins_format">%s : %d</string>    <!-- Date Formats -->
+    <string name="team_wins_format">%s : %d</string>
+    <string name="home__">Domicile : %1$s</string>
+    <string name="draw">Nul : %1$s</string>
+    <string name="away__">Extérieur : %1$s</string>
+    
+    <!-- Date Formats -->
     <string name="date_pattern_input">yyyy-MM-dd\'T\'HH:mm:ssXXX</string>
     <string name="date_pattern_output">dd-MM-yyyy</string>
     <string name="date_pattern_display">dd MMM yyyy</string>
@@ -339,10 +346,31 @@
     <!-- Daily Reminder Notifications -->
     <string name="daily_reminder_channel_name">Rappels Quotidiens</string>
     <string name="daily_reminder_channel_description">Rappels quotidiens sur les prédictions et les matchs</string>
+    
+    <!-- Notification Channels -->
+    <string name="match_reminder_channel_name">Rappels de Matchs</string>
+    <string name="match_reminder_channel_description">Notifications pour les matchs à venir</string>
+    <string name="match_updates_channel_name">Mises à Jour des Matchs</string>
+    <string name="match_updates_channel_description">Mises à jour en direct et scores</string>
+    <string name="fcm_channel_name">Notifications FCM</string>
+    <string name="fcm_channel_description">Notifications de Firebase Cloud Messaging</string>
+    <string name="betting_success_channel_name">Notifications de Succès</string>
+    <string name="betting_success_channel_description">Notifications pour les journées de paris réussies</string>
+    
     <string name="daily_reminder_title">⚽ Alerte Jour de Match !</string>
     <string name="daily_reminder_body">🔥 Les pronostics chauds sont prêts ! Ne manquez pas les paris gagnants d\'aujourd\'hui 🏆</string>
     <string name="afternoon_reminder_title">🎯 Matchs Bientôt !</string>
     <string name="afternoon_reminder_body">⏰ L\'heure de pointe approche ! Vérifiez vos pronostics avant qu\'il ne soit trop tard 💪</string>
+    
+    <!-- Notification Action Buttons -->
+    <string name="view_details">Voir Détails</string>
+    <string name="share_success">Partager le Succès</string>
+    <string name="match_update_title">Mise à Jour du Match</string>
+    <string name="match_update_fallback">Un match a été mis à jour. Appuyez pour voir les détails.</string>
+    <string name="perfect_betting_day_fallback">🎉 Journée de Paris Parfaite !</string>
+    <string name="matches_won_summary">%d matchs gagnés</string>
+    <string name="success_rate_summary">🎯 Taux de Réussite : %1$s%%\n📊 %2$s\n\n📋 Résultats :\n%3$s</string>
+    <string name="share_betting_success">🎉 Journée de paris parfaite ! %1$s matchs gagnés avec %2$s%% de réussite ! 🎯</string>
     
     <!-- Notification Permission Dialogs -->
     <string name="notification_permission_title">Activer les Notifications</string>
@@ -354,5 +382,62 @@
     <string name="notification_open_settings">Ouvrir Paramètres</string>
     <string name="notification_enabled_toast">Notifications activées ! 🎉</string>
     <string name="notification_disabled_toast">Notifications désactivées. Vous pouvez les activer dans les Paramètres.</string>
+    
+    <!-- Exact Alarm Permission -->
+    <string name="exact_alarm_permission_title">Permission d\'Alarme Exacte Requise</string>
+    <string name="exact_alarm_permission_message">Cette application nécessite l\'autorisation de programmer des alarmes exactes. Veuillez accorder la permission dans les paramètres.</string>
+    <string name="go_to_settings">Aller aux Paramètres</string>
+    <string name="unable_to_open_settings">Impossible d\'ouvrir les paramètres</string>
+    
+    <!-- Missing translations -->
+    <string name="address">Adresse</string>
+    <string name="add_to_favorites">Ajouter aux favoris</string>
+    <string name="app_update_available">Mise à jour disponible</string>
+    <string name="capacity">Capacité</string>
+    <string name="city">Ville</string>
+    <string name="critical_update_message">Une mise à jour critique est disponible. Veuillez mettre à jour l\'application pour continuer à l\'utiliser.</string>
+    <string name="dismiss">Fermer</string>
+    <string name="error_loading_fixture_details">Erreur lors du chargement des détails du match</string>
+    <string name="error_loading_transfers">Erreur lors du chargement des transferts</string>
+    <string name="formation_played_times">%1$s (%2$d)</string>
+    <string name="goal_cancelled">But Annulé</string>
+    <string name="league_logo">Logo de la Ligue</string>
+    <string name="locked_watch_ad">Verrouillé - regardez une pub pour débloquer</string>
+    <string name="matches_count_plural">matchs</string>
+    <string name="no_data">-</string>
+    <string name="no_favorite_items">Aucun favori</string>
+    <string name="penalty_confirmed">Penalty Confirmé</string>
+    <string name="pick_label">Choix:</string>
+    <string name="player_photo">Photo du Joueur</string>
+    <string name="remove_from_favorites_action">Retirer des favoris</string>
+    <string name="select_date">Sélectionner la Date</string>
+    <string name="stadium">Stade</string>
+    <string name="starting_eleven">Onze de Départ</string>
+    <string name="surface">Surface</string>
+    <string name="team_player">Joueur de l\'Équipe</string>
+    <string name="unknown">Inconnu</string>
+    <string name="unknown_league">Ligue Inconnue</string>
+    <string name="unknown_team">Équipe Inconnue</string>
+    <string name="update_action">METTRE À JOUR</string>
+    <string name="update_now">Mettre à Jour Maintenant</string>
+    <string name="update_required">Mise à Jour Requise</string>
+    
+    <!-- Format strings -->
+    <string name="goals_0_5">0–5 buts</string>
+    <string name="goals_1_5">1–5 buts</string>
+    <string name="goals_2_5">2–5 buts</string>
+    <string name="goals_3_5">3–5 buts</string>
+    <string name="goals_4_5">4–5 buts</string>
+    <string name="minutes_0_15">0\'–15\'</string>
+    <string name="minutes_16_30">16\'–30\'</string>
+    <string name="minutes_31_45">31\'–45\'</string>
+    <string name="minutes_46_60">46\'–60\'</string>
+    <string name="minutes_61_75">61\'–75\'</string>
+    <string name="minutes_76_90">76\'–90\'</string>
+    <string name="minutes_91_105">91\'–105\'</string>
+    <string name="minutes_106_120">106\'–120\'</string>
+    <string name="percentage_format">%d%%</string>
+    <string name="score_format">%d - %d</string>
+    <string name="time_format">%1$02d:%2$02d</string>
 
 </resources>

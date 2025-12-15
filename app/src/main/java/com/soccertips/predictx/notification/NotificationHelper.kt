@@ -18,37 +18,37 @@ object NotificationHelper {
             listOf(
                 NotificationChannel(
                     MATCH_REMINDER_CHANNEL_ID,
-                    "Match Reminders",
+                    context.getString(R.string.match_reminder_channel_name),
                     NotificationManager.IMPORTANCE_HIGH
                 )
                     .apply {
-                        description = "Notifications for upcoming matches"
+                        description = context.getString(R.string.match_reminder_channel_description)
                         enableVibration(true)
                         enableLights(true)
                     },
                 NotificationChannel(
                     MATCH_UPDATES_CHANNEL_ID,
-                    "Match Updates",
+                    context.getString(R.string.match_updates_channel_name),
                     NotificationManager.IMPORTANCE_DEFAULT
                 )
-                    .apply { description = "Live match updates and scores" },
+                    .apply { description = context.getString(R.string.match_updates_channel_description) },
                 NotificationChannel(
                     FCM_DEFAULT_CHANNEL_ID,
-                    "FCM Notifications",
+                    context.getString(R.string.fcm_channel_name),
                     NotificationManager.IMPORTANCE_HIGH
                 )
                     .apply {
-                        description = "Notifications from Firebase Cloud Messaging"
+                        description = context.getString(R.string.fcm_channel_description)
                         enableLights(true)
                         enableVibration(true)
                     },
                 NotificationChannel(
                     BETTING_SUCCESS_CHANNEL_ID,
-                    "Betting Success Notifications",
+                    context.getString(R.string.betting_success_channel_name),
                     NotificationManager.IMPORTANCE_HIGH
                 )
                     .apply {
-                        description = "Notifications for successful betting days"
+                        description = context.getString(R.string.betting_success_channel_description)
                         enableLights(true)
                         lightColor = android.graphics.Color.GREEN
                         enableVibration(true)

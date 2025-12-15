@@ -453,7 +453,7 @@ fun CategoriesContent(
                             pendingCategory = null
                         }
                     }
-                ) { Text("OK") }
+                ) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = {
                 TextButton(

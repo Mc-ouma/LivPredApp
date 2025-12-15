@@ -204,7 +204,7 @@ fun TeamScreen(
                                             rememberAsyncImagePainter(
                                                 model = data.team.logo
                                             ),
-                                        contentDescription = "Team Logo",
+                                        contentDescription = stringResource(R.string.team_logo),
                                         modifier =
                                             Modifier.size(32.dp)
                                                 .clip(CircleShape)
@@ -607,14 +607,14 @@ fun TeamInfoCard(statistics: Response, modifier: Modifier = Modifier) {
             ) {
                 Image(
                     painter = rememberAsyncImagePainter(statistics.team.logo ?: ""),
-                    contentDescription = "Team Logo",
+                    contentDescription = stringResource(R.string.team_logo),
                     modifier = Modifier.size(80.dp).clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = statistics.team.name ?: "Unknown",
+                        text = statistics.team.name ?: stringResource(R.string.unknown),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )

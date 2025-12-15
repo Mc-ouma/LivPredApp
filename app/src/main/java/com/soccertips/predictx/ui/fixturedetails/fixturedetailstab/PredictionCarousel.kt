@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -57,7 +59,7 @@ fun PredictionCarousel(
         h2h: List<H2H>,
 ) {
         val pagerState = rememberPagerState(pageCount = { 4 })
-        val cardHeight = 480.dp // Adjust height as needed
+        val cardHeight = 520.dp // Increased height for better content fit
 
         Column {
 
@@ -100,7 +102,7 @@ fun GoalsAnalysisCard(teams: Teams) {
                 elevation = CardDefaults.cardElevation(4.dp)
         ) {
                 Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                         Text(
@@ -381,7 +383,7 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                 elevation = CardDefaults.cardElevation(4.dp)
         ) {
                 Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                         Text(
@@ -736,7 +738,7 @@ fun TeamFormComparisonCard(comparison: Comparison, teams: Teams) {
                 elevation = CardDefaults.cardElevation(4.dp)
         ) {
                 Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                         Text(

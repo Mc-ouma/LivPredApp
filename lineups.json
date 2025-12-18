@@ -1,0 +1,195 @@
+{
+  "get": "fixtures/lineups",
+  "parameters": {
+    "team": "463",
+    "fixture": "215662"
+  },
+  "errors": [],
+  "results": 1,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "team": {
+        "id": 463,
+        "name": "Aldosivi",
+        "logo": "https://media.api-sports.io/football/teams/463.png",
+        "colors": null
+      },
+      "coach": {
+        "id": 3946,
+        "name": "G. Hoyos",
+        "photo": "https://media.api-sports.io/football/coachs/3946.png"
+      },
+      "formation": "4-3-3",
+      "startXI": [
+        {
+          "player": {
+            "id": 6258,
+            "name": "L. Pocrnjic",
+            "number": 1,
+            "pos": "G",
+            "grid": "1:1"
+          }
+        },
+        {
+          "player": {
+            "id": 6261,
+            "name": "L. Galeano",
+            "number": 6,
+            "pos": "D",
+            "grid": "2:4"
+          }
+        },
+        {
+          "player": {
+            "id": 52701,
+            "name": "M. Miers",
+            "number": 19,
+            "pos": "D",
+            "grid": "2:3"
+          }
+        },
+        {
+          "player": {
+            "id": 6268,
+            "name": "L. Villalba",
+            "number": 23,
+            "pos": "D",
+            "grid": "2:2"
+          }
+        },
+        {
+          "player": {
+            "id": 6262,
+            "name": "E. Iñíguez",
+            "number": 21,
+            "pos": "D",
+            "grid": "2:1"
+          }
+        },
+        {
+          "player": {
+            "id": 6474,
+            "name": "G. Gil",
+            "number": 5,
+            "pos": "M",
+            "grid": "3:3"
+          }
+        },
+        {
+          "player": {
+            "id": 6269,
+            "name": "F. Acevedo",
+            "number": 8,
+            "pos": "M",
+            "grid": "3:2"
+          }
+        },
+        {
+          "player": {
+            "id": 6212,
+            "name": "L. Maciel",
+            "number": 33,
+            "pos": "M",
+            "grid": "3:1"
+          }
+        },
+        {
+          "player": {
+            "id": 6093,
+            "name": "G. Verón",
+            "number": 29,
+            "pos": "F",
+            "grid": "4:3"
+          }
+        },
+        {
+          "player": {
+            "id": 6126,
+            "name": "F. Andrada",
+            "number": 10,
+            "pos": "F",
+            "grid": "4:2"
+          }
+        },
+        {
+          "player": {
+            "id": 6561,
+            "name": "N. Solís",
+            "number": 7,
+            "pos": "F",
+            "grid": "4:1"
+          }
+        }
+      ],
+      "substitutes": [
+        {
+          "player": {
+            "id": 35845,
+            "name": "H. Burbano",
+            "number": 11,
+            "pos": "M",
+            "grid": null
+          }
+        },
+        {
+          "player": {
+            "id": 6396,
+            "name": "N. Bazzana",
+            "number": 27,
+            "pos": "D",
+            "grid": null
+          }
+        },
+        {
+          "player": {
+            "id": 6550,
+            "name": "F. Grahl",
+            "number": 22,
+            "pos": "M",
+            "grid": null
+          }
+        },
+        {
+          "player": {
+            "id": 152779,
+            "name": "F. Tobares",
+            "number": 40,
+            "pos": "F",
+            "grid": null
+          }
+        },
+        {
+          "player": {
+            "id": 6255,
+            "name": "F. Assmann",
+            "number": 35,
+            "pos": "G",
+            "grid": null
+          }
+        },
+        {
+          "player": {
+            "id": 6399,
+            "name": "F. Evangelista",
+            "number": 20,
+            "pos": "D",
+            "grid": null
+          }
+        },
+        {
+          "player": {
+            "id": 5426,
+            "name": "C. Fara",
+            "number": 2,
+            "pos": "D",
+            "grid": null
+          }
+        }
+      ]
+    }
+  ]
+}

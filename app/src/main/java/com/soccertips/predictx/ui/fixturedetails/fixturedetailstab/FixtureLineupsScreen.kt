@@ -1,16 +1,21 @@
 package com.soccertips.predictx.ui.fixturedetails.fixturedetailstab
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,16 +34,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import coil.compose.rememberAsyncImagePainter
 import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.lineups.CoachInfo
 import com.soccertips.predictx.data.model.lineups.PlayerInfo
+import com.soccertips.predictx.data.model.lineups.PlayerLineup
 import com.soccertips.predictx.data.model.lineups.TeamColors
 import com.soccertips.predictx.data.model.lineups.TeamLineup
 
@@ -79,6 +94,7 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Football Pitch Visualization
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -86,9 +102,11 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
                     // Match Formation Header
                     Row(
                         modifier = Modifier
@@ -97,22 +115,47 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TeamHeaderCompact(lineups.first)
+                        FormationBadge(lineup = lineups.first)
                         Text(
                             text = "vs",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        TeamHeaderCompact(lineups.second)
+                        FormationBadge(lineup = lineups.second)
                     }
 
-                    HorizontalDivider(
+                    // Football Pitch with both teams
+                    FootballPitch(
+                        homeLineup = lineups.first,
+                        awayLineup = lineups.second,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.surfaceVariant
+                            .aspectRatio(0.7f) // Vertical pitch ratio
+                    )
+                }
+            }
+        }
+
+        // Detailed lineups card (substitutes, coach info)
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+
+                    Text(
+                        text = stringResource(R.string.substitutes),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
 
                     // Detailed lineups
@@ -121,7 +164,7 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         // Home team lineup details
-                        TeamLineupDetails(lineup = lineups.first, modifier = Modifier.weight(1f))
+                        SubstitutesAndCoach(lineup = lineups.first, modifier = Modifier.weight(1f))
 
                         // Vertical divider
                         VerticalDivider(
@@ -132,7 +175,7 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
                         )
 
                         // Away team lineup details
-                        TeamLineupDetails(lineup = lineups.second, modifier = Modifier.weight(1f))
+                        SubstitutesAndCoach(lineup = lineups.second, modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -140,50 +183,556 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
     }
 }
 
+// Football pitch colors
+private val PitchGreen = Color(0xFF2E7D32)
+private val PitchLightGreen = Color(0xFF388E3C)
+private val PitchLineColor = Color.White.copy(alpha = 0.9f)
+
+// Position types for fallback logic
+private enum class PositionType { GK, DEF, MID, FWD }
+
+private fun getPositionType(pos: String?): PositionType {
+    return when (pos?.uppercase()) {
+        "G" -> PositionType.GK
+        "D" -> PositionType.DEF
+        "M" -> PositionType.MID
+        "F" -> PositionType.FWD
+        else -> PositionType.MID
+    }
+}
+
+// Parse formation string like "4-3-3" into [4, 3, 3]
+private fun parseFormation(formation: String?): List<Int> {
+    if (formation.isNullOrEmpty()) return listOf(4, 4, 2)
+    val rows = Regex("\\d+").findAll(formation).map { it.value.toInt() }.toList()
+    val sum = rows.sum()
+    return if (sum !in 8..12) listOf(4, 4, 2) else rows
+}
+
+data class PositionedPlayer(
+    val player: PlayerInfo,
+    val x: Float, // 0-100 percentage
+    val y: Float, // 0-100 percentage
+    val teamColors: TeamColors?
+)
+
 @Composable
-fun TeamHeaderCompact(lineup: TeamLineup) {
-    Card(
-        shape = RoundedCornerShape(8.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-            ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+fun FootballPitch(
+    homeLineup: TeamLineup,
+    awayLineup: TeamLineup,
+    modifier: Modifier = Modifier
+) {
+    val homeTeamName = homeLineup.team.name?.take(3)?.uppercase() ?: "HOM"
+    val awayTeamName = awayLineup.team.name?.take(3)?.uppercase() ?: "AWY"
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(PitchGreen)
     ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        // Grass stripes pattern
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+
+            // Alternating grass stripes (horizontal)
+            val stripeCount = 10
+            val stripeHeight = height / stripeCount
+            for (i in 0 until stripeCount) {
+                if (i % 2 == 0) {
+                    drawRect(
+                        color = PitchLightGreen,
+                        topLeft = Offset(0f, i * stripeHeight),
+                        size = Size(width, stripeHeight)
+                    )
+                }
+            }
+        }
+
+        // Pitch markings
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+            val strokeWidth = 2.dp.toPx()
+            val halfHeight = height / 2
+
+            // Outer boundary
+            drawRect(
+                color = PitchLineColor,
+                topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+                size = Size(width - strokeWidth, height - strokeWidth),
+                style = Stroke(width = strokeWidth)
+            )
+
+            // Halfway line
+            drawLine(
+                color = PitchLineColor,
+                start = Offset(0f, halfHeight),
+                end = Offset(width, halfHeight),
+                strokeWidth = strokeWidth
+            )
+
+            // Center circle
+            val centerCircleRadius = width * 0.15f
+            drawCircle(
+                color = PitchLineColor,
+                center = Offset(width / 2, halfHeight),
+                radius = centerCircleRadius,
+                style = Stroke(width = strokeWidth)
+            )
+
+            // Center spot
+            drawCircle(
+                color = PitchLineColor,
+                center = Offset(width / 2, halfHeight),
+                radius = 4.dp.toPx()
+            )
+
+            // === TOP (Away team goal) ===
+            val penaltyAreaWidth = width * 0.7f
+            val penaltyAreaHeight = height * 0.16f
+            val penaltyAreaLeft = (width - penaltyAreaWidth) / 2
+
+            // Top penalty area
+            drawRect(
+                color = PitchLineColor,
+                topLeft = Offset(penaltyAreaLeft, 0f),
+                size = Size(penaltyAreaWidth, penaltyAreaHeight),
+                style = Stroke(width = strokeWidth)
+            )
+
+            // Top goal area (6-yard box)
+            val goalAreaWidth = width * 0.3f
+            val goalAreaHeight = height * 0.06f
+            val goalAreaLeft = (width - goalAreaWidth) / 2
+            drawRect(
+                color = PitchLineColor,
+                topLeft = Offset(goalAreaLeft, 0f),
+                size = Size(goalAreaWidth, goalAreaHeight),
+                style = Stroke(width = strokeWidth)
+            )
+
+            // Top penalty spot
+            val penaltySpotY = penaltyAreaHeight * 0.7f
+            drawCircle(
+                color = PitchLineColor,
+                center = Offset(width / 2, penaltySpotY),
+                radius = 3.dp.toPx()
+            )
+
+            // Top penalty arc
+            val arcRadius = centerCircleRadius * 0.8f
+            drawArc(
+                color = PitchLineColor.copy(alpha = 0.7f),
+                startAngle = 35f,
+                sweepAngle = 110f,
+                useCenter = false,
+                topLeft = Offset(width / 2 - arcRadius, penaltyAreaHeight - arcRadius * 0.3f),
+                size = Size(arcRadius * 2, arcRadius),
+                style = Stroke(width = strokeWidth)
+            )
+
+            // === BOTTOM (Home team goal) ===
+            // Bottom penalty area
+            drawRect(
+                color = PitchLineColor,
+                topLeft = Offset(penaltyAreaLeft, height - penaltyAreaHeight),
+                size = Size(penaltyAreaWidth, penaltyAreaHeight),
+                style = Stroke(width = strokeWidth)
+            )
+
+            // Bottom goal area
+            drawRect(
+                color = PitchLineColor,
+                topLeft = Offset(goalAreaLeft, height - goalAreaHeight),
+                size = Size(goalAreaWidth, goalAreaHeight),
+                style = Stroke(width = strokeWidth)
+            )
+
+            // Bottom penalty spot
+            drawCircle(
+                color = PitchLineColor,
+                center = Offset(width / 2, height - penaltySpotY),
+                radius = 3.dp.toPx()
+            )
+
+            // Bottom penalty arc
+            drawArc(
+                color = PitchLineColor.copy(alpha = 0.7f),
+                startAngle = 215f,
+                sweepAngle = 110f,
+                useCenter = false,
+                topLeft = Offset(width / 2 - arcRadius, height - penaltyAreaHeight - arcRadius * 0.7f),
+                size = Size(arcRadius * 2, arcRadius),
+                style = Stroke(width = strokeWidth)
+            )
+
+            // Corner arcs
+            val cornerRadius = width * 0.04f
+            // Top-left
+            drawArc(
+                color = PitchLineColor,
+                startAngle = 0f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(-cornerRadius, -cornerRadius),
+                size = Size(cornerRadius * 2, cornerRadius * 2),
+                style = Stroke(width = strokeWidth)
+            )
+            // Top-right
+            drawArc(
+                color = PitchLineColor,
+                startAngle = 90f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(width - cornerRadius, -cornerRadius),
+                size = Size(cornerRadius * 2, cornerRadius * 2),
+                style = Stroke(width = strokeWidth)
+            )
+            // Bottom-left
+            drawArc(
+                color = PitchLineColor,
+                startAngle = 270f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(-cornerRadius, height - cornerRadius),
+                size = Size(cornerRadius * 2, cornerRadius * 2),
+                style = Stroke(width = strokeWidth)
+            )
+            // Bottom-right
+            drawArc(
+                color = PitchLineColor,
+                startAngle = 180f,
+                sweepAngle = 90f,
+                useCenter = false,
+                topLeft = Offset(width - cornerRadius, height - cornerRadius),
+                size = Size(cornerRadius * 2, cornerRadius * 2),
+                style = Stroke(width = strokeWidth)
+            )
+        }
+
+        // Team name watermarks
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Home team watermark (top 25%)
+            Text(
+                text = homeTeamName,
+                color = Color.White.copy(alpha = 0.1f),
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 8.sp,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+            )
+
+            // Away team watermark (bottom 25%)
+            Text(
+                text = awayTeamName,
+                color = Color.White.copy(alpha = 0.1f),
+                fontSize = 48.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 8.sp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 80.dp)
+            )
+        }
+
+        // Position players on the pitch
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val pitchWidth = maxWidth
+            val pitchHeight = maxHeight
+
+            // Process home team (top half, plays downward)
+            val homePlayers = processTeamPlayers(
+                lineup = homeLineup,
+                side = "home",
+                startY = 5f,
+                endY = 45f
+            )
+
+            // Process away team (bottom half, plays upward)
+            val awayPlayers = processTeamPlayers(
+                lineup = awayLineup,
+                side = "away",
+                startY = 95f,
+                endY = 55f
+            )
+
+            // Render all players
+            (homePlayers + awayPlayers).forEach { positioned ->
+                PlayerMarker(
+                    player = positioned.player,
+                    teamColors = positioned.teamColors,
+                    xPercent = positioned.x,
+                    yPercent = positioned.y,
+                    pitchWidth = pitchWidth,
+                    pitchHeight = pitchHeight
+                )
+            }
+        }
+    }
+}
+
+private fun processTeamPlayers(
+    lineup: TeamLineup,
+    side: String,
+    startY: Float,
+    endY: Float
+): List<PositionedPlayer> {
+    val players = lineup.startXI ?: return emptyList()
+    val positionedPlayers = mutableListOf<PositionedPlayer>()
+
+    // Check if majority of players have grid data
+    val hasGridData = players.count { it.player.grid != null } > 8
+
+    val rows: List<List<PlayerInfo>> = if (hasGridData) {
+        // Grid-based positioning
+        val rowMap = mutableMapOf<Int, MutableList<Pair<Int, PlayerInfo>>>()
+
+        players.forEach { playerLineup ->
+            val grid = playerLineup.player.grid ?: return@forEach
+            val parts = grid.split(":")
+            if (parts.size == 2) {
+                val row = parts[0].toIntOrNull() ?: 1
+                val col = parts[1].toIntOrNull() ?: 1
+                if (!rowMap.containsKey(row)) {
+                    rowMap[row] = mutableListOf()
+                }
+                rowMap[row]!!.add(Pair(col, playerLineup.player))
+            }
+        }
+
+        // Sort rows by key, then sort players in each row by column
+        rowMap.keys.sorted().map { rowKey ->
+            rowMap[rowKey]!!.sortedBy { it.first }.map { it.second }
+        }
+    } else {
+        // Fallback: use formation string
+        val result = mutableListOf<List<PlayerInfo>>()
+
+        // Find goalkeeper
+        val gk = players.find { getPositionType(it.player.pos) == PositionType.GK }
+        if (gk != null) {
+            result.add(listOf(gk.player))
+        }
+
+        // Parse formation and distribute outfield players
+        val formationRows = parseFormation(lineup.formation)
+        val outfield = players
+            .filter { getPositionType(it.player.pos) != PositionType.GK }
+            .sortedBy {
+                when (getPositionType(it.player.pos)) {
+                    PositionType.DEF -> 1
+                    PositionType.MID -> 2
+                    PositionType.FWD -> 3
+                    else -> 99
+                }
+            }
+            .map { it.player }
+
+        var cursor = 0
+        formationRows.forEach { count ->
+            val rowPlayers = outfield.drop(cursor).take(count)
+            if (rowPlayers.isNotEmpty()) {
+                result.add(rowPlayers)
+            }
+            cursor += count
+        }
+
+        // Handle any remaining players
+        if (cursor < outfield.size) {
+            val remaining = outfield.drop(cursor)
+            if (result.isNotEmpty()) {
+                result[result.lastIndex] = result.last() + remaining
+            } else {
+                result.add(remaining)
+            }
+        }
+
+        result
+    }
+
+    // Calculate Y positions using linear interpolation
+    val numRows = rows.size
+    if (numRows == 0) return emptyList()
+
+    rows.forEachIndexed { rowIndex, rowPlayers ->
+        val y = if (numRows <= 1) {
+            startY
+        } else {
+            val step = (endY - startY) / (numRows - 1)
+            startY + (step * rowIndex)
+        }
+
+        rowPlayers.forEachIndexed { playerIndex, player ->
+            // Distribute evenly on X axis: (100 / (count + 1)) * (index + 1)
+            val x = (100f / (rowPlayers.size + 1)) * (playerIndex + 1)
+
+            positionedPlayers.add(
+                PositionedPlayer(
+                    player = player,
+                    x = x,
+                    y = y,
+                    teamColors = lineup.team.colors
+                )
+            )
+        }
+    }
+
+    return positionedPlayers
+}
+
+@Composable
+fun PlayerMarker(
+    player: PlayerInfo,
+    teamColors: TeamColors?,
+    xPercent: Float,
+    yPercent: Float,
+    pitchWidth: Dp,
+    pitchHeight: Dp
+) {
+    val density = LocalDensity.current
+    val markerSize = 32.dp
+    val columnWidth = 56.dp
+    val halfColumnWidth = columnWidth / 2
+    val halfMarkerHeight = markerSize / 2
+
+    // Calculate actual position from percentage
+    val xOffset = pitchWidth * (xPercent / 100f)
+    val yOffset = pitchHeight * (yPercent / 100f)
+
+    val playerColor = if (player.pos == "G") teamColors?.goalkeeper else teamColors?.player
+    val primaryColor = parseColorOrFallback(playerColor?.primary, Color(0xFF1565C0))
+    val numberColor = parseColorOrFallback(playerColor?.number, Color.White)
+    val borderColor = parseColorOrFallback(playerColor?.border, Color.White)
+
+    Box(
+        modifier = Modifier
+            .offset {
+                IntOffset(
+                    x = with(density) { (xOffset - halfColumnWidth).roundToPx() },
+                    y = with(density) { (yOffset - halfMarkerHeight).roundToPx() }
+                )
+            }
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(columnWidth)
         ) {
-            // Team Logo
+            // Player circle with number
             Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                        .padding(4.dp),
+                modifier = Modifier
+                    .size(markerSize)
+                    .shadow(6.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(primaryColor)
+                    .border(2.dp, borderColor, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter =
-                        rememberAsyncImagePainter(
-                            model = lineup.team.logo,
-                            onError = {
-                                /* Handle error gracefully */
-                            }
-                        ),
-                    contentDescription = lineup.team.name?.take(20)
-                        ?: stringResource(R.string.team_logo),
-                    modifier = Modifier.size(36.dp)
+                Text(
+                    text = player.number?.toString() ?: "",
+                    color = numberColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
 
-            // Team Info
-            Column {
+            // Player name (last name only)
+            Text(
+                text = player.name?.split(" ")?.lastOrNull()?.take(10) ?: "",
+                fontSize = 8.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                /*modifier = Modifier
+                    .background(
+                        Color.Black.copy(alpha = 0.6f),
+                        RoundedCornerShape(4.dp)
+                    )
+                    .padding(horizontal = 4.dp, vertical = 2.dp)*/
+            )
+        }
+    }
+}
+
+@Composable
+fun FormationBadge(lineup: TeamLineup) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        // Team Logo
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(Color.White)
+                .padding(2.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(model = lineup.team.logo),
+                contentDescription = lineup.team.name?.take(20) ?: stringResource(R.string.team_logo),
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column {
+            Text(
+                text = lineup.team.name ?: "",
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+            ) {
+                Text(
+                    text = lineup.formation ?: "-",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SubstitutesAndCoach(lineup: TeamLineup, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .padding(horizontal = 8.dp)
+            .fillMaxWidth()
+            .height(300.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Team header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter(model = lineup.team.logo),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = lineup.team.name ?: "",
                     style = MaterialTheme.typography.titleSmall,
@@ -191,57 +740,9 @@ fun TeamHeaderCompact(lineup: TeamLineup) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                // Formation with visual indicator
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    ) {
-                        Text(
-                            text = lineup.formation ?: "-",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TeamLineupDetails(lineup: TeamLineup, modifier: Modifier = Modifier) {
-    Column(
-        modifier =
-            modifier
-                .padding(horizontal = 8.dp)
-                .fillMaxWidth()
-                .height(300.dp), // Fixed height to avoid infinite height constraints
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-
-        // Use a scrollable column instead of LazyColumn to avoid nesting issues
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f) // Take remaining space
-                    .verticalScroll(rememberScrollState()), // Make it scrollable
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-
-            // Starting XI players
-            lineup.startXI?.forEach { playerLineup ->
-                PlayerRow(player = playerLineup.player, teamColors = lineup.team.colors)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Substitutes header
-            SectionHeader(title = stringResource(R.string.substitutes))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Substitutes players
             lineup.substitutes?.forEach { playerLineup ->
@@ -253,39 +754,6 @@ fun TeamLineupDetails(lineup: TeamLineup, modifier: Modifier = Modifier) {
             // Coach section
             CoachSection(coach = lineup.coach)
         }
-    }
-}
-
-@Composable
-fun SectionHeader(title: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        HorizontalDivider(
-            modifier = Modifier
-                .weight(0.15f)
-                .padding(end = 8.dp),
-            thickness = 2.dp,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        HorizontalDivider(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp),
-            thickness = 2.dp,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-        )
     }
 }
 
@@ -443,5 +911,67 @@ fun PlayerRow(
         }
     }
 }
+
+@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun PreviewFixtureLineupsScreen() {
+    val sampleLineup = TeamLineup(
+        team = com.soccertips.predictx.data.model.lineups.TeamInfo(
+            id = 1,
+            name = "Sample FC",
+            logo = "https://via.placeholder.com/150",
+            colors =
+                TeamColors(
+                    player = com.soccertips.predictx.data.model.lineups.PlayerColors(
+                        primary = "#1565C0",
+                        number = "#FFFFFF",
+                        border = "#0D47A1"
+                    ),
+                    goalkeeper = com.soccertips.predictx.data.model.lineups.PlayerColors(
+                        primary = "#D32F2F",
+                        number = "#FFFFFF",
+                        border = "#B71C1C"
+                    )
+                )
+        ),
+        formation = "3-2-4-1",
+        startXI = List(11) {
+            PlayerLineup(
+                player = PlayerInfo(
+                    id = it + 1,
+                    name = "Player" + "${it + 1}",
+                    number = it + 1,
+                    pos = when (it) {
+                        0 -> "G"
+                        in 1..4 -> "D"
+                        in 5..7 -> "M"
+                        else -> "F"
+                    },
+                    grid = null
+                )
+            )
+        },
+        substitutes = List(7) {
+            PlayerLineup(
+                player = PlayerInfo(
+                    id = it + 12,
+                    name = "Substitute ${it + 1}",
+                    number = it + 12,
+                    pos = "M",
+                    grid = null
+                )
+            )
+        },
+        coach = CoachInfo(
+            id = 1,
+            name = "Coach Name",
+            photo = "https://via.placeholder.com/100"
+        )
+    )   
+    FixtureLineupsScreen(
+        lineups = Pair(sampleLineup, sampleLineup)
+    )
+}
+
 
 

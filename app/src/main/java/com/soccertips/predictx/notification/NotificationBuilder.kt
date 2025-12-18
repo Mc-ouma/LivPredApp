@@ -254,6 +254,7 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
                 .setAutoCancel(true)
                 .setContentIntent(viewResultsIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+
                 .setCategory(NotificationCompat.CATEGORY_EVENT)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setColor(context.getColor(R.color.success_green))

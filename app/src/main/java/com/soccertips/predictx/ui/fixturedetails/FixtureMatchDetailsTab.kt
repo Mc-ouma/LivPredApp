@@ -5,10 +5,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.soccertips.predictx.admob.RewardedAdManager
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.model.ResponseData
 import com.soccertips.predictx.data.model.events.FixtureEvent
 import com.soccertips.predictx.data.model.headtohead.FixtureDetails
@@ -32,8 +33,7 @@ fun FixtureMatchDetailsTab(
     fixturePredictionsState: UiState<List<Response>>,
     fixtureDetails: ResponseData,
     formState: UiState<List<SharedViewModel.FixtureWithType>>,
-    navController: NavController,
-    rewardedAdManager: RewardedAdManager
+    navController: NavController
 ) {
     when {
         formState is UiState.Loading || fixturePredictionsState is UiState.Loading -> {
@@ -50,8 +50,7 @@ fun FixtureMatchDetailsTab(
                 fixtureDetails = fixtureDetails,
                 homeTeamId = fixtureDetails.teams.home.id.toString(),
                 awayTeamId = fixtureDetails.teams.away.id.toString(),
-                navController = navController,
-                rewardedAdManager = rewardedAdManager
+                navController = navController
             )
             Timber.tag("FixtureMatchDetailsTab")
                 .d("FixtureMatchDetailsTab: ${formState.data} ")
@@ -65,7 +64,7 @@ fun FixtureMatchDetailsTab(
         }
 
         else -> {
-            Text(text = "😞 Error loading match details", color = Color.Red)
+            Text(text = stringResource(R.string.error_loading_fixture_details), color = Color.Red)
         }
     }
 }
@@ -89,7 +88,7 @@ fun FixtureStatisticsTab(fixtureStatsState: UiState<List<com.soccertips.predictx
         }
 
         else -> {
-            Text(text = "No data available", color = Color.Gray)
+            Text(text = stringResource(R.string.no_data_available), color = Color.Gray)
         }
     }
 }
@@ -121,7 +120,7 @@ fun FixtureHeadToHeadTab(
         }
 
         else -> {
-            Text(text = "No data available", color = Color.Gray)
+            Text(text = stringResource(R.string.no_data_available), color = Color.Gray)
         }
     }
 }
@@ -135,7 +134,12 @@ fun FixtureLineupsTab(lineupsState: UiState<List<TeamLineup>>) {
                     lineups = Pair(lineupsState.data[0], lineupsState.data[1])
                 )
             } else {
-                Text(text = "No data available", color = Color.Gray, modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
+                Text(
+                    text = stringResource(R.string.no_data_available),
+                    color = Color.Gray,
+                    modifier = Modifier.padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
@@ -151,7 +155,7 @@ fun FixtureLineupsTab(lineupsState: UiState<List<TeamLineup>>) {
         }
 
         else -> {
-            Text(text = "No data available", color = Color.Gray)
+            Text(text = stringResource(R.string.no_data_available), color = Color.Gray)
         }
     }
 }
@@ -184,7 +188,7 @@ fun FixtureStandingsTab(
         }
 
         else -> {
-            Text(text = "No standings available", color = Color.Gray)
+            Text(text = stringResource(R.string.no_standings_available), color = Color.Gray)
         }
     }
 }
@@ -217,7 +221,7 @@ fun FixtureSummaryTab(
         }
 
         else -> {
-            Text(text = "No events available", color = Color.Gray)
+            Text(text = stringResource(R.string.no_events_available), color = Color.Gray)
         }
     }
 }

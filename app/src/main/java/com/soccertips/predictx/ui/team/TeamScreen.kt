@@ -111,14 +111,14 @@ enum class TeamStatisticsTab(@StringRes val title: Int) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamScreen(
-        navController: NavController,
-        teamId: String,
-        viewModel: TeamViewModel = hiltViewModel(),
-        sharedViewModel: SharedViewModel =
-                hiltViewModel(LocalContext.current as ViewModelStoreOwner),
-        leagueId: String,
-        season: String,
-        pages: Array<TeamStatisticsTab> = TeamStatisticsTab.entries.toTypedArray(),
+    navController: NavController,
+    teamId: String,
+    viewModel: TeamViewModel = hiltViewModel(),
+    sharedViewModel: SharedViewModel =
+        hiltViewModel(LocalContext.current as ViewModelStoreOwner),
+    leagueId: String,
+    season: String,
+    pages: Array<TeamStatisticsTab> = TeamStatisticsTab.entries.toTypedArray(),
 ) {
     val teamDataState by viewModel.teamData.collectAsStateWithLifecycle()
     val teamState by viewModel.team.collectAsStateWithLifecycle()
@@ -174,125 +174,129 @@ fun TeamScreen(
             }
 
             awaitAll(
-                    teamDataDeferred,
-                    teamDeferred,
-                    playersDeferred,
-                    transfersDeferred,
-                    nextFixturesDeferred,
-                    standingsDeferred,
-                    fixturesDeferred
+                teamDataDeferred,
+                teamDeferred,
+                playersDeferred,
+                transfersDeferred,
+                nextFixturesDeferred,
+                standingsDeferred,
+                fixturesDeferred
             )
         }
     }
 
     Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                        title = {
-                            when (val state = teamDataState) {
-                                is UiState.Success<*> -> {
-                                    val data = state.data
-                                    if (data is Response) {
-                                        Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            // Team Logo
-                                            Image(
-                                                    painter =
-                                                            rememberAsyncImagePainter(
-                                                                    model = data.team.logo
-                                                            ),
-                                                    contentDescription = "Team Logo",
-                                                    modifier =
-                                                            Modifier.size(32.dp)
-                                                                    .clip(CircleShape)
-                                                                    .border(
-                                                                            1.dp,
-                                                                            MaterialTheme
-                                                                                    .colorScheme
-                                                                                    .primary,
-                                                                            CircleShape
-                                                                    )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            // Team Name and Country
-                                            Column {
-                                                Text(
-                                                        text = data.team.name ?: "",
-                                                        style =
-                                                                MaterialTheme.typography
-                                                                        .titleMedium,
-                                                        fontWeight = FontWeight.Bold
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    when (val state = teamDataState) {
+                        is UiState.Success<*> -> {
+                            val data = state.data
+                            if (data is Response) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    // Team Logo
+                                    Image(
+                                        painter =
+                                            rememberAsyncImagePainter(
+                                                model = data.team.logo
+                                            ),
+                                        contentDescription = stringResource(R.string.team_logo),
+                                        modifier =
+                                            Modifier.size(32.dp)
+                                                .clip(CircleShape)
+                                                .border(
+                                                    1.dp,
+                                                    MaterialTheme
+                                                        .colorScheme
+                                                        .primary,
+                                                    CircleShape
                                                 )
-                                                Text(
-                                                        text = data.team.country ?: "-",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color =
-                                                                MaterialTheme.colorScheme.onSurface
-                                                                        .copy(alpha = 0.7f)
-                                                )
-                                            }
-                                        }
-                                    } else {
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    // Team Name and Country
+                                    Column {
                                         Text(
-                                                text = stringResource(R.string.team_info),
-                                                style = MaterialTheme.typography.titleMedium
+                                            text = data.team.name ?: "",
+                                            style =
+                                                MaterialTheme.typography
+                                                    .titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = data.team.country ?: "-",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color =
+                                                MaterialTheme.colorScheme.onSurface
+                                                    .copy(alpha = 0.7f)
                                         )
                                     }
                                 }
-                                is UiState.Loading -> {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (isTeamDataLoading) {
-                                            CircularProgressIndicator(
-                                                    modifier = Modifier.size(16.dp),
-                                                    strokeWidth = 2.dp
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                    text = stringResource(R.string.loading),
-                                                    style = MaterialTheme.typography.titleMedium
-                                            )
-                                        } else {
-                                            Text(
-                                                    text = stringResource(R.string.team_info),
-                                                    style = MaterialTheme.typography.titleMedium
-                                            )
-                                        }
-                                    }
-                                }
-                                is UiState.Error ->
-                                        Text(
-                                                text =
-                                                        stringResource(
-                                                                R.string
-                                                                        .an_error_occurred_please_check_your_internet_or_check_again_later
-                                                        ),
-                                                style = MaterialTheme.typography.titleMedium
-                                        )
-                                UiState.Empty ->
-                                        Text(
-                                                text = stringResource(R.string.no_data_available),
-                                                style = MaterialTheme.typography.titleMedium
-                                        )
-                                is UiState.ShowSnackbar ->
-                                        Text(
-                                                text = stringResource(R.string.team_info),
-                                                style = MaterialTheme.typography.titleMedium
-                                        )
-                            }
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(
-                                        imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                                        contentDescription = stringResource(R.string.back)
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.team_info),
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                             }
                         }
-                )
-            }
+
+                        is UiState.Loading -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isTeamDataLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.loading),
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.team_info),
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                            }
+                        }
+
+                        is UiState.Error ->
+                            Text(
+                                text =
+                                    stringResource(
+                                        R.string
+                                            .an_error_occurred_please_check_your_internet_or_check_again_later
+                                    ),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+
+                        UiState.Empty ->
+                            Text(
+                                text = stringResource(R.string.no_data_available),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+
+                        is UiState.ShowSnackbar ->
+                            Text(
+                                text = stringResource(R.string.team_info),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                }
+            )
+        }
     ) { paddingValues ->
         if (isTeamDataLoading || isPlayersLoading || isFixturesLoading || isTeamLoading) {
 
@@ -302,67 +306,70 @@ fun TeamScreen(
         } else {
             when (teamDataState) {
                 is UiState.Loading ->
-                        Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxSize()
-                        ) { CircularProgressIndicator() }
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) { CircularProgressIndicator() }
+
                 is UiState.Success ->
-                        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                            val density = LocalDensity.current
-                            AnimatedVisibility(
-                                    visible = teamInfoVisible.value,
-                                    enter =
-                                            slideInVertically {
-                                                with(density) { -40.dp.roundToPx() }
-                                            } +
-                                                    expandVertically(expandFrom = Alignment.Top) +
-                                                    fadeIn(initialAlpha = 0.3f),
-                                    exit = slideOutVertically() + shrinkVertically() + fadeOut(),
-                            ) {
-                                val teamInfoCardData =
-                                        (teamDataState as? UiState.Success<List<Response>>)?.data
-                                                ?.firstOrNull()
+                    Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                        val density = LocalDensity.current
+                        AnimatedVisibility(
+                            visible = teamInfoVisible.value,
+                            enter =
+                                slideInVertically {
+                                    with(density) { -40.dp.roundToPx() }
+                                } +
+                                        expandVertically(expandFrom = Alignment.Top) +
+                                        fadeIn(initialAlpha = 0.3f),
+                            exit = slideOutVertically() + shrinkVertically() + fadeOut(),
+                        ) {
+                            val teamInfoCardData =
+                                (teamDataState as? UiState.Success<List<Response>>)?.data
+                                    ?.firstOrNull()
 
-                                teamInfoCardData?.let { response ->
-                                    TeamInfoCard(
-                                            statistics = response,
-                                            modifier = Modifier.padding(16.dp)
-                                    )
-                                }
+                            teamInfoCardData?.let { response ->
+                                TeamInfoCard(
+                                    statistics = response,
+                                    modifier = Modifier.padding(16.dp)
+                                )
                             }
-
-                            TeamsTab(
-                                    pages = pages,
-                                    navController = navController,
-                                    teamState = teamState,
-                                    playersState = playersState,
-                                    lastFixturesState = lastFixturesState,
-                                    nextFixturesState = nextFixturesState,
-                                    standingsState = standingsState,
-                                    teamId = teamId,
-                                    viewModel = viewModel,
-                                    onTabSelected = { currentTab = it },
-                                    teamInfoVisible = teamInfoVisible // Pass MutableState<Boolean>
-                            )
                         }
-                is UiState.Error ->
-                        ErrorScreen(
-                                paddingValues,
-                                stringResource(
-                                        R.string
-                                                .an_error_occurred_please_check_your_internet_or_check_again_later
-                                ),
-                                // (teamDataState as UiState.Error).message
-                                onRetry = {
-                                    viewModel.getTeams(leagueId, season, teamId)
-                                    viewModel.getTeamData(teamId.toInt())
-                                    viewModel.getPlayers(teamId)
-                                    viewModel.getTransfers(teamId)
-                                    viewModel.getNextFixtures(season, teamId, "10")
-                                    sharedViewModel.fetchStandings(leagueId, season)
-                                    sharedViewModel.fetchFixtures(season, teamId, teamId, "10")
-                                }
+
+                        TeamsTab(
+                            pages = pages,
+                            navController = navController,
+                            teamState = teamState,
+                            playersState = playersState,
+                            lastFixturesState = lastFixturesState,
+                            nextFixturesState = nextFixturesState,
+                            standingsState = standingsState,
+                            teamId = teamId,
+                            viewModel = viewModel,
+                            onTabSelected = { currentTab = it },
+                            teamInfoVisible = teamInfoVisible // Pass MutableState<Boolean>
                         )
+                    }
+
+                is UiState.Error ->
+                    ErrorScreen(
+                        paddingValues,
+                        stringResource(
+                            R.string
+                                .an_error_occurred_please_check_your_internet_or_check_again_later
+                        ),
+                        // (teamDataState as UiState.Error).message
+                        onRetry = {
+                            viewModel.getTeams(leagueId, season, teamId)
+                            viewModel.getTeamData(teamId.toInt())
+                            viewModel.getPlayers(teamId)
+                            viewModel.getTransfers(teamId)
+                            viewModel.getNextFixtures(season, teamId, "10")
+                            sharedViewModel.fetchStandings(leagueId, season)
+                            sharedViewModel.fetchFixtures(season, teamId, teamId, "10")
+                        }
+                    )
+
                 UiState.Empty -> EmptyScreen(paddingValues)
                 else -> Unit
             }
@@ -372,17 +379,17 @@ fun TeamScreen(
 
 @Composable
 fun TeamsTab(
-        pages: Array<TeamStatisticsTab>,
-        navController: NavController,
-        teamState: UiState<TeamStatistics>,
-        playersState: UiState<List<com.soccertips.predictx.data.model.team.squad.Response>>,
-        lastFixturesState: UiState<List<FixtureWithType>>,
-        nextFixturesState: UiState<List<FixtureDetails>>,
-        standingsState: UiState<List<TeamStanding>>,
-        teamId: String,
-        viewModel: TeamViewModel,
-        onTabSelected: (TeamStatisticsTab) -> Unit,
-        teamInfoVisible: MutableState<Boolean>
+    pages: Array<TeamStatisticsTab>,
+    navController: NavController,
+    teamState: UiState<TeamStatistics>,
+    playersState: UiState<List<com.soccertips.predictx.data.model.team.squad.Response>>,
+    lastFixturesState: UiState<List<FixtureWithType>>,
+    nextFixturesState: UiState<List<FixtureDetails>>,
+    standingsState: UiState<List<TeamStanding>>,
+    teamId: String,
+    viewModel: TeamViewModel,
+    onTabSelected: (TeamStatisticsTab) -> Unit,
+    teamInfoVisible: MutableState<Boolean>
 ) {
     val pagerState = rememberPagerState { pages.size }
     val coroutineScope = rememberCoroutineScope()
@@ -410,92 +417,96 @@ fun TeamsTab(
     Column(modifier = Modifier.fillMaxSize()) {
         // Tab Row
         TeamsTabRow(
-                pages = pages,
-                pagerState = pagerState,
-                coroutineScope = coroutineScope,
-                onTabSelected = currentOnTabSelected
+            pages = pages,
+            pagerState = pagerState,
+            coroutineScope = coroutineScope,
+            onTabSelected = currentOnTabSelected
         )
 
         // Horizontal Pager for Tab Content
         HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                userScrollEnabled = true,
-                beyondViewportPageCount = 0,
-                key = { pages[it] }
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            userScrollEnabled = true,
+            beyondViewportPageCount = 0,
+            key = { pages[it] }
         ) { page ->
             val selectedTab = pages[page]
 
             when (selectedTab) {
                 TeamStatisticsTab.OVERVIEW -> {
                     ShowDataOrLoading(
-                            state = teamState,
-                            content = { statistics: TeamStatistics ->
-                                TeamStatisticsContent(
-                                        statistics = statistics,
-                                        lazyListState = lazyListState
-                                )
-                            }
+                        state = teamState,
+                        content = { statistics: TeamStatistics ->
+                            TeamStatisticsContent(
+                                statistics = statistics,
+                                lazyListState = lazyListState
+                            )
+                        }
                     )
                 }
+
                 TeamStatisticsTab.SQUAD -> {
                     ShowDataOrLoading(
-                            state = playersState,
-                            content = {
-                                    squadResponse:
-                                            List<
-                                                    com.soccertips.predictx.data.model.team.squad.Response>
-                                ->
-                                SquadScreen(
-                                        squadResponse = squadResponse,
-                                        lazyListState = lazyListState
-                                )
-                            }
+                        state = playersState,
+                        content = { squadResponse:
+                                    List<
+                                            com.soccertips.predictx.data.model.team.squad.Response>
+                            ->
+                            SquadScreen(
+                                squadResponse = squadResponse,
+                                lazyListState = lazyListState
+                            )
+                        }
                     )
                 }
+
                 TeamStatisticsTab.STANDINGS -> {
                     ShowDataOrLoading(
-                            state = standingsState,
-                            content = { standings: List<TeamStanding> ->
-                                FixtureStandings(
-                                        standings = standings,
-                                        teamId1 = teamId.toInt(),
-                                        lazyListState = lazyListState
-                                )
-                            }
+                        state = standingsState,
+                        content = { standings: List<TeamStanding> ->
+                            FixtureStandings(
+                                standings = standings,
+                                teamId1 = teamId.toInt(),
+                                lazyListState = lazyListState
+                            )
+                        }
                     )
                 }
+
                 TeamStatisticsTab.TRANSFERS -> {
                     TransferScreen(
-                            transfers = transfers,
-                            teamId = teamId,
-                            lazyListState = lazyListState
+                        transfers = transfers,
+                        teamId = teamId,
+                        lazyListState = lazyListState
                     )
                 }
+
                 TeamStatisticsTab.FIXTURES -> {
                     ShowDataOrLoading(
-                            state = nextFixturesState,
-                            content = { fixtures: List<FixtureDetails> ->
-                                FixturesScreen(
-                                        fixtures = fixtures,
-                                        navController = navController,
-                                        viewModel = viewModel,
-                                        lazyListState = lazyListState
-                                )
-                            }
+                        state = nextFixturesState,
+                        content = { fixtures: List<FixtureDetails> ->
+                            FixturesScreen(
+                                fixtures = fixtures,
+                                navController = navController,
+                                viewModel = viewModel,
+                                lazyListState = lazyListState
+                            )
+                        }
                     )
                 }
+
                 TeamStatisticsTab.RESULTS -> {
                     ShowDataOrLoading(
-                            state = lastFixturesState,
-                            content = { fixtures: List<FixtureWithType> ->
-                                ResultsScreen(
-                                        fixtures = fixtures,
-                                        navController = navController,
-                                        teamId = teamId.toInt(),
-                                        lazyListState = lazyListState
-                                )
-                            }
+                        state = lastFixturesState,
+                        content = { fixtures: List<FixtureWithType> ->
+                            ResultsScreen(
+                                fixtures = fixtures,
+                                navController = navController,
+                                teamId = teamId.toInt(),
+                                lazyListState = lazyListState
+                            )
+                        }
                     )
                 }
             }
@@ -507,24 +518,27 @@ fun TeamsTab(
 fun <T> ShowDataOrLoading(state: UiState<T>, content: @Composable (T) -> Unit) {
     when (state) {
         is UiState.Loading ->
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+
         is UiState.Success -> {
             Timber.tag("ShowDataOrLoading").d("Data loaded successfully: ${state.data}")
             content(state.data)
         }
+
         is UiState.Error ->
-                ErrorScreen(
-                        paddingValues = PaddingValues(0.dp),
-                        message =
-                                stringResource(
-                                        R.string
-                                                .an_error_occurred_please_check_your_internet_or_check_again_later
-                                ),
-                        // state.message
-                        onRetry = {}
-                )
+            ErrorScreen(
+                paddingValues = PaddingValues(0.dp),
+                message =
+                    stringResource(
+                        R.string
+                            .an_error_occurred_please_check_your_internet_or_check_again_later
+                    ),
+                // state.message
+                onRetry = {}
+            )
+
         UiState.Empty -> EmptyScreen(paddingValues = PaddingValues(0.dp))
         else -> Unit
     }
@@ -533,43 +547,43 @@ fun <T> ShowDataOrLoading(state: UiState<T>, content: @Composable (T) -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeamsTabRow(
-        pages: Array<TeamStatisticsTab>,
-        pagerState: PagerState,
-        coroutineScope: CoroutineScope,
-        onTabSelected: (TeamStatisticsTab) -> Unit
+    pages: Array<TeamStatisticsTab>,
+    pagerState: PagerState,
+    coroutineScope: CoroutineScope,
+    onTabSelected: (TeamStatisticsTab) -> Unit
 ) {
     SecondaryScrollableTabRow(
-            selectedTabIndex = pagerState.currentPage,
+        selectedTabIndex = pagerState.currentPage,
     ) {
         pages.forEachIndexed { index, tab ->
             val title = stringResource(id = tab.title)
             val icon =
-                    when (tab) {
-                        TeamStatisticsTab.OVERVIEW -> Icons.Default.Home
-                        TeamStatisticsTab.FIXTURES -> Icons.Default.Schedule
-                        TeamStatisticsTab.SQUAD -> Icons.Default.Group
-                        TeamStatisticsTab.RESULTS -> Icons.Default.Checklist
-                        TeamStatisticsTab.TRANSFERS -> Icons.Default.SyncAlt
-                        TeamStatisticsTab.STANDINGS -> Icons.Default.StackedBarChart
-                    }
+                when (tab) {
+                    TeamStatisticsTab.OVERVIEW -> Icons.Default.Home
+                    TeamStatisticsTab.FIXTURES -> Icons.Default.Schedule
+                    TeamStatisticsTab.SQUAD -> Icons.Default.Group
+                    TeamStatisticsTab.RESULTS -> Icons.Default.Checklist
+                    TeamStatisticsTab.TRANSFERS -> Icons.Default.SyncAlt
+                    TeamStatisticsTab.STANDINGS -> Icons.Default.StackedBarChart
+                }
             Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = {
-                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
-                        onTabSelected(tab)
-                    },
-                    text = {
-                        Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(8.dp)
-                        ) {
-                            Icon(imageVector = icon, contentDescription = title)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(title)
-                        }
-                    },
-                    selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                selected = pagerState.currentPage == index,
+                onClick = {
+                    coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                    onTabSelected(tab)
+                },
+                text = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        Icon(imageVector = icon, contentDescription = title)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(title)
+                    }
+                },
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -581,38 +595,38 @@ fun TeamInfoCard(statistics: Response, modifier: Modifier = Modifier) {
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
     Card(
-            colors = cardColors,
-            elevation = cardElevation,
-            modifier = modifier.fillMaxWidth().padding(16.dp),
+        colors = cardColors,
+        elevation = cardElevation,
+        modifier = modifier.fillMaxWidth().padding(16.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Team Logo and Name
             Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Image(
-                        painter = rememberAsyncImagePainter(statistics.team.logo ?: ""),
-                        contentDescription = "Team Logo",
-                        modifier = Modifier.size(80.dp).clip(CircleShape),
-                        contentScale = ContentScale.Crop
+                    painter = rememberAsyncImagePainter(statistics.team.logo ?: ""),
+                    contentDescription = stringResource(R.string.team_logo),
+                    modifier = Modifier.size(80.dp).clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                            text = statistics.team.name ?: "Unknown",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
+                        text = statistics.team.name ?: stringResource(R.string.unknown),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
                     )
                     Text(
-                            text = stringResource(R.string.founded, statistics.team.founded ?: 0),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        text = stringResource(R.string.founded, statistics.team.founded ?: 0),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     Text(
-                            text = stringResource(R.string.country, statistics.team.country ?: "-"),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        text = stringResource(R.string.country, statistics.team.country ?: "-"),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -620,61 +634,61 @@ fun TeamInfoCard(statistics: Response, modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                    onClick = { stadiumDetailsVisible.value = !stadiumDetailsVisible.value },
-                    modifier = Modifier.align(Alignment.End)
+                onClick = { stadiumDetailsVisible.value = !stadiumDetailsVisible.value },
+                modifier = Modifier.align(Alignment.End)
             ) {
                 Text(
-                        text =
-                                if (stadiumDetailsVisible.value)
-                                        stringResource(R.string.hide_stadium_details)
-                                else stringResource(R.string.show_stadium_details)
+                    text =
+                        if (stadiumDetailsVisible.value)
+                            stringResource(R.string.hide_stadium_details)
+                        else stringResource(R.string.show_stadium_details)
                 )
             }
             AnimatedVisibility(visible = stadiumDetailsVisible.value) {
                 Column {
                     Spacer(modifier = Modifier.height(8.dp))
                     GridLayout(
-                            items =
-                                    listOf(
-                                            {
-                                                TeamInfoItem(
-                                                        icon = Icons.Default.LocationOn,
-                                                        title = "Stadium",
-                                                        value = statistics.venue.name ?: ""
-                                                )
-                                            },
-                                            {
-                                                TeamInfoItem(
-                                                        icon = Icons.Default.LocationCity,
-                                                        title = "City",
-                                                        value = statistics.venue.city ?: ""
-                                                )
-                                            },
-                                            {
-                                                TeamInfoItem(
-                                                        icon = Icons.Default.Home,
-                                                        title = "Address",
-                                                        value = statistics.venue.address ?: ""
-                                                )
-                                            },
-                                            {
-                                                TeamInfoItem(
-                                                        icon = Icons.Default.Grass,
-                                                        title = "Surface",
-                                                        value = statistics.venue.surface ?: ""
-                                                )
-                                            },
-                                            {
-                                                TeamInfoItem(
-                                                        icon = Icons.Default.People,
-                                                        title = "Capacity",
-                                                        value =
-                                                                statistics.venue.capacity
-                                                                        ?.toString()
-                                                                        ?: ""
-                                                )
-                                            }
+                        items =
+                            listOf(
+                                {
+                                    TeamInfoItem(
+                                        icon = Icons.Default.LocationOn,
+                                        title = stringResource(R.string.stadium),
+                                        value = statistics.venue.name ?: ""
                                     )
+                                },
+                                {
+                                    TeamInfoItem(
+                                        icon = Icons.Default.LocationCity,
+                                        title = stringResource(R.string.city),
+                                        value = statistics.venue.city ?: ""
+                                    )
+                                },
+                                {
+                                    TeamInfoItem(
+                                        icon = Icons.Default.Home,
+                                        title = stringResource(R.string.address),
+                                        value = statistics.venue.address ?: ""
+                                    )
+                                },
+                                {
+                                    TeamInfoItem(
+                                        icon = Icons.Default.Grass,
+                                        title = stringResource(R.string.surface),
+                                        value = statistics.venue.surface ?: ""
+                                    )
+                                },
+                                {
+                                    TeamInfoItem(
+                                        icon = Icons.Default.People,
+                                        title = stringResource(R.string.capacity),
+                                        value =
+                                            statistics.venue.capacity
+                                                ?.toString()
+                                                ?: ""
+                                    )
+                                }
+                            )
                     )
                 }
             }
@@ -685,37 +699,37 @@ fun TeamInfoCard(statistics: Response, modifier: Modifier = Modifier) {
 @Composable
 fun GridLayout(items: List<@Composable () -> Unit>, modifier: Modifier = Modifier) {
     LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(8.dp, 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        columns = GridCells.Fixed(2),
+        modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(8.dp, 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) { items(items.size) { index -> items[index]() } }
 }
 
 @Composable
 fun TeamInfoItem(icon: ImageVector, title: String, value: String, modifier: Modifier = Modifier) {
     Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier.fillMaxWidth().padding(8.dp)
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth().padding(8.dp)
     ) {
         Icon(
-                imageVector = icon,
-                contentDescription = title,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.primary
+            imageVector = icon,
+            contentDescription = title,
+            modifier = Modifier.size(24.dp),
+            tint = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column {
             Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
             Text(
-                    text = value,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
             )
         }
     }

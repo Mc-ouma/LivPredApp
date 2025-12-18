@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Match-related strings -->
+    <string name="match_details">Maelezo</string>
+    <string name="result">Matokeo</string>
+    <string name="statistics">Takwimu</string>
+    <string name="head_to_head">H2H</string>
+    <string name="lineups">Laini</string>
+    <string name="standings">Msimamo</string>
+    <string name="summary">Muhtasari</string>
+    <string name="squad">Kikosi</string>
+    <string name="fixtures">Ratiba</string>
+    <string name="transfers">Uhamisho</string>
+    <string name="overview">Muhtasari</string>
+
+    <!-- Date and time -->
+    <string name="today">Leo</string>
+    <string name="tomorrow">Kesho</string>
+    <string name="yesterday">Jana</string>
+    <string name="unknown_date">Tarehe Haijulikani</string>
+    <string name="type">Aina</string>
+    <string name="home">Nyumbani</string>
+    <string name="away">Ugenini</string>
+    <string name="total">Jumla</string>
+    <string name="for_">Kwa</string>
+    <string name="against">Dhidi</string>
+    <string name="minute">Dakika</string>
+    <string name="percentage">Asilimia</string>
+    <string name="category">Kategoria</string>
+
+    <!-- Navigation and UI -->
+    <string name="categories">Kategoria</string>
+    <string name="favorites">Vipendwa</string>
+    <string name="saved">Vilivyohifadhiwa</string>
+    <string name="information">Habari</string>
+    <string name="back">Nyuma</string>
+    <string name="close">Funga</string>
+    <string name="retry">Jaribu Tena</string>
+    <string name="ok">Sawa</string>
+    <string name="cancel">Ghairi</string>
+    <string name="submit">Tuma</string>
+
+    <!-- Menu Items -->
+    <string name="share">Shiriki</string>
+    <string name="rate_us">Tupime</string>
+    <string name="privacy_policy">Sera ya Faragha</string>
+    <string name="telegram">Telegram</string>
+    <string name="send_feedback">Tuma Maoni</string>
+    <string name="about_us">Kuhusu Sisi</string>
+
+    <!-- Form Labels -->
+    <string name="email_address">Anwani ya Barua pepe</string>
+    <string name="message">Ujumbe</string>
+    <string name="enter_email_placeholder">Ingiza barua pepe yako</string>
+    <string name="other_feedback">Maoni Mengine</string>
+
+    <!-- Prediction Categories -->
+    <string name="over_under">Zaidi/Chini</string>
+    <string name="btts">Timu Zote Kufunga</string>
+    <string name="daily_2_odds">Uwiano wa Kila Siku 2</string>
+    <string name="combo">Mchanganyiko</string>
+    <string name="ht_ft">Nusu/Mwisho</string>
+    <string name="home_away">Nyumbani/Ugenini</string>
+    <string name="daily_bonus">Bonasi ya Kila Siku</string>
+    <string name="extra_picks">Uchaguzi wa Ziada</string>
+
+    <!-- Prediction Carousel -->
+    <string name="goals_for">Magoli yaliyofungwa:</string>
+    <string name="goals_against">Magoli yaliyopokea:</string>
+    <string name="failed_to_score">Hakufunga:</string>
+    <string name="scored">Alifunga:</string>
+    <string name="conceded">Alipokea:</string>
+    <string name="clean_sheets">Bila Kupokea:</string>
+    <string name="form">Hali</string>
+    <string name="attack">Mashambulizi</string>
+    <string name="defense">Ulinzi</string>
+    <string name="h2h">H2H</string>
+    <string name="overall">Jumla</string>
+    <string name="last_5_matches_goals">Magoli Mechi 5 Zilizopita</string>
+    <string name="win_or_draw_likely">Ushindi au Sare: Inawezekana</string>
+    <string name="goals_under_over_format">Magoli Chini/Juu: %s</string>
+    <string name="team_form_comparison">Ulinganisho wa Hali ya Timu</string>
+    <string name="season_performance">Utendaji wa Msimu</string>
+    <string name="head_to_head_history">Historia ya Mikutano ya Moja kwa Moja</string>
+    <string name="no_head_to_head_history_available">Hakuna historia ya mikutano inayopatikana</string>
+    <string name="draws_format">Sare: %d</string>
+    <string name="last_5_matches">Mechi 5 za Mwisho</string>
+    <string name="match_prediction_overview">Muhtasari wa Utabiri wa Mechi</string>
+    <string name="team_wins_format">%s: %d</string>
+    <string name="goals_analysis">Uchambuzi wa Magoli</string>
+    <string name="home__">Nyumbani: %1$s</string>
+    <string name="draw">Sare: %1$s</string>
+    <string name="away__">Ugeni: %1$s</string>
+
+    <!-- Team Details -->
+    <string name="invalid_time">Wakati Batili</string>
+
+    <!-- Error Messages -->
+    <string name="press_back_again_to_exit">Bonyeza nyuma tena ili utoke</string>
+    <string name="no_internet_connection">Hakuna muunganisho wa intaneti</string>
+    <string name="could_not_open_link">Kiungo hakikuweza kufunguliwa</string>
+    <string name="invalid_team_ids">Kitambulisho cha timu batili. Tafadhali angalia ingizo lako.</string>
+    <string name="error_occurred_check_internet">Hitilafu imetokea. Tafadhali angalia muunganisho wako</string>
+    <string name="error_occurred_fetching_data">Hitilafu imetokea wakati wa kupata data.</string>
+    <string name="no_data_available">Hakuna data inayopatikana</string>
+    <string name="removed_from_favorites">Imeondolewa kutoka vipendwa</string>
+    <string name="undo">Tendua</string>
+    <string name="no_categories_available">Hakuna kategoria zinazopatikana. Jiunge na chaneli yetu ya Telegram.</string>
+    <string name="failed_to_fetch_data">Imeshindwa kupata data</string>
+    <string name="error_loading_categories">Hitilafu kupakia kategoria</string>
+    <string name="no_standings_found">Hakuna msimamo uliopatikana</string>
+    <string name="failed_to_fetch_standings">Imeshindwa kupata msimamo</string>
+    <string name="an_error_occurred_while_fetching_fixtures">Hitilafu imetokea wakati wa kupata ratiba.</string>
+    <string name="an_unexpected_error_occurred">Hitilafu isiyotarajiwa imetokea.</string>
+    <string name="network_error_check_connection">Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.</string>
+
+    <!-- Notification Messages -->
+    <string name="match_starts_in_15_minutes">Mechi inaanza kwa dakika 15!</string>
+    <string name="upcoming_matches">Mechi Zijazo</string>
+    <string name="match_updates">Masasisho ya Mechi</string>
+    <string name="matches_count">mechi %d</string>
+    <string name="final_score_format">Matokeo ya Mwisho: %d - %d</string>
+    <string name="league_format">Ligi: %s</string>
+    <string name="date_format">Tarehe: %s Wakati: %s</string>
+    <string name="your_pick_format">Chaguo lako: %s</string>
+    <string name="vs">VS</string>
+
+    <!-- Content Descriptions -->
+    <string name="localized_description">Maelezo yaliyotafsiriwa</string>
+    <string name="app_icon">Ikoni ya Programu</string>
+    <string name="app_logo">Nembo ya Programu</string>
+    <string name="splash_screen">Skrini ya Kuanza</string>
+    <string name="contact_us">Wasiliana Nasi</string>
+    <string name="home_team_logo">Nembo ya Timu ya Nyumbani</string>
+    <string name="away_team_logo">Nembo ya Timu ya Ugenini</string>
+    <string name="team_logo_format">Nembo ya %s</string>
+    <string name="home_logo">Nembo ya Nyumbani</string>
+    <string name="away_logo">Nembo ya Ugenini</string>
+    <string name="goal_icon">Ikoni ya Goli</string>
+    <string name="card_icon">Ikoni ya Kadi</string>
+    <string name="substitution_icon">Ikoni ya Ubadilishaji</string>
+    <string name="var_icon">Ikoni ya VAR</string>
+    <string name="event_icon">Ikoni ya Tukio</string>
+    <string name="soccer_ball">Mpira wa Miguu</string>
+
+    <!-- Animation Labels -->
+    <string name="logo_pulse">logoPulse</string>
+    <string name="pulse_animation">pulseAnimation</string>
+    <string name="tab_content_transition">Mabadiliko ya Maudhui ya Tab</string>
+    <string name="home_categories">Nyumbani</string>
+
+    <!-- Fixture Details Strings -->
+    <string name="loading">Inapakia…</string>
+    <string name="no_predictions_available">Hakuna utabiri unaopatikana.</string>
+    <string name="no_fixtures_available">Hakuna ratiba inayopatikana</string>
+    <string name="no_head_to_head_data_available">Hakuna data ya H2H inayopatikana</string>
+    <string name="no_events_available">Hakuna matukio yanayopatikana</string>
+    <string name="no_standings_available">Hakuna msimamo unaopatikana</string>
+    <string name="date_unavailable">Tarehe haipatikani</string>
+    <string name="watch_ad_for_extra_predictions">Tazama tangazo kwa utabiri wa ziada</string>
+    <string name="stats">Takwimu</string>
+    <string name="na">H/K</string>
+    <string name="substitutes">Wabadala</string>
+    <string name="coach_format">Kocha: %1$s</string>
+    <string name="coach_default">Kocha</string>
+    <string name="coach_photo">Picha ya Kocha</string>
+    <string name="team_logo">Nembo ya Timu</string>
+
+    <!-- Language Picker -->
+    <string name="language">Lugha</string>
+    <string name="select_language">Chagua Lugha</string>
+    <string name="language_english">Kiingereza</string>
+    <string name="language_spanish">Kihispania</string>
+    <string name="language_portuguese">Kireno</string>
+    <string name="language_french">Kifaransa</string>
+    <string name="language_german">Kijerumani</string>
+    <string name="language_italian">Kiitaliano</string>
+    <string name="language_arabic">Kiarabu</string>
+    <string name="language_turkish">Kituruki</string>
+    <string name="language_swahili">Kiswahili</string>
+    <string name="language_system">Mfumo Asilia</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Vikumbusho vya Kila Siku</string>
+    <string name="daily_reminder_channel_description">Vikumbusho vya kila siku kuhusu utabiri na mechi</string>
+    
+    <!-- Notification Channels -->
+    <string name="match_reminder_channel_name">Vikumbusho vya Mechi</string>
+    <string name="match_reminder_channel_description">Arifa za mechi zijazo</string>
+    <string name="match_updates_channel_name">Sasisho za Mechi</string>
+    <string name="match_updates_channel_description">Sasisho za moja kwa moja na matokeo</string>
+    <string name="fcm_channel_name">Arifa za FCM</string>
+    <string name="fcm_channel_description">Arifa kutoka Firebase Cloud Messaging</string>
+    <string name="betting_success_channel_name">Arifa za Mafanikio</string>
+    <string name="betting_success_channel_description">Arifa za siku za kubeti zenye mafanikio</string>
+    
+    <string name="daily_reminder_title">⚽ Tahadhari ya Siku ya Mechi!</string>
+    <string name="daily_reminder_body">🔥 Utabiri wa moto uko tayari! Usikose ubashiri wa kushinda wa leo 🏆</string>
+    <string name="afternoon_reminder_title">🎯 Mechi Zinaanza Hivi Karibuni!</string>
+    <string name="afternoon_reminder_body">⏰ Wakati mkuu unaanza hivi karibuni! Angalia utabiri wako kabla haijachelewa 💪</string>
+    
+    <!-- Notification Action Buttons -->
+    <string name="view_details">Tazama Maelezo</string>
+    <string name="share_success">Shiriki Mafanikio</string>
+    <string name="match_update_title">Sasisho la Mechi</string>
+    <string name="match_update_fallback">Mechi imesasishwa. Gusa kutazama maelezo.</string>
+    <string name="perfect_betting_day_fallback">🎉 Siku Kamili ya Kubeti!</string>
+    <string name="matches_won_summary">mechi %d zilishinda</string>
+    <string name="success_rate_summary">🎯 Kiwango cha Mafanikio: %1$s%%\n📊 %2$s\n\n📋 Matokeo:\n%3$s</string>
+    <string name="share_betting_success">🎉 Siku kamili ya kubeti! Mechi zote %1$s zilishinda na kiwango cha mafanikio %2$s%%! 🎯</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Washa Arifa</string>
+    <string name="notification_permission_message">🔔 Kaa na habari za utabiri na vikumbusho vya kila siku!\n\nArifa zinakusaidia:\n• Kupata tahadhari za utabiri wa kila siku\n• Kutokosa mechi muhimu\n• Kupata vidokezo vya kushinda kwa wakati</string>
+    <string name="notification_permission_enable">Washa</string>
+    <string name="notification_permission_not_now">Si Sasa</string>
+    <string name="notification_disabled_title">Arifa Zimezimwa</string>
+    <string name="notification_disabled_message">🔕 Umezima arifa.\n\nIli kupata tahadhari za mechi na utabiri wa kila siku, washa arifa katika Mipangilio.</string>
+    <string name="notification_open_settings">Fungua Mipangilio</string>
+    <string name="notification_enabled_toast">Arifa zimewashwa! 🎉</string>
+    <string name="notification_disabled_toast">Arifa zimezimwa. Unaweza kuziwasha katika Mipangilio.</string>
+    
+    <!-- Exact Alarm Permission -->
+    <string name="exact_alarm_permission_title">Ruhusa ya Kengele Sahihi Inahitajika</string>
+    <string name="exact_alarm_permission_message">Programu hii inahitaji ruhusa ya kupanga kengele sahihi. Tafadhali toa ruhusa katika mipangilio.</string>
+    <string name="go_to_settings">Nenda Mipangilio</string>
+    <string name="unable_to_open_settings">Imeshindwa kufungua mipangilio</string>
+    
+    <!-- Missing translations - UI and Basic -->
+    <string name="address">Anwani</string>
+    <string name="add_to_favorites">Ongeza kwenye vipendwa</string>
+    <string name="ad_not_available">Tangazo halipatikani</string>
+    <string name="ad_not_available_message">Hakuna tangazo kwa sasa. Jaribu tena baadaye.</string>
+    <string name="age_years">Miaka %d</string>
+    <string name="all_matches_won_with_rate">Mechi zote zilishinda! (%1$d/%2$d) - Kiwango cha mafanikio: %3$.1f%%</string>
+    <string name="and_more_matches">…na mechi %d zaidi</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Kosa limetokea. Angalia mtandao wako au jaribu tena baadaye.</string>
+    <string name="an_update_has_been_downloaded">Sasisho limepakuliwa.</string>
+    <string name="app_update_available">Sasisho la programu linapatikana</string>
+    <string name="average_goals">Wastani wa magoli</string>
+    <string name="ball_possession">Umiliki wa mpira</string>
+    <string name="betting_success_detailed_stats">📊 Mechi %1$d/%2$d zilishinda\n🎯 Kiwango cha mafanikio: %3$.1f%%\n📋 Kategoria: %4$s</string>
+    <string name="betting_success_fallback_share_text">🎉 Siku ya mafanikio! Mechi nyingi zilishinda!</string>
+    <string name="betting_success_share_text">🎉 Siku kamili! Mechi zote %1$d zilishinda na mafanikio %2$.1f%%! 🎯\n📱 Pakua programu: %3$s</string>
+    <string name="biggest_losses">Hasara kubwa zaidi</string>
+    <string name="biggest_streak">Mfuatano mrefu zaidi</string>
+    <string name="biggest_wins">Ushindi mkubwa zaidi</string>
+    <string name="blocked_shots">Mapigo yaliyozuiwa</string>
+    <string name="capacity">Uwezo</string>
+    <string name="cards">Kadi</string>
+    <string name="card_type_red">Nyekundu</string>
+    <string name="card_type_yellow">Njano</string>
+    <string name="city">Jiji</string>
+    <string name="coach_title">Kocha</string>
+    <string name="corner_kicks">Mapigo ya kona</string>
+    <string name="country">Nchi</string>
+    <string name="critical_update_message">Sasisho muhimu linapatikana. Tafadhali sasisha programu kuendelea kuitumia.</string>
+    <string name="date_label">Tarehe</string>
+    <string name="date_pattern_display">dd MMM yyyy</string>
+    <string name="date_pattern_input">yyyy-MM-dd</string>
+    <string name="date_pattern_output">d MMMM yyyy</string>
+    <string name="decimal_format">#.##</string>
+    <string name="dismiss">Funga</string>
+    <string name="drawn">Sare</string>
+    <string name="draws">Sare</string>
+    <string name="earn_more_passes">Pata pasi zaidi</string>
+    <string name="error_check_internet">Angalia mtandao wako</string>
+    <string name="error_loading_fixture_details">Kosa kupakia maelezo ya mechi</string>
+    <string name="error_loading_transfers">Kosa kupakia uhamisho</string>
+    <string name="expected_goals">Magoli yanayotarajiwa</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Imeshindwa kupata mechi. Jaribu tena baadaye.</string>
+    <string name="formation_played_times">%1$s (%2$d)</string>
+    <string name="fouls">Makosa</string>
+    <string name="founded">Ilianzishwa</string>
+    <string name="games_played">Mechi zilizochezwa</string>
+    <string name="goal_cancelled">Goli Limefutwa</string>
+    <string name="goal_difference">Tofauti ya magoli</string>
+    <string name="goalkeeper_saves">Okozi za kipa</string>
+    <string name="goals">Magoli</string>
+    <string name="goals_0_5">Magoli 0–5</string>
+    <string name="goals_1_5">Magoli 1–5</string>
+    <string name="goals_2_5">Magoli 2–5</string>
+    <string name="goals_3_5">Magoli 3–5</string>
+    <string name="goals_4_5">Magoli 4–5</string>
+    <string name="goals_by_minute">Magoli kwa dakika</string>
+    <string name="goals_for_against">Magoli (Kwa/Dhidi)</string>
+    <string name="goals_prevented">Magoli yaliyozuiwa</string>
+    <string name="goals_under_over">Magoli Chini/Juu</string>
+    <string name="goal_type_goal">Goli</string>
+    <string name="goal_type_missed_penalty">Penalti Iliyokosekana</string>
+    <string name="goal_type_normal">Goli la Kawaida</string>
+    <string name="goal_type_own">Goli la Kibinafsi</string>
+    <string name="goal_type_penalty">Penalti</string>
+    <string name="hide_stadium_details">Ficha maelezo ya uwanja</string>
+    <string name="invalid_date">Tarehe batili</string>
+    <string name="join_our_telegram_channel">Jiunge na kituo chetu cha Telegram</string>
+    <string name="league_logo">Nembo ya Ligi</string>
+    <string name="locked_watch_ad">Imefungwa - tazama tangazo kufungua</string>
+    <string name="losses">Hasara</string>
+    <string name="lost">Imeshindwa</string>
+    <string name="matches_count_plural">mechi</string>
+    <string name="match_results_label">Matokeo ya mechi</string>
+    <string name="max_passes_message">Umefika kiwango cha juu cha pasi.</string>
+    <string name="max_passes_title">Pasi za Juu Zimefikiwa</string>
+    <string name="minutes_0_15">0\'–15\'</string>
+    <string name="minutes_106_120">106\'–120\'</string>
+    <string name="minutes_16_30">16\'–30\'</string>
+    <string name="minutes_31_45">31\'–45\'</string>
+    <string name="minutes_46_60">46\'–60\'</string>
+    <string name="minutes_61_75">61\'–75\'</string>
+    <string name="minutes_76_90">76\'–90\'</string>
+    <string name="minutes_91_105">91\'–105\'</string>
+    <string name="no_data">-</string>
+    <string name="no_detail_available">Hakuna maelezo</string>
+    <string name="no_favorite_items">Hakuna vipendwa</string>
+    <string name="no_games_found_for_the_selected_date">Hakuna mechi zilizopatikana kwa tarehe iliyochaguliwa.</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Hakuna data ya makabiliano kwa %1$s na %2$s.</string>
+    <string name="no_passes_message">Huna pasi. Tazama tangazo kupata zaidi.</string>
+    <string name="no_passes_title">Hakuna Pasi</string>
+    <string name="offsides">Offside</string>
+    <string name="over">Juu</string>
+    <string name="pass_earned_message">Umepata pasi!</string>
+    <string name="pass_earned_title">Pasi Imepatikana</string>
+    <string name="passes_accurate">Pasi sahihi</string>
+    <string name="passes_balance">Pasi %d</string>
+    <string name="passes_percentage">Asilimia ya pasi</string>
+    <string name="penalties">Penalti</string>
+    <string name="penalties_missed">Penalti zilizokosekana</string>
+    <string name="penalties_scored">Penalti zilizofungwa</string>
+    <string name="penalty_confirmed">Penalti Imethibitishwa</string>
+    <string name="percentage_format">%d%%</string>
+    <string name="percent_suffix">%</string>
+    <string name="perfect_betting_day">🎉 Siku kamili ya kubeti!</string>
+    <string name="perfect_day_in_category">%s: Mechi zote zilishinda! 🏆</string>
+    <string name="perfect_day_stats">%1$d/%2$d zilishinda (100%% mafanikio)</string>
+    <string name="pick_label">Chaguo:</string>
+    <string name="played">Imechezwa</string>
+    <string name="player_photo">Picha ya Mchezaji</string>
+    <string name="points">Pointi</string>
+    <string name="position_defender">Beki</string>
+    <string name="position_defender_short">BEK</string>
+    <string name="position_format">%s</string>
+    <string name="position_forward">Mshambuliaji</string>
+    <string name="position_forward_short">MSH</string>
+    <string name="position_goalkeeper">Kipa</string>
+    <string name="position_goalkeeper_short">KIP</string>
+    <string name="position_midfielder">Kiungo</string>
+    <string name="position_midfielder_short">KIU</string>
+    <string name="red_cards">Kadi nyekundu</string>
+    <string name="remove_from_favorites_action">Ondoa kwenye vipendwa</string>
+    <string name="request_in_app_review">Omba tathmini</string>
+    <string name="restart">Anzisha upya</string>
+    <string name="save_for_later">Hifadhi kwa baadaye</string>
+    <string name="score_format">%d - %d</string>
+    <string name="select_date">Chagua tarehe</string>
+    <string name="shots_insidebox">Mapigo ndani ya eneo</string>
+    <string name="shots_off_goal">Mapigo nje ya goli</string>
+    <string name="shots_on_goal">Mapigo kwenye goli</string>
+    <string name="shots_outsidebox">Mapigo nje ya eneo</string>
+    <string name="show_stadium_details">Onyesha maelezo ya uwanja</string>
+    <string name="stadium">Uwanja</string>
+    <string name="starting_eleven">Timu ya Kwanza</string>
+    <string name="success_rate_label">Kiwango cha mafanikio</string>
+    <string name="surface">Uso</string>
+    <string name="team">Timu</string>
+    <string name="team_a">Timu A</string>
+    <string name="team_info">Habari za timu</string>
+    <string name="team_player">Mchezaji</string>
+    <string name="team_statistics">Takwimu za timu</string>
+    <string name="time_format">%1$02d:%2$02d</string>
+    <string name="total_passes">Jumla ya pasi</string>
+    <string name="total_shots">Jumla ya mapigo</string>
+    <string name="under">Chini</string>
+    <string name="unknown">Haijulikani</string>
+    <string name="unknown_event">Tukio halijulikani</string>
+    <string name="unknown_league">Ligi haijulikani</string>
+    <string name="unknown_player">Mchezaji hajulikani</string>
+    <string name="unknown_team">Timu haijulikani</string>
+    <string name="unlock_category_message">Tazama tangazo kufungua kategoria hii kwa saa 24.</string>
+    <string name="unlock_category_title">Fungua Kategoria</string>
+    <string name="unlock_passes">Fungua Pasi</string>
+    <string name="update_action">SASISHA</string>
+    <string name="update_downloaded_restart">Sasisho limepakuliwa. Anzisha upya kusakinisha.</string>
+    <string name="update_now">Sasisha Sasa</string>
+    <string name="update_required">Sasisho Linahitajika</string>
+    <string name="use_now">Tumia Sasa</string>
+    <string name="use_pass">Tumia Pasi</string>
+    <string name="watch_ad">Tazama Tangazo</string>
+    <string name="watch_ad_to_earn">Tazama tangazo kupata pasi</string>
+    <string name="watch_ad_to_unlock">Tazama tangazo kufungua</string>
+    <string name="watch_ad_unlock_24h">Tazama tangazo kufungua (saa 24)</string>
+    <string name="wins">Ushindi</string>
+    <string name="won">Imeshinda</string>
+    <string name="yellow_cards">Kadi njano</string>
+    
+    <!-- Category Labels -->
+    <string name="category_away_win">Ushindi wa ugenini</string>
+    <string name="category_away_win_or_draw">Ushindi wa ugenini au sare</string>
+    <string name="category_both_teams_score">Timu Zote Zifunge</string>
+    <string name="category_clean_sheet">Bila kufungwa</string>
+    <string name="category_draw">Sare</string>
+    <string name="category_home_win">Ushindi wa nyumbani</string>
+    <string name="category_home_win_or_draw">Ushindi wa nyumbani au sare</string>
+    <string name="category_label">Kategoria</string>
+    <string name="category_matches_won">Mechi zilizoshinda</string>
+    <string name="category_over_goals">Magoli zaidi ya %s</string>
+    <string name="category_today_tips">Vidokezo vya leo</string>
+    <string name="category_under_goals">Magoli chini ya %s</string>
+
+</resources>

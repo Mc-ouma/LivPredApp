@@ -2,6 +2,7 @@ package com.soccertips.predictx
 
 import android.content.Context
 import android.content.Intent
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -14,19 +15,24 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Message
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.Share
+import androidx.core.os.LocaleListCompat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -67,6 +73,7 @@ fun Menu() {
         var expanded by remember { mutableStateOf(false) }
         var showFeedback by remember { mutableStateOf(false) }
         var showAboutUs by remember { mutableStateOf(false) }
+        var showLanguagePicker by remember { mutableStateOf(false) }
         val context = LocalContext.current
 
         Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
@@ -87,7 +94,10 @@ fun Menu() {
                                 text = { Text(stringResource(R.string.share)) },
                                 onClick = {
                                         expanded = false
-                                        launchShare(context, "Check out AI ScoreCast, the best football prediction app. ")
+                                        launchShare(
+                                                context,
+                                                "Check out AI ScoreCast, the best football prediction app. "
+                                        )
                                 },
                                 leadingIcon = {
                                         Icon(
@@ -133,6 +143,20 @@ fun Menu() {
                         )
                         HorizontalDivider()
                         DropdownMenuItem(
+                                text = { Text(stringResource(R.string.language)) },
+                                onClick = {
+                                        showLanguagePicker = true
+                                        expanded = false
+                                },
+                                leadingIcon = {
+                                        Icon(
+                                                Icons.Outlined.Language,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                        )
+                                },
+                        )
+                        DropdownMenuItem(
                                 text = { Text(stringResource(R.string.send_feedback)) },
                                 onClick = { showFeedback = true },
                                 leadingIcon = {
@@ -165,7 +189,12 @@ fun Menu() {
                 AboutUs(onDismiss = { showAboutUs = false })
         }
 
+        if (showLanguagePicker) {
+                LanguagePickerDialog(onDismiss = { showLanguagePicker = false })
+        }
+
 }
+
 private fun launchShare(context: Context, text: String) {
         val sendIntent = Intent().apply {
                 action = Intent.ACTION_SEND
@@ -274,15 +303,15 @@ fun AboutUs(onDismiss: () -> Unit) {
                                                 Text(
                                                         text =
                                                                 try {
-                                                                                context.packageManager
-                                                                                        .getPackageInfo(
-                                                                                                context.packageName,
-                                                                                                0
-                                                                                        )
-                                                                                        .versionName
-                                                                        } catch (e: Exception) {
-                                                                                "Unknown"
-                                                                        }.toString(),
+                                                                        context.packageManager
+                                                                                .getPackageInfo(
+                                                                                        context.packageName,
+                                                                                        0
+                                                                                )
+                                                                                .versionName
+                                                                } catch (e: Exception) {
+                                                                        "Unknown"
+                                                                }.toString(),
                                                         style = MaterialTheme.typography.bodyMedium
                                                 )
                                         }
@@ -296,8 +325,8 @@ fun AboutUs(onDismiss: () -> Unit) {
                                                                 Modifier.size(20.dp).clickable {
                                                                         val intent =
                                                                                 Intent(
-                                                                                                Intent.ACTION_SENDTO
-                                                                                        )
+                                                                                        Intent.ACTION_SENDTO
+                                                                                )
                                                                                         .apply {
                                                                                                 data =
                                                                                                         "mailto:ouma.monicasales@gmail.com".toUri()
@@ -444,14 +473,14 @@ fun ExpandableList(items: List<ExpandableItem>, onOtherSelected: () -> Unit) {
                         Column(
                                 modifier =
                                         Modifier.animateContentSize(
-                                                        animationSpec =
-                                                                spring(
-                                                                        dampingRatio =
-                                                                                Spring.DampingRatioLowBouncy,
-                                                                        stiffness =
-                                                                                Spring.StiffnessLow
-                                                                )
-                                                )
+                                                animationSpec =
+                                                        spring(
+                                                                dampingRatio =
+                                                                        Spring.DampingRatioLowBouncy,
+                                                                stiffness =
+                                                                        Spring.StiffnessLow
+                                                        )
+                                        )
                                                 .fillMaxWidth()
                                                 .clickable {
                                                         if (item.title == "Other") {
@@ -525,9 +554,9 @@ fun Feedback(onDismiss: () -> Unit) {
                         onSubmit = { email, message ->
                                 val appVersion =
                                         context.packageManager.getPackageInfo(
-                                                        context.packageName,
-                                                        0
-                                                )
+                                                context.packageName,
+                                                0
+                                        )
                                                 .versionName
                                 val intent =
                                         Intent(Intent.ACTION_SEND).apply {
@@ -660,4 +689,138 @@ fun OtherFeedbackDialog(onDismiss: () -> Unit, onSubmit: (String, String) -> Uni
                 },
                 dismissButton = {}
         )
+}
+
+/**
+ * Data class representing a language option
+ */
+data class LanguageOption(
+        val code: String,
+        val nameResId: Int,
+        val nativeName: String
+)
+
+/**
+ * Language picker dialog allowing users to change the app language
+ */
+@Composable
+fun LanguagePickerDialog(onDismiss: () -> Unit) {
+        val languages = listOf(
+                LanguageOption("", R.string.language_system, "System"),
+                LanguageOption("en", R.string.language_english, "English"),
+                LanguageOption("es", R.string.language_spanish, "Español"),
+                LanguageOption("pt", R.string.language_portuguese, "Português"),
+                LanguageOption("fr", R.string.language_french, "Français"),
+                LanguageOption("de", R.string.language_german, "Deutsch"),
+                LanguageOption("it", R.string.language_italian, "Italiano"),
+                LanguageOption("ar", R.string.language_arabic, "العربية"),
+                LanguageOption("tr", R.string.language_turkish, "Türkçe"),
+                LanguageOption("sw", R.string.language_swahili, "Kiswahili")
+        )
+
+        // Get current locale
+        val currentLocale = AppCompatDelegate.getApplicationLocales()
+        val currentLanguageCode =
+                if (currentLocale.isEmpty) "" else currentLocale.toLanguageTags().split("-").firstOrNull() ?: ""
+
+        var selectedLanguage by remember { mutableStateOf(currentLanguageCode) }
+
+        AlertDialog(
+                onDismissRequest = onDismiss,
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.large,
+                properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
+                title = {
+                        Text(
+                                stringResource(R.string.select_language),
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                        )
+                },
+                text = {
+                        LazyColumn {
+                                items(languages.size) { index ->
+                                        val language = languages[index]
+                                        val isSelected = selectedLanguage == language.code
+
+                                        Row(
+                                                modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .selectable(
+                                                                selected = isSelected,
+                                                                onClick = { selectedLanguage = language.code }
+                                                        )
+                                                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                Column {
+                                                        Text(
+                                                                text = language.nativeName,
+                                                                style = MaterialTheme.typography.bodyLarge,
+                                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        if (language.code.isNotEmpty()) {
+                                                                Text(
+                                                                        text = stringResource(language.nameResId),
+                                                                        style = MaterialTheme.typography.bodySmall,
+                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                        }
+                                                }
+                                                if (isSelected) {
+                                                        Icon(
+                                                                imageVector = Icons.Default.Check,
+                                                                contentDescription = null,
+                                                                tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                }
+                                        }
+                                        if (index < languages.size - 1) {
+                                                HorizontalDivider(
+                                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                                )
+                                        }
+                                }
+                        }
+                },
+                confirmButton = {
+                        Button(
+                                onClick = {
+                                        setAppLocale(selectedLanguage)
+                                        onDismiss()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                shape = MaterialTheme.shapes.small
+                        ) {
+                                Text(
+                                        stringResource(R.string.ok),
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                )
+                        }
+                },
+                dismissButton = {
+                        TextButton(onClick = onDismiss) {
+                                Text(stringResource(R.string.cancel))
+                        }
+                }
+        )
+}
+
+/**
+ * Sets the app locale using AppCompatDelegate
+ * @param languageCode The language code (e.g., "en", "es", "pt") or empty string for system default
+ */
+private fun setAppLocale(languageCode: String) {
+        val localeList = if (languageCode.isEmpty()) {
+                LocaleListCompat.getEmptyLocaleList()
+        } else {
+                LocaleListCompat.forLanguageTags(languageCode)
+        }
+        AppCompatDelegate.setApplicationLocales(localeList)
+        Timber.d("App locale changed to: $languageCode")
 }

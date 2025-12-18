@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.PredictX" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.PredictX" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Required for Compose + AppCompat compatibility -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
 
     <!-- Splash Theme with custom splash screen -->
     <style name="Theme.PredictX.Splash" parent="Theme.SplashScreen">

@@ -1,0 +1,33 @@
+# Baseline Profile for PredictX App
+# This file enables AOT compilation for critical startup paths
+# to reduce cold start times, especially on low-RAM devices (1.5-2GB)
+
+# Application class
+HSPLcom/soccertips/predictx/App;-><init>()V
+HSPLcom/soccertips/predictx/App;->onCreate()V
+HSPLcom/soccertips/predictx/App;->onActivityCreated(Landroid/app/Activity;Landroid/os/Bundle;)V
+HSPLcom/soccertips/predictx/App;->onActivityResumed(Landroid/app/Activity;)V
+
+# MainActivity
+HSPLcom/soccertips/predictx/MainActivity;-><init>()V
+HSPLcom/soccertips/predictx/MainActivity;->onCreate(Landroid/os/Bundle;)V
+
+# Splash ViewModel - critical for splash screen
+HSPLcom/soccertips/predictx/viewmodel/SplashViewModel;-><init>()V
+HSPLcom/soccertips/predictx/viewmodel/SplashViewModel;->initialize()V
+
+# Device Performance Manager - used early in startup
+HSPLcom/soccertips/predictx/util/DevicePerformanceManager;-><init>()V
+HSPLcom/soccertips/predictx/util/DevicePerformanceManager;->initialize(Landroid/content/Context;)V
+HSPLcom/soccertips/predictx/util/DevicePerformanceManager;->getPerformanceTier()Lcom/soccertips/predictx/util/DevicePerformanceManager$PerformanceTier;
+HSPLcom/soccertips/predictx/util/DevicePerformanceManager;->isLowMemoryDevice()Z
+HSPLcom/soccertips/predictx/util/DevicePerformanceManager;->getStartupConfig()Lcom/soccertips/predictx/util/DevicePerformanceManager$StartupConfig;
+
+# Startup Time Tracker
+HSPLcom/soccertips/predictx/util/StartupTimeTracker;-><init>()V
+HSPLcom/soccertips/predictx/util/StartupTimeTracker$Companion;->recordAppStart()V
+HSPLcom/soccertips/predictx/util/StartupTimeTracker$Companion;->recordProcessStart()V
+
+# Network Tagging Initializer - early initialization
+HSPLcom/soccertips/predictx/util/NetworkTaggingInitializer;-><init>()V
+HSPLcom/soccertips/predictx/util/NetworkTaggingInitializer;->initialize()V

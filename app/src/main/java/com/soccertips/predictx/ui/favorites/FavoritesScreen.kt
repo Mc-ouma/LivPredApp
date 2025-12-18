@@ -46,10 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.soccertips.predictx.R
 import com.soccertips.predictx.data.local.entities.FavoriteItem
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.UiState
@@ -68,8 +70,8 @@ import com.soccertips.predictx.viewmodel.FavoritesViewModel
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun FavoritesScreen(
-        navController: NavController,
-        viewModel: FavoritesViewModel = hiltViewModel(),
+    navController: NavController,
+    viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -81,15 +83,16 @@ fun FavoritesScreen(
     LaunchedEffect(snackbarData) {
         snackbarData?.let { data ->
             val result =
-                    snackbarHostState.showSnackbar(
-                            message = data.message,
-                            actionLabel = data.actionLabel,
-                            duration = SnackbarDuration.Short
-                    )
+                snackbarHostState.showSnackbar(
+                    message = data.message,
+                    actionLabel = data.actionLabel,
+                    duration = SnackbarDuration.Short
+                )
             when (result) {
                 SnackbarResult.ActionPerformed -> {
                     data.onActionPerformed?.invoke()
                 }
+
                 SnackbarResult.Dismissed -> {
                     // Do nothing
                 }
@@ -99,63 +102,66 @@ fun FavoritesScreen(
     }
 
     PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                isRefreshing = true
-                viewModel.loadFavorites()
-                isRefreshing = false
-            }, // Start refresh gesture
-            state = state,
-            indicator = {
-                PullToRefreshDefaults.Indicator(
-                        state = state,
-                        isRefreshing = isRefreshing,
-                        modifier = Modifier.align(Alignment.TopCenter)
-                )
-            }
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            isRefreshing = true
+            viewModel.loadFavorites()
+            isRefreshing = false
+        }, // Start refresh gesture
+        state = state,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = state,
+                isRefreshing = isRefreshing,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
     ) {
         AnimatedContent(
-                targetState = uiState,
-                transitionSpec = {
-                    if (targetState is UiState.Success) {
-                        fadeIn(animationSpec = tween(durationMillis = 300)) +
-                                scaleIn(
-                                        initialScale = 0.9f,
-                                        animationSpec = tween(durationMillis = 300)
-                                ) togetherWith fadeOut(animationSpec = tween(durationMillis = 200))
-                    } else {
-                        fadeIn(animationSpec = tween(durationMillis = 300)) togetherWith
-                                fadeOut(animationSpec = tween(durationMillis = 200))
-                    }
+            targetState = uiState,
+            transitionSpec = {
+                if (targetState is UiState.Success) {
+                    fadeIn(animationSpec = tween(durationMillis = 300)) +
+                            scaleIn(
+                                initialScale = 0.9f,
+                                animationSpec = tween(durationMillis = 300)
+                            ) togetherWith fadeOut(animationSpec = tween(durationMillis = 200))
+                } else {
+                    fadeIn(animationSpec = tween(durationMillis = 300)) togetherWith
+                            fadeOut(animationSpec = tween(durationMillis = 200))
                 }
+            }
         ) { uiState ->
             when (uiState) {
                 is UiState.Loading -> {
                     LoadingIndicator()
                 }
+
                 is UiState.Error -> {
                     ErrorMessage(
-                            message = uiState.message,
-                            onRetry = { viewModel.loadFavorites() },
+                        message = uiState.message,
+                        onRetry = { viewModel.loadFavorites() },
                     )
                 }
+
                 is UiState.Success -> {
                     val favoriteItems = uiState.data
                     val listState = rememberLazyListState()
                     if (favoriteItems.isEmpty()) {
                         EmptyScreen(
-                                paddingValues = PaddingValues(16.dp),
-                                message = "No favorite items"
+                            paddingValues = PaddingValues(16.dp),
+                            message = stringResource(R.string.no_favorite_items)
                         )
                     } else {
                         FavoritesList(
-                                navController = navController,
-                                viewModel = viewModel,
-                                favoriteItems = favoriteItems,
-                                listState = listState
+                            navController = navController,
+                            viewModel = viewModel,
+                            favoriteItems = favoriteItems,
+                            listState = listState
                         )
                     }
                 }
+
                 is UiState.Empty -> EmptyScreen(paddingValues = PaddingValues(16.dp))
                 else -> Unit
             }
@@ -166,51 +172,52 @@ fun FavoritesScreen(
 
 @Composable
 fun FavoritesList(
-        navController: NavController,
-        viewModel: FavoritesViewModel = hiltViewModel(),
-        favoriteItems: List<FavoriteItem>,
-        listState: LazyListState,
+    navController: NavController,
+    viewModel: FavoritesViewModel = hiltViewModel(),
+    favoriteItems: List<FavoriteItem>,
+    listState: LazyListState,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(16.dp),
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        state = listState,
+        contentPadding = PaddingValues(16.dp),
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(items = favoriteItems, key = { item -> item.fixtureId }) { item ->
             var isItemVisible by remember { mutableStateOf(true) }
             AnimatedVisibility(
-                    visible = isItemVisible,
-                    enter = fadeIn() + slideInVertically(),
-                    exit =
-                            slideOutHorizontally(
-                                    targetOffsetX = { -it },
-                                    animationSpec = tween(300)
-                            ) + fadeOut(animationSpec = tween(300)),
-                    content = {
-                        FavoriteItemCard(
-                                item = item,
-                                onFavoriteClick = { favoriteItem ->
-                                    viewModel.removeFromFavorites(favoriteItem) // Remove the item
-                                    viewModel.showSnackbar(
-                                            message = "Removed from Favorites",
-                                            actionLabel = "Undo",
-                                            onActionPerformed = {
-                                                viewModel.restoreFavorites(favoriteItem)
-                                                isItemVisible = true
-                                            }
-                                    )
-                                    isItemVisible = false
-                                },
-                                isFavorite = true,
-                                onClick = {
-                                    navController.navigate(
-                                            Routes.FixtureDetails.createRoute(item.fixtureId)
-                                    )
-                                },
-                        )
-                    }
+                visible = isItemVisible,
+                enter = fadeIn() + slideInVertically(),
+                exit =
+                    slideOutHorizontally(
+                        targetOffsetX = { -it },
+                        animationSpec = tween(300)
+                    ) + fadeOut(animationSpec = tween(300)),
+                content = {
+                    FavoriteItemCard(
+                        item = item,
+                        onFavoriteClick = { favoriteItem ->
+                            viewModel.removeFromFavorites(favoriteItem) // Remove the item
+                            viewModel.showSnackbar(
+                                message = context.getString(R.string.removed_from_favorites),
+                                actionLabel = context.getString(R.string.undo),
+                                onActionPerformed = {
+                                    viewModel.restoreFavorites(favoriteItem)
+                                    isItemVisible = true
+                                }
+                            )
+                            isItemVisible = false
+                        },
+                        isFavorite = true,
+                        onClick = {
+                            navController.navigate(
+                                Routes.FixtureDetails.createRoute(item.fixtureId)
+                            )
+                        },
+                    )
+                }
             )
         }
         item { Spacer(modifier = Modifier.height(16.dp)) }
@@ -219,51 +226,51 @@ fun FavoritesList(
 
 @Composable
 fun FavoriteItemCard(
-        item: FavoriteItem,
-        onFavoriteClick: (FavoriteItem) -> Unit = {},
-        isFavorite: Boolean,
-        onClick: () -> Unit,
-        context: android.content.Context = androidx.compose.ui.platform.LocalContext.current,
+    item: FavoriteItem,
+    onFavoriteClick: (FavoriteItem) -> Unit = {},
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    context: android.content.Context = androidx.compose.ui.platform.LocalContext.current,
 ) {
     val cardColors = LocalCardColors.current
     val homeTeamDetails = TeamDetails(item.hLogoPath, item.homeTeam)
     val awayTeamDetails = TeamDetails(item.aLogoPath, item.awayTeam)
     val statusColor =
-            if (item.color != Color.Unspecified.toArgb()) Color(item.color) else Color.Unspecified
+        if (item.color != Color.Unspecified.toArgb()) Color(item.color) else Color.Unspecified
 
     Card(
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                            .clickable(
-                                    onClick = onClick,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple()
-                            ),
-            colors = cardColors,
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = androidx.compose.material3.MaterialTheme.shapes.medium
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .clickable(
+                    onClick = onClick,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple()
+                ),
+        colors = cardColors,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.material3.MaterialTheme.shapes.medium
     ) {
         Column(
-                modifier = Modifier.padding(0.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(0.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Header with league info and favorite button
             MatchHeader(
-                    league = item.league?.split(",")?.firstOrNull() ?: "Unknown League",
-                    leagueLogo = item.leagueLogo,
-                    date = DateUtils.formatRelativeDate(context, item.mDate),
-                    isFavorite = isFavorite,
-                    onFavoriteClick = { onFavoriteClick(item) },
+                league = item.league?.split(",")?.firstOrNull() ?: stringResource(R.string.unknown_league),
+                leagueLogo = item.leagueLogo,
+                date = DateUtils.formatRelativeDate(context, item.mDate),
+                isFavorite = isFavorite,
+                onFavoriteClick = { onFavoriteClick(item) },
             )
 
             // Main content - teams and score
             TeamsRow(
-                    homeTeam = homeTeamDetails,
-                    awayTeam = awayTeamDetails,
-                    matchTime = item.mTime ?: "TBD",
-                    score = item.outcome,
-                    statusColor = statusColor
+                homeTeam = homeTeamDetails,
+                awayTeam = awayTeamDetails,
+                matchTime = item.mTime ?: "TBD",
+                score = item.outcome,
+                statusColor = statusColor
             )
 
             // Footer with pick only

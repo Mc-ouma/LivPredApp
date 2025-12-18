@@ -34,9 +34,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import com.soccertips.predictx.R
 
 @Composable
 fun UpdateHandler(updateManager: CustomAppUpdateManager) {
@@ -49,8 +51,8 @@ fun UpdateHandler(updateManager: CustomAppUpdateManager) {
     Box(modifier = Modifier.fillMaxSize()) {
         // Show update progress indicator when downloading
         UpdateProgressIndicator(
-                isDownloading = updateState.isDownloading,
-                modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
+            isDownloading = updateState.isDownloading,
+            modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
         )
 
         // Handle update downloaded state
@@ -58,12 +60,12 @@ fun UpdateHandler(updateManager: CustomAppUpdateManager) {
             if (updateState.isDownloaded) {
                 scope.launch {
                     val result =
-                            snackbarHostState.showSnackbar(
-                                    message =
-                                            "Update downloaded. Restart to complete installation.",
-                                    actionLabel = "RESTART",
-                                    duration = SnackbarDuration.Indefinite
-                            )
+                        snackbarHostState.showSnackbar(
+                            message =
+                                "Update downloaded. Restart to complete installation.",
+                            actionLabel = "RESTART",
+                            duration = SnackbarDuration.Indefinite
+                        )
                     if (result == SnackbarResult.ActionPerformed) {
                         updateManager.completeUpdate()
                     }
@@ -74,10 +76,10 @@ fun UpdateHandler(updateManager: CustomAppUpdateManager) {
         // Show mandatory update dialog
         if (updateState.isAvailable && updateState.isMandatory) {
             MandatoryUpdateDialog(
-                    onUpdateClick = {
-                        val activity = context as? ComponentActivity
-                        activity?.let { updateManager.startUpdateFlow(it) }
-                    }
+                onUpdateClick = {
+                    val activity = context as? ComponentActivity
+                    activity?.let { updateManager.startUpdateFlow(it) }
+                }
             )
         }
 
@@ -86,11 +88,11 @@ fun UpdateHandler(updateManager: CustomAppUpdateManager) {
             if (updateState.isAvailable && !updateState.isMandatory) {
                 scope.launch {
                     val result =
-                            snackbarHostState.showSnackbar(
-                                    message = "App update available",
-                                    actionLabel = "UPDATE",
-                                    duration = SnackbarDuration.Long
-                            )
+                        snackbarHostState.showSnackbar(
+                            message = context.getString(R.string.app_update_available),
+                            actionLabel = context.getString(R.string.update_action),
+                            duration = SnackbarDuration.Long
+                        )
                     if (result == SnackbarResult.ActionPerformed) {
                         val activity = context as? ComponentActivity
                         activity?.let { updateManager.startUpdateFlow(it) }
@@ -101,8 +103,8 @@ fun UpdateHandler(updateManager: CustomAppUpdateManager) {
 
         // Position SnackbarHost at the bottom
         SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
         )
     }
 }
@@ -110,39 +112,38 @@ fun UpdateHandler(updateManager: CustomAppUpdateManager) {
 @Composable
 private fun MandatoryUpdateDialog(onUpdateClick: () -> Unit) {
     AlertDialog(
-            onDismissRequest = { /* Cannot dismiss mandatory update */},
-            title = {
-                Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                            imageVector = Icons.Default.Update,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(text = "Update Required", fontWeight = FontWeight.Bold)
-                }
-            },
-            text = {
-                Text(
-                        text =
-                                "A critical update is available. Please update the app to continue using it.",
-                        style = MaterialTheme.typography.bodyMedium
+        onDismissRequest = { /* Cannot dismiss mandatory update */ },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Update,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
                 )
-            },
-            confirmButton = {
-                Button(onClick = onUpdateClick, modifier = Modifier.fillMaxWidth()) {
-                    Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Update Now")
-                }
-            },
-            dismissButton = null // No dismiss button for mandatory updates
+                Text(text = stringResource(R.string.update_required), fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Text(
+                text = stringResource(R.string.critical_update_message),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(onClick = onUpdateClick, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.update_now))
+            }
+        },
+        dismissButton = null // No dismiss button for mandatory updates
     )
 }
 
@@ -150,19 +151,19 @@ private fun MandatoryUpdateDialog(onUpdateClick: () -> Unit) {
 fun UpdateProgressIndicator(isDownloading: Boolean, modifier: Modifier = Modifier) {
     if (isDownloading) {
         Card(
-                modifier = modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            modifier = modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
                 Text(
-                        text = "Downloading update...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f)
+                    text = "Downloading update...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }

@@ -43,8 +43,8 @@ android {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 25
-        versionName = "2.0.5"
+        versionCode = 27
+        versionName = "2.0.7"
 
         buildConfigField("boolean", "DEBUG", "true")
 
@@ -202,6 +202,9 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.dotenv.kotlin)
 
+    // Baseline Profile for faster cold starts
+    implementation(libs.profileinstaller)
+
     // paging
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
@@ -212,6 +215,10 @@ dependencies {
     // Admob
     implementation(libs.play.services.ads)
     implementation(libs.facebook)
+
+    // Facebook SDK annotation dependencies (compile-only to avoid R8 errors)
+    compileOnly(libs.infer.annotation)
+    compileOnly(libs.javax.annotation.api)
 
     // User Messaging Platform (UMP) for consent management
     implementation(libs.user.messaging.platform)

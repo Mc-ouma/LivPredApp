@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Match-related strings -->
+    <string name="match_details">Dettagli</string>
+    <string name="result">Risultato</string>
+    <string name="statistics">Statistiche</string>
+    <string name="head_to_head">H2H</string>
+    <string name="lineups">Formazioni</string>
+    <string name="standings">Classifica</string>
+    <string name="summary">Riepilogo</string>
+    <string name="squad">Rosa</string>
+    <string name="fixtures">Calendario</string>
+    <string name="transfers">Trasferimenti</string>
+    <string name="overview">Panoramica</string>
+
+    <!-- Date and time -->
+    <string name="today">Oggi</string>
+    <string name="tomorrow">Domani</string>
+    <string name="yesterday">Ieri</string>
+    <string name="unknown_date">Data sconosciuta</string>
+    <string name="type">Tipo</string>
+    <string name="home">Casa</string>
+    <string name="away">Trasferta</string>
+    <string name="total">Totale</string>
+    <string name="for_">A favore</string>
+    <string name="against">Contro</string>
+    <string name="minute">Minuto</string>
+    <string name="percentage">Percentuale</string>
+    <string name="category">Categoria</string>
+
+    <!-- Navigation and UI -->
+    <string name="categories">Categorie</string>
+    <string name="favorites">Preferiti</string>
+    <string name="saved">Salvato</string>
+    <string name="information">Informazioni</string>
+    <string name="back">Indietro</string>
+    <string name="close">Chiudi</string>
+    <string name="retry">Riprova</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Annulla</string>
+    <string name="submit">Invia</string>
+
+    <!-- Menu Items -->
+    <string name="share">Condividi</string>
+    <string name="rate_us">Valutaci</string>
+    <string name="privacy_policy">Privacy</string>
+    <string name="telegram">Telegram</string>
+    <string name="send_feedback">Invia feedback</string>
+    <string name="about_us">Chi siamo</string>
+
+    <!-- Form Labels -->
+    <string name="email_address">Indirizzo email</string>
+    <string name="message">Messaggio</string>
+    <string name="enter_email_placeholder">Inserisci il tuo indirizzo email</string>
+    <string name="other_feedback">Altro feedback</string>
+
+    <!-- Prediction Categories -->
+    <string name="over_under">Over/Under</string>
+    <string name="btts">Entrambe segnano</string>
+    <string name="daily_2_odds">Quote giornaliere 2</string>
+    <string name="combo">Multipla</string>
+    <string name="ht_ft">PT/FT</string>
+    <string name="home_away">Casa/Trasferta</string>
+    <string name="daily_bonus">Bonus giornaliero</string>
+    <string name="extra_picks">Selezioni extra</string>
+
+    <!-- Prediction Carousel -->
+    <string name="goals_for">Gol fatti:</string>
+    <string name="goals_against">Gol subiti:</string>
+    <string name="failed_to_score">Senza gol:</string>
+    <string name="scored">Segnati:</string>
+    <string name="conceded">Subiti:</string>
+    <string name="clean_sheets">Porta inviolata:</string>
+    <string name="form">Forma</string>
+    <string name="attack">Attacco</string>
+    <string name="defense">Difesa</string>
+    <string name="h2h">H2H</string>
+    <string name="overall">Generale</string>
+    <string name="last_5_matches_goals">Gol nelle ultime 5 partite</string>
+    <string name="win_or_draw_likely">Vittoria o Pareggio: Probabile</string>
+    <string name="goals_under_over_format">Gol Under/Over: %s</string>
+    <string name="team_form_comparison">Confronto Forma Squadre</string>
+    <string name="season_performance">Rendimento Stagionale</string>
+    <string name="head_to_head_history">Storico Scontri Diretti</string>
+    <string name="no_head_to_head_history_available">Nessuno storico scontri diretti disponibile</string>
+    <string name="draws_format">Pareggi: %d</string>
+    <string name="last_5_matches">Ultime 5 Partite</string>
+    <string name="match_prediction_overview">Panoramica Pronostico Partita</string>
+    <string name="team_wins_format">%s: %d</string>
+    <string name="goals_analysis">Analisi Gol</string>
+    <string name="home__">Casa: %1$s</string>
+    <string name="draw">Pareggio: %1$s</string>
+    <string name="away__">Trasferta: %1$s</string>
+
+    <!-- Team Details -->
+    <string name="invalid_time">Ora non valida</string>
+
+    <!-- Error Messages -->
+    <string name="press_back_again_to_exit">Premi di nuovo indietro per uscire</string>
+    <string name="no_internet_connection">Nessuna connessione internet</string>
+    <string name="could_not_open_link">Impossibile aprire il link</string>
+    <string name="invalid_team_ids">ID squadra non valido. Controlla i tuoi dati.</string>
+    <string name="error_occurred_check_internet">Si è verificato un errore. Controlla la tua connessione</string>
+    <string name="error_occurred_fetching_data">Si è verificato un errore durante il recupero dei dati.</string>
+    <string name="no_data_available">Nessun dato disponibile</string>
+    <string name="removed_from_favorites">Rimosso dai preferiti</string>
+    <string name="undo">Annulla</string>
+    <string name="no_categories_available">Nessuna categoria disponibile. Unisciti al nostro canale Telegram per aggiornamenti.</string>
+    <string name="failed_to_fetch_data">Impossibile recuperare i dati</string>
+    <string name="error_loading_categories">Errore nel caricamento delle categorie</string>
+    <string name="no_standings_found">Nessuna classifica trovata</string>
+    <string name="failed_to_fetch_standings">Impossibile recuperare la classifica</string>
+    <string name="an_error_occurred_while_fetching_fixtures">Si è verificato un errore durante il recupero delle partite.</string>
+    <string name="an_unexpected_error_occurred">Si è verificato un errore imprevisto.</string>
+    <string name="network_error_check_connection">Errore di rete. Controlla la tua connessione.</string>
+
+    <!-- Notification Messages -->
+    <string name="match_starts_in_15_minutes">La partita inizia tra 15 minuti!</string>
+    <string name="upcoming_matches">Prossime partite</string>
+    <string name="match_updates">Aggiornamenti partite</string>
+    <string name="matches_count">%d partite</string>
+    <string name="final_score_format">Risultato finale: %d - %d</string>
+    <string name="league_format">Campionato: %s</string>
+    <string name="date_format">Data: %s Ora: %s</string>
+    <string name="your_pick_format">La tua scelta: %s</string>
+    <string name="vs">VS</string>
+
+    <!-- Content Descriptions -->
+    <string name="localized_description">Descrizione localizzata</string>
+    <string name="app_icon">Icona app</string>
+    <string name="app_logo">Logo app</string>
+    <string name="splash_screen">Schermata di avvio</string>
+    <string name="contact_us">Contattaci</string>
+    <string name="home_team_logo">Logo squadra casa</string>
+    <string name="away_team_logo">Logo squadra trasferta</string>
+    <string name="team_logo_format">Logo %s</string>
+    <string name="home_logo">Logo casa</string>
+    <string name="away_logo">Logo trasferta</string>
+    <string name="goal_icon">Icona gol</string>
+    <string name="card_icon">Icona cartellino</string>
+    <string name="substitution_icon">Icona sostituzione</string>
+    <string name="var_icon">Icona VAR</string>
+    <string name="event_icon">Icona evento</string>
+    <string name="soccer_ball">Pallone da calcio</string>
+
+    <!-- Animation Labels -->
+    <string name="logo_pulse">logoPulse</string>
+    <string name="pulse_animation">pulseAnimation</string>
+    <string name="tab_content_transition">Transizione contenuto tab</string>
+    <string name="home_categories">Home</string>
+
+    <!-- Fixture Details Strings -->
+    <string name="loading">Caricamento…</string>
+    <string name="no_predictions_available">Nessuna previsione disponibile.</string>
+    <string name="no_fixtures_available">Nessuna partita disponibile</string>
+    <string name="no_head_to_head_data_available">Nessun dato H2H disponibile</string>
+    <string name="no_events_available">Nessun evento disponibile</string>
+    <string name="no_standings_available">Nessuna classifica disponibile</string>
+    <string name="date_unavailable">Data non disponibile</string>
+    <string name="watch_ad_for_extra_predictions">Guarda pubblicità per previsioni extra</string>
+    <string name="stats">Statistiche</string>
+    <string name="na">N/D</string>
+    <string name="substitutes">Sostituti</string>
+    <string name="coach_format">Allenatore: %1$s</string>
+    <string name="coach_default">Allenatore</string>
+    <string name="coach_photo">Foto allenatore</string>
+    <string name="team_logo">Logo squadra</string>
+
+    <!-- Language Picker -->
+    <string name="language">Lingua</string>
+    <string name="select_language">Seleziona lingua</string>
+    <string name="language_english">Inglese</string>
+    <string name="language_spanish">Spagnolo</string>
+    <string name="language_portuguese">Portoghese</string>
+    <string name="language_french">Francese</string>
+    <string name="language_german">Tedesco</string>
+    <string name="language_italian">Italiano</string>
+    <string name="language_arabic">Arabo</string>
+    <string name="language_turkish">Turco</string>
+    <string name="language_swahili">Swahili</string>
+    <string name="language_system">Predefinito sistema</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Promemoria Giornalieri</string>
+    <string name="daily_reminder_channel_description">Promemoria giornalieri su previsioni e partite</string>
+    
+    <!-- Notification Channels -->
+    <string name="match_reminder_channel_name">Promemoria Partite</string>
+    <string name="match_reminder_channel_description">Notifiche per le prossime partite</string>
+    <string name="match_updates_channel_name">Aggiornamenti Partite</string>
+    <string name="match_updates_channel_description">Aggiornamenti live e punteggi</string>
+    <string name="fcm_channel_name">Notifiche FCM</string>
+    <string name="fcm_channel_description">Notifiche da Firebase Cloud Messaging</string>
+    <string name="betting_success_channel_name">Notifiche di Successo</string>
+    <string name="betting_success_channel_description">Notifiche per giorni di scommesse riuscite</string>
+    
+    <string name="daily_reminder_title">⚽ Avviso Giorno di Partita!</string>
+    <string name="daily_reminder_body">🔥 Le previsioni calde sono pronte! Non perdere le scommesse vincenti di oggi 🏆</string>
+    <string name="afternoon_reminder_title">🎯 Partite in Arrivo!</string>
+    <string name="afternoon_reminder_body">⏰ Il prime time sta per iniziare! Controlla le tue previsioni prima che sia troppo tardi 💪</string>
+    
+    <!-- Notification Action Buttons -->
+    <string name="view_details">Vedi Dettagli</string>
+    <string name="share_success">Condividi Successo</string>
+    <string name="match_update_title">Aggiornamento Partita</string>
+    <string name="match_update_fallback">Una partita è stata aggiornata. Tocca per vedere i dettagli.</string>
+    <string name="perfect_betting_day_fallback">🎉 Giornata di Scommesse Perfetta!</string>
+    <string name="matches_won_summary">%d partite vinte</string>
+    <string name="success_rate_summary">🎯 Tasso di Successo: %1$s%%\n📊 %2$s\n\n📋 Risultati:\n%3$s</string>
+    <string name="share_betting_success">🎉 Giornata di scommesse perfetta! Tutte le %1$s partite vinte con %2$s%% di successo! 🎯</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Attiva Notifiche</string>
+    <string name="notification_permission_message">🔔 Rimani aggiornato con previsioni e promemoria giornalieri!\n\nLe notifiche ti aiutano a:\n• Ricevere avvisi di previsioni giornaliere\n• Non perdere partite importanti\n• Ricevere consigli vincenti in tempo</string>
+    <string name="notification_permission_enable">Attiva</string>
+    <string name="notification_permission_not_now">Non Ora</string>
+    <string name="notification_disabled_title">Notifiche Disattivate</string>
+    <string name="notification_disabled_message">🔕 Hai disattivato le notifiche.\n\nPer ricevere avvisi di partite e previsioni giornaliere, attiva le notifiche nelle Impostazioni.</string>
+    <string name="notification_open_settings">Apri Impostazioni</string>
+    <string name="notification_enabled_toast">Notifiche attivate! 🎉</string>
+    <string name="notification_disabled_toast">Notifiche disattivate. Puoi attivarle nelle Impostazioni.</string>
+    
+    <!-- Exact Alarm Permission -->
+    <string name="exact_alarm_permission_title">Permesso Allarme Esatto Richiesto</string>
+    <string name="exact_alarm_permission_message">Questa app richiede il permesso di programmare allarmi esatti. Concedi il permesso nelle impostazioni.</string>
+    <string name="go_to_settings">Vai alle Impostazioni</string>
+    <string name="unable_to_open_settings">Impossibile aprire le impostazioni</string>
+    
+    <!-- Missing translations - UI and Basic -->
+    <string name="address">Indirizzo</string>
+    <string name="add_to_favorites">Aggiungi ai preferiti</string>
+    <string name="ad_not_available">Annuncio non disponibile</string>
+    <string name="ad_not_available_message">Nessun annuncio disponibile al momento. Riprova più tardi.</string>
+    <string name="age_years">%d anni</string>
+    <string name="all_matches_won_with_rate">Tutte le partite vinte! (%1$d/%2$d) - Tasso di successo: %3$.1f%%</string>
+    <string name="and_more_matches">…e altre %d partite</string>
+    <string name="an_error_occurred_please_check_your_internet_or_check_again_later">Si è verificato un errore. Controlla la connessione internet o riprova più tardi.</string>
+    <string name="an_update_has_been_downloaded">È stato scaricato un aggiornamento.</string>
+    <string name="app_update_available">Aggiornamento app disponibile</string>
+    <string name="average_goals">Gol medi</string>
+    <string name="ball_possession">Possesso palla</string>
+    <string name="betting_success_detailed_stats">📊 %1$d/%2$d partite vinte\n🎯 Tasso di successo: %3$.1f%%\n📋 Categoria: %4$s</string>
+    <string name="betting_success_fallback_share_text">🎉 Giornata di successo! Più partite vinte!</string>
+    <string name="betting_success_share_text">🎉 Giornata perfetta! Tutte le %1$d partite vinte con %2$.1f%% di successo! 🎯\n📱 Scarica l\'app: %3$s</string>
+    <string name="biggest_losses">Maggiori sconfitte</string>
+    <string name="biggest_streak">Serie più lunga</string>
+    <string name="biggest_wins">Maggiori vittorie</string>
+    <string name="blocked_shots">Tiri bloccati</string>
+    <string name="capacity">Capacità</string>
+    <string name="cards">Cartellini</string>
+    <string name="card_type_red">Rosso</string>
+    <string name="card_type_yellow">Giallo</string>
+    <string name="city">Città</string>
+    <string name="coach_title">Allenatore</string>
+    <string name="corner_kicks">Calci d\'angolo</string>
+    <string name="country">Paese</string>
+    <string name="critical_update_message">È disponibile un aggiornamento critico. Aggiorna l\'app per continuare a usarla.</string>
+    <string name="date_label">Data</string>
+    <string name="date_pattern_display">dd MMM yyyy</string>
+    <string name="date_pattern_input">yyyy-MM-dd</string>
+    <string name="date_pattern_output">d MMMM yyyy</string>
+    <string name="decimal_format">#,##</string>
+    <string name="dismiss">Chiudi</string>
+    <string name="drawn">Pareggiato</string>
+    <string name="draws">Pareggi</string>
+    <string name="earn_more_passes">Guadagna più pass</string>
+    <string name="error_check_internet">Controlla la connessione internet</string>
+    <string name="error_loading_fixture_details">Errore nel caricamento dei dettagli della partita</string>
+    <string name="error_loading_transfers">Errore nel caricamento dei trasferimenti</string>
+    <string name="expected_goals">Gol previsti</string>
+    <string name="failed_to_fetch_games_please_try_again_later">Impossibile recuperare le partite. Riprova più tardi.</string>
+    <string name="formation_played_times">%1$s (%2$d)</string>
+    <string name="fouls">Falli</string>
+    <string name="founded">Fondato</string>
+    <string name="games_played">Partite giocate</string>
+    <string name="goal_cancelled">Gol Annullato</string>
+    <string name="goal_difference">Differenza reti</string>
+    <string name="goalkeeper_saves">Parate del portiere</string>
+    <string name="goals">Gol</string>
+    <string name="goals_0_5">0–5 gol</string>
+    <string name="goals_1_5">1–5 gol</string>
+    <string name="goals_2_5">2–5 gol</string>
+    <string name="goals_3_5">3–5 gol</string>
+    <string name="goals_4_5">4–5 gol</string>
+    <string name="goals_by_minute">Gol per minuto</string>
+    <string name="goals_for_against">Gol (Fatti/Subiti)</string>
+    <string name="goals_prevented">Gol impediti</string>
+    <string name="goals_under_over">Gol Sotto/Sopra</string>
+    <string name="goal_type_goal">Gol</string>
+    <string name="goal_type_missed_penalty">Rigore Sbagliato</string>
+    <string name="goal_type_normal">Gol Normale</string>
+    <string name="goal_type_own">Autogol</string>
+    <string name="goal_type_penalty">Rigore</string>
+    <string name="hide_stadium_details">Nascondi dettagli stadio</string>
+    <string name="invalid_date">Data non valida</string>
+    <string name="join_our_telegram_channel">Unisciti al nostro canale Telegram</string>
+    <string name="league_logo">Logo Lega</string>
+    <string name="locked_watch_ad">Bloccato - guarda annuncio per sbloccare</string>
+    <string name="losses">Sconfitte</string>
+    <string name="lost">Perso</string>
+    <string name="matches_count_plural">partite</string>
+    <string name="match_results_label">Risultati partite</string>
+    <string name="max_passes_message">Hai raggiunto il numero massimo di pass.</string>
+    <string name="max_passes_title">Pass Massimi Raggiunti</string>
+    <string name="minutes_0_15">0\'–15\'</string>
+    <string name="minutes_106_120">106\'–120\'</string>
+    <string name="minutes_16_30">16\'–30\'</string>
+    <string name="minutes_31_45">31\'–45\'</string>
+    <string name="minutes_46_60">46\'–60\'</string>
+    <string name="minutes_61_75">61\'–75\'</string>
+    <string name="minutes_76_90">76\'–90\'</string>
+    <string name="minutes_91_105">91\'–105\'</string>
+    <string name="no_data">-</string>
+    <string name="no_detail_available">Nessun dettaglio disponibile</string>
+    <string name="no_favorite_items">Nessun preferito</string>
+    <string name="no_games_found_for_the_selected_date">Nessuna partita trovata per la data selezionata.</string>
+    <string name="no_head_to_head_data_available_for_teams_and">Nessun dato confronto diretto disponibile per %1$s e %2$s.</string>
+    <string name="no_passes_message">Non hai più pass. Guarda un annuncio per guadagnarne altri.</string>
+    <string name="no_passes_title">Nessun Pass</string>
+    <string name="offsides">Fuorigioco</string>
+    <string name="over">Sopra</string>
+    <string name="pass_earned_message">Hai guadagnato un pass!</string>
+    <string name="pass_earned_title">Pass Guadagnato</string>
+    <string name="passes_accurate">Passaggi precisi</string>
+    <string name="passes_balance">%d pass</string>
+    <string name="passes_percentage">Percentuale passaggi</string>
+    <string name="penalties">Rigori</string>
+    <string name="penalties_missed">Rigori sbagliati</string>
+    <string name="penalties_scored">Rigori segnati</string>
+    <string name="penalty_confirmed">Rigore Confermato</string>
+    <string name="percentage_format">%d%%</string>
+    <string name="percent_suffix">%</string>
+    <string name="perfect_betting_day">🎉 Giornata di scommesse perfetta!</string>
+    <string name="perfect_day_in_category">%s: Tutte le partite vinte! 🏆</string>
+    <string name="perfect_day_stats">%1$d/%2$d vinte (100%% successo)</string>
+    <string name="pick_label">Scelta:</string>
+    <string name="played">Giocate</string>
+    <string name="player_photo">Foto Giocatore</string>
+    <string name="points">Punti</string>
+    <string name="position_defender">Difensore</string>
+    <string name="position_defender_short">DIF</string>
+    <string name="position_format">%s</string>
+    <string name="position_forward">Attaccante</string>
+    <string name="position_forward_short">ATT</string>
+    <string name="position_goalkeeper">Portiere</string>
+    <string name="position_goalkeeper_short">POR</string>
+    <string name="position_midfielder">Centrocampista</string>
+    <string name="position_midfielder_short">CEN</string>
+    <string name="red_cards">Cartellini rossi</string>
+    <string name="remove_from_favorites_action">Rimuovi dai preferiti</string>
+    <string name="request_in_app_review">Richiedi recensione</string>
+    <string name="restart">Riavvia</string>
+    <string name="save_for_later">Salva per dopo</string>
+    <string name="score_format">%d - %d</string>
+    <string name="select_date">Seleziona data</string>
+    <string name="shots_insidebox">Tiri in area</string>
+    <string name="shots_off_goal">Tiri fuori</string>
+    <string name="shots_on_goal">Tiri in porta</string>
+    <string name="shots_outsidebox">Tiri fuori area</string>
+    <string name="show_stadium_details">Mostra dettagli stadio</string>
+    <string name="stadium">Stadio</string>
+    <string name="starting_eleven">Formazione titolare</string>
+    <string name="success_rate_label">Tasso di successo</string>
+    <string name="surface">Superficie</string>
+    <string name="team">Squadra</string>
+    <string name="team_a">Squadra A</string>
+    <string name="team_info">Info squadra</string>
+    <string name="team_player">Giocatore</string>
+    <string name="team_statistics">Statistiche squadra</string>
+    <string name="time_format">%1$02d:%2$02d</string>
+    <string name="total_passes">Passaggi totali</string>
+    <string name="total_shots">Tiri totali</string>
+    <string name="under">Sotto</string>
+    <string name="unknown">Sconosciuto</string>
+    <string name="unknown_event">Evento sconosciuto</string>
+    <string name="unknown_league">Lega sconosciuta</string>
+    <string name="unknown_player">Giocatore sconosciuto</string>
+    <string name="unknown_team">Squadra sconosciuta</string>
+    <string name="unlock_category_message">Guarda un annuncio per sbloccare questa categoria per 24 ore.</string>
+    <string name="unlock_category_title">Sblocca Categoria</string>
+    <string name="unlock_passes">Sblocca Pass</string>
+    <string name="update_action">AGGIORNA</string>
+    <string name="update_downloaded_restart">Aggiornamento scaricato. Riavvia per installare.</string>
+    <string name="update_now">Aggiorna Ora</string>
+    <string name="update_required">Aggiornamento Richiesto</string>
+    <string name="use_now">Usa Ora</string>
+    <string name="use_pass">Usa Pass</string>
+    <string name="watch_ad">Guarda Annuncio</string>
+    <string name="watch_ad_to_earn">Guarda annuncio per guadagnare pass</string>
+    <string name="watch_ad_to_unlock">Guarda annuncio per sbloccare</string>
+    <string name="watch_ad_unlock_24h">Guarda annuncio per sbloccare (24h)</string>
+    <string name="wins">Vittorie</string>
+    <string name="won">Vinto</string>
+    <string name="yellow_cards">Cartellini gialli</string>
+    
+    <!-- Category Labels -->
+    <string name="category_away_win">Vittoria in trasferta</string>
+    <string name="category_away_win_or_draw">Vittoria trasferta o pareggio</string>
+    <string name="category_both_teams_score">Entrambe Segnano</string>
+    <string name="category_clean_sheet">Porta inviolata</string>
+    <string name="category_draw">Pareggio</string>
+    <string name="category_home_win">Vittoria in casa</string>
+    <string name="category_home_win_or_draw">Vittoria casa o pareggio</string>
+    <string name="category_label">Categoria</string>
+    <string name="category_matches_won">Partite vinte</string>
+    <string name="category_over_goals">Più di %s gol</string>
+    <string name="category_today_tips">Consigli del giorno</string>
+    <string name="category_under_goals">Meno di %s gol</string>
+
+</resources>

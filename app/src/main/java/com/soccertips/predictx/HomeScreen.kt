@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -77,7 +78,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -88,30 +89,30 @@ import com.soccertips.predictx.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 sealed class BottomNavScreens(
-        open val route: String,
-        @StringRes open val title: Int,
-        open val selectedIcon: ImageVector,
-        open val unselectedIcon: ImageVector,
-        open val hasNews: Boolean,
-        open val badgeCount: Int? = null
+    open val route: String,
+    @StringRes open val title: Int,
+    open val selectedIcon: ImageVector,
+    open val unselectedIcon: ImageVector,
+    open val hasNews: Boolean,
+    open val badgeCount: Int? = null
 ) {
     object Categories :
-            BottomNavScreens(
-                    "categories",
-                    R.string.home_categories,
-                    Icons.Filled.Home,
-                    Icons.Outlined.Home,
-                    false,
-                    null
-            )
+        BottomNavScreens(
+            "categories",
+            R.string.home_categories,
+            Icons.Filled.Home,
+            Icons.Outlined.Home,
+            false,
+            null
+        )
 
     data class Favorite(
-            override val route: String = "favorites",
-            @StringRes override val title: Int = R.string.favorites,
-            override val selectedIcon: ImageVector = Icons.Filled.Favorite,
-            override val unselectedIcon: ImageVector = Icons.Filled.FavoriteBorder,
-            override val hasNews: Boolean = false,
-            override val badgeCount: Int? = null
+        override val route: String = "favorites",
+        @StringRes override val title: Int = R.string.favorites,
+        override val selectedIcon: ImageVector = Icons.Filled.Favorite,
+        override val unselectedIcon: ImageVector = Icons.Filled.FavoriteBorder,
+        override val hasNews: Boolean = false,
+        override val badgeCount: Int? = null
     ) : BottomNavScreens(route, title, selectedIcon, unselectedIcon, hasNews, badgeCount)
 }
 
@@ -122,16 +123,16 @@ fun HomeScreen(navController: NavController) {
     rememberNavController()
     val favoritesViewModel: FavoritesViewModel = hiltViewModel()
     val favoriteCount by
-            favoritesViewModel.favoriteCount.collectAsStateWithLifecycle(initialValue = 0)
+    favoritesViewModel.favoriteCount.collectAsStateWithLifecycle(initialValue = 0)
     val mainViewModel: MainViewModel = hiltViewModel()
     val networkUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val items =
-            listOf(
-                    BottomNavScreens.Categories,
-                    BottomNavScreens.Favorite(badgeCount = favoriteCount),
-            )
+        listOf(
+            BottomNavScreens.Categories,
+            BottomNavScreens.Favorite(badgeCount = favoriteCount),
+        )
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(0) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
@@ -153,11 +154,11 @@ fun HomeScreen(navController: NavController) {
             } else {
                 backPressState = currentTime
                 Toast.makeText(
-                                context,
-                                context.getString(R.string.press_back_again_to_exit),
-                                Toast.LENGTH_SHORT
-                        )
-                        .show()
+                    context,
+                    context.getString(R.string.press_back_again_to_exit),
+                    Toast.LENGTH_SHORT
+                )
+                    .show()
             }
         }
     }
@@ -165,11 +166,11 @@ fun HomeScreen(navController: NavController) {
     LaunchedEffect(networkUiState) {
         if (networkUiState is MainViewModel.UiState.NetworkError) {
             val result =
-                    snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.no_internet_connection),
-                            actionLabel = context.getString(R.string.retry),
-                            duration = SnackbarDuration.Long
-                    )
+                snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.no_internet_connection),
+                    actionLabel = context.getString(R.string.retry),
+                    duration = SnackbarDuration.Long
+                )
             if (result == SnackbarResult.ActionPerformed) {
                 mainViewModel.retryNetworkOperation()
             }
@@ -181,111 +182,117 @@ fun HomeScreen(navController: NavController) {
     }
 
     Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            snackbarHost = {
-                SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
-            },
-            topBar = {
-                HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior)
-            },
-            bottomBar = {
-                AnimatedNavigationBar(
-                        selectedItem = pagerState.currentPage,
-                        onItemSelected = { index ->
-                            scope.launch { pagerState.animateScrollToPage(index) }
-                        },
-                        buttons =
-                                items.map { item ->
-                                    ButtonData(
-                                            text = stringResource(item.title),
-                                            icon = item.selectedIcon,
-                                            hasNews = item.hasNews,
-                                            badgeCount = item.badgeCount
-                                    )
-                                },
-                        barColor = MaterialTheme.colorScheme.primaryContainer,
-                        circleColor = MaterialTheme.colorScheme.primaryContainer,
-                        selectedColor = MaterialTheme.colorScheme.primary,
-                        unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                /*NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    items.forEachIndexed { index, item ->
-                        NavigationBarItem(
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            },
-                            label = { Text(text = stringResource(item.title)) },
-                            icon = {
-                                BadgedBox(
-                                    badge = {
-                                        if (item.badgeCount != null) {
-                                            Badge(
-                                                containerColor =
-                                                    MaterialTheme.colorScheme
-                                                        .primary
-                                            ) { Text(text = item.badgeCount.toString()) }
-                                        } else if (item.hasNews) {
-                                            Badge(
-                                                containerColor =
-                                                    MaterialTheme.colorScheme
-                                                        .primary
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector =
-                                            if (pagerState.currentPage == index) {
-                                                item.selectedIcon
-                                            } else item.unselectedIcon,
-                                        contentDescription = stringResource(item.title)
-                                    )
-                                }
-                            }
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
+        },
+        topBar = {
+            HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior)
+        },
+        bottomBar = {
+            AnimatedNavigationBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
+                selectedItem = pagerState.currentPage,
+                onItemSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                buttons =
+                    items.map { item ->
+                        ButtonData(
+                            text = stringResource(item.title),
+                            icon = item.selectedIcon,
+                            hasNews = item.hasNews,
+                            badgeCount = item.badgeCount
                         )
-                    }
-                }*/
-            },
-            content = { padding ->
-                HorizontalPager(state = pagerState, modifier = Modifier.padding(padding)) { page ->
-                    when (page) {
-                        0 -> CategoriesScreen(navController = navController)
-                        1 -> FavoritesScreen(navController = navController)
-                    }
+                    },
+                barColor = MaterialTheme.colorScheme.primaryContainer,
+                circleColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedColor = MaterialTheme.colorScheme.primary,
+                unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            /*NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                items.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            scope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        },
+                        label = { Text(text = stringResource(item.title)) },
+                        icon = {
+                            BadgedBox(
+                                badge = {
+                                    if (item.badgeCount != null) {
+                                        Badge(
+                                            containerColor =
+                                                MaterialTheme.colorScheme
+                                                    .primary
+                                        ) { Text(text = item.badgeCount.toString()) }
+                                    } else if (item.hasNews) {
+                                        Badge(
+                                            containerColor =
+                                                MaterialTheme.colorScheme
+                                                    .primary
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (pagerState.currentPage == index) {
+                                            item.selectedIcon
+                                        } else item.unselectedIcon,
+                                    contentDescription = stringResource(item.title)
+                                )
+                            }
+                        }
+                    )
+                }
+            }*/
+        },
+        content = { padding ->
+            HorizontalPager(state = pagerState, modifier = Modifier.padding(padding)) { page ->
+                when (page) {
+                    0 -> CategoriesScreen(navController = navController)
+                    1 -> FavoritesScreen(navController = navController)
                 }
             }
+        }
     )
 }
 
 @Composable
 private fun Circle(
-        modifier: Modifier = Modifier,
-        color: Color = MaterialTheme.colorScheme.onPrimary,
-        radius: Dp,
-        button: ButtonData,
-        iconColor: Color,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onPrimary,
+    radius: Dp,
+    button: ButtonData,
+    iconColor: Color,
 ) {
     Box(
-            contentAlignment = Alignment.Center,
-            modifier = modifier.size(radius * 2).clip(CircleShape).background(color),
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(radius * 2)
+            .clip(CircleShape)
+            .background(color),
     ) {
         BadgedBox(
-                badge = {
-                    if (button.badgeCount != null) {
-                        Badge(containerColor = MaterialTheme.colorScheme.error) {
-                            Text(text = button.badgeCount.toString())
-                        }
-                    } else if (button.hasNews) {
-                        Badge(containerColor = MaterialTheme.colorScheme.error)
+            badge = {
+                if (button.badgeCount != null) {
+                    Badge(containerColor = MaterialTheme.colorScheme.error) {
+                        Text(text = button.badgeCount.toString())
                     }
+                } else if (button.hasNews) {
+                    Badge(containerColor = MaterialTheme.colorScheme.error)
                 }
+            }
         ) {
             AnimatedContent(
-                    targetState = button.icon,
-                    label = "Bottom bar circle icon",
+                targetState = button.icon,
+                label = "Bottom bar circle icon",
             ) { targetIcon -> Icon(targetIcon, button.text, tint = iconColor) }
         }
     }
@@ -294,38 +301,39 @@ private fun Circle(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
-        modifier: Modifier = Modifier,
-        selectedItemIndex: Int,
-        scrollBehavior: TopAppBarScrollBehavior
+    modifier: Modifier = Modifier,
+    selectedItemIndex: Int,
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
     CenterAlignedTopAppBar(
-            title = {
-                if (selectedItemIndex == 0) Text(stringResource(R.string.categories))
-                else Text(stringResource(R.string.favorites))
-            },
-            modifier = modifier,
-            navigationIcon = {},
-            actions = { Menu() },
-            scrollBehavior = scrollBehavior,
+        title = {
+            if (selectedItemIndex == 0) Text(stringResource(R.string.categories))
+            else Text(stringResource(R.string.favorites))
+        },
+        modifier = modifier,
+        navigationIcon = {},
+        actions = { Menu() },
+        scrollBehavior = scrollBehavior,
     )
 }
 
 data class ButtonData(
-        val text: String,
-        val icon: ImageVector,
-        val hasNews: Boolean = false,
-        val badgeCount: Int? = null
+    val text: String,
+    val icon: ImageVector,
+    val hasNews: Boolean = false,
+    val badgeCount: Int? = null
 )
 
 @Composable
 fun AnimatedNavigationBar(
-        selectedItem: Int,
-        onItemSelected: (Int) -> Unit,
-        buttons: List<ButtonData>,
-        barColor: Color,
-        circleColor: Color,
-        selectedColor: Color,
-        unselectedColor: Color,
+    modifier: Modifier = Modifier,
+    selectedItem: Int,
+    onItemSelected: (Int) -> Unit,
+    buttons: List<ButtonData>,
+    barColor: Color,
+    circleColor: Color,
+    selectedColor: Color,
+    unselectedColor: Color,
 ) {
     val circleRadius = 26.dp
 
@@ -337,125 +345,131 @@ fun AnimatedNavigationBar(
     val offsetTransition = updateTransition(offset, "offset transition")
     val animation = spring<Float>(dampingRatio = 0.5f, stiffness = Spring.StiffnessVeryLow)
     val cutoutOffset by
-            offsetTransition.animateFloat(
-                    transitionSpec = {
-                        if (this.initialState == 0f) {
-                            snap()
-                        } else {
-                            animation
-                        }
-                    },
-                    label = "cutout offset"
-            ) { it }
-    val circleOffset by
-            offsetTransition.animateIntOffset(
-                    transitionSpec = {
-                        if (this.initialState == 0f) {
-                            snap()
-                        } else {
-                            spring(animation.dampingRatio, animation.stiffness)
-                        }
-                    },
-                    label = "circle offset"
-            ) { IntOffset(it.toInt() - circleRadiusPx, -circleRadiusPx) }
-    val barShape =
-            remember(cutoutOffset) {
-                BarShape(
-                        offset = cutoutOffset,
-                        circleRadius = circleRadius,
-                        cornerRadius = 25.dp,
-                )
+    offsetTransition.animateFloat(
+        transitionSpec = {
+            if (this.initialState == 0f) {
+                snap()
+            } else {
+                animation
             }
+        },
+        label = "cutout offset"
+    ) { it }
+    val circleOffset by
+    offsetTransition.animateIntOffset(
+        transitionSpec = {
+            if (this.initialState == 0f) {
+                snap()
+            } else {
+                spring(animation.dampingRatio, animation.stiffness)
+            }
+        },
+        label = "circle offset"
+    ) { IntOffset(it.toInt() - circleRadiusPx, -circleRadiusPx) }
+    val barShape =
+        remember(cutoutOffset) {
+            BarShape(
+                offset = cutoutOffset,
+                circleRadius = circleRadius,
+                cornerRadius = 25.dp,
+            )
+        }
 
-    Box(modifier = Modifier.fillMaxWidth().graphicsLayer { clip = false }) {
+    Box(modifier = modifier
+        .graphicsLayer { clip = false }) {
         Row(
-                modifier =
-                        Modifier.onPlaced { barSize = it.size }.fillMaxWidth().drawBehind {
-                            // Draw the bar shape directly behind the row
-                            val outline = barShape.createOutline(size, layoutDirection, this)
-                            if (outline is Outline.Generic) {
-                                drawPath(path = outline.path, color = barColor)
-                            }
-                        },
-                horizontalArrangement = Arrangement.SpaceAround,
+            modifier =
+                Modifier
+                    .onPlaced { barSize = it.size }
+                    .fillMaxWidth()
+                    .drawBehind {
+                        // Draw the bar shape directly behind the row
+                        val outline = barShape.createOutline(size, layoutDirection, this)
+                        if (outline is Outline.Generic) {
+                            drawPath(path = outline.path, color = barColor)
+                        }
+                    },
+            horizontalArrangement = Arrangement.SpaceAround,
         ) {
             buttons.forEachIndexed { index, button ->
                 val isSelected = index == selectedItem
                 NavigationBarItem(
-                        selected = isSelected,
-                        onClick = { onItemSelected(index) },
-                        icon = {
-                            val iconAlpha by
-                                    animateFloatAsState(
-                                            targetValue = if (isSelected) 0f else 1f,
-                                            label = "Navbar item icon"
-                                    )
-                            // Only show badge when not selected (floating circle will show it when
-                            // selected)
-                            if (!isSelected) {
-                                BadgedBox(
-                                        badge = {
-                                            if (button.badgeCount != null) {
-                                                Badge(
-                                                        containerColor =
-                                                                MaterialTheme.colorScheme.primary
-                                                ) { Text(text = button.badgeCount.toString()) }
-                                            } else if (button.hasNews) {
-                                                Badge(
-                                                        containerColor =
-                                                                MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        }
-                                ) {
-                                    Icon(
-                                            imageVector = button.icon,
-                                            contentDescription = button.text,
-                                            modifier = Modifier.alpha(iconAlpha)
-                                    )
+                    selected = isSelected,
+                    onClick = { onItemSelected(index) },
+                    icon = {
+                        val iconAlpha by
+                        animateFloatAsState(
+                            targetValue = if (isSelected) 0f else 1f,
+                            label = "Navbar item icon"
+                        )
+                        // Only show badge when not selected (floating circle will show it when
+                        // selected)
+                        if (!isSelected) {
+                            BadgedBox(
+                                badge = {
+                                    if (button.badgeCount != null) {
+                                        Badge(
+                                            containerColor =
+                                                MaterialTheme.colorScheme.primary
+                                        ) { Text(text = button.badgeCount.toString()) }
+                                    } else if (button.hasNews) {
+                                        Badge(
+                                            containerColor =
+                                                MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
-                            } else {
+                            ) {
                                 Icon(
-                                        imageVector = button.icon,
-                                        contentDescription = button.text,
-                                        modifier = Modifier.alpha(iconAlpha)
+                                    imageVector = button.icon,
+                                    contentDescription = button.text,
+                                    modifier = Modifier.alpha(iconAlpha)
                                 )
                             }
-                        },
-                        label = { Text(button.text) },
-                        colors =
-                                NavigationBarItemDefaults.colors(
-                                        selectedIconColor = selectedColor,
-                                        selectedTextColor = selectedColor,
-                                        unselectedIconColor = unselectedColor,
-                                        unselectedTextColor = unselectedColor,
-                                        indicatorColor = Color.Transparent,
-                                )
+                        } else {
+                            Icon(
+                                imageVector = button.icon,
+                                contentDescription = button.text,
+                                modifier = Modifier.alpha(iconAlpha)
+                            )
+                        }
+                    },
+                    label = { Text(button.text) },
+                    colors =
+                        NavigationBarItemDefaults.colors(
+                            selectedIconColor = selectedColor,
+                            selectedTextColor = selectedColor,
+                            unselectedIconColor = unselectedColor,
+                            unselectedTextColor = unselectedColor,
+                            indicatorColor = Color.Transparent,
+                        )
                 )
             }
         }
         // Circle on top, completely independent of the row
         Circle(
-                modifier = Modifier.offset { circleOffset }.zIndex(2f),
-                color = circleColor,
-                radius = circleRadius,
-                button = buttons[selectedItem],
-                iconColor = selectedColor,
+            modifier = Modifier
+                .offset { circleOffset }
+                .zIndex(2f),
+            color = circleColor,
+            radius = circleRadius,
+            button = buttons[selectedItem],
+            iconColor = selectedColor,
         )
     }
 }
 
 private class BarShape(
-        private val offset: Float,
-        private val circleRadius: Dp,
-        private val cornerRadius: Dp,
-        private val circleGap: Dp = 5.dp,
+    private val offset: Float,
+    private val circleRadius: Dp,
+    private val cornerRadius: Dp,
+    private val circleGap: Dp = 5.dp,
 ) : Shape {
 
     override fun createOutline(
-            size: androidx.compose.ui.geometry.Size,
-            layoutDirection: LayoutDirection,
-            density: Density
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: LayoutDirection,
+        density: Density
     ): Outline {
         return Outline.Generic(getPath(size, density))
     }
@@ -475,63 +489,63 @@ private class BarShape(
             // top left
             if (cutoutLeftX > 0) {
                 val realLeftCornerDiameter =
-                        if (cutoutLeftX >= cornerRadiusPx) {
-                            // there is a space between rounded corner and cutout
-                            cornerDiameter
-                        } else {
-                            // rounded corner and cutout overlap
-                            cutoutLeftX * 2
-                        }
+                    if (cutoutLeftX >= cornerRadiusPx) {
+                        // there is a space between rounded corner and cutout
+                        cornerDiameter
+                    } else {
+                        // rounded corner and cutout overlap
+                        cutoutLeftX * 2
+                    }
                 arcTo(
-                        rect =
-                                androidx.compose.ui.geometry.Rect(
-                                        left = 0f,
-                                        top = 0f,
-                                        right = realLeftCornerDiameter,
-                                        bottom = realLeftCornerDiameter
-                                ),
-                        startAngleDegrees = 180.0f,
-                        sweepAngleDegrees = 90.0f,
-                        forceMoveTo = false
+                    rect =
+                        androidx.compose.ui.geometry.Rect(
+                            left = 0f,
+                            top = 0f,
+                            right = realLeftCornerDiameter,
+                            bottom = realLeftCornerDiameter
+                        ),
+                    startAngleDegrees = 180.0f,
+                    sweepAngleDegrees = 90.0f,
+                    forceMoveTo = false
                 )
             }
             lineTo(cutoutLeftX, 0f)
             // cutout
             cubicTo(
-                    x1 = cutoutCenterX - cutoutRadius,
-                    y1 = 0f,
-                    x2 = cutoutCenterX - cutoutRadius,
-                    y2 = cutoutRadius,
-                    x3 = cutoutCenterX,
-                    y3 = cutoutRadius,
+                x1 = cutoutCenterX - cutoutRadius,
+                y1 = 0f,
+                x2 = cutoutCenterX - cutoutRadius,
+                y2 = cutoutRadius,
+                x3 = cutoutCenterX,
+                y3 = cutoutRadius,
             )
             cubicTo(
-                    x1 = cutoutCenterX + cutoutRadius,
-                    y1 = cutoutRadius,
-                    x2 = cutoutCenterX + cutoutRadius,
-                    y2 = 0f,
-                    x3 = cutoutRightX,
-                    y3 = 0f,
+                x1 = cutoutCenterX + cutoutRadius,
+                y1 = cutoutRadius,
+                x2 = cutoutCenterX + cutoutRadius,
+                y2 = 0f,
+                x3 = cutoutRightX,
+                y3 = 0f,
             )
             // top right
             if (cutoutRightX < size.width) {
                 val realRightCornerDiameter =
-                        if (cutoutRightX <= size.width - cornerRadiusPx) {
-                            cornerDiameter
-                        } else {
-                            (size.width - cutoutRightX) * 2
-                        }
+                    if (cutoutRightX <= size.width - cornerRadiusPx) {
+                        cornerDiameter
+                    } else {
+                        (size.width - cutoutRightX) * 2
+                    }
                 arcTo(
-                        rect =
-                                androidx.compose.ui.geometry.Rect(
-                                        left = size.width - realRightCornerDiameter,
-                                        top = 0f,
-                                        right = size.width,
-                                        bottom = realRightCornerDiameter
-                                ),
-                        startAngleDegrees = -90.0f,
-                        sweepAngleDegrees = 90.0f,
-                        forceMoveTo = false
+                    rect =
+                        androidx.compose.ui.geometry.Rect(
+                            left = size.width - realRightCornerDiameter,
+                            top = 0f,
+                            right = size.width,
+                            bottom = realRightCornerDiameter
+                        ),
+                    startAngleDegrees = -90.0f,
+                    sweepAngleDegrees = 90.0f,
+                    forceMoveTo = false
                 )
             }
             // bottom right

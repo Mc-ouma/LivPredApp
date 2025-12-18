@@ -20,12 +20,13 @@ import timber.log.Timber
 class CategoriesViewModel
 @Inject
 constructor(
-        private val firebaseRepository: FirebaseRepository,
-        private val remoteConfigRepository: RemoteConfigRepository,
-        private val unlockPassManager: UnlockPassManager
+    private val firebaseRepository: FirebaseRepository,
+    private val remoteConfigRepository: RemoteConfigRepository,
+    private val unlockPassManager: UnlockPassManager
 ) : ViewModel() {
 
     private val telegramMessage = "        context.getString(R.string.no_categories_available)"
+
     // Private mutable state that holds the UI state (loading, success, error)
     private val _uiState = MutableStateFlow<UiState<List<Category>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<Category>>> = _uiState.asStateFlow()
@@ -33,11 +34,11 @@ constructor(
     // State for announcements
     private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
     val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
-    
+
     // State for ad strategy (rewarded vs interstitial)
     private val _adStrategy = MutableStateFlow(RemoteConfigRepository.AD_STRATEGY_REWARDED)
     val adStrategy: StateFlow<String> = _adStrategy.asStateFlow()
-    
+
     // State for unlock passes
     val passBalance: StateFlow<Int> = unlockPassManager.passBalance
 
@@ -62,7 +63,7 @@ constructor(
             }
         }
     }
-    
+
     // Function to load ad strategy from Remote Config
     private fun loadAdStrategy() {
         viewModelScope.launch {
@@ -84,26 +85,26 @@ constructor(
             try {
                 firebaseRepository.getCategories().collect { result ->
                     result.fold(
-                            onSuccess = { categories ->
-                                if (categories.isEmpty()) {
-                                    Timber.tag("Categories")
-                                            .d("loadCategories: No categories found")
-                                    _uiState.value =
-                                            UiState.Error(
-                                                    telegramMessage
-                                            ) // (getFallbackCategories())
-                                } else {
-                                    Timber.tag("Categories")
-                                            .d("loadCategories: Categories loaded successfully")
-                                    _uiState.value = UiState.Success(categories)
-                                }
-                            },
-                            onFailure = { error ->
+                        onSuccess = { categories ->
+                            if (categories.isEmpty()) {
                                 Timber.tag("Categories")
-                                        .e(error, "loadCategories: Error loading categories")
-                                _uiState.value = UiState.Error(telegramMessage)
-                                // _uiState.value = UiState.Success(getFallbackCategories())
+                                    .d("loadCategories: No categories found")
+                                _uiState.value =
+                                    UiState.Error(
+                                        telegramMessage
+                                    ) // (getFallbackCategories())
+                            } else {
+                                Timber.tag("Categories")
+                                    .d("loadCategories: Categories loaded successfully")
+                                _uiState.value = UiState.Success(categories)
                             }
+                        },
+                        onFailure = { error ->
+                            Timber.tag("Categories")
+                                .e(error, "loadCategories: Error loading categories")
+                            _uiState.value = UiState.Error(telegramMessage)
+                            // _uiState.value = UiState.Success(getFallbackCategories())
+                        }
                     )
                 }
             } catch (e: Exception) {
@@ -117,28 +118,28 @@ constructor(
         _uiState.value = UiState.Loading
         loadCategories()
     }
-    
+
     // Pass-related functions
     fun isCategoryUnlocked(categoryUrl: String): Boolean {
         return unlockPassManager.isCategoryUnlocked(categoryUrl)
     }
-    
+
     fun usePass(categoryUrl: String): Boolean {
         return unlockPassManager.usePass(categoryUrl)
     }
-    
+
     fun addPass(): Boolean {
         return unlockPassManager.addPass()
     }
-    
+
     fun hasPass(): Boolean {
         return unlockPassManager.hasPass()
     }
-    
+
     fun canEarnMorePasses(): Boolean {
         return unlockPassManager.canEarnMore()
     }
-    
+
     fun getMaxPasses(): Int {
         return unlockPassManager.getMaxPasses()
     }

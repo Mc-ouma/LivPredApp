@@ -77,6 +77,9 @@
     <string name="h2h">H2H</string>
     <string name="overall">Geral</string>
     <string name="last_5_matches_goals">Gols nos últimos 5 jogos</string>
+    <string name="win_or_draw_likely">Vitória ou Empate: Provável</string>
+    <string name="goals_under_over_format">Gols Abaixo/Acima: %s</string>
+    <string name="team_form_comparison">Comparação de Forma das Equipes</string>
 
     <!-- Team Details -->
     <string name="invalid_time">Hora inválida</string>
@@ -234,7 +237,9 @@
     <string name="last_5_matches">Últimos 5 jogos</string>
     <string name="match_prediction_overview">Resumo da previsão do jogo</string>
     <string name="team_wins_format">%s: %d</string>
-
+    <string name="home__">Casa: %1$s</string>
+    <string name="draw">Empate: %1$s</string>
+    <string name="away__">Fora: %1$s</string>
     <!-- Date Formats -->
     <string name="date_pattern_input">yyyy-MM-dd\'T\'HH:mm:ssXXX</string>
     <string name="date_pattern_output">dd-MM-yyyy</string>
@@ -339,5 +344,116 @@
     <string name="save_for_later">Guardar para Depois</string>
     <string name="max_passes_title">Máximo de Passes Atingido!</string>
     <string name="max_passes_message">Você já tem %1$d/%2$d passes.\n\nUse seus passes para desbloquear categorias!</string>
+
+    <!-- Language Picker -->
+    <string name="language">Idioma</string>
+    <string name="select_language">Selecionar Idioma</string>
+    <string name="language_english">Inglês</string>
+    <string name="language_spanish">Espanhol</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_french">Francês</string>
+    <string name="language_german">Alemão</string>
+    <string name="language_italian">Italiano</string>
+    <string name="language_arabic">Árabe</string>
+    <string name="language_turkish">Turco</string>
+    <string name="language_swahili">Suaíli</string>
+    <string name="language_system">Padrão do Sistema</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Lembretes Diários</string>
+    <string name="daily_reminder_channel_description">Lembretes diários sobre previsões e partidas</string>
+    
+    <!-- Notification Channels -->
+    <string name="match_reminder_channel_name">Lembretes de Partidas</string>
+    <string name="match_reminder_channel_description">Notificações para próximas partidas</string>
+    <string name="match_updates_channel_name">Atualizações de Partidas</string>
+    <string name="match_updates_channel_description">Atualizações ao vivo e placares</string>
+    <string name="fcm_channel_name">Notificações FCM</string>
+    <string name="fcm_channel_description">Notificações do Firebase Cloud Messaging</string>
+    <string name="betting_success_channel_name">Notificações de Sucesso</string>
+    <string name="betting_success_channel_description">Notificações para dias de apostas bem-sucedidas</string>
+    
+    <string name="daily_reminder_title">⚽ Alerta de Dia de Jogo!</string>
+    <string name="daily_reminder_body">🔥 Previsões quentes estão prontas! Não perca as apostas vencedoras de hoje 🏆</string>
+    <string name="afternoon_reminder_title">🎯 Partidas Começando em Breve!</string>
+    <string name="afternoon_reminder_body">⏰ O horário nobre começa logo! Confira suas previsões antes que seja tarde 💪</string>
+    
+    <!-- Notification Action Buttons -->
+    <string name="view_details">Ver Detalhes</string>
+    <string name="share_success">Compartilhar Sucesso</string>
+    <string name="match_update_title">Atualização da Partida</string>
+    <string name="match_update_fallback">Uma partida foi atualizada. Toque para ver detalhes.</string>
+    <string name="perfect_betting_day_fallback">🎉 Dia de Apostas Perfeito!</string>
+    <string name="matches_won_summary">%d partidas ganhas</string>
+    <string name="success_rate_summary">🎯 Taxa de Sucesso: %1$s%%\n📊 %2$s\n\n📋 Resultados:\n%3$s</string>
+    <string name="share_betting_success">🎉 Dia de apostas perfeito! Todas as %1$s partidas ganhas com %2$s%% de sucesso! 🎯</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Ativar Notificações</string>
+    <string name="notification_permission_message">🔔 Fique atualizado com previsões e lembretes diários!\n\nAs notificações ajudam você a:\n• Receber alertas de previsões diárias\n• Não perder partidas importantes\n• Receber dicas vencedoras na hora certa</string>
+    <string name="notification_permission_enable">Ativar</string>
+    <string name="notification_permission_not_now">Agora Não</string>
+    <string name="notification_disabled_title">Notificações Desativadas</string>
+    <string name="notification_disabled_message">🔕 Você desativou as notificações.\n\nPara receber alertas de partidas e previsões diárias, ative as notificações nas Configurações.</string>
+    <string name="notification_open_settings">Abrir Configurações</string>
+    <string name="notification_enabled_toast">Notificações ativadas! 🎉</string>
+    <string name="notification_disabled_toast">Notificações desativadas. Você pode ativá-las nas Configurações.</string>
+    
+    <!-- Exact Alarm Permission -->
+    <string name="exact_alarm_permission_title">Permissão de Alarme Exato Necessária</string>
+    <string name="exact_alarm_permission_message">Este aplicativo requer permissão para agendar alarmes exatos. Por favor, conceda a permissão nas configurações.</string>
+    <string name="go_to_settings">Ir para Configurações</string>
+    <string name="unable_to_open_settings">Não foi possível abrir as configurações</string>
+    
+    <!-- Missing translations -->
+    <string name="address">Endereço</string>
+    <string name="add_to_favorites">Adicionar aos favoritos</string>
+    <string name="app_update_available">Atualização disponível</string>
+    <string name="capacity">Capacidade</string>
+    <string name="city">Cidade</string>
+    <string name="critical_update_message">Uma atualização crítica está disponível. Por favor atualize o aplicativo para continuar usando.</string>
+    <string name="dismiss">Dispensar</string>
+    <string name="error_loading_fixture_details">Erro ao carregar detalhes do jogo</string>
+    <string name="error_loading_transfers">Erro ao carregar transferências</string>
+    <string name="formation_played_times">%1$s (%2$d)</string>
+    <string name="goal_cancelled">Gol Anulado</string>
+    <string name="league_logo">Logo da Liga</string>
+    <string name="locked_watch_ad">Bloqueado - assista ao anúncio para desbloquear</string>
+    <string name="matches_count_plural">partidas</string>
+    <string name="no_data">-</string>
+    <string name="no_favorite_items">Nenhum item favorito</string>
+    <string name="penalty_confirmed">Pênalti Confirmado</string>
+    <string name="pick_label">Escolha:</string>
+    <string name="player_photo">Foto do Jogador</string>
+    <string name="remove_from_favorites_action">Remover dos favoritos</string>
+    <string name="select_date">Selecionar Data</string>
+    <string name="stadium">Estádio</string>
+    <string name="starting_eleven">Escalação Titular</string>
+    <string name="surface">Superfície</string>
+    <string name="team_player">Jogador do Time</string>
+    <string name="unknown">Desconhecido</string>
+    <string name="unknown_league">Liga Desconhecida</string>
+    <string name="unknown_team">Time Desconhecido</string>
+    <string name="update_action">ATUALIZAR</string>
+    <string name="update_now">Atualizar Agora</string>
+    <string name="update_required">Atualização Necessária</string>
+    
+    <!-- Format strings -->
+    <string name="goals_0_5">0–5 gols</string>
+    <string name="goals_1_5">1–5 gols</string>
+    <string name="goals_2_5">2–5 gols</string>
+    <string name="goals_3_5">3–5 gols</string>
+    <string name="goals_4_5">4–5 gols</string>
+    <string name="minutes_0_15">0\'–15\'</string>
+    <string name="minutes_16_30">16\'–30\'</string>
+    <string name="minutes_31_45">31\'–45\'</string>
+    <string name="minutes_46_60">46\'–60\'</string>
+    <string name="minutes_61_75">61\'–75\'</string>
+    <string name="minutes_76_90">76\'–90\'</string>
+    <string name="minutes_91_105">91\'–105\'</string>
+    <string name="minutes_106_120">106\'–120\'</string>
+    <string name="percentage_format">%d%%</string>
+    <string name="score_format">%d - %d</string>
+    <string name="time_format">%1$02d:%2$02d</string>
 
 </resources>

@@ -6,8 +6,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
@@ -37,6 +37,7 @@ import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
 import com.soccertips.predictx.update.CustomAppUpdateManager
 import com.soccertips.predictx.update.UpdateHandler
+import com.soccertips.predictx.util.DevicePerformanceManager
 import com.soccertips.predictx.util.StartupTimeTracker
 import com.soccertips.predictx.viewmodel.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -51,20 +52,30 @@ import timber.log.Timber
  * Composable that ensures ad managers are properly initialized with Activity context only after the
  * Compose UI has been fully rendered and is stable. This prevents "Window couldn't find content
  * container view" errors.
+ *
+ * On low-memory devices, ad preloading is deferred to reduce cold start time.
  */
 @Composable
 private fun AdInitializedContent(
-        interstitialAdManager: InterstitialAdManager,
-        rewardedAdManager: RewardedAdManager,
-        content: @Composable () -> Unit
+    interstitialAdManager: InterstitialAdManager,
+    rewardedAdManager: RewardedAdManager,
+    devicePerformanceManager: DevicePerformanceManager,
+    content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
-    val activity = LocalContext.current as? ComponentActivity
+    val activity = LocalContext.current as? AppCompatActivity
 
     // Use LaunchedEffect to initialize ad managers after first composition
     LaunchedEffect(Unit) {
-        // Delay to ensure the Compose UI has fully rendered its first frame
-        delay(100)
+        // Device-aware delay - longer on low-memory devices to prioritize UI
+        val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
+        val initDelay = if (isLowMemory) {
+            devicePerformanceManager.getStartupConfig().deferAdInitializationMs
+        } else {
+            100L
+        }
+
+        delay(initDelay)
 
         // Initialize ad managers with Activity context
         activity?.let {
@@ -74,10 +85,21 @@ private fun AdInitializedContent(
             rewardedAdManager.setActivityContext(it)
             rewardedAdManager.useActivityContextForAdLoading(true)
 
-            // Load initial ads once after app startup (not on every screen open)
-            interstitialAdManager.loadAdIfNeeded()
-
-            Timber.d("Ad managers initialized after UI rendering completed")
+            // On low-memory devices, skip aggressive preloading during startup
+            // Ads will be loaded when needed
+            if (!isLowMemory) {
+                // PRELOAD BOTH ad types immediately for faster availability
+                // This significantly reduces latency when ads are needed
+                interstitialAdManager.loadAdIfNeeded()
+                rewardedAdManager.loadAdIfNeeded()
+                Timber.d("Ad managers initialized - preloading interstitial and rewarded ads")
+            } else {
+                Timber.d("Ad managers initialized - skipping preload on low-memory device")
+                // Defer preloading on low-memory devices
+                delay(devicePerformanceManager.getStartupConfig().deferPreloadingMs)
+                interstitialAdManager.loadAdIfNeeded()
+                // Only preload rewarded ads if really needed (they're used less frequently)
+            }
         }
     }
 
@@ -86,22 +108,33 @@ private fun AdInitializedContent(
 }
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     // ViewModels
     private val splashViewModel: SplashViewModel by viewModels()
 
     // Admob
-    @Inject lateinit var appOpenAdManager: AppOpenAdManager
+    @Inject
+    lateinit var appOpenAdManager: AppOpenAdManager
 
-    @Inject lateinit var startupTimeTracker: StartupTimeTracker
+    @Inject
+    lateinit var startupTimeTracker: StartupTimeTracker
 
-    @Inject lateinit var adStateManager: AdStateManager
-    @Inject lateinit var interstitialAdManager: InterstitialAdManager
-    @Inject lateinit var rewardedAdManager: RewardedAdManager
+    @Inject
+    lateinit var adStateManager: AdStateManager
+
+    @Inject
+    lateinit var interstitialAdManager: InterstitialAdManager
+
+    @Inject
+    lateinit var rewardedAdManager: RewardedAdManager
+
+    @Inject
+    lateinit var devicePerformanceManager: DevicePerformanceManager
 
     // Custom Update Manager
-    @Inject lateinit var customAppUpdateManager: CustomAppUpdateManager
+    @Inject
+    lateinit var customAppUpdateManager: CustomAppUpdateManager
 
     // Lazy initialize for review functionality
     private val analytics: FirebaseAnalytics by lazy { FirebaseAnalytics.getInstance(this) }
@@ -145,16 +178,17 @@ class MainActivity : ComponentActivity() {
             if (isReady) {
                 // Initialize ad managers after UI is ready
                 AdInitializedContent(
-                        interstitialAdManager = interstitialAdManager,
-                        rewardedAdManager = rewardedAdManager,
+                    interstitialAdManager = interstitialAdManager,
+                    rewardedAdManager = rewardedAdManager,
+                    devicePerformanceManager = devicePerformanceManager,
                 ) {
                     PredictXTheme {
                         Surface(
-                                modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.surface
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.surface
                         ) {
                             AppNavigation(
-                                    fixtureId = fixtureId.value,
+                                fixtureId = fixtureId.value,
                             )
                         }
 
@@ -206,10 +240,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkPermissions() {
+        Timber.d("Checking permissions...")
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 if (!splashViewModel.canScheduleExactAlarms()) {
+                    Timber.d("Exact alarm permission not granted, showing dialog")
                     showExactAlarmPermissionDialog()
+                } else {
+                    Timber.d("Exact alarm permission already granted")
                 }
             } catch (e: Exception) {
                 Timber.e("Error checking alarm permission: ${e.message}")
@@ -218,9 +257,105 @@ class MainActivity : ComponentActivity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!splashViewModel.hasNotificationPermission()) {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
+                Timber.d("Notification permission not granted, checking rationale...")
+
+                // Check if we should show rationale (user denied before but didn't select "Don't ask again")
+                if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) {
+                    // User denied before - show explanation dialog
+                    Timber.d("Showing notification permission rationale dialog")
+                    showNotificationPermissionRationale()
+                } else {
+                    // First time asking OR user selected "Don't ask again"
+                    // Check if we've asked before
+                    val hasAskedBefore = sharedPrefs.getBoolean("notification_permission_asked", false)
+
+                    if (!hasAskedBefore) {
+                        // First time - just request
+                        Timber.d("First time requesting notification permission")
+                        sharedPrefs.edit { putBoolean("notification_permission_asked", true) }
+                        requestPermissions(
+                            arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                            NOTIFICATION_PERMISSION_REQUEST_CODE
+                        )
+                    } else {
+                        // User selected "Don't ask again" - show settings dialog
+                        Timber.d("User previously denied with 'Don't ask again', showing settings dialog")
+                        showNotificationSettingsDialog()
+                    }
+                }
+            } else {
+                Timber.d("Notification permission already granted")
             }
         }
+    }
+
+    private fun showNotificationPermissionRationale() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.notification_permission_title))
+            .setMessage(getString(R.string.notification_permission_message))
+            .setPositiveButton(getString(R.string.notification_permission_enable)) { _, _ ->
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    NOTIFICATION_PERMISSION_REQUEST_CODE
+                )
+            }
+            .setNegativeButton(getString(R.string.notification_permission_not_now), null)
+            .show()
+    }
+
+    private fun showNotificationSettingsDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.notification_disabled_title))
+            .setMessage(getString(R.string.notification_disabled_message))
+            .setPositiveButton(getString(R.string.notification_open_settings)) { _, _ ->
+                openNotificationSettings()
+            }
+            .setNegativeButton(getString(R.string.notification_permission_not_now), null)
+            .show()
+    }
+
+    private fun openNotificationSettings() {
+        try {
+            val intent = Intent().apply {
+                action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Timber.e(e, "Could not open notification settings")
+            // Fallback to app settings
+            try {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
+            } catch (e2: Exception) {
+                Timber.e(e2, "Could not open app settings")
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    Timber.d("Notification permission granted by user")
+                    Toast.makeText(this, getString(R.string.notification_enabled_toast), Toast.LENGTH_SHORT).show()
+                } else {
+                    Timber.w("Notification permission denied by user")
+                    Toast.makeText(this, getString(R.string.notification_disabled_toast), Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
     }
 
     private fun maybeShowReview() {
@@ -232,9 +367,9 @@ class MainActivity : ComponentActivity() {
                 launchReviewFlow(reviewInfo)
             } else {
                 reviewManager
-                        .requestReviewFlow()
-                        .addOnSuccessListener { launchReviewFlow(it) }
-                        .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
+                    .requestReviewFlow()
+                    .addOnSuccessListener { launchReviewFlow(it) }
+                    .addOnFailureListener { e -> Timber.e(e, "Review flow request failed") }
             }
         }
     }
@@ -280,25 +415,19 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     private fun showExactAlarmPermissionDialog() {
         AlertDialog.Builder(this)
-                .setTitle("Exact Alarm Permission Required")
-                .setMessage(
-                        "This app requires permission to schedule exact alarms. Please grant the permission in the settings."
-                )
-                .setPositiveButton("Go to Settings") { _, _ ->
-                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                    try {
-                        startActivity(intent)
-                    } catch (e: android.content.ActivityNotFoundException) {
-                        android.util.Log.e(
-                                "MainActivity",
-                                "No activity found to handle intent: $intent",
-                                e
-                        )
-                        Toast.makeText(this, "Unable to open settings", Toast.LENGTH_SHORT).show()
-                    }
+            .setTitle(getString(R.string.exact_alarm_permission_title))
+            .setMessage(getString(R.string.exact_alarm_permission_message))
+            .setPositiveButton(getString(R.string.go_to_settings)) { _, _ ->
+                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                try {
+                    startActivity(intent)
+                } catch (e: android.content.ActivityNotFoundException) {
+                    Timber.e(e, "No activity found to handle intent: $intent")
+                    Toast.makeText(this, getString(R.string.unable_to_open_settings), Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -311,7 +440,12 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNotificationIntent(intent: Intent) {
         Timber.d(
-                "handleNotificationIntent called with action: ${intent.action}, fromNotification: ${intent.getBooleanExtra("fromNotification", false)}"
+            "handleNotificationIntent called with action: ${intent.action}, fromNotification: ${
+                intent.getBooleanExtra(
+                    "fromNotification",
+                    false
+                )
+            }"
         )
 
         if (!intent.getBooleanExtra("fromNotification", false)) return
@@ -326,10 +460,12 @@ class MainActivity : ComponentActivity() {
                     Timber.d("Handling betting success intent")
                     handleBettingSuccessIntent(intent)
                 }
+
                 action == "com.soccertips.predictx.ACTION_VIEW_BETTING_HISTORY" -> {
                     Timber.d("Handling betting history intent")
                     handleBettingHistoryIntent(intent)
                 }
+
                 action == "com.soccertips.predictx.ACTION_VIEW_MATCH" -> {
                     Timber.d("Handling match intent")
                     handleMatchIntent(intent)
@@ -388,7 +524,7 @@ class MainActivity : ComponentActivity() {
 
     private fun shareSuccess(matchCount: String, successRate: String, date: String) {
         val shareText =
-                """
+            """
                 🎉 Perfect Betting Day! 🎉
     
                 📅 Date: $date
@@ -399,60 +535,35 @@ class MainActivity : ComponentActivity() {
             """.trimIndent()
 
         startActivity(
-                Intent.createChooser(
-                        Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, shareText)
-                        },
-                        "Share Betting Success"
-                )
+            Intent.createChooser(
+                Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                },
+                "Share Betting Success"
+            )
         )
     }
 
     private fun logBettingSuccessEvent(
-            date: String,
-            matchCount: String,
-            winCount: String,
-            successRate: String
+        date: String,
+        matchCount: String,
+        winCount: String,
+        successRate: String
     ) {
         try {
             analytics.logEvent(
-                    "betting_success_notification",
-                    Bundle().apply {
-                        putString("date", date)
-                        putLong("match_count", matchCount.toLongOrNull() ?: 0L)
-                        putLong("win_count", winCount.toLongOrNull() ?: 0L)
-                        putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
-                    }
+                "betting_success_notification",
+                Bundle().apply {
+                    putString("date", date)
+                    putLong("match_count", matchCount.toLongOrNull() ?: 0L)
+                    putLong("win_count", winCount.toLongOrNull() ?: 0L)
+                    putDouble("success_rate", successRate.toDoubleOrNull() ?: 0.0)
+                }
             )
         } catch (e: Exception) {
             Timber.e(e, "Failed to log betting success event")
-        }
-    }
-
-    @Deprecated("Using onActivityResult is deprecated in favor of ActivityResultContracts")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        // Custom update manager (handle flexible update downloads with new approach)
-        when (resultCode) {
-            RESULT_OK -> {
-                Timber.d("Update flow completed successfully")
-                logAnalyticsEvent("update_flow_completed")
-            }
-            RESULT_CANCELED -> {
-                Timber.d("Update flow cancelled by user")
-                logAnalyticsEvent("update_flow_cancelled")
-            }
-            ActivityResult.RESULT_IN_APP_UPDATE_FAILED -> {
-                Timber.e("Update flow failed")
-                logAnalyticsEvent("update_flow_failed")
-            }
-            else -> {
-                Timber.d("Update flow result: $resultCode")
-                logAnalyticsEventWithResultCode("update_flow_unknown_result", resultCode)
-            }
         }
     }
 
@@ -474,10 +585,6 @@ class MainActivity : ComponentActivity() {
             Timber.tag("FCM_TOKEN").d("═══════════════════════════════════════════════════════")
             Timber.tag("FCM_TOKEN").d("FCM Token: $token")
             Timber.tag("FCM_TOKEN").d("═══════════════════════════════════════════════════════")
-
-            // Also show as Toast for easy visibility
-            Toast.makeText(this, "FCM Token copied to Logcat (tag: FCM_TOKEN)", Toast.LENGTH_LONG)
-                    .show()
         }
     }
 }

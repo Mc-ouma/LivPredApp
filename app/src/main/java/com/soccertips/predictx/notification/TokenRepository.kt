@@ -21,7 +21,7 @@ class TokenRepository @Inject constructor(@ApplicationContext private val contex
     private val firebaseDatabase = FirebaseDatabase.getInstance()
     private val tokensRef = firebaseDatabase.getReference("fcm_tokens")
 
-    private val supportedLanguages = listOf("en", "pt", "fr", "es")
+    private val supportedLanguages = listOf("en", "pt", "fr", "es", "de", "it", "ar", "tr", "sw")
     private fun getSupportedLanguage(): String {
         val systemLang = Locale.getDefault().language.lowercase()
         return if (supportedLanguages.contains(systemLang)) {
@@ -64,15 +64,15 @@ class TokenRepository @Inject constructor(@ApplicationContext private val contex
         if (!isPlaceholder) {
             try {
                 val deviceInfo =
-                        mapOf(
-                                "token" to token,
-                                "deviceId" to deviceId,
-                                "model" to "${Build.MANUFACTURER} ${Build.MODEL}",
-                                "osVersion" to "Android ${Build.VERSION.RELEASE}",
-                                "appVersion" to getAppVersion(),
-                                "language" to userLanguage,
-                                "lastUpdated" to System.currentTimeMillis()
-                        )
+                    mapOf(
+                        "token" to token,
+                        "deviceId" to deviceId,
+                        "model" to "${Build.MANUFACTURER} ${Build.MODEL}",
+                        "osVersion" to "Android ${Build.VERSION.RELEASE}",
+                        "appVersion" to getAppVersion(),
+                        "language" to userLanguage,
+                        "lastUpdated" to System.currentTimeMillis()
+                    )
 
                 tokensRef.child(deviceId).setValue(deviceInfo).await()
                 Timber.d("Token successfully sent to Firebase")
@@ -87,22 +87,25 @@ class TokenRepository @Inject constructor(@ApplicationContext private val contex
                 when {
                     e.message?.contains("AUTHENTICATION_FAILED") == true -> {
                         Timber.e(
-                                e,
-                                "FCM token save failed due to authentication - check Firebase configuration"
+                            e,
+                            "FCM token save failed due to authentication - check Firebase configuration"
                         )
                     }
+
                     e.message?.contains("PERMISSION_DENIED") == true -> {
                         Timber.e(
-                                e,
-                                "FCM token save failed due to permissions - check Firebase rules"
+                            e,
+                            "FCM token save failed due to permissions - check Firebase rules"
                         )
                     }
+
                     e.message?.contains("NetworkException") == true -> {
                         Timber.w(
-                                e,
-                                "FCM token save failed due to network issues - will retry later"
+                            e,
+                            "FCM token save failed due to network issues - will retry later"
                         )
                     }
+
                     else -> {
                         Timber.e(e, "Failed to send token to Firebase: ${e.message}")
                     }
@@ -128,14 +131,14 @@ class TokenRepository @Inject constructor(@ApplicationContext private val contex
             Timber.d("Attempting to replace placeholder token with real FCM token")
             try {
                 val realToken =
-                        com.google.firebase.messaging.FirebaseMessaging.getInstance().token.await()
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.await()
                 saveToken(realToken, false)
             } catch (e: Exception) {
                 Timber.w(e, "Failed to get real FCM token, keeping placeholder")
             }
         } else {
             Timber.d(
-                    "No token retry needed - token: ${token != null}, placeholder: $isPlaceholder, error: ${hadFirebaseError()}"
+                "No token retry needed - token: ${token != null}, placeholder: $isPlaceholder, error: ${hadFirebaseError()}"
             )
         }
     }

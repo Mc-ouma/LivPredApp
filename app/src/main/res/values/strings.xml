@@ -81,6 +81,9 @@
     <string name="h2h">h2h</string>
     <string name="overall">Overall</string>
     <string name="last_5_matches_goals">Last 5 Matches Goals</string>
+    <string name="win_or_draw_likely">Win or Draw: Likely</string>
+    <string name="goals_under_over_format">Goals Under/Over: %s</string>
+    <string name="team_form_comparison">Team Form Comparison</string>
 
     <!-- Team Details -->
     <string name="invalid_time">Invalid Time</string>
@@ -113,6 +116,10 @@
     <string name="upcoming_matches">Upcoming Matches</string>
     <string name="match_updates">Match Updates</string>
     <string name="matches_count">%d matches</string>
+    <plurals name="matches_count_plural">
+        <item quantity="one">%d match</item>
+        <item quantity="other">%d matches</item>
+    </plurals>
     <string name="final_score_format">Final Score: %d - %d</string>
     <string name="league_format">League: %s</string>
     <string name="date_format">Date: %s Time: %s</string>
@@ -373,4 +380,96 @@
     <string name="save_for_later">Save for Later</string>
     <string name="max_passes_title">Maximum Passes Reached!</string>
     <string name="max_passes_message">You already have %1$d/%2$d passes.\n\nUse your passes to unlock categories!</string>
+    
+    <!-- Language Picker -->
+    <string name="language">Language</string>
+    <string name="select_language">Select Language</string>
+    <string name="language_english">English</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_french">Français</string>
+    <string name="language_german">Deutsch</string>
+    <string name="language_italian">Italiano</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_turkish">Türkçe</string>
+    <string name="language_swahili">Kiswahili</string>
+    <string name="language_system">System Default</string>
+    
+    <!-- Additional UI Strings -->
+    <string name="no_favorite_items">No favorite items</string>
+    <string name="add_to_favorites">Add to favorites</string>
+    <string name="remove_from_favorites_action">Remove from favorites</string>
+    <string name="league_logo">League Logo</string>
+    <string name="select_date">Select Date</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="locked_watch_ad">Locked - watch ad to unlock</string>
+    <string name="unknown">Unknown</string>
+    <string name="unknown_league">Unknown League</string>
+    <string name="unknown_team">Unknown Team</string>
+    <string name="pick_label">Pick:</string>
+    <string name="player_photo">Player Photo</string>
+    
+    <!-- Stadium/Venue Details -->
+    <string name="stadium">Stadium</string>
+    <string name="city">City</string>
+    <string name="address">Address</string>
+    <string name="surface">Surface</string>
+    <string name="capacity">Capacity</string>
+    
+    <!-- Update Strings -->
+    <string name="app_update_available">App update available</string>
+    <string name="update_required">Update Required</string>
+    <string name="update_now">Update Now</string>
+    <string name="update_action">UPDATE</string>
+    <string name="critical_update_message">A critical update is available. Please update the app to continue using it.</string>
+    
+    <!-- Error Strings -->
+    <string name="error_loading_transfers">Error loading transfers</string>
+    <string name="error_loading_fixture_details">Error loading fixture details</string>
+    
+    <!-- Daily Reminder Notifications -->
+    <string name="daily_reminder_channel_name">Daily Reminders</string>
+    <string name="daily_reminder_channel_description">Daily reminders about predictions and matches</string>
+    
+    <!-- Notification Channels -->
+    <string name="match_reminder_channel_name">Match Reminders</string>
+    <string name="match_reminder_channel_description">Notifications for upcoming matches</string>
+    <string name="match_updates_channel_name">Match Updates</string>
+    <string name="match_updates_channel_description">Live match updates and scores</string>
+    <string name="fcm_channel_name">FCM Notifications</string>
+    <string name="fcm_channel_description">Notifications from Firebase Cloud Messaging</string>
+    <string name="betting_success_channel_name">Betting Success Notifications</string>
+    <string name="betting_success_channel_description">Notifications for successful betting days</string>
+    
+    <string name="daily_reminder_title">⚽ Game Day Alert!</string>
+    <string name="daily_reminder_body">🔥 Hot predictions are ready! Don\'t miss today\'s winning picks 🏆</string>
+    <string name="afternoon_reminder_title">🎯 Matches Starting Soon!</string>
+    <string name="afternoon_reminder_body">⏰ Prime time kicks off soon! Check your predictions before it\'s too late 💪</string>
+    
+    <!-- Notification Action Buttons -->
+    <string name="view_details">View Details</string>
+    <string name="share_success">Share Success</string>
+    <string name="match_update_title">Match Update</string>
+    <string name="match_update_fallback">A match has been updated. Tap to view details.</string>
+    <string name="perfect_betting_day_fallback">🎉 Perfect Betting Day!</string>
+    <string name="matches_won_summary">%d matches won</string>
+    <string name="success_rate_summary">🎯 Success Rate: %1$s%%\n📊 %2$s\n\n📋 Match Results:\n%3$s</string>
+    <string name="share_betting_success">🎉 Perfect betting day! All %1$s matches won with %2$s%% success rate! 🎯</string>
+    
+    <!-- Notification Permission Dialogs -->
+    <string name="notification_permission_title">Enable Notifications</string>
+    <string name="notification_permission_message">🔔 Stay updated with match predictions and daily reminders!\n\nNotifications help you:\n• Get daily prediction alerts\n• Never miss important matches\n• Receive winning tips on time</string>
+    <string name="notification_permission_enable">Enable</string>
+    <string name="notification_permission_not_now">Not Now</string>
+    <string name="notification_disabled_title">Notifications Disabled</string>
+    <string name="notification_disabled_message">🔕 You\'ve disabled notifications.\n\nTo receive match alerts and daily predictions, please enable notifications in Settings.</string>
+    <string name="notification_open_settings">Open Settings</string>
+    <string name="notification_enabled_toast">Notifications enabled! 🎉</string>
+    <string name="notification_disabled_toast">Notifications disabled. You can enable them in Settings.</string>
+    
+    <!-- Exact Alarm Permission -->
+    <string name="exact_alarm_permission_title">Exact Alarm Permission Required</string>
+    <string name="exact_alarm_permission_message">This app requires permission to schedule exact alarms. Please grant the permission in the settings.</string>
+    <string name="go_to_settings">Go to Settings</string>
+    <string name="unable_to_open_settings">Unable to open settings</string>
 </resources>

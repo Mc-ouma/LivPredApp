@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.soccertips.predictx.util.DevicePerformanceManager
 import com.soccertips.predictx.util.StartupTimeTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,16 +29,17 @@ import javax.inject.Inject
 class SplashViewModel
 @Inject
 constructor(
-        @ApplicationContext private val context: Context,
-        private val reviewManager: ReviewManager,
-        private val sharedPrefs: SharedPreferences
+    @ApplicationContext private val context: Context,
+    private val reviewManager: ReviewManager,
+    private val sharedPrefs: SharedPreferences,
+    private val devicePerformanceManager: DevicePerformanceManager
 ) : ViewModel() {
 
     private val _isReady = MutableStateFlow(false)
     val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
     private val _initializationState =
-            MutableStateFlow<InitializationState>(InitializationState.Starting)
+        MutableStateFlow<InitializationState>(InitializationState.Starting)
 
     // Cache review info
     private var cachedReviewInfo: ReviewInfo? = null
@@ -53,19 +55,31 @@ constructor(
                 // Record process start time for cold start tracking
                 StartupTimeTracker.recordProcessStart()
 
-                // Essential initialization on main thread
+                // Initialize device performance manager if not already done
+                devicePerformanceManager.initialize(context)
+                val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
+
+                Timber.d("SplashViewModel: isLowMemory=$isLowMemory, tier=${devicePerformanceManager.getPerformanceTier()}")
+
+                // Essential initialization on main thread - keep minimal
                 withContext(Dispatchers.Main) {
-                    setupAdManagers()
+                    // Only essential operations on main thread
                     updateAppLaunchCount()
+
+                    // On low-memory devices, skip non-essential setup on main thread
+                    if (!isLowMemory) {
+                        setupAdManagers()
+                    }
                 }
 
                 _initializationState.value = InitializationState.InitializingBackground
 
-                // Background initialization
+                // Background initialization - device-aware delays
                 withContext(Dispatchers.IO) {
-                    // Minimal delay to ensure UI thread is free
-                    delay(100)
-                    initializeBackgroundComponents()
+                    // On low-memory devices, use minimal delay to release splash faster
+                    val initDelay = if (isLowMemory) 50L else 100L
+                    delay(initDelay)
+                    initializeBackgroundComponents(isLowMemory)
                 }
 
                 _initializationState.value = InitializationState.Complete
@@ -117,7 +131,7 @@ constructor(
 
         val now = System.currentTimeMillis()
         val daysSinceLastReview =
-                java.util.concurrent.TimeUnit.MILLISECONDS.toDays(now - lastReviewTime)
+            java.util.concurrent.TimeUnit.MILLISECONDS.toDays(now - lastReviewTime)
 
         return (appLaunchCount >= MIN_LAUNCHES_FOR_REVIEW &&
                 (lastReviewTime == 0L || daysSinceLastReview >= MIN_DAYS_BETWEEN_REVIEWS))
@@ -129,9 +143,9 @@ constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val bundle =
-                        android.os.Bundle().apply {
-                            if (stalenessDays > 0) putInt("staleness_days", stalenessDays)
-                        }
+                    android.os.Bundle().apply {
+                        if (stalenessDays > 0) putInt("staleness_days", stalenessDays)
+                    }
                 analytics.logEvent(name, bundle)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to log analytics event: $name")
@@ -159,13 +173,17 @@ constructor(
         }
     }
 
-    private suspend fun initializeBackgroundComponents() {
+    private suspend fun initializeBackgroundComponents(isLowMemory: Boolean = false) {
         try {
-            // Prefetch review info early
-            prefetchReviewInfoAsync()
-
-            // Lower priority operations with delays
-            delay(500)
+            // On low-memory devices, skip review prefetch during startup
+            // It will be fetched when actually needed
+            if (!isLowMemory) {
+                prefetchReviewInfoAsync()
+                // Lower priority operations with delays
+                delay(500)
+            } else {
+                Timber.d("Skipping review prefetch on low-memory device")
+            }
             // Additional background initialization can be added here
 
         } catch (e: Exception) {

@@ -40,6 +40,26 @@
             </intent-filter>
         </receiver>
 
+        <!-- Daily reminder alarm receiver -->
+        <receiver 
+            android:name=".notification.DailyReminderReceiver" 
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.soccertips.predictx.ACTION_DAILY_REMINDER" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Boot completed receiver to reschedule alarms after reboot -->
+        <receiver
+            android:name=".notification.BootCompletedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-8504414839434291~8215753517" />

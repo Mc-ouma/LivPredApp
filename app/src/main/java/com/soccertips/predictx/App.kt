@@ -75,7 +75,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     lateinit var realTimeResultMonitor: com.soccertips.predictx.notification.RealTimeResultMonitor
 
     @Inject
-    lateinit var dailyReminderScheduler: com.soccertips.predictx.notification.DailyReminderScheduler
+    lateinit var dailyReminderAlarmScheduler: com.soccertips.predictx.notification.DailyReminderAlarmScheduler
 
     private var currentActivity: Activity? = null
 
@@ -250,17 +250,17 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 realTimeResultMonitor.startMonitoring()
                 Timber.d("Real-time result monitoring initialized")
 
-                // Schedule daily reminder notifications
-                dailyReminderScheduler.scheduleDailyReminder()
-                Timber.d("Daily reminder scheduler initialized")
+                // Schedule daily reminder notifications using AlarmManager (exact timing)
+                dailyReminderAlarmScheduler.scheduleDailyReminders()
+                Timber.d("Daily reminder alarm scheduler initialized")
             } else {
                 // Defer these initializations on low-memory devices
                 delay(startupConfig.deferFirebaseMs)
                 bettingSuccessScheduler.initialize()
                 realTimeResultMonitor.startMonitoring()
                 Timber.d("Real-time result monitoring initialized (deferred for low-memory device)")
-                dailyReminderScheduler.scheduleDailyReminder()
-                Timber.d("Daily reminder scheduler initialized (deferred for low-memory device)")
+                dailyReminderAlarmScheduler.scheduleDailyReminders()
+                Timber.d("Daily reminder alarm scheduler initialized (deferred for low-memory device)")
             }
 
             // Initialize Firebase messaging with device-aware delay

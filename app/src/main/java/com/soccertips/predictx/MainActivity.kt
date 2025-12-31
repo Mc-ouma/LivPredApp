@@ -33,7 +33,6 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.soccertips.predictx.admob.AdStateManager
 import com.soccertips.predictx.admob.AppOpenAdManager
 import com.soccertips.predictx.admob.InterstitialAdManager
-import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
 import com.soccertips.predictx.update.CustomAppUpdateManager
 import com.soccertips.predictx.update.UpdateHandler
@@ -58,7 +57,6 @@ import timber.log.Timber
 @Composable
 private fun AdInitializedContent(
     interstitialAdManager: InterstitialAdManager,
-    rewardedAdManager: RewardedAdManager,
     devicePerformanceManager: DevicePerformanceManager,
     content: @Composable () -> Unit
 ) {
@@ -82,23 +80,18 @@ private fun AdInitializedContent(
             // Set up ad managers with Activity context
             interstitialAdManager.setActivityContext(it)
             interstitialAdManager.useActivityContextForAdLoading(true)
-            rewardedAdManager.setActivityContext(it)
-            rewardedAdManager.useActivityContextForAdLoading(true)
 
             // On low-memory devices, skip aggressive preloading during startup
             // Ads will be loaded when needed
             if (!isLowMemory) {
-                // PRELOAD BOTH ad types immediately for faster availability
-                // This significantly reduces latency when ads are needed
+                // Preload interstitial ad for faster availability
                 interstitialAdManager.loadAdIfNeeded()
-                rewardedAdManager.loadAdIfNeeded()
-                Timber.d("Ad managers initialized - preloading interstitial and rewarded ads")
+                Timber.d("Ad managers initialized - preloading interstitial ad")
             } else {
                 Timber.d("Ad managers initialized - skipping preload on low-memory device")
                 // Defer preloading on low-memory devices
                 delay(devicePerformanceManager.getStartupConfig().deferPreloadingMs)
                 interstitialAdManager.loadAdIfNeeded()
-                // Only preload rewarded ads if really needed (they're used less frequently)
             }
         }
     }
@@ -125,9 +118,6 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var interstitialAdManager: InterstitialAdManager
-
-    @Inject
-    lateinit var rewardedAdManager: RewardedAdManager
 
     @Inject
     lateinit var devicePerformanceManager: DevicePerformanceManager
@@ -179,7 +169,6 @@ class MainActivity : AppCompatActivity() {
                 // Initialize ad managers after UI is ready
                 AdInitializedContent(
                     interstitialAdManager = interstitialAdManager,
-                    rewardedAdManager = rewardedAdManager,
                     devicePerformanceManager = devicePerformanceManager,
                 ) {
                     PredictXTheme {

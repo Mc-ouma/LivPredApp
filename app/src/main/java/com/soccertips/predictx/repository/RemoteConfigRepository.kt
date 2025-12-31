@@ -20,12 +20,7 @@ class RemoteConfigRepository
 constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gson) {
     companion object {
         private const val ANNOUNCEMENTS_KEY = "app_announcements"
-        private const val CATEGORY_AD_STRATEGY_KEY = "category_ad_strategy"
         private const val FETCH_INTERVAL = 1800L // 30 minutes in seconds
-
-        // Ad strategy variants
-        const val AD_STRATEGY_REWARDED = "rewarded"
-        const val AD_STRATEGY_INTERSTITIAL = "interstitial"
     }
 
     init {
@@ -34,8 +29,7 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
 
         // Set default values
         val defaults = mapOf(
-            ANNOUNCEMENTS_KEY to "[]",
-            CATEGORY_AD_STRATEGY_KEY to AD_STRATEGY_REWARDED // Default to rewarded ads
+            ANNOUNCEMENTS_KEY to "[]"
         )
         remoteConfig.setDefaultsAsync(defaults)
     }
@@ -93,20 +87,4 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
      * Can be used by UI components to get localized announcement text.
      */
     fun getLanguageCode(): String = getCurrentLanguageCode()
-
-    /**
-     * Get the ad strategy for category unlocking
-     * Returns either "rewarded" or "interstitial"
-     */
-    suspend fun getCategoryAdStrategy(): String {
-        return try {
-            fetchAndActivate()
-            val strategy = remoteConfig.getString(CATEGORY_AD_STRATEGY_KEY)
-            Timber.d("Category Ad Strategy: $strategy")
-            strategy.ifBlank { AD_STRATEGY_REWARDED }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to get category ad strategy, using default")
-            AD_STRATEGY_REWARDED
-        }
-    }
 }

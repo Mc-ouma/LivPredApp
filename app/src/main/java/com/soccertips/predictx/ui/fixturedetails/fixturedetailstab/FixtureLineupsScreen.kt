@@ -72,6 +72,32 @@ private fun parseColorOrFallback(colorString: String?, fallback: Color): Color {
     }
 }
 
+// Calculate relative luminance of a color (0.0 = black, 1.0 = white)
+private fun Color.luminance(): Float {
+    val r = if (red <= 0.03928f) red / 12.92f else Math.pow(((red + 0.055f) / 1.055f).toDouble(), 2.4).toFloat()
+    val g = if (green <= 0.03928f) green / 12.92f else Math.pow(((green + 0.055f) / 1.055f).toDouble(), 2.4).toFloat()
+    val b = if (blue <= 0.03928f) blue / 12.92f else Math.pow(((blue + 0.055f) / 1.055f).toDouble(), 2.4).toFloat()
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b
+}
+
+// Get contrasting text color based on background luminance
+private fun getContrastingTextColor(backgroundColor: Color, preferredTextColor: Color): Color {
+    val bgLuminance = backgroundColor.luminance()
+    val textLuminance = preferredTextColor.luminance()
+
+    // Calculate contrast ratio (simplified)
+    val lighter = maxOf(bgLuminance, textLuminance)
+    val darker = minOf(bgLuminance, textLuminance)
+    val contrastRatio = (lighter + 0.05f) / (darker + 0.05f)
+
+    // If contrast ratio is too low (< 3:1), use opposite color
+    return if (contrastRatio < 3f) {
+        if (bgLuminance > 0.5f) Color.Black else Color.White
+    } else {
+        preferredTextColor
+    }
+}
+
 // Object to handle localized player positions
 object PlayerPositionLocalizer {
 
@@ -447,7 +473,7 @@ fun FootballPitch(
             val homePlayers = processTeamPlayers(
                 lineup = homeLineup,
                 side = "home",
-                startY = 5f,
+                startY = 8f,
                 endY = 45f
             )
 
@@ -455,7 +481,7 @@ fun FootballPitch(
             val awayPlayers = processTeamPlayers(
                 lineup = awayLineup,
                 side = "away",
-                startY = 95f,
+                startY = 88f,
                 endY = 55f
             )
 
@@ -594,25 +620,34 @@ fun PlayerMarker(
 ) {
     val density = LocalDensity.current
     val markerSize = 32.dp
+    val nameHeight = 14.dp // Approximate height for the name text with padding
     val columnWidth = 56.dp
     val halfColumnWidth = columnWidth / 2
-    val halfMarkerHeight = markerSize / 2
+    val totalMarkerHeight = markerSize + nameHeight
 
     // Calculate actual position from percentage
     val xOffset = pitchWidth * (xPercent / 100f)
     val yOffset = pitchHeight * (yPercent / 100f)
 
+    // Clamp Y position to keep the entire marker (circle + name) within bounds
+    val minY = markerSize / 2
+    val maxY = pitchHeight - totalMarkerHeight + (markerSize / 2)
+    val clampedYOffset = yOffset.coerceIn(minY, maxY)
+
     val playerColor = if (player.pos == "G") teamColors?.goalkeeper else teamColors?.player
     val primaryColor = parseColorOrFallback(playerColor?.primary, Color(0xFF1565C0))
-    val numberColor = parseColorOrFallback(playerColor?.number, Color.White)
+    val rawNumberColor = parseColorOrFallback(playerColor?.number, Color.White)
     val borderColor = parseColorOrFallback(playerColor?.border, Color.White)
+
+    // Ensure number color has sufficient contrast with primary background
+    val numberColor = getContrastingTextColor(primaryColor, rawNumberColor)
 
     Box(
         modifier = Modifier
             .offset {
                 IntOffset(
                     x = with(density) { (xOffset - halfColumnWidth).roundToPx() },
-                    y = with(density) { (yOffset - halfMarkerHeight).roundToPx() }
+                    y = with(density) { (clampedYOffset - (markerSize / 2)).roundToPx() }
                 )
             }
     ) {
@@ -639,20 +674,22 @@ fun PlayerMarker(
             }
 
 
-            // Player name (last name only)
+            // Player name (last name only) with high contrast background for readability
             Text(
                 text = player.name?.split(" ")?.lastOrNull()?.take(10) ?: "",
                 fontSize = 8.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                /*modifier = Modifier
+                modifier = Modifier
+                    .shadow(2.dp, RoundedCornerShape(4.dp))
                     .background(
-                        Color.Black.copy(alpha = 0.6f),
+                        Color.Black.copy(alpha = 0.75f),
                         RoundedCornerShape(4.dp)
                     )
-                    .padding(horizontal = 4.dp, vertical = 2.dp)*/
+                    //.padding(horizontal = 5.dp, vertical = 2.dp)
             )
         }
     }
@@ -840,8 +877,11 @@ fun PlayerRow(
 
     // Use helper function instead of try-catch in composable
     val primaryColor = parseColorOrFallback(playerColor.primary, MaterialTheme.colorScheme.primary)
-    val numberColor = parseColorOrFallback(playerColor.number, MaterialTheme.colorScheme.onPrimary)
+    val rawNumberColor = parseColorOrFallback(playerColor.number, MaterialTheme.colorScheme.onPrimary)
     parseColorOrFallback(playerColor.border, MaterialTheme.colorScheme.outline)
+
+    // Ensure number color has sufficient contrast with primary background
+    val numberColor = getContrastingTextColor(primaryColor, rawNumberColor)
 
     Card(
         modifier = Modifier

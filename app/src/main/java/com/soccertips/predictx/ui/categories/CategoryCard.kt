@@ -8,11 +8,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,15 +29,12 @@ import com.soccertips.predictx.data.model.Category
 @Composable
 fun CategoryCard(
         category: Category,
-        isUnlocked: Boolean = true,
         onClick: () -> Unit,
 ) {
         ImageListItem(
                 name = category.name,
                 iconResId = category.iconResId,
                 colorHex = category.colorHex,
-                requiresRewardAd = category.requiresRewardAd,
-                isUnlocked = isUnlocked,
                 onClick = onClick
         )
 }
@@ -50,8 +44,6 @@ fun ImageListItem(
         name: String,
         iconResId: Int = R.drawable.outline_add_circle_outline_24,
         colorHex: String? = null,
-        requiresRewardAd: Boolean = false,
-        isUnlocked: Boolean = true,
         onClick: () -> Unit,
 ) {
         val cardElevation = CardDefaults.elevatedCardElevation(2.dp)
@@ -69,37 +61,26 @@ fun ImageListItem(
                 colors = customCardColors,
                 elevation = cardElevation,
                 modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .padding(bottom = 12.dp),
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = 12.dp),
         ) {
                 Column(Modifier.fillMaxWidth()) {
-                        Box(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp)
-                            .padding(24.dp)) {
+                        Box(
+                                modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(150.dp)
+                                        .padding(24.dp)
+                        ) {
                                 // Make the main icon larger and centered in the card
                                 Image(
                                         painter = painterResource(id = iconResId),
                                         contentDescription = null,
                                         modifier = Modifier
-                                            .size(112.dp)
-                                            .align(Alignment.Center),
+                                                .size(112.dp)
+                                                .align(Alignment.Center),
                                         contentScale = ContentScale.Fit,
                                         colorFilter = ColorFilter.tint(iconTint)
                                 )
-
-                                // Show lock icon only if requires reward ad AND is not unlocked
-                                if (requiresRewardAd && !isUnlocked) {
-                                        Icon(
-                                                imageVector = Icons.Default.Lock,
-                                                contentDescription = "Locked - watch ad to unlock",
-                                                modifier =
-                                                        Modifier
-                                                            .align(Alignment.TopEnd)
-                                                            .size(24.dp),
-                                                tint = iconTint
-                                        )
-                                }
                         }
 
                         Text(
@@ -110,9 +91,9 @@ fun ImageListItem(
                                 color = iconTint,
                                 modifier =
                                         Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 16.dp)
-                                            .wrapContentWidth(Alignment.CenterHorizontally),
+                                                .fillMaxWidth()
+                                                .padding(vertical = 16.dp)
+                                                .wrapContentWidth(Alignment.CenterHorizontally),
                         )
                 }
         }
@@ -121,37 +102,34 @@ fun ImageListItem(
 @Preview(showBackground = true)
 @Composable
 private fun CategoryCardPreview() {
-    // Wrap preview in MaterialTheme so typography and color scheme are available
-    MaterialTheme {
-        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            val sample1 = Category(
-                url = "",
-                name = "Unlocked",
-                iconResId = R.drawable.outline_add_circle_outline_24,
-                colorHex = "#1E88E5",
-                requiresRewardAd = false
-            )
+        // Wrap preview in MaterialTheme so typography and color scheme are available
+        MaterialTheme {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                        val sample1 = Category(
+                                url = "",
+                                name = "Category 1",
+                                iconResId = R.drawable.outline_add_circle_outline_24,
+                                colorHex = "#1E88E5"
+                        )
 
-            val sample2 = Category(
-                url = "",
-                name = "Locked",
-                iconResId = R.drawable.outline_add_circle_outline_24,
-                colorHex = "#F4511E",
-                requiresRewardAd = true
-            )
+                        val sample2 = Category(
+                                url = "",
+                                name = "Category 2",
+                                iconResId = R.drawable.outline_add_circle_outline_24,
+                                colorHex = "#F4511E"
+                        )
 
-            val sample3 = Category(
-                url = "",
-                name = "Default Color",
-                iconResId = R.drawable.outline_add_circle_outline_24,
-                colorHex = null,
-                requiresRewardAd = false
-            )
+                        val sample3 = Category(
+                                url = "",
+                                name = "Default Color",
+                                iconResId = R.drawable.outline_add_circle_outline_24,
+                                colorHex = null
+                        )
 
-            // Show different states
-            CategoryCard(category = sample1, isUnlocked = true, onClick = {})
-            CategoryCard(category = sample2, isUnlocked = false, onClick = {})
-            CategoryCard(category = sample3, isUnlocked = true, onClick = {})
+                        // Show different states
+                        CategoryCard(category = sample1, onClick = {})
+                        CategoryCard(category = sample2, onClick = {})
+                        CategoryCard(category = sample3, onClick = {})
+                }
         }
-    }
 }

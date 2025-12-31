@@ -115,16 +115,20 @@ fun ItemsListScreen(
     val isAdReady by interstitialAdManager.isAdReady.collectAsState()
 
     // Ensure the activity context is set on the interstitial ad manager
-    // and preload interstitial ad
-    LaunchedEffect(interstitialAdManager) {
+    // and preload interstitial ad if not already loaded
+    LaunchedEffect(Unit) {
         val activity = context.findActivity()
         if (activity != null) {
             interstitialAdManager.setActivityContext(activity)
             interstitialAdManager.useActivityContextForAdLoading(true)
 
-            // Proactively load interstitial ad for back navigation
-            Timber.tag("InterstitialAd").d("Preloading interstitial ad for back navigation")
-            interstitialAdManager.loadAdIfNeeded()
+            // Only trigger load if ad is not ready and not currently loading
+            if (!interstitialAdManager.isAdReady.value && !interstitialAdManager.isCurrentlyLoading()) {
+                Timber.tag("InterstitialAd").d("ItemsListScreen: Ad not ready, triggering load")
+                interstitialAdManager.forceLoadAd()
+            } else {
+                Timber.tag("InterstitialAd").d("ItemsListScreen: Ad already ready or loading")
+            }
 
             Timber.d("InterstitialAdManager activity context set in ItemsListScreen")
         } else {

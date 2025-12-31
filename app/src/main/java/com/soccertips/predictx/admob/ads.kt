@@ -250,11 +250,20 @@ constructor(private val applicationContext: Context, private val adStateManager:
     private var retryAttempt = 0
     private val maxRetries = 5
 
+    // Track last load attempt time for rate limiting
+    private var lastLoadAttemptTime = 0L
+    private val minLoadIntervalMs = 5000L // Minimum 5 seconds between load attempts
+
     // Method to set the current activity context
     fun setActivityContext(activity: Activity?) {
+        val previousActivity = currentActivityContext
         currentActivityContext = activity
-        // Preload ad when activity context is set (important for reducing latency)
-        if (activity != null && interstitialAd == null && !isAdLoading) {
+
+        // Only trigger load if this is a new valid activity and we don't have an ad
+        if (activity != null && activity != previousActivity &&
+            interstitialAd == null && !isAdLoading
+        ) {
+            Timber.tag("InterstitialAd").d("New activity context set, triggering ad load")
             loadInterstitialAd()
         }
     }
@@ -266,7 +275,24 @@ constructor(private val applicationContext: Context, private val adStateManager:
 
     // Method to request ad loading if needed (called after dismissal or failure)
     fun loadAdIfNeeded() {
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastLoad = currentTime - lastLoadAttemptTime
+
+        // Rate limit load attempts to avoid excessive requests
+        if (timeSinceLastLoad < minLoadIntervalMs && lastLoadAttemptTime > 0) {
+            Timber.tag("InterstitialAd").d("Rate limiting: ${timeSinceLastLoad}ms since last load, waiting...")
+            return
+        }
+
         if (interstitialAd == null && !isAdLoading && currentActivityContext != null) {
+            loadInterstitialAd()
+        }
+    }
+
+    // Force load an ad, bypassing rate limiting (use sparingly)
+    fun forceLoadAd() {
+        if (interstitialAd == null && !isAdLoading && currentActivityContext != null) {
+            Timber.tag("InterstitialAd").d("Force loading ad (bypassing rate limit)")
             loadInterstitialAd()
         }
     }
@@ -279,6 +305,7 @@ constructor(private val applicationContext: Context, private val adStateManager:
 
         if (interstitialAd != null) {
             Timber.tag("InterstitialAd").d("Ad is already loaded.")
+            _isAdReady.value = true // Ensure state is synced
             return
         }
 
@@ -300,6 +327,7 @@ constructor(private val applicationContext: Context, private val adStateManager:
         val contextToUse: Context = activity
 
         isAdLoading = true
+        lastLoadAttemptTime = System.currentTimeMillis()
         Timber.tag("InterstitialAd").d("Starting to load interstitial ad...")
         try {
             FirebaseCrashlytics.getInstance().log("Interstitial: load start")

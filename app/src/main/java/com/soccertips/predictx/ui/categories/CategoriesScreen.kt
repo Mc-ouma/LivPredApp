@@ -1,6 +1,7 @@
 package com.soccertips.predictx.ui.categories
 
 import android.content.Intent
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +23,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.soccertips.predictx.R
+import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.data.model.Announcement
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
@@ -30,6 +33,17 @@ import com.soccertips.predictx.ui.components.LoadingIndicator
 import com.soccertips.predictx.ui.fixturedetails.EmptyScreen
 import com.soccertips.predictx.ui.fixturedetails.ErrorScreen
 import com.soccertips.predictx.viewmodel.CategoriesViewModel
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import timber.log.Timber
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface CategoriesInterstitialAdManagerEntryPoint {
+    fun interstitialAdManager(): InterstitialAdManager
+}
 
 // CategoriesScreen.kt
 @Composable
@@ -40,6 +54,34 @@ fun CategoriesScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val announcements by viewModel.announcements.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = LocalActivity.current
+
+    // Get interstitial ad manager for preloading
+    val interstitialAdManager = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            CategoriesInterstitialAdManagerEntryPoint::class.java
+        ).interstitialAdManager()
+    }
+
+    // Preload interstitial ad when CategoriesScreen is displayed
+    // This ensures the ad is ready when user navigates to ItemsListScreen
+    LaunchedEffect(interstitialAdManager) {
+        activity?.let { act ->
+            interstitialAdManager.setActivityContext(act)
+            interstitialAdManager.useActivityContextForAdLoading(true)
+
+            val isAdReady = interstitialAdManager.isAdReady.value
+            val isLoading = interstitialAdManager.isCurrentlyLoading()
+
+            if (!isAdReady && !isLoading) {
+                Timber.tag("CategoriesScreen").d("Preloading interstitial ad for later use...")
+                interstitialAdManager.loadAdIfNeeded()
+            } else {
+                Timber.tag("CategoriesScreen").d("Interstitial ad already ready=$isAdReady or loading=$isLoading")
+            }
+        }
+    }
 
     // Track dismissed announcements
     var dismissedAnnouncementIds by remember { mutableStateOf(setOf<String>()) }

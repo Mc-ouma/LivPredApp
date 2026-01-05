@@ -6,9 +6,17 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.ImageView
+import android.widget.TextView
+import com.google.android.gms.ads.nativead.MediaView
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -16,11 +24,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -28,16 +39,21 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdOptions
+import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.soccertips.predictx.R
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.math.pow
+import com.soccertips.predictx.ui.theme.LocalCardColors
+import com.soccertips.predictx.ui.theme.LocalCardElevation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.math.pow
 
 // Helper function to check consent status efficiently
 private fun canShowAdsWithConsent(activity: Activity): Boolean {
@@ -221,6 +237,332 @@ fun InlineBannerAdView(
             }
         }
     )
+}
+
+/**
+ * Native Ad View Composable for displaying native ads in lists.
+ * Styled to match the ItemCard design for a seamless user experience.
+ *
+ * @param modifier Modifier for the composable
+ * @param adUnitId The AdMob ad unit ID for the native ad
+ */
+@Composable
+fun NativeAdItem(
+    modifier: Modifier = Modifier,
+    adUnitId: String = stringResource(R.string.native_id)
+) {
+    val context = LocalContext.current
+    var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
+    var isAdLoaded by remember { mutableStateOf(false) }
+
+    // Load native ad
+    DisposableEffect(adUnitId) {
+        val adLoader = AdLoader.Builder(context, adUnitId)
+            .forNativeAd { ad ->
+                // Destroy previous ad if any
+                nativeAd?.destroy()
+                nativeAd = ad
+                isAdLoaded = true
+                Timber.d("Native ad loaded successfully")
+            }
+            .withAdListener(object : AdListener() {
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    Timber.e("Native ad failed to load: ${error.message}")
+                    isAdLoaded = false
+                }
+
+                override fun onAdLoaded() {
+                    Timber.d("Native ad onAdLoaded callback")
+                }
+            })
+            .withNativeAdOptions(
+                NativeAdOptions.Builder()
+                    .setAdChoicesPlacement(NativeAdOptions.ADCHOICES_TOP_RIGHT)
+                    .setMediaAspectRatio(NativeAdOptions.NATIVE_MEDIA_ASPECT_RATIO_LANDSCAPE)
+                    .build()
+            )
+            .build()
+
+        adLoader.loadAd(AdRequest.Builder().build())
+
+        onDispose {
+            nativeAd?.destroy()
+            nativeAd = null
+        }
+    }
+
+    // Only show the ad view when the ad is loaded
+    if (isAdLoaded && nativeAd != null) {
+        NativeAdContent(
+            nativeAd = nativeAd!!,
+            modifier = modifier
+        )
+    }
+}
+
+/**
+ * Compose-based native ad content styled to match ItemCard design.
+ */
+@Composable
+private fun NativeAdContent(
+    nativeAd: NativeAd,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
+
+    // Get Material theme colors to pass to Android Views
+    val primaryContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f).toArgb()
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f).toArgb()
+    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    val secondaryContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f).toArgb()
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        colors = cardColors,
+        elevation = cardElevation,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        // We need AndroidView to wrap content in NativeAdView for proper ad tracking
+        AndroidView(
+            modifier = Modifier.fillMaxWidth(),
+            factory = { ctx ->
+                NativeAdView(ctx)
+            },
+            update = { nativeAdView ->
+                // Clear previous views
+                nativeAdView.removeAllViews()
+
+                // Create and add the content view styled like ItemCard
+                val contentView = createItemCardStyleNativeAd(
+                    context = context,
+                    nativeAd = nativeAd,
+                    nativeAdView = nativeAdView,
+                    primaryContainerColor = primaryContainerColor,
+                    onSurfaceColor = onSurfaceColor,
+                    onSurfaceVariantColor = onSurfaceVariantColor,
+                    primaryColor = primaryColor,
+                    secondaryContainerColor = secondaryContainerColor
+                )
+                nativeAdView.addView(contentView)
+                nativeAdView.setNativeAd(nativeAd)
+            }
+        )
+    }
+}
+
+/**
+ * Creates native ad content view styled to match ItemCard design.
+ */
+private fun createItemCardStyleNativeAd(
+    context: Context,
+    nativeAd: NativeAd,
+    nativeAdView: NativeAdView,
+    primaryContainerColor: Int,
+    onSurfaceColor: Int,
+    onSurfaceVariantColor: Int,
+    primaryColor: Int,
+    secondaryContainerColor: Int
+): android.view.View {
+    val density = context.resources.displayMetrics.density
+    fun Int.dp() = (this * density).toInt()
+    fun Float.dp() = (this * density)
+
+    // Main container (matches ItemCard Column structure)
+    val mainLayout = android.widget.LinearLayout(context).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    // === HEADER (matches MatchHeader style) ===
+    val headerLayout = android.widget.LinearLayout(context).apply {
+        orientation = android.widget.LinearLayout.HORIZONTAL
+        setBackgroundColor(primaryContainerColor)
+        setPadding(12.dp(), 8.dp(), 12.dp(), 8.dp())
+        gravity = android.view.Gravity.CENTER_VERTICAL
+        layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    // Ad icon in header (like league logo)
+    val iconView = ImageView(context).apply {
+        layoutParams = android.widget.LinearLayout.LayoutParams(24.dp(), 24.dp()).apply {
+            marginEnd = 8.dp()
+        }
+        scaleType = ImageView.ScaleType.CENTER_CROP
+    }
+    nativeAd.icon?.drawable?.let {
+        iconView.setImageDrawable(it)
+        headerLayout.addView(iconView)
+        nativeAdView.iconView = iconView
+    }
+
+    // Advertiser name (like league name)
+    val advertiserView = TextView(context).apply {
+        text = nativeAd.advertiser ?: "Sponsored"
+        textSize = 14f
+        setTextColor(onSurfaceColor)
+        setTypeface(typeface, android.graphics.Typeface.BOLD)
+        maxLines = 1
+        ellipsize = android.text.TextUtils.TruncateAt.END
+        layoutParams = android.widget.LinearLayout.LayoutParams(
+            0,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+    }
+    headerLayout.addView(advertiserView)
+    nativeAd.advertiser?.let { nativeAdView.advertiserView = advertiserView }
+
+    // "Ad" badge (positioned like date in MatchHeader)
+    val adBadge = TextView(context).apply {
+        text = "Ad"
+        textSize = 10f
+        setTextColor(android.graphics.Color.WHITE)
+        setPadding(6.dp(), 2.dp(), 6.dp(), 2.dp())
+        setBackgroundColor(primaryColor)
+        layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            marginStart = 8.dp()
+        }
+    }
+    headerLayout.addView(adBadge)
+
+    mainLayout.addView(headerLayout)
+
+    // === CONTENT SECTION (matches TeamsRow style) ===
+    val contentLayout = android.widget.LinearLayout(context).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
+        layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    // Headline (main title - like team names importance)
+    val headlineView = TextView(context).apply {
+        text = nativeAd.headline
+        textSize = 16f
+        setTextColor(onSurfaceColor)
+        setTypeface(typeface, android.graphics.Typeface.BOLD)
+        maxLines = 2
+        ellipsize = android.text.TextUtils.TruncateAt.END
+        layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+    contentLayout.addView(headlineView)
+    nativeAdView.headlineView = headlineView
+
+    // Body text (description)
+    nativeAd.body?.let { body ->
+        val bodyView = TextView(context).apply {
+            text = body
+            textSize = 13f
+            setTextColor(onSurfaceVariantColor)
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 4.dp()
+            }
+        }
+        contentLayout.addView(bodyView)
+        nativeAdView.bodyView = bodyView
+    }
+
+    // Star rating
+    nativeAd.starRating?.let { rating ->
+        val ratingContainer = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 4.dp()
+            }
+        }
+
+        val ratingText = TextView(context).apply {
+            text = "★".repeat(rating.toInt()) + "☆".repeat(5 - rating.toInt())
+            textSize = 12f
+            setTextColor(android.graphics.Color.parseColor("#FFC107"))
+        }
+        ratingContainer.addView(ratingText)
+
+        val ratingValue = TextView(context).apply {
+            text = " (${String.format("%.1f", rating)})"
+            textSize = 12f
+            setTextColor(onSurfaceVariantColor)
+        }
+        ratingContainer.addView(ratingValue)
+
+        contentLayout.addView(ratingContainer)
+    }
+
+    mainLayout.addView(contentLayout)
+
+    // === MEDIA VIEW (for images and videos) ===
+    val mediaContent = nativeAd.mediaContent
+    if (mediaContent != null && mediaContent.hasVideoContent() || nativeAd.images.isNotEmpty()) {
+        val mediaView = MediaView(context).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                180.dp() // Fixed height for media
+            ).apply {
+                setMargins(12.dp(), 0, 12.dp(), 12.dp())
+            }
+            setImageScaleType(ImageView.ScaleType.CENTER_CROP)
+        }
+        mainLayout.addView(mediaView)
+        nativeAdView.mediaView = mediaView
+    }
+
+    // === FOOTER (matches MatchStatusRow style) ===
+    nativeAd.callToAction?.let { cta ->
+        val footerLayout = android.widget.FrameLayout(context).apply {
+            setBackgroundColor(secondaryContainerColor)
+            setPadding(12.dp(), 8.dp(), 12.dp(), 8.dp())
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val ctaButton = TextView(context).apply {
+            text = cta.uppercase()
+            textSize = 14f
+            setTextColor(primaryColor)
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER
+            layoutParams = android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        footerLayout.addView(ctaButton)
+        nativeAdView.callToActionView = ctaButton
+
+        mainLayout.addView(footerLayout)
+    }
+
+    return mainLayout
 }
 
 @Singleton

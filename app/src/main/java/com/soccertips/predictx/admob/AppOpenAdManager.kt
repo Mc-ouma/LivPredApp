@@ -210,7 +210,7 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
                     }
 
                     override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        Timber.Forest.tag("AppOpenAd")
+                        Timber.tag("AppOpenAd")
                                 .d("App open ad failed to load: ${'$'}{loadAdError.message}")
                         try {
                             FirebaseCrashlytics.getInstance()
@@ -282,14 +282,14 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
         try {
             val window = activity.window
             if (window == null) {
-                Timber.Forest.tag("AppOpenAd").w("Cannot show ad - activity window is null")
+                Timber.tag("AppOpenAd").w("Cannot show ad - activity window is null")
                 onShowAdCompleteListener()
                 return
             }
 
             val decorView = window.decorView
             if (decorView == null || !decorView.isAttachedToWindow) {
-                Timber.Forest.tag("AppOpenAd")
+                Timber.tag("AppOpenAd")
                         .w("Cannot show ad - decor view not attached to window")
                 onShowAdCompleteListener()
                 return

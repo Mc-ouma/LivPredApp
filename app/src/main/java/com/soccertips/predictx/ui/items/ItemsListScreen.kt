@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
 import androidx.compose.material.icons.filled.Today
@@ -48,6 +49,7 @@ import com.soccertips.predictx.Menu
 import com.soccertips.predictx.R
 import com.soccertips.predictx.admob.CollapsibleBannerAdView
 import com.soccertips.predictx.admob.InterstitialAdManager
+import com.soccertips.predictx.admob.NativeAdItem
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.UiState
@@ -296,11 +298,14 @@ fun ItemsListScreen(
                             modifier = Modifier.align(Alignment.Center).padding(paddingValues),
                         )
                     } else {
+                        // Show native ad after 5th item when there are 6+ items
+                        val showNativeAd = items.size >= 6
+
                         LazyColumn(
                             modifier = Modifier.fillMaxSize().padding(paddingValues),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(items) { item ->
+                            itemsIndexed(items) { index, item ->
                                 // Check if the item is a favorite
                                 var isFavorite by remember { mutableStateOf(false) }
                                 LaunchedEffect(item) { isFavorite = viewModel.isFavorite(item) }
@@ -318,6 +323,12 @@ fun ItemsListScreen(
                                     viewModel = viewModel
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
+
+                                // Insert native ad after 5th item (index 4)
+                                if (showNativeAd && index == 4) {
+                                    NativeAdItem()
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
                             }
                         }
                     }

@@ -74,9 +74,17 @@ private fun parseColorOrFallback(colorString: String?, fallback: Color): Color {
 
 // Calculate relative luminance of a color (0.0 = black, 1.0 = white)
 private fun Color.luminance(): Float {
-    val r = if (red <= 0.03928f) red / 12.92f else Math.pow(((red + 0.055f) / 1.055f).toDouble(), 2.4).toFloat()
-    val g = if (green <= 0.03928f) green / 12.92f else Math.pow(((green + 0.055f) / 1.055f).toDouble(), 2.4).toFloat()
-    val b = if (blue <= 0.03928f) blue / 12.92f else Math.pow(((blue + 0.055f) / 1.055f).toDouble(), 2.4).toFloat()
+    val r =
+        if (red <= 0.03928f) red / 12.92f else Math.pow(((red + 0.055f) / 1.055f).toDouble(), 2.4)
+            .toFloat()
+    val g = if (green <= 0.03928f) green / 12.92f else Math.pow(
+        ((green + 0.055f) / 1.055f).toDouble(),
+        2.4
+    ).toFloat()
+    val b = if (blue <= 0.03928f) blue / 12.92f else Math.pow(
+        ((blue + 0.055f) / 1.055f).toDouble(),
+        2.4
+    ).toFloat()
     return 0.2126f * r + 0.7152f * g + 0.0722f * b
 }
 
@@ -157,7 +165,7 @@ fun FixtureLineupsScreen(lineups: Pair<TeamLineup, TeamLineup>) {
                         awayLineup = lineups.second,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(0.7f) // Vertical pitch ratio
+                            .aspectRatio(0.58f) // Taller vertical pitch ratio for better spacing
                     )
                 }
             }
@@ -388,7 +396,10 @@ fun FootballPitch(
                 startAngle = 215f,
                 sweepAngle = 110f,
                 useCenter = false,
-                topLeft = Offset(width / 2 - arcRadius, height - penaltyAreaHeight - arcRadius * 0.7f),
+                topLeft = Offset(
+                    width / 2 - arcRadius,
+                    height - penaltyAreaHeight - arcRadius * 0.7f
+                ),
                 size = Size(arcRadius * 2, arcRadius),
                 style = Stroke(width = strokeWidth)
             )
@@ -470,22 +481,23 @@ fun FootballPitch(
             val pitchHeight = maxHeight
 
             // Process home team (top half, plays downward)
+            // Mirror X axis so left/right positions match the away team perspective
             val homePlayers = processTeamPlayers(
                 lineup = homeLineup,
                 side = "home",
-                startY = 8f,
-                endY = 45f
+                startY = 5f,
+                endY = 43f,
+                mirrorX = true
             )
 
             // Process away team (bottom half, plays upward)
             val awayPlayers = processTeamPlayers(
                 lineup = awayLineup,
                 side = "away",
-                startY = 88f,
-                endY = 55f
+                startY = 92f,
+                endY = 57f,
+                mirrorX = false
             )
-
-            // Render all players
             (homePlayers + awayPlayers).forEach { positioned ->
                 PlayerMarker(
                     player = positioned.player,
@@ -504,7 +516,8 @@ private fun processTeamPlayers(
     lineup: TeamLineup,
     side: String,
     startY: Float,
-    endY: Float
+    endY: Float,
+    mirrorX: Boolean = false
 ): List<PositionedPlayer> {
     val players = lineup.startXI ?: return emptyList()
     val positionedPlayers = mutableListOf<PositionedPlayer>()
@@ -593,7 +606,9 @@ private fun processTeamPlayers(
 
         rowPlayers.forEachIndexed { playerIndex, player ->
             // Distribute evenly on X axis: (100 / (count + 1)) * (index + 1)
-            val x = (100f / (rowPlayers.size + 1)) * (playerIndex + 1)
+            val baseX = (100f / (rowPlayers.size + 1)) * (playerIndex + 1)
+            // Mirror X if needed (for home team to match perspective)
+            val x = if (mirrorX) 100f - baseX else baseX
 
             positionedPlayers.add(
                 PositionedPlayer(
@@ -619,9 +634,9 @@ fun PlayerMarker(
     pitchHeight: Dp
 ) {
     val density = LocalDensity.current
-    val markerSize = 32.dp
-    val nameHeight = 14.dp // Approximate height for the name text with padding
-    val columnWidth = 56.dp
+    val markerSize = 28.dp
+    val nameHeight = 16.dp // Approximate height for the name text with padding
+    val columnWidth = 48.dp
     val halfColumnWidth = columnWidth / 2
     val totalMarkerHeight = markerSize + nameHeight
 
@@ -659,37 +674,39 @@ fun PlayerMarker(
             Box(
                 modifier = Modifier
                     .size(markerSize)
-                    .shadow(6.dp, CircleShape)
+                    .shadow(4.dp, CircleShape)
                     .clip(CircleShape)
                     .background(primaryColor)
-                    .border(2.dp, borderColor, CircleShape),
+                    .border(1.5.dp, borderColor, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = player.number?.toString() ?: "",
                     color = numberColor,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+                    fontSize = 10.sp
                 )
             }
 
+            Spacer(modifier = Modifier.height(2.dp))
 
             // Player name (last name only) with high contrast background for readability
             Text(
-                text = player.name?.split(" ")?.lastOrNull()?.take(10) ?: "",
-                fontSize = 8.sp,
-                fontWeight = FontWeight.Bold,
+                text = player.name?.split(" ")?.lastOrNull()?.take(8) ?: "",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
+                lineHeight = 10.sp,
                 modifier = Modifier
-                    .shadow(2.dp, RoundedCornerShape(4.dp))
+                    .shadow(2.dp, RoundedCornerShape(3.dp))
                     .background(
-                        Color.Black.copy(alpha = 0.75f),
-                        RoundedCornerShape(4.dp)
+                        Color.Black.copy(alpha = 0.7f),
+                        RoundedCornerShape(3.dp)
                     )
-                    //.padding(horizontal = 5.dp, vertical = 2.dp)
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
             )
         }
     }
@@ -712,7 +729,8 @@ fun FormationBadge(lineup: TeamLineup) {
         ) {
             Image(
                 painter = rememberAsyncImagePainter(model = lineup.team.logo),
-                contentDescription = lineup.team.name?.take(20) ?: stringResource(R.string.team_logo),
+                contentDescription = lineup.team.name?.take(20)
+                    ?: stringResource(R.string.team_logo),
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -877,7 +895,8 @@ fun PlayerRow(
 
     // Use helper function instead of try-catch in composable
     val primaryColor = parseColorOrFallback(playerColor.primary, MaterialTheme.colorScheme.primary)
-    val rawNumberColor = parseColorOrFallback(playerColor.number, MaterialTheme.colorScheme.onPrimary)
+    val rawNumberColor =
+        parseColorOrFallback(playerColor.number, MaterialTheme.colorScheme.onPrimary)
     parseColorOrFallback(playerColor.border, MaterialTheme.colorScheme.outline)
 
     // Ensure number color has sufficient contrast with primary background
@@ -1007,7 +1026,7 @@ fun PreviewFixtureLineupsScreen() {
             name = "Coach Name",
             photo = "https://via.placeholder.com/100"
         )
-    )   
+    )
     FixtureLineupsScreen(
         lineups = Pair(sampleLineup, sampleLineup)
     )

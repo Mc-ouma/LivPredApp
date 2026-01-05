@@ -61,31 +61,29 @@ constructor(
 
                 Timber.d("SplashViewModel: isLowMemory=$isLowMemory, tier=${devicePerformanceManager.getPerformanceTier()}")
 
-                // Essential initialization on main thread - keep minimal
-                withContext(Dispatchers.Main) {
-                    // Only essential operations on main thread
+                // CRITICAL: Minimize main thread work during startup to prevent ANR
+                // Move as much as possible to background
+                withContext(Dispatchers.Default) {
+                    // Only essential operations - keep main thread free
                     updateAppLaunchCount()
-
-                    // On low-memory devices, skip non-essential setup on main thread
-                    if (!isLowMemory) {
-                        setupAdManagers()
-                    }
                 }
 
                 _initializationState.value = InitializationState.InitializingBackground
 
-                // Background initialization - device-aware delays
+                // Mark as ready EARLY to dismiss splash screen and prevent ANR
+                // Background tasks continue asynchronously after splash is dismissed
+                _isReady.value = true
+                Timber.d("Splash screen released - continuing background initialization")
+
+                // Background initialization - device-aware delays (non-blocking now)
                 withContext(Dispatchers.IO) {
-                    // On low-memory devices, use minimal delay to release splash faster
-                    val initDelay = if (isLowMemory) 50L else 100L
+                    // Minimal delay to allow UI to render
+                    val initDelay = if (isLowMemory) 100L else 200L
                     delay(initDelay)
                     initializeBackgroundComponents(isLowMemory)
                 }
 
                 _initializationState.value = InitializationState.Complete
-
-                // Mark as ready to dismiss splash screen
-                _isReady.value = true
 
                 Timber.d("Splash initialization completed successfully")
             } catch (e: Exception) {

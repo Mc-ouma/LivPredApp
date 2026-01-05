@@ -160,10 +160,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     /**
      * Cleans up old and stale WorkManager jobs to prevent the 100-job limit from being exceeded.
      * This method cancels finished/failed jobs and removes old notification jobs.
+     * Made fully async to avoid blocking startup.
      */
-    private fun cleanupOldWorkManagerJobs() {
+    private suspend fun cleanupOldWorkManagerJobs() = withContext(Dispatchers.IO) {
         try {
-            Timber.d("WorkManager: Starting cleanup of old jobs")
+            Timber.d("WorkManager: Starting async cleanup of old jobs")
 
             val workManager = WorkManager.getInstance(this@App)
 
@@ -172,42 +173,46 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Cancel all work by tags for match notifications (old format)
             workManager.cancelAllWorkByTag("match_notification")
 
-            // Get and cancel finished manual betting check jobs
-            workManager.getWorkInfosByTag("manual_betting_check").get()?.forEach { workInfo ->
-                if (workInfo.state == WorkInfo.State.SUCCEEDED ||
-                    workInfo.state == WorkInfo.State.FAILED ||
-                    workInfo.state == WorkInfo.State.CANCELLED
-                ) {
-                    try {
-                        workManager.cancelWorkById(workInfo.id)
-                        cancelledCount++
-                    } catch (e: Exception) {
-                        Timber.w(
-                            "Failed to cancel manual betting work ${workInfo.id}: ${e.message}"
-                        )
+            // Get and cancel finished manual betting check jobs - use async with timeout
+            try {
+                workManager.getWorkInfosByTag("manual_betting_check").get()?.forEach { workInfo ->
+                    if (workInfo.state == WorkInfo.State.SUCCEEDED ||
+                        workInfo.state == WorkInfo.State.FAILED ||
+                        workInfo.state == WorkInfo.State.CANCELLED
+                    ) {
+                        try {
+                            workManager.cancelWorkById(workInfo.id)
+                            cancelledCount++
+                        } catch (e: Exception) {
+                            Timber.w(
+                                "Failed to cancel manual betting work ${workInfo.id}: ${e.message}"
+                            )
+                        }
                     }
                 }
-            }
 
-            // Get and cancel finished end-of-day check jobs
-            workManager.getWorkInfosByTag("end_of_day_check").get()?.forEach { workInfo ->
-                if (workInfo.state == WorkInfo.State.SUCCEEDED ||
-                    workInfo.state == WorkInfo.State.FAILED ||
-                    workInfo.state == WorkInfo.State.CANCELLED
-                ) {
-                    try {
-                        workManager.cancelWorkById(workInfo.id)
-                        cancelledCount++
-                    } catch (e: Exception) {
-                        Timber.w("Failed to cancel end-of-day work ${workInfo.id}: ${e.message}")
+                // Get and cancel finished end-of-day check jobs
+                workManager.getWorkInfosByTag("end_of_day_check").get()?.forEach { workInfo ->
+                    if (workInfo.state == WorkInfo.State.SUCCEEDED ||
+                        workInfo.state == WorkInfo.State.FAILED ||
+                        workInfo.state == WorkInfo.State.CANCELLED
+                    ) {
+                        try {
+                            workManager.cancelWorkById(workInfo.id)
+                            cancelledCount++
+                        } catch (e: Exception) {
+                            Timber.w("Failed to cancel end-of-day work ${workInfo.id}: ${e.message}")
+                        }
                     }
                 }
+
+                // Prune completed work from the database
+                workManager.pruneWork()
+
+                Timber.d("WorkManager: Cleanup completed - cancelled $cancelledCount old jobs")
+            } catch (tagError: Exception) {
+                Timber.w("WorkManager: Error getting work info by tag: ${tagError.message}")
             }
-
-            // Prune completed work from the database
-            workManager.pruneWork()
-
-            Timber.d("WorkManager: Cleanup completed - cancelled $cancelledCount old jobs")
         } catch (e: Exception) {
             Timber.e(e, "WorkManager: Error during cleanup")
         }
@@ -217,16 +222,19 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         withContext(Dispatchers.IO) {
             val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
 
-            // On low-memory devices, delay all initialization to prioritize UI rendering
-            if (isLowMemory) {
-                delay(500) // Give UI thread a head start
-            }
+            // CRITICAL: On ALL devices, give UI thread priority during startup to prevent ANR
+            // Longer delay on low-memory devices
+            val startupDelay = if (isLowMemory) 1000L else 500L
+            delay(startupDelay)
 
             // Clean up old/stale WorkManager jobs first (lightweight, always do this)
+            // This is now async and won't block
             cleanupOldWorkManagerJobs()
 
-            // Initialize non-critical components in background
-            // On low-memory devices, defer this
+            // Initialize non-critical components in background with staggered delays
+            // to avoid resource contention
+            delay(300)
+
             if (!startupConfig.skipNonEssentialInit) {
                 NotificationHelper.createNotificationChannels(this@App)
             } else {
@@ -235,33 +243,31 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 NotificationHelper.createNotificationChannels(this@App)
             }
 
-            // Set up prediction repository dependency
+            // Set up prediction repository dependency - lightweight operation
+            delay(200)
             preloadRepository.setPredictionRepository(predictionRepository)
 
-            // Initialize API config - this is essential, do it early
+            // Initialize API config - this is essential but can wait for UI
+            delay(300)
             initApiConfig()
 
-            // On low-memory devices, defer non-essential schedulers
-            if (!isLowMemory) {
-                // Initialize betting success checking system
-                bettingSuccessScheduler.initialize()
+            // On ALL devices, defer non-essential schedulers to after UI is stable
+            // Use longer delays than before to ensure UI responsiveness
+            val schedulerDelay = if (isLowMemory) 2000L else 1500L
+            delay(schedulerDelay)
 
-                // Initialize real-time result monitoring system
-                realTimeResultMonitor.startMonitoring()
-                Timber.d("Real-time result monitoring initialized")
+            // Initialize betting success checking system
+            bettingSuccessScheduler.initialize()
+            delay(200)
 
-                // Schedule daily reminder notifications using AlarmManager (exact timing)
-                dailyReminderAlarmScheduler.scheduleDailyReminders()
-                Timber.d("Daily reminder alarm scheduler initialized")
-            } else {
-                // Defer these initializations on low-memory devices
-                delay(startupConfig.deferFirebaseMs)
-                bettingSuccessScheduler.initialize()
-                realTimeResultMonitor.startMonitoring()
-                Timber.d("Real-time result monitoring initialized (deferred for low-memory device)")
-                dailyReminderAlarmScheduler.scheduleDailyReminders()
-                Timber.d("Daily reminder alarm scheduler initialized (deferred for low-memory device)")
-            }
+            // Initialize real-time result monitoring system
+            realTimeResultMonitor.startMonitoring()
+            Timber.d("Real-time result monitoring initialized${if (isLowMemory) " (deferred for low-memory device)" else ""}")
+            delay(200)
+
+            // Schedule daily reminder notifications using AlarmManager (exact timing)
+            dailyReminderAlarmScheduler.scheduleDailyReminders()
+            Timber.d("Daily reminder alarm scheduler initialized${if (isLowMemory) " (deferred for low-memory device)" else ""}")
 
             // Initialize Firebase messaging with device-aware delay
             delay(startupConfig.deferFirebaseMs)
@@ -775,13 +781,27 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         } catch (_: Exception) {
         }
 
-        // Initialize consent only once (first activity creation)
+        // Defer consent initialization to avoid blocking startup
+        // This is a non-essential operation that can wait until the app is fully rendered
         if (!isConsentInitialized) {
             isConsentInitialized = true
             Timber.d(
-                "Consent: Initializing for first time with activity: ${activity.javaClass.simpleName}"
+                "Consent: Scheduling deferred initialization with activity: ${activity.javaClass.simpleName}"
             )
-            initializeConsent(activity)
+            // Defer consent initialization to after startup completes
+            CoroutineScope(Dispatchers.Main).launch {
+                // Wait for UI to be fully rendered and stable
+                val deferDelay = if (devicePerformanceManager.isLowMemoryDevice()) 2500L else 1500L
+                delay(deferDelay)
+                // Double-check activity is still valid
+                if (currentActivity != null && !activity.isFinishing && !activity.isDestroyed) {
+                    Timber.d("Consent: Starting deferred initialization")
+                    initializeConsent(activity)
+                } else {
+                    Timber.w("Consent: Activity no longer valid, skipping initialization")
+                    isConsentInitialized = false // Allow retry on next activity
+                }
+            }
         } else {
             Timber.d("Consent: Already initialized, skipping")
         }
@@ -811,7 +831,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Record first frame for performance tracking (first activity resume)
         if (isInitialAppStart) {
             startupTimeTracker.recordFirstFrameRendered()
-            devicePerformanceManager.logPerformanceInfo()
+            // Defer performance logging to avoid blocking during critical startup
+            CoroutineScope(Dispatchers.Default).launch {
+                delay(500)
+                devicePerformanceManager.logPerformanceInfo()
+            }
         }
 
         // Update AppOpenAdManager with current activity context

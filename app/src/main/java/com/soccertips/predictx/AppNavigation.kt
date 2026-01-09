@@ -92,7 +92,8 @@ fun AppNavigation(
                         // channel
                         val intent = Intent(Intent.ACTION_VIEW, telegramUrl.toUri())
                         try {
-                            context.startActivity(intent)
+                            // Use a chooser to avoid SecurityException from apps with non-exported activities
+                            context.startActivity(Intent.createChooser(intent, null))
                         } catch (e: Exception) {
                             Toast.makeText(
                                 context,

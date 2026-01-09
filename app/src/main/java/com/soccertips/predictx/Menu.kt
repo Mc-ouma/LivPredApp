@@ -422,15 +422,33 @@ private fun FeatureChip(text: String) {
 }
 
 /**
- * Safely starts an activity, catching ActivityNotFoundException if no app can handle the intent.
+ * Safely starts an activity, catching common exceptions that may occur when starting intents.
+ * Uses a chooser for VIEW intents to avoid issues with apps that have non-exported activities.
  */
 private fun Context.startActivitySafely(intent: Intent): Boolean {
         return try {
-                startActivity(intent)
+                // For VIEW intents, use a chooser to let the user select the app
+                // This avoids SecurityException when an app intercepts URLs but doesn't export its activity
+                val launchIntent = if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
+                        Intent.createChooser(intent, null)
+                } else {
+                        intent
+                }
+                startActivity(launchIntent)
                 true
         } catch (e: android.content.ActivityNotFoundException) {
                 Timber.tag("Menu").e(e, "No activity found to handle intent: $intent")
                 false
+        } catch (e: SecurityException) {
+                Timber.tag("Menu").e(e, "Security exception when starting intent: $intent")
+                // Fallback: try with chooser if we haven't already
+                try {
+                        startActivity(Intent.createChooser(intent, null))
+                        true
+                } catch (e2: Exception) {
+                        Timber.tag("Menu").e(e2, "Fallback also failed for intent: $intent")
+                        false
+                }
         }
 }
 

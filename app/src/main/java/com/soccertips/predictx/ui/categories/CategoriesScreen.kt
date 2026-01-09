@@ -112,7 +112,8 @@ fun CategoriesScreen(
                 onAnnouncementActionClick = { url ->
                     try {
                         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                        context.startActivity(intent)
+                        // Use a chooser to avoid SecurityException from apps with non-exported activities
+                        context.startActivity(Intent.createChooser(intent, null))
                     } catch (e: Exception) {
                         // Handle error silently
                     }

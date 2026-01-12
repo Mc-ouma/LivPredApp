@@ -39,6 +39,7 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.VideoOptions
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAdView
@@ -279,6 +280,12 @@ fun NativeAdItem(
                 NativeAdOptions.Builder()
                     .setAdChoicesPlacement(NativeAdOptions.ADCHOICES_TOP_RIGHT)
                     .setMediaAspectRatio(NativeAdOptions.NATIVE_MEDIA_ASPECT_RATIO_LANDSCAPE)
+                    .setVideoOptions(
+                        VideoOptions.Builder()
+                            .setStartMuted(true) // Start muted for better UX
+                            .setClickToExpandRequested(true) // Allow fullscreen on click
+                            .build()
+                    )
                     .build()
             )
             .build()
@@ -520,7 +527,7 @@ private fun createItemCardStyleNativeAd(
 
     // === MEDIA VIEW (for images and videos) ===
     val mediaContent = nativeAd.mediaContent
-    if (mediaContent != null && mediaContent.hasVideoContent() || nativeAd.images.isNotEmpty()) {
+    if (mediaContent != null) {
         val mediaView = MediaView(context).apply {
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -529,6 +536,8 @@ private fun createItemCardStyleNativeAd(
                 setMargins(12.dp(), 0, 12.dp(), 12.dp())
             }
             setImageScaleType(ImageView.ScaleType.CENTER_CROP)
+            // Set the media content to properly display video
+            setMediaContent(mediaContent)
         }
         mainLayout.addView(mediaView)
         nativeAdView.mediaView = mediaView

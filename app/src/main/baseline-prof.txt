@@ -31,3 +31,32 @@ HSPLcom/soccertips/predictx/util/StartupTimeTracker$Companion;->recordProcessSta
 # Network Tagging Initializer - early initialization
 HSPLcom/soccertips/predictx/util/NetworkTaggingInitializer;-><init>()V
 HSPLcom/soccertips/predictx/util/NetworkTaggingInitializer;->initialize()V
+
+# Dependency Injection - Hilt/Dagger initialization (critical for startup)
+HSPLcom/soccertips/predictx/di/AppModule;-><clinit>()V
+HSPLcom/soccertips/predictx/di/AppModule;->provideImageLoader(Landroid/content/Context;Lokhttp3/OkHttpClient;)Lcoil/ImageLoader;
+HSPLcom/soccertips/predictx/di/AppModule;->provideDatabase(Landroid/content/Context;)Lcom/soccertips/predictx/data/local/AppDatabase;
+HSPLcom/soccertips/predictx/di/AppModule;->provideFavoriteDao(Lcom/soccertips/predictx/data/local/AppDatabase;)Lcom/soccertips/predictx/data/local/dao/FavoriteDao;
+
+# ViewModels - Critical for UI initialization
+HSPLcom/soccertips/predictx/viewmodel/MainViewModel;-><init>(Lcom/soccertips/predictx/repository/PredictionRepository;)V
+HSPLcom/soccertips/predictx/viewmodel/ItemsListViewModel;-><init>(Lcom/soccertips/predictx/repository/PredictionRepository;Lcom/soccertips/predictx/data/local/dao/FavoriteDao;)V
+
+# Repositories - Data layer initialization
+HSPLcom/soccertips/predictx/repository/PredictionRepository;-><init>(Lcom/soccertips/predictx/network/ApiService;Lcom/soccertips/predictx/repository/FirebaseRepository;)V
+HSPLcom/soccertips/predictx/repository/PreloadRepository;-><init>(Lcom/soccertips/predictx/repository/PredictionRepository;)V
+
+# Room Database - Local data persistence
+HSPLcom/soccertips/predictx/data/local/AppDatabase;->getInstance(Landroid/content/Context;)Lcom/soccertips/predictx/data/local/AppDatabase;
+HSPLcom/soccertips/predictx/data/local/dao/FavoriteDao;->getAllFavoritesFlow()Lkotlinx/coroutines/flow/Flow;
+
+# Navigation - Compose Navigation setup
+HSPLcom/soccertips/predictx/navigation/AppNavigationKt;->AppNavigation(Landroidx/compose/runtime/Composer;I)V
+
+# AdMob - Early ad initialization
+HSPLcom/soccertips/predictx/admob/AppOpenAdManager;-><init>(Landroid/app/Application;)V
+HSPLcom/soccertips/predictx/admob/AppOpenAdManager;->loadAd()V
+
+# Firebase initialization
+HSPLcom/soccertips/predictx/firebase/FirebaseInitializer;-><init>()V
+HSPLcom/soccertips/predictx/repository/FirebaseRepository;-><init>()V

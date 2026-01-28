@@ -51,6 +51,19 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
     private val _uiState = MutableStateFlow<UiState<List<ServerResponse>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<ServerResponse>>> = _uiState.asStateFlow()
 
+    // Cache of favorite fixture IDs for efficient lookups - reactively updated
+    private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
+    val favoriteIds: StateFlow<Set<String>> = _favoriteIds.asStateFlow()
+
+    init {
+        // Observe favorites and update the cached set reactively
+        viewModelScope.launch {
+            favoriteDao.getAllFavoritesFlow().collect { favorites ->
+                _favoriteIds.value = favorites.map { it.fixtureId }.toSet()
+            }
+        }
+    }
+
     // Fetch data only if not already cached for the given date
     fun fetchItems(categoryEndpoint: String, date: LocalDate?) {
         val cacheKey = "${categoryEndpoint}_$date"
@@ -168,8 +181,8 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
         }
     }
 
-    // Check if an item is a favorite
-    suspend fun isFavorite(item: ServerResponse): Boolean {
-        return favoriteDao.getAllFavorites().any { it.fixtureId == item.fixtureId }
+    // Check if an item is a favorite - non-blocking lookup from cached set
+    fun isFavorite(item: ServerResponse): Boolean {
+        return item.fixtureId in _favoriteIds.value
     }
 }

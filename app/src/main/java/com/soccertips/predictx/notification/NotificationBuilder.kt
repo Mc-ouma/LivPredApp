@@ -22,7 +22,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import timber.log.Timber
 
 @Singleton
@@ -30,12 +32,20 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
     companion object {
         private const val GROUP_KEY_MATCHES = "com.soccertips.predictx.MATCH_NOTIFICATIONS"
         private const val GROUP_KEY_UPDATES = "com.soccertips.predictx.MATCH_UPDATES"
+        private const val IMAGE_LOAD_TIMEOUT_MS = 2000L // 2 seconds
     }
+
+    // In-memory cache for team logos to avoid repeated network requests
+    private val logoCache = mutableMapOf<String, Bitmap>()
 
     suspend fun buildMatchNotification(item: FavoriteItem): NotificationCompat.Builder {
         return try {
-            val homeTeamLogo = loadTeamLogo(item.hLogoPath)
-            val awayTeamLogo = loadTeamLogo(item.aLogoPath)
+            // Load images with timeout to prevent notification delays
+            val (homeTeamLogo, awayTeamLogo) = withTimeout(IMAGE_LOAD_TIMEOUT_MS) {
+                val home = loadTeamLogo(item.hLogoPath)
+                val away = loadTeamLogo(item.aLogoPath)
+                Pair(home, away)
+            }
 
             val largeIcon = createVersusIcon(homeTeamLogo, awayTeamLogo)
 
@@ -59,6 +69,24 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
                     context.getString(R.string.view_details),
                     createPendingIntent(item)
                 )
+        } catch (e: TimeoutCancellationException) {
+            Timber.w(
+                "Image loading timed out for fixture ${item.fixtureId}, creating fallback notification without images"
+            )
+            // Create a fallback notification without images
+            NotificationCompat.Builder(context, NotificationHelper.MATCH_REMINDER_CHANNEL_ID)
+                .setContentTitle(
+                    "${item.homeTeam ?: "Unknown"} vs ${item.awayTeam ?: "Unknown"}"
+                )
+                .setContentText(context.getString(R.string.match_starts_in_15_minutes))
+                .setSmallIcon(R.drawable.launcher)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_EVENT)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setGroup(GROUP_KEY_MATCHES)
+                .setStyle(createBigTextStyle(item))
+                .setContentIntent(createSafePendingIntent(item))
         } catch (e: Exception) {
             Timber.e(
                 e,
@@ -284,10 +312,22 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
     private suspend fun loadTeamLogo(logoUrl: String?): Bitmap? =
         withContext(Dispatchers.IO) {
             try {
-                logoUrl?.let {
-                    val imageRequest = ImageRequest.Builder(context).data(it).build()
+                logoUrl?.let { url ->
+                    // Check cache first
+                    logoCache[url]?.let { return@withContext it }
+
+                    // Load from network if not cached
+                    val imageRequest = ImageRequest.Builder(context)
+                        .data(url)
+                        .allowHardware(false) // Required for notification compatibility
+                        .build()
                     val drawable = context.imageLoader.execute(imageRequest).drawable
-                    drawable?.toBitmap()
+                    val bitmap = drawable?.toBitmap()
+
+                    // Cache the bitmap for future use
+                    bitmap?.let { logoCache[url] = it }
+
+                    bitmap
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load team logo: $logoUrl")

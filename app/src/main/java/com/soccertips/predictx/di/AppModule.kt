@@ -36,6 +36,11 @@ import dagger.hilt.components.SingletonComponent
 import java.io.File
 import javax.inject.Named
 import javax.inject.Singleton
+import coil.ImageLoader
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
+import coil.request.CachePolicy
+import coil.util.DebugLogger
 import okhttp3.Cache
 import okhttp3.HttpUrl
 import okhttp3.Interceptor
@@ -418,5 +423,42 @@ object AppModule {
     @Singleton
     fun provideGson(): Gson {
         return Gson()
+    }
+
+    /**
+     * Provides a custom Coil ImageLoader with optimized caching configuration.
+     * Memory cache: 25% of available app memory
+     * Disk cache: 100 MB
+     * This improves image loading performance and reduces network calls.
+     */
+    @Provides
+    @Singleton
+    fun provideImageLoader(
+        @ApplicationContext context: Context,
+        @Named("defaultOkHttpClient") okHttpClient: OkHttpClient
+    ): ImageLoader {
+        return ImageLoader.Builder(context)
+            .memoryCache {
+                MemoryCache.Builder(context)
+                    .maxSizePercent(0.25) // Use 25% of available memory
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(context.cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(100 * 1024 * 1024) // 100 MB
+                    .build()
+            }
+            .okHttpClient(okHttpClient) // Reuse our configured OkHttp client
+            .respectCacheHeaders(false) // Use our own cache policy
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .apply {
+                // Enable debug logging in debug builds
+                if (com.soccertips.predictx.BuildConfig.DEBUG) {
+                    logger(DebugLogger())
+                }
+            }
+            .build()
     }
 }

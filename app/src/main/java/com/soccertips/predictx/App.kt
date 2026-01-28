@@ -8,6 +8,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import coil.Coil
 import com.google.android.gms.ads.MobileAds
 import com.google.android.ump.ConsentInformation
 import com.google.firebase.crashlytics.FirebaseCrashlytics
@@ -29,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.guava.await
 import timber.log.Timber
 
 @HiltAndroidApp
@@ -76,6 +78,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     @Inject
     lateinit var dailyReminderAlarmScheduler: com.soccertips.predictx.notification.DailyReminderAlarmScheduler
+
+    @Inject
+    lateinit var imageLoader: coil.ImageLoader
 
     private var currentActivity: Activity? = null
 
@@ -138,6 +143,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Initialize network tagging early to prevent socket violations
         networkTaggingInitializer.initialize()
 
+        // Set custom Coil ImageLoader with optimized caching
+        Coil.setImageLoader(imageLoader)
+
         // Register lifecycle callbacks immediately
         registerActivityLifecycleCallbacks(this)
 
@@ -175,7 +183,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
             // Get and cancel finished manual betting check jobs - use async with timeout
             try {
-                workManager.getWorkInfosByTag("manual_betting_check").get()?.forEach { workInfo ->
+                workManager.getWorkInfosByTag("manual_betting_check").await().forEach { workInfo ->
                     if (workInfo.state == WorkInfo.State.SUCCEEDED ||
                         workInfo.state == WorkInfo.State.FAILED ||
                         workInfo.state == WorkInfo.State.CANCELLED
@@ -192,7 +200,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 }
 
                 // Get and cancel finished end-of-day check jobs
-                workManager.getWorkInfosByTag("end_of_day_check").get()?.forEach { workInfo ->
+                workManager.getWorkInfosByTag("end_of_day_check").await().forEach { workInfo ->
                     if (workInfo.state == WorkInfo.State.SUCCEEDED ||
                         workInfo.state == WorkInfo.State.FAILED ||
                         workInfo.state == WorkInfo.State.CANCELLED
@@ -1011,7 +1019,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     }
 
     /** Request FCM token with exponential backoff retry */
-    private fun requestFcmTokenWithRetry(attempt: Int = 0, maxAttempts: Int = 5) {
+    private fun requestFcmTokenWithRetry(attempt: Int = 0, maxAttempts: Int = 3) {
         if (attempt >= maxAttempts) {
             Timber.e("Failed to get FCM token after $maxAttempts attempts")
             // Generate a placeholder token to allow the app to continue working

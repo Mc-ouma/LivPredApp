@@ -306,10 +306,6 @@ fun ItemsListScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             itemsIndexed(items) { index, item ->
-                                // Check if the item is a favorite
-                                var isFavorite by remember { mutableStateOf(false) }
-                                LaunchedEffect(item) { isFavorite = viewModel.isFavorite(item) }
-
                                 ItemCard(
                                     item = item,
                                     onClick = {

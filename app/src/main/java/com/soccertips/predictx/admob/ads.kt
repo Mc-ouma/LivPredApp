@@ -527,7 +527,7 @@ private fun createItemCardStyleNativeAd(
 
     // === MEDIA VIEW (for images and videos) ===
     val mediaContent = nativeAd.mediaContent
-    if (mediaContent != null) {
+    /*if (mediaContent != null) {
         val mediaView = MediaView(context).apply {
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -537,6 +537,29 @@ private fun createItemCardStyleNativeAd(
             }
             setImageScaleType(ImageView.ScaleType.CENTER_CROP)
             // Set the media content to properly display video
+            setMediaContent(mediaContent)
+        }
+        mainLayout.addView(mediaView)
+        nativeAdView.mediaView = mediaView
+    }*/
+
+    if (mediaContent != null) {
+        val aspectRatio = mediaContent.aspectRatio
+        val calculatedHeight = if (aspectRatio > 0) {
+            ((context.resources.displayMetrics.widthPixels - 24.dp()) / aspectRatio).toInt()
+                .coerceIn(100.dp(), 250.dp()) // Min/max bounds
+        } else {
+            180.dp()
+        }
+
+        val mediaView = MediaView(context).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                calculatedHeight
+            ).apply {
+                setMargins(12.dp(), 0, 12.dp(), 12.dp())
+            }
+            setImageScaleType(ImageView.ScaleType.FIT_CENTER) // Better for varied content
             setMediaContent(mediaContent)
         }
         mainLayout.addView(mediaView)

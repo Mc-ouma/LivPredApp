@@ -1,5 +1,6 @@
 package com.soccertips.predictx.admob
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.os.Build
@@ -55,6 +56,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.pow
+import androidx.core.graphics.toColorInt
 
 // Helper function to check consent status efficiently
 private fun canShowAdsWithConsent(activity: Activity): Boolean {
@@ -365,6 +367,7 @@ private fun NativeAdContent(
 /**
  * Creates native ad content view styled to match ItemCard design.
  */
+@SuppressLint("UseKtx", "SetTextI18n")
 private fun createItemCardStyleNativeAd(
     context: Context,
     nativeAd: NativeAd,
@@ -509,7 +512,7 @@ private fun createItemCardStyleNativeAd(
         val ratingText = TextView(context).apply {
             text = "★".repeat(rating.toInt()) + "☆".repeat(5 - rating.toInt())
             textSize = 12f
-            setTextColor(android.graphics.Color.parseColor("#FFC107"))
+            setTextColor("#FFC107".toColorInt())
         }
         ratingContainer.addView(ratingText)
 

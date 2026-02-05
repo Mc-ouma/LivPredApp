@@ -27,6 +27,8 @@ class NotificationReceiver : BroadcastReceiver() {
 
         val fixtureId = intent.getStringExtra("fixtureId") ?: return
 
+        val pendingResult = goAsync()
+
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 val favoriteItem = FavoriteItem(
@@ -49,6 +51,8 @@ class NotificationReceiver : BroadcastReceiver() {
                 showNotification(context, favoriteItem)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to show notification for fixture $fixtureId")
+            } finally {
+                pendingResult.finish()
             }
         }
     }
@@ -66,4 +70,3 @@ class NotificationReceiver : BroadcastReceiver() {
         }
     }
 }
-

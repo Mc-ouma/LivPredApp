@@ -273,6 +273,28 @@ constructor(
         sharedPrefs.edit { putStringSet(NOTIFIED_DATES_KEY, notifiedDates) }
     }
 
+    /**
+     * Public method to mark a date as notified when receiving FCM notification.
+     * This prevents the WorkManager fallback from sending duplicate notifications.
+     * 
+     * Call this from FirebaseMessagingService when handling "all_matches_won" FCM messages.
+     * 
+     * @param date The date in "yyyy-MM-dd" format
+     * @param categoryUrl Optional category URL to track per-category notifications
+     */
+    fun markDateAsNotifiedFromFcm(date: String, categoryUrl: String? = null) {
+        Timber.d("Marking date $date as notified from FCM (category: $categoryUrl)")
+        markDateAsNotified(date)
+    }
+
+    /**
+     * Check if a date has already been notified (useful for debugging)
+     */
+    fun isDateAlreadyNotified(date: String): Boolean {
+        val notifiedDates = sharedPrefs.getStringSet(NOTIFIED_DATES_KEY, emptySet()) ?: emptySet()
+        return notifiedDates.contains(date)
+    }
+
     /** Check betting success for today's date */
     suspend fun checkTodaysBettingSuccess() {
         checkBettingSuccessForDate(LocalDate.now())

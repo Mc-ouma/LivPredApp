@@ -26,6 +26,8 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     lateinit var tokenRepository: TokenRepository
     @Inject
     lateinit var realTimeResultMonitor: RealTimeResultMonitor
+    @Inject
+    lateinit var bettingSuccessChecker: BettingSuccessChecker
 
     // Use a SupervisorJob so that failure of one coroutine doesn't cancel others
     private val serviceJob = SupervisorJob()
@@ -141,6 +143,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     ) {
         // Extract betting data
         val date = data["date"] ?: ""
+        val categoryUrl = data["category_url"] ?: ""
         val matchCount = data["match_count"] ?: "0"
         val winCount = data["win_count"] ?: "0"
         val successRate = data["success_rate"] ?: "0"
@@ -150,6 +153,11 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         Timber.d(
             "Betting Success - Date: $date, Matches: $matchCount, Wins: $winCount, Rate: $successRate%"
         )
+
+        // Mark this date as notified to prevent duplicate notifications from WorkManager fallback
+        if (date.isNotEmpty()) {
+            bettingSuccessChecker.markDateAsNotifiedFromFcm(date, categoryUrl)
+        }
 
         // Create enhanced intent for betting success
         val intent =

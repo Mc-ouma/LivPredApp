@@ -1016,6 +1016,16 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
         // Try to get the token with retry logic
         requestFcmTokenWithRetry()
+
+        // Ensure topic subscriptions for existing users (runs regardless of token refresh)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                tokenRepository.subscribeToDefaultTopics()
+                Timber.d("FCM topic subscriptions ensured")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to ensure FCM topic subscriptions")
+            }
+        }
     }
 
     /** Request FCM token with exponential backoff retry */
@@ -1048,9 +1058,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                 val token = task.result
                                 Timber.d("FCM Token retrieved successfully: $token")
 
-                                // Save the token to repository
+                                // Save the token to repository and subscribe to topics
                                 CoroutineScope(Dispatchers.IO).launch {
                                     tokenRepository.saveToken(token)
+                                    // Subscribe to FCM topics for server-side notifications
+                                    tokenRepository.subscribeToDefaultTopics()
                                 }
                             } else {
                                 val exception = task.exception

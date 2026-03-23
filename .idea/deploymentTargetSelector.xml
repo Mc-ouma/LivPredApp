@@ -18,10 +18,10 @@
       </SelectionState>
       <SelectionState runConfigName="AI_ScoreCast.app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-01-28T13:53:54.473476378Z">
+        <DropdownSelection timestamp="2026-02-06T08:46:39.902277831Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=104813735Q009323" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/home/luiz/.android/avd/Medium_Phone_2_2.avd" />
             </handle>
           </Target>
         </DropdownSelection>

@@ -324,6 +324,16 @@ fun ItemsListScreen(
                             }
                         }
                     }
+
+                    is UiState.Empty -> {
+                        ErrorMessage(
+                            message = stringResource(R.string.no_games_found_for_the_selected_date),
+                            onRetry = { viewModel.fetchItems(category.url, pageDate) },
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
+
+                    is UiState.ShowSnackbar -> { /* Handled elsewhere */ }
                 }
             }
         }

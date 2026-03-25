@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.soccertips.predictx.data.model.Announcement
 import com.soccertips.predictx.data.model.Category
-import com.soccertips.predictx.repository.FirebaseRepository
+import com.soccertips.predictx.repository.CategoryRepository
 import com.soccertips.predictx.repository.RemoteConfigRepository
 import com.soccertips.predictx.ui.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +19,7 @@ import timber.log.Timber
 class CategoriesViewModel
 @Inject
 constructor(
-    private val firebaseRepository: FirebaseRepository,
+    private val categoryRepository: CategoryRepository,
     private val remoteConfigRepository: RemoteConfigRepository
 ) : ViewModel() {
 
@@ -59,7 +59,7 @@ constructor(
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
-                firebaseRepository.getCategories().collect { result ->
+                categoryRepository.getCategories().collect { result ->
                     result.fold(
                         onSuccess = { categories ->
                             if (categories.isEmpty()) {

@@ -11,32 +11,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
-import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -62,6 +54,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import timber.log.Timber
 
 @EntryPoint
@@ -80,19 +73,6 @@ fun Context.findActivity(): Activity? {
         context = context.baseContext
     }
     return null
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-object Last5DaysSelectableDates : SelectableDates {
-    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-        val fiveDaysAgo =
-            System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000) // 5 days in milliseconds
-        return utcTimeMillis >= fiveDaysAgo && utcTimeMillis <= System.currentTimeMillis()
-    }
-
-    override fun isSelectableYear(year: Int): Boolean {
-        return year <= LocalDate.now().year
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,41 +125,58 @@ fun ItemsListScreen(
     val category =
         remember(categoryId) { categories.find { it.url == categoryId } } ?: categories.first()
 
-    val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
-    var showDatePicker by rememberSaveable { mutableStateOf(false) }
-
     // Check for pending navigation date from betting success notification
     val activity = context.findActivity()
     val sharedPrefs = activity?.getSharedPreferences("predictx_prefs", Context.MODE_PRIVATE)
     val pendingNavigationDate = sharedPrefs?.getString("pending_navigation_date", null)
 
-    // Initialize selectedDate with pending navigation date if available, otherwise use today
-    var selectedDate by rememberSaveable {
-        mutableStateOf(
-            if (!pendingNavigationDate.isNullOrEmpty()) {
-                try {
-                    val parsedDate = LocalDate.parse(pendingNavigationDate)
-                    Timber.d(
-                        "ItemsListScreen: Using pending navigation date: $pendingNavigationDate"
-                    )
-                    // Clear the pending navigation date after using it
-                    sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
-                    parsedDate
-                } catch (e: Exception) {
-                    Timber.w(
-                        "ItemsListScreen: Failed to parse pending navigation date: $pendingNavigationDate"
-                    )
-                    LocalDate.now()
-                }
-            } else {
-                Timber.d("ItemsListScreen: No pending navigation date, using today")
-                LocalDate.now()
-            }
-        )
+    // Date range: 5 days back + today + tomorrow (if available)
+    val today = LocalDate.now()
+    val pastDays = 5
+    val todayPageIndex = pastDays // page 5 = today
+
+    val tomorrowHasItems by viewModel.tomorrowHasItems.collectAsState()
+    val pageCount = todayPageIndex + 1 + (if (tomorrowHasItems) 1 else 0)
+
+    // Map page index to date
+    fun pageToDate(page: Int): LocalDate = today.minusDays((todayPageIndex - page).toLong())
+
+    // Determine initial page based on pending navigation date
+    val initialPage = if (!pendingNavigationDate.isNullOrEmpty()) {
+        try {
+            val parsedDate = LocalDate.parse(pendingNavigationDate)
+            sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
+            val daysFromToday = ChronoUnit.DAYS.between(today, parsedDate).toInt()
+            (todayPageIndex + daysFromToday).coerceIn(0, pageCount - 1)
+        } catch (e: Exception) {
+            Timber.w("Failed to parse pending navigation date: $pendingNavigationDate")
+            todayPageIndex
+        }
+    } else {
+        todayPageIndex
     }
 
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { pageCount }
+    )
+
+    // Check if tomorrow has items
+    LaunchedEffect(category) {
+        viewModel.checkTomorrowItems(category.url)
+    }
+
+    // Determine the selected date based on current page
+    val selectedDate = pageToDate(pagerState.currentPage)
     val formattedDate = DateUtils.formatRelativeDate(context, selectedDate.toString())
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    // Fetch items when page changes
+    LaunchedEffect(category, pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            viewModel.fetchItems(category.url, pageToDate(page))
+        }
+    }
 
     // Function to handle back navigation with an interstitial ad
     val navigateBackWithAd: () -> Unit = {
@@ -229,11 +226,6 @@ fun ItemsListScreen(
     // Handle system back gesture
     BackHandler { navigateBackWithAd() }
 
-    // Fetch items when the category or selected date changes
-    LaunchedEffect(key1 = category, key2 = selectedDate) {
-        viewModel.fetchItems(category.url, selectedDate)
-    }
-
     Scaffold(
         Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -253,13 +245,6 @@ fun ItemsListScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Today,
-                            contentDescription = "Select Date",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
                     Menu()
                 },
                 scrollBehavior = scrollBehavior,
@@ -267,100 +252,80 @@ fun ItemsListScreen(
         },
         bottomBar = { CollapsibleBannerAdView() }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            when (val uiState = viewModel.uiState.collectAsState().value) {
-                is UiState.Loading -> {
-                    LoadingIndicator(
-                        modifier = Modifier.align(Alignment.Center).padding(paddingValues)
-                    )
-                }
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+        ) { page ->
+            val pageDate = pageToDate(page)
 
-                is UiState.Error -> {
-                    ErrorMessage(
-                        message =
-                            stringResource(
-                                R.string.failed_to_fetch_games_please_try_again_later
-                            ),
-                        onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                        modifier = Modifier.align(Alignment.Center).padding(paddingValues),
-                    )
-                }
+            val dateStates by viewModel.dateUiStates.collectAsState()
+            val pageUiState: UiState<List<com.soccertips.predictx.data.model.ServerResponse>> =
+                dateStates[pageDate] ?: UiState.Loading
 
-                is UiState.Success -> {
-                    val items = uiState.data
-                    if (items.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (pageUiState) {
+                    is UiState.Loading -> {
+                        LoadingIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+
+                    is UiState.Error -> {
                         ErrorMessage(
                             message =
                                 stringResource(
-                                    R.string.no_games_found_for_the_selected_date
+                                    R.string.failed_to_fetch_games_please_try_again_later
                                 ),
-                            onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                            modifier = Modifier.align(Alignment.Center).padding(paddingValues),
+                            onRetry = { viewModel.fetchItems(category.url, pageDate) },
+                            modifier = Modifier.align(Alignment.Center),
                         )
-                    } else {
-                        // Show native ad after 5th item when there are 6+ items
-                        val showNativeAd = items.size >= 6
+                    }
 
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize().padding(paddingValues),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            itemsIndexed(items) { index, item ->
-                                ItemCard(
-                                    item = item,
-                                    onClick = {
-                                        navController.navigate(
-                                            Routes.FixtureDetails.createRoute(
-                                                item.fixtureId ?: ""
-                                            ),
-                                        )
-                                    },
-                                    onFavoriteClick = { viewModel.toggleFavorite(item) },
-                                    viewModel = viewModel
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
+                    is UiState.Success -> {
+                        val items = pageUiState.data
+                        if (items.isEmpty()) {
+                            ErrorMessage(
+                                message =
+                                    stringResource(
+                                        R.string.no_games_found_for_the_selected_date
+                                    ),
+                                onRetry = { viewModel.fetchItems(category.url, pageDate) },
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                        } else {
+                            // Show native ad after 5th item when there are 6+ items
+                            val showNativeAd = items.size >= 6
 
-                                // Insert native ad after 5th item (index 4)
-                                if (showNativeAd && index == 4) {
-                                    NativeAdItem()
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                itemsIndexed(items) { index, item ->
+                                    ItemCard(
+                                        item = item,
+                                        onClick = {
+                                            navController.navigate(
+                                                Routes.FixtureDetails.createRoute(
+                                                    item.fixtureId ?: ""
+                                                ),
+                                            )
+                                        },
+                                        onFavoriteClick = { viewModel.toggleFavorite(item) },
+                                        viewModel = viewModel
+                                    )
                                     Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Insert native ad after 5th item (index 4)
+                                    if (showNativeAd && index == 4) {
+                                        NativeAdItem()
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
                                 }
                             }
                         }
                     }
                 }
-
-                else -> {
-                    /* No Action */
-                }
             }
-        }
-
-        // Date picker dialog
-        if (showDatePicker) {
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val selectedDateMillis = datePickerState.selectedDateMillis
-                            if (selectedDateMillis != null) {
-                                selectedDate =
-                                    LocalDate.ofEpochDay(
-                                        selectedDateMillis / (24 * 60 * 60 * 1000)
-                                    )
-                            }
-                            showDatePicker = false
-                        }
-                    ) { Text(stringResource(R.string.ok)) }
-                },
-                content = { DatePicker(state = datePickerState) },
-                dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                },
-            )
         }
     }
 }

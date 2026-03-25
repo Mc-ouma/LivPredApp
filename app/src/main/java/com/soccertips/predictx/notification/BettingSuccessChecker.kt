@@ -285,6 +285,9 @@ constructor(
     fun markDateAsNotifiedFromFcm(date: String, categoryUrl: String? = null) {
         Timber.d("Marking date $date as notified from FCM (category: $categoryUrl)")
         markDateAsNotified(date)
+        if (!categoryUrl.isNullOrEmpty()) {
+            markCategoryDateAsNotified("betting_success_${categoryUrl}_$date")
+        }
     }
 
     /**

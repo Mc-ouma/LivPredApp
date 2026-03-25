@@ -6,17 +6,33 @@
 
 ## Architecture
 
+**Data Flow:**
 ```
 API/Firebase → Repository → ViewModel (StateFlow<UiState<T>>) → Compose UI
 ```
 
-**Key directories:**
-- `admob/` - Ad integration with consent management and device safety checks
-- `di/` - Hilt modules (`AppModule.kt` provides singletons)
-- `repository/` - Data layer with multi-tier fallback (API → Firebase → cache)
-- `viewmodel/` - State management using `UiState<T>` sealed class
-- `navigation/` - Routes as sealed classes in `Routes.kt`
-- `notification/` - FCM + WorkManager background jobs
+**Layer Structure:**
+```
+com.soccertips.predictx/
+├── admob/              # AdMob integration (app open, interstitial, banner, native ads)
+├── data/               # Data models, entities, local database
+│   └── local/         # Room database (favorites persistence)
+├── di/                 # Hilt dependency injection modules
+├── firebase/           # Firebase services integration
+├── network/            # Retrofit API services and interceptors
+├── notification/       # FCM, WorkManager notification jobs
+├── repository/         # Repository implementations
+├── ui/                 # Jetpack Compose screens and components
+│   ├── components/    # Reusable composables
+│   └── theme/         # Material 3 theme
+├── util/              # Utilities (performance, networking, workers)
+└── viewmodel/         # State management ViewModels
+```
+
+**Key Architectural Patterns:**
+- **MVVM with Repository:** ViewModels manage `StateFlow<UiState<T>>`, Repositories abstract data sources (API, Firebase, Room)
+- **Navigation:** Jetpack Compose Navigation with sealed class routes in `Routes.kt`, deep linking support
+- **Dependency Injection:** Hilt provides singletons via `AppModule.kt` and `WorkManagerModule.kt`
 
 ## Essential Commands
 
@@ -57,14 +73,6 @@ sealed class UiState<out T> {
 4. Add sealed class route to `navigation/Routes.kt`
 5. Wire in `AppNavigation.kt`
 
-### Repository Fallback Strategy
-See `PredictionRepository.kt`:
-1. Check preloaded cache
-2. Try API call
-3. On 403 → Firebase Realtime Database fallback
-4. On network error → exponential backoff retry (max 2 attempts)
-5. Last resort → cached fallback (30-min TTL)
-
 ### AdMob Safety
 - `AdStateManager` prevents overlapping full-screen ads
 - Device manufacturer blacklist for full-screen ads (Huawei, Honor, Oppo, Vivo, Realme)
@@ -75,13 +83,32 @@ See `PredictionRepository.kt`:
 Use composition locals for consistent styling:
 - `LocalCardColors.current`
 - `LocalCardElevation.current`
+- Material 3 theme defined in [ui/theme/](app/src/main/java/com/soccertips/predictx/ui/theme/)
+
+### Repository Fallback Strategy
+See `PredictionRepository.kt`:
+1. Check preloaded cache
+2. Try API call
+3. On 403 → Firebase Realtime Database fallback
+4. On network error → exponential backoff retry (max 5 attempts)
+5. Last resort → cached fallback (30-min TTL)
+
+**Network Layer Details:**
+- Dual API configurations: Default API and FixtureDetailsService
+- Custom OkHttp interceptors:
+  - Cache interceptor with endpoint-specific TTLs (fixtures: 1h, predictions: 24h, standings: 10min)
+  - `SocketTaggingInterceptor` for background execution
+  - `DnsFailureInterceptor` for DNS recovery
+- Room database for favorites ([FavoriteItem](app/src/main/java/com/soccertips/predictx/data/local/FavoriteItem.kt) entity)
+- Database migrations: v1→v2 (fixtureId Integer→String), v2→v3 (added completedTimestamp)
+
 
 ## Tech Stack
 
-- **Compose BOM:** 2026.01.00 | **Min SDK:** 26 | **Target SDK:** 36
+- **Compose BOM:** 2026.02.01 | **Min SDK:** 26 | **Target SDK/Compile SDK:** 36
 - **DI:** Hilt (KSP, not KAPT)
 - **DB:** Room with migrations (v1→v2→v3)
-- **Network:** Retrofit + OkHttp with custom interceptors
+- **Network:** Retrofit 3.0.0 + OkHttp 5.3.2 with custom interceptors
 - **Firebase:** Messaging, Realtime DB, Remote Config, Analytics, Crashlytics
 
 ## Background Jobs: AlarmManager & WorkManager

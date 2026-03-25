@@ -102,7 +102,7 @@ class FirebaseRepository @Inject constructor() {
         awaitClose { apiConfigRef.removeEventListener(configListener) }
     }
 
-    private fun getIconResourceId(iconName: String?): Int {
+    fun getIconResourceId(iconName: String?): Int {
         if (iconName == null) return R.drawable.outline_add_circle_outline_24 // Default icon
 
         return when (iconName) {

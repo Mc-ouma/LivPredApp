@@ -29,7 +29,8 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
 
         // Set default values
         val defaults = mapOf(
-            ANNOUNCEMENTS_KEY to "[]"
+            ANNOUNCEMENTS_KEY to "[]",
+            "categories_json" to "[]"
         )
         remoteConfig.setDefaultsAsync(defaults)
     }

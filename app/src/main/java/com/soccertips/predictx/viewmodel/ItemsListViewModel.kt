@@ -48,8 +48,12 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                     }
                 }
             }
-    private val _uiState = MutableStateFlow<UiState<List<ServerResponse>>>(UiState.Loading)
-    val uiState: StateFlow<UiState<List<ServerResponse>>> = _uiState.asStateFlow()
+    // Per-date UI state so each pager page has independent state
+    private val _dateUiStates = MutableStateFlow<Map<LocalDate, UiState<List<ServerResponse>>>>(emptyMap())
+    val dateUiStates: StateFlow<Map<LocalDate, UiState<List<ServerResponse>>>> = _dateUiStates.asStateFlow()
+
+    private val _tomorrowHasItems = MutableStateFlow(false)
+    val tomorrowHasItems: StateFlow<Boolean> = _tomorrowHasItems.asStateFlow()
 
     // Cache of favorite fixture IDs for efficient lookups - reactively updated
     private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
@@ -66,14 +70,15 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
 
     // Fetch data only if not already cached for the given date
     fun fetchItems(categoryEndpoint: String, date: LocalDate?) {
-        val cacheKey = "${categoryEndpoint}_$date"
+        val resolvedDate = date ?: LocalDate.now()
+        val cacheKey = "${categoryEndpoint}_$resolvedDate"
         val cachedItems = cachedData.get(cacheKey)
 
         if (cachedItems != null) {
             val (timestamp, items) = cachedItems
             val currentTime = System.currentTimeMillis()
             if (currentTime - timestamp < cacheExpirationDuration) {
-                _uiState.value = UiState.Success(items)
+                updateDateState(resolvedDate, UiState.Success(items))
                 return
             } else {
                 cachedData.remove(cacheKey) // Remove expired cache
@@ -81,7 +86,7 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
         }
 
         viewModelScope.launch {
-            _uiState.value = UiState.Loading
+            updateDateState(resolvedDate, UiState.Loading)
             try {
                 val response = repository.getCategoryData(categoryEndpoint)
 
@@ -93,15 +98,13 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                                         val mDate = serverResponse.mDate ?: ""
                                         mDate != "0000-00-00" &&
                                                 try {
-                                                    LocalDate.parse(mDate, formatter) == date
+                                                    LocalDate.parse(mDate, formatter) == resolvedDate
                                                 } catch (e: Exception) {
                                                     Timber.e(e, "Error parsing date: $mDate")
                                                     false // Ignore items with invalid dates
                                                 }
                                     }
                                     .map { serverResponse ->
-                                        // Calculate outcome if not provided
-
                                         val color =
                                                 when (serverResponse.outcome?.lowercase()) {
                                                     "win" -> Color.Green
@@ -138,10 +141,47 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                         }
 
                 cachedData.put(cacheKey, System.currentTimeMillis() to items)
-                _uiState.value = UiState.Success(items)
+                updateDateState(resolvedDate, UiState.Success(items))
             } catch (e: Exception) {
-                _uiState.value =
-                        UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
+                updateDateState(resolvedDate, UiState.Error(e.localizedMessage ?: "An unexpected error occurred."))
+            }
+        }
+    }
+
+    private fun updateDateState(date: LocalDate, state: UiState<List<ServerResponse>>) {
+        _dateUiStates.value = _dateUiStates.value + (date to state)
+    }
+
+    fun checkTomorrowItems(categoryEndpoint: String) {
+        val tomorrow = LocalDate.now().plusDays(1)
+        val cacheKey = "${categoryEndpoint}_$tomorrow"
+        val cachedItems = cachedData.get(cacheKey)
+
+        if (cachedItems != null) {
+            val (timestamp, items) = cachedItems
+            if (System.currentTimeMillis() - timestamp < cacheExpirationDuration) {
+                _tomorrowHasItems.value = items.isNotEmpty()
+                return
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                val response = repository.getCategoryData(categoryEndpoint)
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                val hasItems = withContext(Dispatchers.IO) {
+                    response.serverResponse.any { serverResponse ->
+                        val mDate = serverResponse.mDate ?: ""
+                        mDate != "0000-00-00" && try {
+                            LocalDate.parse(mDate, formatter) == tomorrow
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+                }
+                _tomorrowHasItems.value = hasItems
+            } catch (e: Exception) {
+                _tomorrowHasItems.value = false
             }
         }
     }

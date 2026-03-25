@@ -4,23 +4,29 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -231,9 +237,34 @@ fun ItemsListScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        text = formattedDate,
+                    val canSwipeLeft = pagerState.currentPage > 0
+                    val canSwipeRight = pagerState.currentPage < pageCount - 1
+                    val activeColor = MaterialTheme.colorScheme.onSurface
+                    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                    val leftColor by animateColorAsState(
+                        if (canSwipeLeft) activeColor else inactiveColor,
+                        label = "leftChevron"
                     )
+                    val rightColor by animateColorAsState(
+                        if (canSwipeRight) activeColor else inactiveColor,
+                        label = "rightChevron"
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = null,
+                            tint = leftColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(text = formattedDate)
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = rightColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 },
                 // show  interstitial ad when the back button is pressed
                 navigationIcon = {

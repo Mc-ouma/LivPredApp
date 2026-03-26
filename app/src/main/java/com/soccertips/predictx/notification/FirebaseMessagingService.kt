@@ -154,6 +154,12 @@ class FirebaseMessagingService : FirebaseMessagingService() {
             "Betting Success - Date: $date, Matches: $matchCount, Wins: $winCount, Rate: $successRate%"
         )
 
+        // Skip if in-app notification already sent for this date/category
+        if (date.isNotEmpty() && bettingSuccessChecker.isDateAlreadyNotified(date)) {
+            Timber.d("Skipping FCM betting success notification - already notified for date: $date")
+            return
+        }
+
         // Mark this date as notified to prevent duplicate notifications from WorkManager fallback
         if (date.isNotEmpty()) {
             bettingSuccessChecker.markDateAsNotifiedFromFcm(date, categoryUrl)

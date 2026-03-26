@@ -1,6 +1,7 @@
 package com.soccertips.predictx.ui.subscription
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
@@ -70,6 +71,14 @@ fun SubscriptionScreen(
     val isConnected by viewModel.billingConnectionState.collectAsState()
     val activity = LocalActivity.current as Activity
 
+    val goBack: () -> Unit = {
+        if (!navController.popBackStack()) {
+            navController.navigateUp()
+        }
+    }
+
+    BackHandler { goBack() }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -80,7 +89,7 @@ fun SubscriptionScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = goBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back)

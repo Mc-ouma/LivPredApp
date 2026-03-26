@@ -244,6 +244,13 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
     }
 
     fun showAdIfAvailable(activity: Activity, onShowAdCompleteListener: () -> Unit) {
+        // Skip ads for subscribers
+        if (adStateManager.isSubscribed()) {
+            Timber.Forest.tag("AppOpenAd").d("User is subscribed, skipping app open ad")
+            onShowAdCompleteListener()
+            return
+        }
+
         // CRITICAL: Check if device is safe for full screen ads
         if (!adStateManager.isSafeForFullScreenAds()) {
             Timber.Forest.tag("AppOpenAd").w("Skipping ad on problematic device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")

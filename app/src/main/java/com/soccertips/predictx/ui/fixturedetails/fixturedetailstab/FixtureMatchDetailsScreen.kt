@@ -112,7 +112,9 @@ fun FixtureMatchDetailsScreen(
         }
 
         item {
-            InlineBannerAdView()
+            InlineBannerAdView(
+                onUpgradeClick = { navController.navigate(Routes.Subscription.route) }
+            )
         }
 
         item {

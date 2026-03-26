@@ -61,6 +61,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     lateinit var appOpenAdManager: AppOpenAdManager
 
     @Inject
+    lateinit var subscriptionRepository: com.soccertips.predictx.repository.SubscriptionRepository
+
+    @Inject
+    lateinit var adStateManager: com.soccertips.predictx.admob.AdStateManager
+
+    @Inject
     lateinit var startupTimeTracker: StartupTimeTracker
 
     @Inject
@@ -234,6 +240,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Longer delay on low-memory devices
             val startupDelay = if (isLowMemory) 1000L else 500L
             delay(startupDelay)
+
+            // Initialize subscription status early so ads are suppressed for subscribers
+            initializeSubscription()
 
             // Clean up old/stale WorkManager jobs first (lightweight, always do this)
             // This is now async and won't block
@@ -500,6 +509,25 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         currentActivity?.let { activity ->
             appOpenAdManager.setActivityContext(activity)
             Timber.d("AppOpenAdManager setup complete with activity context")
+        }
+    }
+
+    private fun initializeSubscription() {
+        // Sync cached subscription status to AdStateManager immediately
+        val cachedStatus = subscriptionRepository.isSubscribedSync()
+        adStateManager.setSubscribed(cachedStatus)
+        Timber.d("Subscription status synced from cache: $cachedStatus")
+
+        // Initialize billing client to verify/refresh subscription status
+        subscriptionRepository.initialize()
+
+        // Observe changes and keep AdStateManager in sync
+        CoroutineScope(Dispatchers.Main).launch {
+            subscriptionRepository.isSubscribed.collect { isSubscribed ->
+                adStateManager.setSubscribed(isSubscribed)
+                subscriptionRepository.cacheSubscriptionStatus(isSubscribed)
+                Timber.d("Subscription status updated: $isSubscribed")
+            }
         }
     }
 

@@ -10,20 +10,33 @@ import android.os.Looper
 import android.widget.ImageView
 import android.widget.TextView
 import com.google.android.gms.ads.nativead.MediaView
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -107,6 +120,16 @@ class AdStateManager @Inject constructor() {
     // Tracks if any full screen ad is currently showing
     private var isAnyFullScreenAdShowing = false
 
+    // Tracks subscription status - when true, all ads are suppressed
+    private var _isSubscribed = false
+
+    fun setSubscribed(subscribed: Boolean) {
+        _isSubscribed = subscribed
+        Timber.tag("AdStateManager").d("Subscription state: $subscribed")
+    }
+
+    fun isSubscribed(): Boolean = _isSubscribed
+
     // Lock any full screen ad from showing
     fun setFullScreenAdShowing(isShowing: Boolean) {
         isAnyFullScreenAdShowing = isShowing
@@ -122,32 +145,116 @@ class AdStateManager @Inject constructor() {
     fun isSafeForFullScreenAds(): Boolean {
         return !isProblematicDeviceForFullScreenAds()
     }
+
+    // Check if ads should be shown (not subscribed and device is safe)
+    fun shouldShowAds(): Boolean {
+        return !_isSubscribed
+    }
+}
+
+/**
+ * Checks if the user is subscribed by reading cached preference.
+ * Used by ad composables to skip rendering when user has active subscription.
+ */
+@Composable
+private fun isUserSubscribed(): Boolean {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE) }
+    return prefs.getBoolean("is_subscribed", false)
+}
+
+/**
+ * Compact upgrade prompt shown as fallback when banner ads fail to load.
+ */
+@Composable
+fun UpgradePromptBanner(
+    modifier: Modifier = Modifier,
+    onUpgradeClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onUpgradeClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        shape = RoundedCornerShape(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Star,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.upgrade_banner_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = stringResource(R.string.upgrade_banner_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onUpgradeClick,
+                contentPadding = ButtonDefaults.ContentPadding
+            ) {
+                Text(
+                    text = stringResource(R.string.upgrade_button),
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+    }
 }
 
 @Composable
 fun BannerAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = stringResource(R.string.banner_id) // Test banner ID
+    adUnitId: String = stringResource(R.string.banner_id),
+    onUpgradeClick: (() -> Unit)? = null
 ) {
+    if (isUserSubscribed()) return
     val context = LocalContext.current
-    AndroidView(
-        modifier =
-            modifier.fillMaxWidth()
-                // Add WindowInsets.navigationBars padding to avoid overlap with
-                // navigation buttons
-                .windowInsetsPadding(
-                    androidx.compose.foundation.layout.WindowInsets.navigationBars
-                ),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(
-                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
-                )
-                this.adUnitId = adUnitId
-                loadAd(AdRequest.Builder().build())
+    var adFailed by remember { mutableStateOf(false) }
+
+    if (adFailed && onUpgradeClick != null) {
+        UpgradePromptBanner(modifier = modifier, onUpgradeClick = onUpgradeClick)
+    } else {
+        AndroidView(
+            modifier =
+                modifier.fillMaxWidth()
+                    .windowInsetsPadding(
+                        androidx.compose.foundation.layout.WindowInsets.navigationBars
+                    ),
+            factory = { factoryContext ->
+                AdView(factoryContext).apply {
+                    setAdSize(
+                        AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
+                    )
+                    this.adUnitId = adUnitId
+                    adListener = object : AdListener() {
+                        override fun onAdFailedToLoad(error: LoadAdError) {
+                            Timber.e("Banner ad failed to load: ${error.message}")
+                            adFailed = true
+                        }
+                    }
+                    loadAd(AdRequest.Builder().build())
+                }
             }
-        }
-    )
+        )
+    }
 }
 
 /**
@@ -162,10 +269,13 @@ fun BannerAdView(
 fun CollapsibleBannerAdView(
     modifier: Modifier = Modifier,
     adUnitId: String = stringResource(R.string.banner_id),
-    collapsiblePosition: String = "bottom"
+    collapsiblePosition: String = "bottom",
+    onUpgradeClick: (() -> Unit)? = null
 ) {
+    if (isUserSubscribed()) return
     val context = LocalContext.current
     var adView by remember { mutableStateOf<AdView?>(null) }
+    var adFailed by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -173,73 +283,90 @@ fun CollapsibleBannerAdView(
         }
     }
 
-    AndroidView(
-        modifier = modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(
-                androidx.compose.foundation.layout.WindowInsets.navigationBars
-            ),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(
-                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
-                )
-                this.adUnitId = adUnitId
+    if (adFailed && onUpgradeClick != null) {
+        UpgradePromptBanner(modifier = modifier, onUpgradeClick = onUpgradeClick)
+    } else {
+        AndroidView(
+            modifier = modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(
+                    androidx.compose.foundation.layout.WindowInsets.navigationBars
+                ),
+            factory = { factoryContext ->
+                AdView(factoryContext).apply {
+                    setAdSize(
+                        AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
+                    )
+                    this.adUnitId = adUnitId
 
-                // Set up ad listener to track load state
-                adListener = object : AdListener() {
-                    override fun onAdLoaded() {
-                        Timber.d("Collapsible banner ad loaded")
+                    adListener = object : AdListener() {
+                        override fun onAdLoaded() {
+                            Timber.d("Collapsible banner ad loaded")
+                        }
+
+                        override fun onAdFailedToLoad(error: LoadAdError) {
+                            Timber.e("Collapsible banner ad failed to load: ${error.message}")
+                            adFailed = true
+                        }
+
+                        override fun onAdClosed() {
+                            Timber.d("Collapsible banner ad closed by user")
+                        }
+
+                        override fun onAdOpened() {
+                            Timber.d("Collapsible banner ad opened/expanded")
+                        }
                     }
 
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        Timber.e("Collapsible banner ad failed to load: ${error.message}")
+                    val extras = Bundle().apply {
+                        putString("collapsible", collapsiblePosition)
                     }
 
-                    override fun onAdClosed() {
-                        Timber.d("Collapsible banner ad closed by user")
-                    }
+                    val adRequest = AdRequest.Builder()
+                        .addNetworkExtrasBundle(com.google.ads.mediation.admob.AdMobAdapter::class.java, extras)
+                        .build()
 
-                    override fun onAdOpened() {
-                        Timber.d("Collapsible banner ad opened/expanded")
-                    }
+                    loadAd(adRequest)
+                    adView = this
                 }
-
-                // Build ad request with collapsible banner extras
-                val extras = Bundle().apply {
-                    putString("collapsible", collapsiblePosition)
-                }
-
-                val adRequest = AdRequest.Builder()
-                    .addNetworkExtrasBundle(com.google.ads.mediation.admob.AdMobAdapter::class.java, extras)
-                    .build()
-
-                loadAd(adRequest)
-                adView = this
+            },
+            update = { view ->
+                adView = view
             }
-        },
-        update = { view ->
-            adView = view
-        }
-    )
+        )
+    }
 }
 
 @Composable
 fun InlineBannerAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = stringResource(R.string.banner_id)
+    adUnitId: String = stringResource(R.string.banner_id),
+    onUpgradeClick: (() -> Unit)? = null
 ) {
+    if (isUserSubscribed()) return
     val context = LocalContext.current
-    AndroidView(
-        modifier = modifier.fillMaxWidth(),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, 360))
-                this.adUnitId = adUnitId
-                loadAd(AdRequest.Builder().build())
+    var adFailed by remember { mutableStateOf(false) }
+
+    if (adFailed && onUpgradeClick != null) {
+        UpgradePromptBanner(modifier = modifier, onUpgradeClick = onUpgradeClick)
+    } else {
+        AndroidView(
+            modifier = modifier.fillMaxWidth(),
+            factory = { factoryContext ->
+                AdView(factoryContext).apply {
+                    setAdSize(AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, 360))
+                    this.adUnitId = adUnitId
+                    adListener = object : AdListener() {
+                        override fun onAdFailedToLoad(error: LoadAdError) {
+                            Timber.e("Inline banner ad failed to load: ${error.message}")
+                            adFailed = true
+                        }
+                    }
+                    loadAd(AdRequest.Builder().build())
+                }
             }
-        }
-    )
+        )
+    }
 }
 
 /**
@@ -254,6 +381,7 @@ fun NativeAdItem(
     modifier: Modifier = Modifier,
     adUnitId: String = stringResource(R.string.native_id)
 ) {
+    if (isUserSubscribed()) return
     val context = LocalContext.current
     var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
     var isAdLoaded by remember { mutableStateOf(false) }
@@ -811,6 +939,13 @@ constructor(private val applicationContext: Context, private val adStateManager:
 
     // Method that accepts a callback to execute after ad is dismissed
     fun showInterstitialAdWithCallback(activity: Activity, onAdDismissed: () -> Unit) {
+        // Skip ads for subscribers
+        if (adStateManager.isSubscribed()) {
+            Timber.tag("InterstitialAd").d("User is subscribed, skipping interstitial ad")
+            onAdDismissed()
+            return
+        }
+
         Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback called")
         Timber.tag("InterstitialAd").d("Activity: ${activity.javaClass.simpleName}")
         Timber.tag("InterstitialAd").d("Activity isFinishing: ${activity.isFinishing}")

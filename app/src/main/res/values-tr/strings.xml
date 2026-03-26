@@ -407,4 +407,26 @@
     <string name="category_today_tips">Günün ipuçları</string>
     <string name="category_under_goals">%s gol altı</string>
 
+    <!-- Subscription -->
+    <string name="remove_ads">Reklamları Kaldır</string>
+    <string name="subscription_title">Premium Ol</string>
+    <string name="subscription_header">Reklamsız Deneyimin Keyfini Çıkar</string>
+    <string name="subscription_subheader">Tüm reklamları kaldırmak ve AI ScoreCast\'in geliştirilmesini desteklemek için abone ol</string>
+    <string name="subscription_active_title">Premium\'sun!</string>
+    <string name="subscription_active_description">Aktif bir aboneliğin var. Reklamsız deneyimin keyfini çıkar!</string>
+    <string name="subscription_manage_hint">Aboneliğini yönetmek için Google Play Store > Abonelikler\'e git</string>
+    <string name="subscription_loading">Abonelik planları yükleniyor…</string>
+    <string name="subscription_subscribe_button">Şimdi Abone Ol</string>
+    <string name="subscription_restore">Satın Alımları Geri Yükle</string>
+    <string name="subscription_terms">Abonelik, mevcut dönemin bitiminden en az 24 saat önce iptal edilmediği sürece otomatik olarak yenilenir. Aboneliğini Google Play Store ayarlarından yönet.</string>
+    <string name="benefit_no_ads">Banner, geçiş veya açılır reklam yok</string>
+    <string name="benefit_faster_experience">Daha hızlı ve temiz uygulama deneyimi</string>
+    <string name="benefit_support_development">Sürekli uygulama geliştirmeyi destekle</string>
+    <string name="plan_monthly">Aylık</string>
+    <string name="plan_yearly">Yıllık</string>
+    <string name="best_value">EN İYİ DEĞER</string>
+    <string name="upgrade_banner_title">Reklamlardan sıkıldın mı?</string>
+    <string name="upgrade_banner_subtitle">Reklamsız deneyim için Premium ol</string>
+    <string name="upgrade_button">Yükselt</string>
+
 </resources>

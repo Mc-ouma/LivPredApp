@@ -182,7 +182,13 @@ fun FixtureDetailsScreen(
                         )
                     }
                 },
-                actions = { Menu() },
+                actions = {
+                    Menu(
+                        onNavigateToSubscription = {
+                            navController.navigate(com.soccertips.predictx.navigation.Routes.Subscription.route)
+                        }
+                    )
+                },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
                         containerColor =

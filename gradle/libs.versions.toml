@@ -15,6 +15,7 @@ androidxNavigation = "2.9.7"
 # @keep
 appUpdate = "2.1.0"
 appUpdateKtx = "2.1.0"
+billing = "8.3.0"
 coilComposeVersion = "2.7.0"
 compiler = "1.5.15"
 compileSdk = "36"
@@ -96,6 +97,8 @@ androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version =
 androidx-work-runtime-ktx-v281 = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 app-update = { module = "com.google.android.play:app-update", version.ref = "appUpdate" }
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdateKtx" }
+billing = { module = "com.android.billingclient:billing", version.ref = "billing" }
+billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
 coil-kt-coil-compose-v240 = { module = "io.coil-kt:coil-compose", version.ref = "coilComposeVersion" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }

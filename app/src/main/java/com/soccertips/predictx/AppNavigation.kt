@@ -40,6 +40,7 @@ import com.soccertips.predictx.ui.categories.CategoriesScreen
 import com.soccertips.predictx.ui.favorites.FavoritesScreen
 import com.soccertips.predictx.ui.fixturedetails.FixtureDetailsScreen
 import com.soccertips.predictx.ui.items.ItemsListScreen
+import com.soccertips.predictx.ui.subscription.SubscriptionScreen
 import com.soccertips.predictx.ui.team.TeamScreen
 import com.soccertips.predictx.viewmodel.CategoriesViewModel
 import com.soccertips.predictx.viewmodel.SharedViewModel
@@ -178,6 +179,9 @@ fun AppNavigation(
                 navController = navController,
                 fixtureId = fixtureIdArgument,
             )
+        }
+        composable(Routes.Subscription.route) {
+            SubscriptionScreen(navController = navController)
         }
         composable(
             Routes.TeamDetails.route,

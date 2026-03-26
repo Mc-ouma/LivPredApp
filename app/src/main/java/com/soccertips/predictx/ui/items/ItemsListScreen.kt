@@ -276,12 +276,20 @@ fun ItemsListScreen(
                     }
                 },
                 actions = {
-                    Menu()
+                    Menu(
+                        onNavigateToSubscription = {
+                            navController.navigate(com.soccertips.predictx.navigation.Routes.Subscription.route)
+                        }
+                    )
                 },
                 scrollBehavior = scrollBehavior,
             )
         },
-        bottomBar = { CollapsibleBannerAdView() }
+        bottomBar = {
+            CollapsibleBannerAdView(
+                onUpgradeClick = { navController.navigate(Routes.Subscription.route) }
+            )
+        }
     ) { paddingValues ->
         HorizontalPager(
             state = pagerState,

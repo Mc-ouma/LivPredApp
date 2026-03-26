@@ -223,4 +223,10 @@ dependencies {
 
     // User Messaging Platform (UMP) for consent management
     implementation(libs.user.messaging.platform)
+
+    //Play Billing
+    implementation(libs.billing)
+    implementation(libs.billing.ktx)
+
+    // Testing dependencies
 }

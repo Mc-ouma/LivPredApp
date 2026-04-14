@@ -43,8 +43,8 @@ android {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 30
-        versionName = "2.1.0"
+        versionCode = 31
+        versionName = "2.1.1"
 
         buildConfigField("boolean", "DEBUG", "true")
 
@@ -214,8 +214,9 @@ dependencies {
     implementation(libs.firebase.config)
 
     // Admob
-    implementation(libs.play.services.ads)
+  //  implementation(libs.play.services.ads)
     implementation(libs.facebook)
+    implementation(libs.ads.mobile.sdk)
 
     // Facebook SDK annotation dependencies (compile-only to avoid R8 errors)
     compileOnly(libs.infer.annotation)
@@ -229,4 +230,8 @@ dependencies {
     implementation(libs.billing.ktx)
 
     // Testing dependencies
+}
+configurations.configureEach {
+exclude( "com.google.android.gms", module = "play-services-ads")
+exclude("com.google.android.gms", module = "play-services-ads-lite")
 }

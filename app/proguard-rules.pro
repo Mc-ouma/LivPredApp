@@ -52,6 +52,11 @@
 -keep class com.google.android.gms.common.** { *; }
 -keep class com.google.android.gms.internal.** { *; }
 
+# Google Play Billing
+-keep class com.android.billingclient.** { *; }
+-dontwarn com.android.billingclient.**
+-keep class com.android.vending.billing.** { *; }
+
 # User Messaging Platform (UMP)
 -keep class com.google.android.ump.** { *; }
 -dontwarn com.google.android.ump.**

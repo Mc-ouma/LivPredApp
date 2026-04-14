@@ -85,7 +85,6 @@ fun CategoriesScreen(
     LaunchedEffect(interstitialAdManager) {
         activity?.let { act ->
             interstitialAdManager.setActivityContext(act)
-            interstitialAdManager.useActivityContextForAdLoading(true)
 
             val isAdReady = interstitialAdManager.isAdReady.value
             val isLoading = interstitialAdManager.isCurrentlyLoading()

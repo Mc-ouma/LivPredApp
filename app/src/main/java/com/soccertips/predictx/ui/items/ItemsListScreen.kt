@@ -108,7 +108,6 @@ fun ItemsListScreen(
         val activity = context.findActivity()
         if (activity != null) {
             interstitialAdManager.setActivityContext(activity)
-            interstitialAdManager.useActivityContextForAdLoading(true)
 
             // Only trigger load if ad is not ready and not currently loading
             if (!interstitialAdManager.isAdReady.value && !interstitialAdManager.isCurrentlyLoading()) {

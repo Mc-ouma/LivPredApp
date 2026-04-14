@@ -410,13 +410,13 @@
     <!-- Subscription -->
     <string name="remove_ads">Ondoa Matangazo</string>
     <string name="subscription_title">Kuwa Premium</string>
-    <string name="subscription_header">Furahia Uzoefu Bila Matangazo</string>
-    <string name="subscription_subheader">Jiandikishe kuondoa matangazo yote na kusaidia maendeleo ya AI ScoreCast</string>
+    <string name="subscription_header">Furahia Bila Matangazo</string>
+    <string name="subscription_subheader">Jiunge na usajili ili kuondoa matangazo yote na kusaidia uendelezaji wa AI ScoreCast</string>
     <string name="subscription_active_title">Uko Premium!</string>
-    <string name="subscription_active_description">Una usajili hai. Furahia uzoefu wako bila matangazo!</string>
+    <string name="subscription_active_description">Uko kwa premium. Enjoy premium wako bila matangazo!</string>
     <string name="subscription_manage_hint">Ili kudhibiti usajili wako, nenda Google Play Store > Usajili</string>
     <string name="subscription_loading">Inapakia mipango ya usajili…</string>
-    <string name="subscription_subscribe_button">Jiandikishe Sasa</string>
+    <string name="subscription_subscribe_button">Jiunge Sasa</string>
     <string name="subscription_restore">Rejesha Manunuzi</string>
     <string name="subscription_terms">Usajili unafanywa upya moja kwa moja isipokuwa umeufuta angalau masaa 24 kabla ya mwisho wa kipindi cha sasa. Dhibiti usajili wako katika mipangilio ya Google Play Store.</string>
     <string name="benefit_no_ads">Hakuna matangazo ya bango, kati ya kurasa au ibukizi</string>
@@ -426,7 +426,7 @@
     <string name="plan_yearly">Kila Mwaka</string>
     <string name="best_value">THAMANI BORA</string>
     <string name="upgrade_banner_title">Umechoka na matangazo?</string>
-    <string name="upgrade_banner_subtitle">Kuwa Premium kwa uzoefu bila matangazo</string>
+    <string name="upgrade_banner_subtitle">Pata Premium kwa uzoefu bila matangazo</string>
     <string name="upgrade_button">Boresha</string>
 
 </resources>

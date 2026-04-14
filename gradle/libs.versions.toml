@@ -2,8 +2,9 @@
 accompanist = "0.36.0"
 accompanistNavigationMaterial = "0.36.0"
 accompanistPermissions = "0.37.3"
-annotation = "1.9.1"
-androidGradlePlugin = "9.0.1"
+adsMobileSdk = "0.25.0-beta01"
+annotation = "1.10.0"
+androidGradlePlugin = "9.1.1"
 androidxActivity = "1.12.4"
 
 androidxComposeBom = "2026.02.01"
@@ -22,7 +23,7 @@ compileSdk = "36"
 converterGson = "3.0.0"
 coreSplashscreen = "1.2.0"
 dotenvKotlin = "6.5.1"
-facebook = "6.21.0.1"
+facebook = "6.21.0.2"
 firebaseConfig = "23.0.1"
 gson = "2.13.2"
 hilt = "2.59.2"
@@ -45,7 +46,7 @@ minSdk = "26"
 okhttpVersion = "5.3.2"
 pagingRuntime = "3.4.1"
 pagingCompose = "3.4.1"
-playServicesAds = "25.0.0"
+playServicesAds = "25.1.0"
 profileInstaller = "1.4.1"
 retrofitVersion = "3.0.0"
 review = "2.0.2"
@@ -56,7 +57,7 @@ timber = "5.0.1"
 # @keep
 targetSdk = "36"
 userMessagingPlatform = "4.0.0"
-workRuntimeKtx = "2.11.1"
+workRuntimeKtx = "2.11.2"
 firebaseCrashlytics = "20.0.4"
 googleGmsGoogleServices = "4.4.2"
 googleFirebaseCrashlytics = "3.0.3"
@@ -70,13 +71,14 @@ accompanist-appcompat-theme = { group = "com.google.accompanist", name = "accomp
 accompanist-navigation-material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanistNavigationMaterial" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist" }
+ads-mobile-sdk = { module = "com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk", version.ref = "adsMobileSdk" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.13.0" }
 androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version = "1.13.0" }
 androidx-activity = { module = "androidx.activity:activity", version = "1.13.0" }
 androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "annotation" }
 androidx-compiler = { module = "androidx.compose.compiler:compiler", version.ref = "compiler" }
 androidx-compose-animation = { group = "androidx.compose.animation", name = "animation" }
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version = "2026.03.00" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version = "2026.03.01" }
 androidx-compose-foundation-core = { group = "androidx.compose.foundation", name = "foundation" }
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout" }
 androidx-compose-material-iconsExtended = { group = "androidx.compose.material", name = "material-icons-extended" }
@@ -131,7 +133,7 @@ firebase-database = { group = "com.google.firebase", name = "firebase-database",
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics", version = "23.2.0" }
 user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
-androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version = "1.10.5" }
+androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version = "1.10.6" }
 
 
 [plugins]

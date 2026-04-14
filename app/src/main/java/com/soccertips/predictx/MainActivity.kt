@@ -79,7 +79,6 @@ private fun AdInitializedContent(
         activity?.let {
             // Set up ad managers with Activity context
             interstitialAdManager.setActivityContext(it)
-            interstitialAdManager.useActivityContextForAdLoading(true)
 
             // On low-memory devices, skip aggressive preloading during startup
             // Ads will be loaded when needed

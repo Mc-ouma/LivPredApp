@@ -28,6 +28,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -98,7 +100,10 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     private var isInitialAppStart = true
 
     // Track when Mobile Ads SDK has been initialized
-    private var isMobileAdsInitialized = false
+    //private var isMobileAdsInitialized = false
+    private val _isMobileAdsInitialized = MutableStateFlow(false)
+    val isMobileAdsInitialized: StateFlow<Boolean> = _isMobileAdsInitialized.asStateFlow()
+
 
     // Track if MobileAds initialization is in progress
     private var isMobileAdsInitializing = false
@@ -319,31 +324,28 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             return
         }
 
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.IO) {
             try {
                 isMobileAdsInitializing = true
-                try {
-                    val initConfig =
-                        InitializationConfig.Builder("ca-app-pub-8504414839434291~8215753517")
-                            .build()
-                    MobileAds.initialize(applicationContext, initConfig) { initializationStatus ->
-                        Timber.d("MobileAds initialized with status: $initializationStatus")
 
-                        isMobileAdsInitialized = true
-                        isMobileAdsInitializing = false
+                val initConfig =
+                    InitializationConfig.Builder("ca-app-pub-8504414839434291~8215753517")
+                        .build()
+                MobileAds.initialize(applicationContext, initConfig) { initializationStatus ->
+                    Timber.d("MobileAds initialized with status: $initializationStatus")
 
-                        setupAppOpenAdManager()
-
-                        if (!isFirstLaunch()) {
-                            isInitialAppStart = false
-                            Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
-                        }
-
-                        maybePreloadAppOpenAd()
-                    }
-                } catch (timeoutEx: TimeoutCancellationException) {
-                    Timber.e("MobileAds initialization timed out")
+                    isMobileAdsInitialized = true
                     isMobileAdsInitializing = false
+
+                    setupAppOpenAdManager()
+
+                    if (!isFirstLaunch()) {
+                        isInitialAppStart = false
+                        Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
+                    }
+
+                    maybePreloadAppOpenAd()
+
                 }
             } catch (e: Exception) {
                 Timber.e("Error initializing MobileAds: ${e.message}")

@@ -45,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.checkerframework.checker.initialization.qual.Initialized
 import timber.log.Timber
 
 /**
@@ -58,6 +59,7 @@ import timber.log.Timber
 private fun AdInitializedContent(
     interstitialAdManager: InterstitialAdManager,
     devicePerformanceManager: DevicePerformanceManager,
+    isMobileAdsInitialized: Boolean,
     content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
@@ -65,6 +67,7 @@ private fun AdInitializedContent(
 
     // Use LaunchedEffect to initialize ad managers after first composition
     LaunchedEffect(Unit) {
+        if (!isMobileAdsInitialized) return@LaunchedEffect
         // Device-aware delay - longer on low-memory devices to prioritize UI
         val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
         val initDelay = if (isLowMemory) {

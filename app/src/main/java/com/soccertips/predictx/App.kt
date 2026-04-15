@@ -30,6 +30,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -306,7 +307,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     private suspend fun initializeMobileAds() {
         // Prevent multiple initialization attempts
-        if (isMobileAdsInitialized || isMobileAdsInitializing) {
+        if (isMobileAdsInitialized.value || isMobileAdsInitializing) {
             Timber.d("MobileAds already initialized or initializing, skipping")
             return
         }
@@ -334,7 +335,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 MobileAds.initialize(applicationContext, initConfig) { initializationStatus ->
                     Timber.d("MobileAds initialized with status: $initializationStatus")
 
-                    isMobileAdsInitialized = true
+                    _isMobileAdsInitialized.value = true
                     isMobileAdsInitializing = false
 
                     setupAppOpenAdManager()
@@ -376,7 +377,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     private fun maybePreloadAppOpenAd() {
         val activity = currentActivity
-        if (!isMobileAdsInitialized || activity == null || activity.isFinishing || activity.isDestroyed) {
+        if (!isMobileAdsInitialized.value || activity == null || activity.isFinishing || activity.isDestroyed) {
             return
         }
 
@@ -621,7 +622,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     /** Helper function to initialize MobileAds only if all conditions are met */
     private fun initializeMobileAdsIfReady() {
-        if (!isMobileAdsInitialized && !isMobileAdsInitializing && isConsentComplete) {
+        if (!isMobileAdsInitialized.value && !isMobileAdsInitializing && isConsentComplete) {
             CoroutineScope(Dispatchers.Main).launch {
                 // Add delay before initializing after consent
                 delay(1000)
@@ -637,7 +638,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
         } else {
             Timber.d(
-                "Consent: Not initializing MobileAds yet (initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete)"
+                "Consent: Not initializing MobileAds yet (initialized=${isMobileAdsInitialized.value}, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete)"
             )
         }
     }
@@ -755,7 +756,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
         // Initialize MobileAds with delay after activity is fully resumed and stable
         // Only if consent is complete and MobileAds is not already initialized
-        if (!isMobileAdsInitialized && !isMobileAdsInitializing && isConsentComplete) {
+        if (!isMobileAdsInitialized.value && !isMobileAdsInitializing && isConsentComplete) {
             CoroutineScope(Dispatchers.Main).launch {
                 // Device-aware delay - longer on low-memory devices
                 val stabilizationDelay = if (devicePerformanceManager.isLowMemoryDevice()) {
@@ -777,11 +778,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
         } else {
             Timber.d(
-                "MobileAds init check: initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete"
+                "MobileAds init check: initialized=${isMobileAdsInitialized.value}, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete"
             )
         }
 
-        if (isMobileAdsInitialized) {
+        if (isMobileAdsInitialized.value) {
             maybePreloadAppOpenAd()
         }
 
@@ -792,7 +793,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
             // Check if ads can be shown - skip on low-memory devices during initial start
             val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
-            if (isMobileAdsInitialized && !isInitialAppStart && !(isLowMemory && isInitialAppStart)) {
+            if (isMobileAdsInitialized.value && !isInitialAppStart && !(isLowMemory && isInitialAppStart)) {
                 Timber.d("AppOpenAdManager: Checking if ad can be shown on resume")
                 // Check if the app is eligible to show ad on app resume
                 if (appOpenAdManager.shouldShowAdOnAppResume()) {
@@ -803,7 +804,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 }
             } else {
                 Timber.d(
-                    "AppOpenAdManager: Not showing ad on resume (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart}, lowMemory=$isLowMemory)"
+                    "AppOpenAdManager: Not showing ad on resume (initialization state: ads initialized=${isMobileAdsInitialized.value}, initialAppStart=${isInitialAppStart}, lowMemory=$isLowMemory)"
                 )
             }
         }
@@ -827,7 +828,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         }
 
         // Determine if we should show app open ad on start
-        if (isMobileAdsInitialized && !isInitialAppStart && !isFirstLaunchCheck) {
+        if (isMobileAdsInitialized.value && !isInitialAppStart && !isFirstLaunchCheck) {
             Timber.d("AppOpenAdManager: Checking if ad can be shown on activity start")
             if (appOpenAdManager.shouldShowAdOnAppStart(isFirstLaunchCheck)) {
                 Timber.d("AppOpenAdManager: Attempting to show app open ad on activity start")
@@ -837,7 +838,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
         } else {
             Timber.d(
-                "AppOpenAdManager: Not showing app open ad on start (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart}, firstLaunch=${isFirstLaunchCheck})"
+                "AppOpenAdManager: Not showing app open ad on start (initialization state: ads initialized=${isMobileAdsInitialized.value}, initialAppStart=${isInitialAppStart}, firstLaunch=${isFirstLaunchCheck})"
             )
         }
     }

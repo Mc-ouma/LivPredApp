@@ -755,8 +755,9 @@ private fun createItemCardStyleNativeAd(
             }
         }
 
+        val intRating = rating.toInt().coerceIn(0, 5)
         val ratingText = TextView(context).apply {
-            text = "★".repeat(rating.toInt()) + "☆".repeat(5 - rating.toInt())
+            text = "★".repeat(intRating) + "☆".repeat(5 - intRating)
             textSize = 12f
             setTextColor("#FFC107".toColorInt())
         }
@@ -1278,6 +1279,12 @@ constructor(
     }
 
     fun forceLoadAd() {
+        val app = applicationContext as? com.soccertips.predictx.App
+        if (app?.isMobileAdsInitialized?.value != true) {
+            Timber.tag("InterstitialAd").w("MobileAds not initialized yet, skipping force load")
+            return
+        }
+
         if (interstitialAd == null && !isAdLoading) {
             Timber.tag("InterstitialAd").d("Force loading ad")
             loadInterstitialAd()
@@ -1288,6 +1295,12 @@ constructor(
         if (isAdLoading) return
         if (interstitialAd != null) {
             _isAdReady.value = true
+            return
+        }
+
+        val app = applicationContext as? com.soccertips.predictx.App
+        if (app?.isMobileAdsInitialized?.value != true) {
+            Timber.tag("InterstitialAd").w("MobileAds not initialized yet, skipping load")
             return
         }
 

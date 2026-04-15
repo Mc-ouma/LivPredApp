@@ -80,9 +80,13 @@ fun CategoriesScreen(
         ).interstitialAdManager()
     }
 
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized = app?.isMobileAdsInitialized?.collectAsStateWithLifecycle()?.value == true
+
     // Preload interstitial ad when CategoriesScreen is displayed
     // This ensures the ad is ready when user navigates to ItemsListScreen
-    LaunchedEffect(interstitialAdManager) {
+    LaunchedEffect(interstitialAdManager, isMobileAdsInitialized) {
+        if (!isMobileAdsInitialized) return@LaunchedEffect
         activity?.let { act ->
             interstitialAdManager.setActivityContext(act)
 

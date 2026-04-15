@@ -66,7 +66,7 @@ private fun AdInitializedContent(
     val activity = LocalContext.current as? AppCompatActivity
 
     // Use LaunchedEffect to initialize ad managers after first composition
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isMobileAdsInitialized) {
         if (!isMobileAdsInitialized) return@LaunchedEffect
         // Device-aware delay - longer on low-memory devices to prioritize UI
         val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
@@ -165,6 +165,7 @@ class MainActivity : AppCompatActivity() {
         // Set content and observe the splash state
         setContent {
             val isReady by splashViewModel.isReady.collectAsState()
+            val isMobileAdsInitialized by (applicationContext as App).isMobileAdsInitialized.collectAsState()
 
             // Only show content when ready
             if (isReady) {
@@ -172,6 +173,7 @@ class MainActivity : AppCompatActivity() {
                 AdInitializedContent(
                     interstitialAdManager = interstitialAdManager,
                     devicePerformanceManager = devicePerformanceManager,
+                    isMobileAdsInitialized = isMobileAdsInitialized,
                 ) {
                     PredictXTheme {
                         Surface(

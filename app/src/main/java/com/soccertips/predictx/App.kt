@@ -332,6 +332,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 val initConfig =
                     InitializationConfig.Builder("ca-app-pub-8504414839434291~8215753517")
                         .build()
+
                 MobileAds.initialize(applicationContext, initConfig) { initializationStatus ->
                     Timber.d("MobileAds initialized with status: $initializationStatus")
 

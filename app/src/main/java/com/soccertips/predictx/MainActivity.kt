@@ -209,6 +209,7 @@ class MainActivity : AppCompatActivity() {
             delay(1000) // Wait for splash to complete
             initializeBackgroundComponents()
         }
+
     }
 
     private suspend fun initializeBackgroundComponents() {

@@ -41,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -257,6 +258,11 @@ fun BannerAdView(
 ) {
     if (isUserSubscribed()) return
     val context = LocalContext.current
+    
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
     val activity = context.findActivity()
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
@@ -326,6 +332,11 @@ fun CollapsibleBannerAdView(
 ) {
     if (isUserSubscribed()) return
     val context = LocalContext.current
+    
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
     val activity = context.findActivity()
 
     val configuration = LocalConfiguration.current
@@ -401,6 +412,11 @@ fun InlineBannerAdView(
 ) {
     if (isUserSubscribed()) return
     val context = LocalContext.current
+    
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
     val activity = context.findActivity()
 
     val configuration = LocalConfiguration.current
@@ -495,6 +511,12 @@ fun NativeAdItem(
     adUnitId: String = stringResource(R.string.native_id)
 ) {
     if (isUserSubscribed()) return
+    val context = LocalContext.current
+    
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
     val nativeTypes = remember { listOf(NativeAd.NativeAdType.NATIVE) }
     var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
 
@@ -1408,7 +1430,7 @@ constructor(
         }
 
         if (adStateManager.isFullScreenAdShowing()) {
-            onAdDismissed()
+            Timber.tag("InterstitialAd").w("Ad already showing, swallowing duplicate invocation to prevent double navigation/crash")
             return
         }
 
@@ -1449,6 +1471,9 @@ constructor(
             }
 
             Timber.tag("InterstitialAd").d("Showing ad")
+            
+            // Immediately mark as showing to preempt rapid double-clicks
+            adStateManager.setFullScreenAdShowing(true)
             ad.show(activity)
 
         } catch (e: Exception) {

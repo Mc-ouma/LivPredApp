@@ -52,6 +52,11 @@
 -keep class com.google.android.gms.common.** { *; }
 -keep class com.google.android.gms.internal.** { *; }
 
+# Next-Gen AdMob SDK
+-keep class com.google.android.libraries.ads.mobile.sdk.** { *; }
+-keep public class com.google.android.libraries.ads.mobile.sdk.common.AdActivity
+-dontwarn com.google.android.libraries.ads.mobile.sdk.**
+
 # Google Play Billing
 -keep class com.android.billingclient.** { *; }
 -dontwarn com.android.billingclient.**

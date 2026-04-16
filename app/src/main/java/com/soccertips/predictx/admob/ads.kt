@@ -258,7 +258,7 @@ fun BannerAdView(
 ) {
     if (isUserSubscribed()) return
     val context = LocalContext.current
-    
+
     val app = context.applicationContext as? com.soccertips.predictx.App
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
@@ -332,7 +332,7 @@ fun CollapsibleBannerAdView(
 ) {
     if (isUserSubscribed()) return
     val context = LocalContext.current
-    
+
     val app = context.applicationContext as? com.soccertips.predictx.App
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
@@ -412,7 +412,7 @@ fun InlineBannerAdView(
 ) {
     if (isUserSubscribed()) return
     val context = LocalContext.current
-    
+
     val app = context.applicationContext as? com.soccertips.predictx.App
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
@@ -512,7 +512,7 @@ fun NativeAdItem(
 ) {
     if (isUserSubscribed()) return
     val context = LocalContext.current
-    
+
     val app = context.applicationContext as? com.soccertips.predictx.App
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
@@ -1034,7 +1034,8 @@ constructor(
         }
 
         if (adStateManager.isFullScreenAdShowing()) {
-            Timber.tag("InterstitialAd").w("Ad already showing, swallowing duplicate invocation to prevent double navigation/crash")
+            Timber.tag("InterstitialAd")
+                .w("Ad already showing, swallowing duplicate invocation to prevent double navigation/crash")
             return
         }
 
@@ -1057,12 +1058,16 @@ constructor(
 
                 override fun onAdDismissedFullScreenContent() {
                     baseCallback?.onAdDismissedFullScreenContent()
-                    onAdDismissed()
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        onAdDismissed()
+                    }
                 }
 
                 override fun onAdFailedToShowFullScreenContent(error: FullScreenContentError) {
                     baseCallback?.onAdFailedToShowFullScreenContent(error)
-                    onAdDismissed()
+                    android.os.Handler(android.os.Looper.getMainLooper()).post {
+                        onAdDismissed()
+                    }
                 }
 
                 override fun onAdImpression() {
@@ -1075,7 +1080,7 @@ constructor(
             }
 
             Timber.tag("InterstitialAd").d("Showing ad")
-            
+
             // Immediately mark as showing to preempt rapid double-clicks
             adStateManager.setFullScreenAdShowing(true)
             ad.show(activity)

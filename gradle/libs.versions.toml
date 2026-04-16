@@ -2,7 +2,7 @@
 accompanist = "0.36.0"
 accompanistNavigationMaterial = "0.36.0"
 accompanistPermissions = "0.37.3"
-adsMobileSdk = "0.25.0-beta01"
+adsMobileSdk = "1.0.0"
 annotation = "1.10.0"
 androidGradlePlugin = "9.1.1"
 androidxActivity = "1.12.4"
@@ -58,7 +58,7 @@ timber = "5.0.1"
 targetSdk = "36"
 userMessagingPlatform = "4.0.0"
 workRuntimeKtx = "2.11.2"
-firebaseCrashlytics = "20.0.4"
+firebaseCrashlytics = "20.0.5"
 googleGmsGoogleServices = "4.4.2"
 googleFirebaseCrashlytics = "3.0.3"
 firebaseDatabase = "22.0.1"
@@ -126,7 +126,7 @@ review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "rev
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-sheets-m3 = { module = "io.github.dokar3:sheets-m3", version = "0.7.2" }
+sheets-m3 = { module = "io.github.dokar3:sheets-m3", version = "0.7.4" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "firebaseCrashlytics" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }

@@ -275,7 +275,16 @@ fun BannerAdView(
 
     DisposableEffect(Unit) {
         onDispose {
-            adViewRef?.destroy()
+            try {
+                adViewRef?.let { view ->
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    view.destroy()
+                }
+            } catch (e: Exception) {
+                Timber.e("Error destroying AdView: ${e.message}")
+            } finally {
+                adViewRef = null
+            }
         }
     }
 
@@ -351,7 +360,16 @@ fun CollapsibleBannerAdView(
 
     DisposableEffect(Unit) {
         onDispose {
-            adViewRef?.destroy()
+            try {
+                adViewRef?.let { view ->
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    view.destroy()
+                }
+            } catch (e: Exception) {
+                Timber.e("Error destroying AdView: ${e.message}")
+            } finally {
+                adViewRef = null
+            }
         }
     }
 
@@ -431,7 +449,16 @@ fun InlineBannerAdView(
 
     DisposableEffect(Unit) {
         onDispose {
-            adViewRef?.destroy()
+            try {
+                adViewRef?.let { view ->
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    view.destroy()
+                }
+            } catch (e: Exception) {
+                Timber.e("Error destroying AdView: ${e.message}")
+            } finally {
+                adViewRef = null
+            }
         }
     }
 
@@ -562,8 +589,13 @@ fun NativeAdItem(
         )
 
         onDispose {
-            nativeAd?.destroy()
-            nativeAd = null
+            try {
+                nativeAd?.destroy()
+            } catch (e: Exception) {
+                Timber.e("Error destroying NativeAd: ${e.message}")
+            } finally {
+                nativeAd = null
+            }
         }
     }
 
@@ -610,6 +642,14 @@ private fun NativeAdContent(
             modifier = Modifier.fillMaxWidth(),
             factory = { ctx ->
                 NativeAdView(ctx)
+            },
+            onRelease = { view ->
+                try {
+                    view.removeAllViews()
+                    view.destroy()
+                } catch (e: Exception) {
+                    Timber.e("Error destroying NativeAdView: ${e.message}")
+                }
             },
             update = { nativeAdView ->
                 // Clear previous views

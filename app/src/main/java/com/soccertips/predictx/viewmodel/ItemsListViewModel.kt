@@ -68,7 +68,11 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
         }
     }
 
-    // Fetch data only if not already cached for the given date
+    companion object {
+        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    }
+
+    // Fetch data using Stale-While-Revalidate with batch date grouping
     fun fetchItems(categoryEndpoint: String, date: LocalDate?) {
         val resolvedDate = date ?: LocalDate.now()
         val cacheKey = "${categoryEndpoint}_$resolvedDate"
@@ -85,66 +89,107 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
             }
         }
 
-        viewModelScope.launch {
+        // If no cached success state is currently visible for this date, show Loading
+        if (_dateUiStates.value[resolvedDate] !is UiState.Success) {
             updateDateState(resolvedDate, UiState.Loading)
+        }
+
+        viewModelScope.launch {
             try {
-                val response = repository.getCategoryData(categoryEndpoint)
-
-                val items =
-                        withContext(Dispatchers.IO) {
-                            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                            response.serverResponse
-                                    .filter { serverResponse ->
-                                        val mDate = serverResponse.mDate ?: ""
-                                        mDate != "0000-00-00" &&
-                                                try {
-                                                    LocalDate.parse(mDate, formatter) == resolvedDate
-                                                } catch (e: Exception) {
-                                                    Timber.e(e, "Error parsing date: $mDate")
-                                                    false // Ignore items with invalid dates
-                                                }
-                                    }
-                                    .map { serverResponse ->
-                                        val color =
-                                                when (serverResponse.outcome?.lowercase()) {
-                                                    "win" -> Color.Green
-                                                    "lose" -> Color.Red
-                                                    else -> Color.Unspecified
-                                                }
-
-                                        // Convert UTC time to local timezone
-                                        val localTime = TimeZoneConverter.convertUtcToLocal(
-                                            serverResponse.mTime,
-                                            serverResponse.mDate
-                                        )
-
-                                        ServerResponse(
-                                                fixtureId = serverResponse.fixtureId ?: "",
-                                                pick = serverResponse.pick ?: "Unknown",
-                                                homeTeam = serverResponse.homeTeam ?: "Unknown",
-                                                awayTeam = serverResponse.awayTeam ?: "Unknown",
-                                                mDate = serverResponse.mDate ?: "Unknown",
-                                                league = serverResponse.league ?: "Unknown",
-                                                mTime = localTime,
-                                                betOdds = serverResponse.betOdds ?: "Unknown",
-                                                outcome = serverResponse.outcome ?: "Unknown",
-                                                htScore = serverResponse.htScore ?: "Unknown",
-                                                result = serverResponse.result ?: "Unknown",
-                                                hLogoPath = serverResponse.hLogoPath ?: "Unknown",
-                                                aLogoPath = serverResponse.aLogoPath ?: "Unknown",
-                                                leagueLogo = serverResponse.leagueLogo ?: "Unknown",
-                                                mStatus = serverResponse.mStatus ?: "Unknown",
-                                                color = color,
-                                        )
-                                    }
-                                .sortedBy { it.mTime }
-                        }
-
-                cachedData.put(cacheKey, System.currentTimeMillis() to items)
-                updateDateState(resolvedDate, UiState.Success(items))
+                repository.getCategoryDataFlow(categoryEndpoint).collect { response ->
+                    processResponse(categoryEndpoint, response, resolvedDate)
+                }
             } catch (e: Exception) {
-                updateDateState(resolvedDate, UiState.Error(e.localizedMessage ?: "An unexpected error occurred."))
+                if (_dateUiStates.value[resolvedDate] !is UiState.Success) {
+                    updateDateState(resolvedDate, UiState.Error(e.localizedMessage ?: "An unexpected error occurred."))
+                }
             }
+        }
+    }
+
+    private suspend fun processResponse(categoryEndpoint: String, response: com.soccertips.predictx.data.model.RootResponse, resolvedDate: LocalDate) = withContext(Dispatchers.Default) {
+        val today = LocalDate.now()
+        val tomorrow = today.plusDays(1)
+        val currentTime = System.currentTimeMillis()
+
+        // Parse and map all items in the category response in a single pass
+        val parsedItems = response.serverResponse
+            .filter { serverResponse ->
+                val mDate = serverResponse.mDate ?: ""
+                mDate != "0000-00-00" && mDate.isNotBlank()
+            }
+            .mapNotNull { serverResponse ->
+                val mDate = serverResponse.mDate ?: return@mapNotNull null
+                val parsedDate = try {
+                    LocalDate.parse(mDate, DATE_FORMATTER)
+                } catch (e: Exception) {
+                    Timber.e(e, "Error parsing date: $mDate")
+                    return@mapNotNull null
+                }
+
+                val color = when (serverResponse.outcome?.lowercase()) {
+                    "win" -> Color.Green
+                    "lose" -> Color.Red
+                    else -> Color.Unspecified
+                }
+
+                val localTime = TimeZoneConverter.convertUtcToLocal(
+                    serverResponse.mTime,
+                    serverResponse.mDate
+                )
+
+                parsedDate to ServerResponse(
+                    fixtureId = serverResponse.fixtureId ?: "",
+                    pick = serverResponse.pick ?: "Unknown",
+                    homeTeam = serverResponse.homeTeam ?: "Unknown",
+                    awayTeam = serverResponse.awayTeam ?: "Unknown",
+                    mDate = serverResponse.mDate ?: "Unknown",
+                    league = serverResponse.league ?: "Unknown",
+                    mTime = localTime,
+                    betOdds = serverResponse.betOdds ?: "Unknown",
+                    outcome = serverResponse.outcome ?: "Unknown",
+                    htScore = serverResponse.htScore ?: "Unknown",
+                    result = serverResponse.result ?: "Unknown",
+                    hLogoPath = serverResponse.hLogoPath ?: "Unknown",
+                    aLogoPath = serverResponse.aLogoPath ?: "Unknown",
+                    leagueLogo = serverResponse.leagueLogo ?: "Unknown",
+                    mStatus = serverResponse.mStatus ?: "Unknown",
+                    color = color,
+                )
+            }
+
+        // Group items by LocalDate and sort by time
+        val groupedByDate = parsedItems
+            .groupBy({ it.first }, { it.second })
+            .mapValues { entry -> entry.value.sortedBy { it.mTime } }
+
+        // Update tomorrow has items flag
+        val tomorrowItems = groupedByDate[tomorrow]
+        _tomorrowHasItems.value = !tomorrowItems.isNullOrEmpty()
+
+        // Pre-populate all dates in the standard pager range (past 5 days, today, tomorrow)
+        val pastDays = 5
+        val allDatesInRange = (0..pastDays).map { today.minusDays(it.toLong()) } + tomorrow
+
+        val newStates = mutableMapOf<LocalDate, UiState<List<ServerResponse>>>()
+        allDatesInRange.forEach { date ->
+            val items = groupedByDate[date] ?: emptyList()
+            val cacheKey = "${categoryEndpoint}_$date"
+            cachedData.put(cacheKey, currentTime to items)
+            newStates[date] = UiState.Success(items)
+        }
+
+        // Also include any other dates present in the response outside the default range
+        groupedByDate.forEach { (date, items) ->
+            if (!newStates.containsKey(date)) {
+                val cacheKey = "${categoryEndpoint}_$date"
+                cachedData.put(cacheKey, currentTime to items)
+                newStates[date] = UiState.Success(items)
+            }
+        }
+
+        withContext(Dispatchers.Main) {
+            _dateUiStates.value = _dateUiStates.value + newStates
         }
     }
 
@@ -162,26 +207,6 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
             if (System.currentTimeMillis() - timestamp < cacheExpirationDuration) {
                 _tomorrowHasItems.value = items.isNotEmpty()
                 return
-            }
-        }
-
-        viewModelScope.launch {
-            try {
-                val response = repository.getCategoryData(categoryEndpoint)
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                val hasItems = withContext(Dispatchers.IO) {
-                    response.serverResponse.any { serverResponse ->
-                        val mDate = serverResponse.mDate ?: ""
-                        mDate != "0000-00-00" && try {
-                            LocalDate.parse(mDate, formatter) == tomorrow
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }
-                }
-                _tomorrowHasItems.value = hasItems
-            } catch (e: Exception) {
-                _tomorrowHasItems.value = false
             }
         }
     }

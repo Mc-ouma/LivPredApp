@@ -240,6 +240,20 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         withContext(Dispatchers.IO) {
             val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
 
+            // Connect repositories immediately
+            preloadRepository.setPredictionRepository(predictionRepository)
+
+            // Start immediate priority-driven preloading concurrently without serial delay
+            if (!startupConfig.skipAggressivePreloading) {
+                launch(Dispatchers.IO) {
+                    try {
+                        preloadRepository.preloadCategoryData()
+                    } catch (e: Exception) {
+                        Timber.w(e, "Error during immediate startup preloading")
+                    }
+                }
+            }
+
             // CRITICAL: On ALL devices, give UI thread priority during startup to prevent ANR
             // Longer delay on low-memory devices
             val startupDelay = if (isLowMemory) 1000L else 500L
@@ -263,10 +277,6 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 delay(startupConfig.deferFirebaseMs)
                 NotificationHelper.createNotificationChannels(this@App)
             }
-
-            // Set up prediction repository dependency - lightweight operation
-            delay(200)
-            preloadRepository.setPredictionRepository(predictionRepository)
 
             // Initialize API config - this is essential but can wait for UI
             delay(300)
@@ -293,15 +303,6 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Initialize Firebase messaging with device-aware delay
             delay(startupConfig.deferFirebaseMs)
             initFirebaseMessaging()
-
-            // Preloading - skip aggressive preloading on low-memory devices
-            if (!startupConfig.skipAggressivePreloading) {
-                delay(startupConfig.deferPreloadingMs)
-                preloadRepository.preloadCategoryData()
-            } else {
-                Timber.d("Skipping aggressive preloading on low-memory device")
-                // On low-memory devices, only preload when user accesses categories
-            }
         }
     }
 

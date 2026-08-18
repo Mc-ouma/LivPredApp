@@ -9,6 +9,11 @@ import timber.log.Timber
 
 object TimeZoneConverter {
 
+    private val TIME_FORMATTER_SECONDS = DateTimeFormatter.ofPattern("HH:mm:ss")
+    private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm")
+    private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val UTC_ZONE = ZoneId.of("UTC")
+
     /**
      * Converts UTC time string to user's local timezone
      * @param utcTime Time string in UTC (e.g., "14:30", "14:30:00")
@@ -23,26 +28,22 @@ object TimeZoneConverter {
         try {
             // Parse the time (supports both HH:mm and HH:mm:ss formats)
             val timeFormatter = if (utcTime.count { it == ':' } == 2) {
-                DateTimeFormatter.ofPattern("HH:mm:ss")
+                TIME_FORMATTER_SECONDS
             } else {
-                DateTimeFormatter.ofPattern("HH:mm")
+                TIME_FORMATTER
             }
 
             val localTime = LocalTime.parse(utcTime, timeFormatter)
-
-            // Parse the date
-            val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val localDate = java.time.LocalDate.parse(utcDate, dateFormatter)
+            val localDate = java.time.LocalDate.parse(utcDate, DATE_FORMATTER)
 
             // Combine date and time in UTC timezone
-            val utcDateTime = ZonedDateTime.of(localDate, localTime, ZoneId.of("UTC"))
+            val utcDateTime = ZonedDateTime.of(localDate, localTime, UTC_ZONE)
 
             // Convert to user's local timezone
             val localDateTime = utcDateTime.withZoneSameInstant(ZoneId.systemDefault())
 
             // Format the output time
-            val outputFormatter = DateTimeFormatter.ofPattern("HH:mm")
-            return localDateTime.format(outputFormatter)
+            return localDateTime.format(TIME_FORMATTER)
 
         } catch (e: DateTimeParseException) {
             Timber.e(e, "Error parsing UTC time: $utcTime or date: $utcDate")
@@ -67,30 +68,23 @@ object TimeZoneConverter {
         try {
             // Parse the time
             val timeFormatter = if (utcTime.count { it == ':' } == 2) {
-                DateTimeFormatter.ofPattern("HH:mm:ss")
+                TIME_FORMATTER_SECONDS
             } else {
-                DateTimeFormatter.ofPattern("HH:mm")
+                TIME_FORMATTER
             }
 
             val localTime = LocalTime.parse(utcTime, timeFormatter)
-
-            // Parse the date
-            val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val localDate = java.time.LocalDate.parse(utcDate, dateFormatter)
+            val localDate = java.time.LocalDate.parse(utcDate, DATE_FORMATTER)
 
             // Combine date and time in UTC timezone
-            val utcDateTime = ZonedDateTime.of(localDate, localTime, ZoneId.of("UTC"))
+            val utcDateTime = ZonedDateTime.of(localDate, localTime, UTC_ZONE)
 
             // Convert to user's local timezone
             val localDateTime = utcDateTime.withZoneSameInstant(ZoneId.systemDefault())
 
-            // Format the output
-            val outputTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-            val outputDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-
             return Pair(
-                localDateTime.format(outputDateFormatter),
-                localDateTime.format(outputTimeFormatter)
+                localDateTime.format(DATE_FORMATTER),
+                localDateTime.format(TIME_FORMATTER)
             )
 
         } catch (e: Exception) {

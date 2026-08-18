@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import timber.log.Timber
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -23,6 +25,7 @@ sealed class PreloadNetworkState {
 @Singleton
 class PreloadRepository @Inject constructor(
     private val firebaseRepository: FirebaseRepository,
+    private val categoryRepository: dagger.Lazy<CategoryRepository>,
     private val networkUtils: NetworkUtils
 ) {
     // Cache for preloaded data
@@ -39,59 +42,110 @@ class PreloadRepository @Inject constructor(
         }
     }
 
-    // Start preloading data after categories are loaded
+    // Start preloading data immediately without waiting for Firebase network roundtrip
     suspend fun preloadCategoryData() {
         if (!networkUtils.isNetworkAvailable()) {
-            Timber.e("Network is not available. Cannot preload data.")
+            Timber.d("Network is not available. Skipping preload.")
             _networkState.value = PreloadNetworkState.Unavailable
             return
         }
         _networkState.value = PreloadNetworkState.Loading
-        firebaseRepository.getCategories().collect { result ->
-            result.fold(
-                onSuccess = { categories ->
-                    preloadCategories(categories)
-                },
-                onFailure = {
-                    Timber.e(it, "Failed to load categories for preloading")
-                    _networkState.value = PreloadNetworkState.Unavailable
+
+        // Fast Path (0ms): Read local cached categories or default seed endpoints immediately
+        val immediateCategories = try {
+            categoryRepository.get().getCachedOrSeedCategories()
+        } catch (e: Exception) {
+            Timber.w(e, "Error reading cached categories for preloading")
+            emptyList()
+        }
+
+        if (immediateCategories.isNotEmpty()) {
+            preloadCategories(immediateCategories)
+        }
+
+        // Secondary Background Path: Revalidate with Firebase and preload any new categories
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                firebaseRepository.getCategories().collect { result ->
+                    result.fold(
+                        onSuccess = { freshCategories ->
+                            val uncollectedCategories = freshCategories.filter {
+                                it.url.isNotBlank() && !preloadedData.containsKey(it.url)
+                            }
+                            if (uncollectedCategories.isNotEmpty()) {
+                                preloadCategories(uncollectedCategories)
+                            }
+                        },
+                        onFailure = {
+                            Timber.w(it, "Firebase categories query failed during background preloading")
+                        }
+                    )
                 }
-            )
+            } catch (e: Exception) {
+                Timber.w(e, "Background Firebase preloading collector error")
+            }
         }
     }
 
-    private fun preloadCategories(categories: List<Category>) {
-        if (!networkUtils.isNetworkAvailable()) {
-            Timber.e("Network connection lost, cancelling preloading")
-            _networkState.value = PreloadNetworkState.Unavailable
-            return
-        }
+    fun preloadCategories(categories: List<Category>) {
+        if (!networkUtils.isNetworkAvailable() || categories.isEmpty()) return
 
-        var completedCount = 0
-        val totalCount = categories.size
+        CoroutineScope(Dispatchers.IO).launch {
+            if (!::predictionRepository.isInitialized) {
+                Timber.w("PredictionRepository not yet initialized in PreloadRepository")
+                return@launch
+            }
 
-        categories.forEach { category ->
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val response = predictionRepository.getCategoryData(category.url)
-                    preloadedData[category.url] = response
-                    Timber.d("Preloaded data for category: ${category.name}")
+            val semaphore = Semaphore(3)
 
-                    completedCount++
-                    if (completedCount == totalCount) {
-                        _networkState.value = PreloadNetworkState.Done
-                        Timber.d("All categories preloaded successfully")
+            // Priority 1: Fetch the first/primary category (e.g. Today Tips) immediately
+            val primaryCategory = categories.firstOrNull { it.url.isNotBlank() }
+            if (primaryCategory != null) {
+                launch {
+                    try {
+                        if (!preloadedData.containsKey(primaryCategory.url)) {
+                            val response = predictionRepository.getCategoryData(primaryCategory.url)
+                            preloadedData[primaryCategory.url] = response
+                            Timber.d("Priority preloaded data for: ${primaryCategory.name} (${primaryCategory.url})")
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed priority preload for category: ${primaryCategory.name}")
                     }
+                }
+            }
 
-                } catch (e: Exception) {
-                    Timber.e(e, "Failed to preload data for category: ${category.name}")
-                    if (!networkUtils.isNetworkAvailable()) {
-                        Timber.e("Network connection lost during preloading")
-                        _networkState.value = PreloadNetworkState.Unavailable
-                    } else {
-                        _networkState.value = PreloadNetworkState.Available
+            // Priority 2: Concurrently preload remaining categories with bounded concurrency
+            val remainingCategories = categories.filter { it != primaryCategory && it.url.isNotBlank() }
+            var completedCount = 0
+            val totalCount = remainingCategories.size
+
+            if (totalCount == 0) {
+                _networkState.value = PreloadNetworkState.Done
+                return@launch
+            }
+
+            remainingCategories.forEach { category ->
+                launch {
+                    semaphore.withPermit {
+                        try {
+                            if (!preloadedData.containsKey(category.url)) {
+                                val response = predictionRepository.getCategoryData(category.url)
+                                preloadedData[category.url] = response
+                                Timber.d("Preloaded data for category: ${category.name}")
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to preload data for category: ${category.name}")
+                            if (!networkUtils.isNetworkAvailable()) {
+                                _networkState.value = PreloadNetworkState.Unavailable
+                            }
+                        } finally {
+                            completedCount++
+                            if (completedCount == totalCount) {
+                                _networkState.value = PreloadNetworkState.Done
+                                Timber.d("All categories preloaded successfully")
+                            }
+                        }
                     }
-
                 }
             }
         }
@@ -99,6 +153,10 @@ class PreloadRepository @Inject constructor(
 
     fun getPreloadedData(endpoint: String): RootResponse? {
         return preloadedData[endpoint]
+    }
+
+    fun putPreloadedData(endpoint: String, data: RootResponse) {
+        preloadedData[endpoint] = data
     }
 
     companion object {
@@ -111,10 +169,11 @@ class PreloadRepository @Inject constructor(
 
         fun createInstance(
             firebaseRepository: FirebaseRepository,
+            categoryRepository: dagger.Lazy<CategoryRepository>,
             networkUtils: NetworkUtils
         ): PreloadRepository {
             return instance ?: synchronized(this) {
-                instance ?: PreloadRepository(firebaseRepository, networkUtils).also {
+                instance ?: PreloadRepository(firebaseRepository, categoryRepository, networkUtils).also {
                     instance = it
                 }
             }

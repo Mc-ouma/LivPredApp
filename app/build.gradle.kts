@@ -1,9 +1,10 @@
+import com.android.build.api.dsl.ApplicationExtension
 import java.util.Properties
+import org.gradle.api.JavaVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     // alias(libs.plugins.kapt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
@@ -30,9 +31,9 @@ if (dotEnvFile.exists()) {
     }
 }
 
-android {
+ApplicationExtension::class.java.cast(extensions.getByName("android")).apply {
     namespace = "com.soccertips.predictx"
-    compileSdkVersion(libs.versions.compileSdk.get().toInt())
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     buildFeatures {
         buildConfig = true
@@ -53,21 +54,20 @@ android {
         buildConfigField("String", "DEFAULT_API_HOST", "\"${dotEnvProps["API_HOST"] ?: ""}\"")
         buildConfigField("String", "API_BASE_URL", "\"${dotEnvProps["API_BASE_URL"] ?: ""}\"")
         buildConfigField(
-                "String",
-                "DAILY_BONUS_BASE_URL",
-                "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\""
+            "String",
+            "DAILY_BONUS_BASE_URL",
+            "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\""
         )
         buildConfigField(
-                "String",
-                "API_BASE_URL_VALUE",
-                "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\""
+            "String",
+            "API_BASE_URL_VALUE",
+            "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\""
         )
-
         javaCompileOptions {
             annotationProcessorOptions { arguments += "room.incremental" to "true" }
         }
-    }
 
+    }
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
@@ -84,8 +84,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.15" }
@@ -93,10 +93,7 @@ android {
     packaging { resources { excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1") } }
     buildToolsVersion = "36.0.0"
 
-    /*composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.androidxComposeCompiler.get()
-    }*/
-    lint {
+    lint  {
         abortOnError = false
         checkReleaseBuilds = false
         disable += "GradleDependency"
@@ -111,7 +108,7 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
+        jvmTarget.set(JvmTarget.JVM_17)
         freeCompilerArgs.addAll("-opt-in=kotlin.RequiresOptIn", "-opt-in=kotlin.Experimental")
     }
 }

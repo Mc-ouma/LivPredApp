@@ -251,6 +251,8 @@ fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData
                         rememberAsyncImagePainter(
                             ImageRequest.Builder(LocalContext.current)
                                 .data(fixtureDetails.teams.home.logo)
+                                .size(96, 96)
+                                .precision(coil.size.Precision.INEXACT)
                                 .crossfade(true)
                                 .memoryCachePolicy(CachePolicy.ENABLED)
                                 .build()
@@ -277,6 +279,8 @@ fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData
                         rememberAsyncImagePainter(
                             ImageRequest.Builder(LocalContext.current)
                                 .data(fixtureDetails.teams.away.logo)
+                                .size(96, 96)
+                                .precision(coil.size.Precision.INEXACT)
                                 .crossfade(true)
                                 .memoryCachePolicy(CachePolicy.ENABLED)
                                 .build()
@@ -483,6 +487,8 @@ fun TeamColumn(
                 rememberAsyncImagePainter(
                     ImageRequest.Builder(LocalContext.current)
                         .data(team.logo)
+                        .size(128, 128)
+                        .precision(coil.size.Precision.INEXACT)
                         .crossfade(true)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .build()

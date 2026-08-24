@@ -1,86 +1,74 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ==============================================================================
+# R8 / ProGuard Configuration for AI ScoreCast (com.soccertips.predictx)
+# Optimized for maximum shrinking, aggressive optimization, and high obfuscation.
+# ==============================================================================
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve line numbers and source file attributes for Crashlytics stack traces
+-keepattributes SourceFile,LineNumberTable,*Annotation*,Signature,InnerClasses,EnclosingMethod
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
-# If you need to keep the original class names, uncomment this
-# to prevent ProGuard from renaming the classes.
-#keep models classes
--keep class com.soccertips.predictx.data.**{*;}
-
-# Performance optimizations
--optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
--optimizationpasses 5
+# Allow R8 to aggressively modify access modifiers and repackage classes
 -allowaccessmodification
--dontpreverify
+-repackageclasses 'o'
 
-# Keep essential classes for faster startup
--keep public class * extends android.app.Application
--keep public class * extends android.app.Activity
--keep public class * extends androidx.fragment.app.Fragment
+# ------------------------------------------------------------------------------
+# Data Models & Serialization (Gson / Room)
+# ------------------------------------------------------------------------------
+# Keep fields serialized by Gson
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+    @com.google.gson.annotations.Expose <fields>;
+}
 
-# Hilt optimizations
--keep class dagger.hilt.** { *; }
--keep class javax.inject.** { *; }
--keep class * extends dagger.hilt.android.lifecycle.HiltViewModel
+# Keep custom JSON deserializers and adapters
+-keep class com.soccertips.predictx.data.model.RootResponseDeserializer { *; }
+-keep class * implements com.google.gson.JsonDeserializer { *; }
+-keep class * implements com.google.gson.JsonSerializer { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory { *; }
+-keep class * extends com.google.gson.TypeAdapter { *; }
 
-# Firebase optimizations
--keep class com.google.firebase.** { *; }
--dontwarn com.google.firebase.**
+# Keep Room database entities & DAOs
+-keep @androidx.room.Entity class * { *; }
+-keep @androidx.room.Dao interface * { *; }
+-keep class * extends androidx.room.RoomDatabase { *; }
 
-# AdMob optimizations
--keep class com.google.android.gms.ads.** { *; }
--keep public class com.google.android.gms.ads.AdActivity
+# Keep explicit @Keep annotations
+-keep @androidx.annotation.Keep class * { *; }
+-keepclassmembers class * {
+    @androidx.annotation.Keep *;
+}
+
+# Keep Enums
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# ------------------------------------------------------------------------------
+# Retrofit & OkHttp
+# ------------------------------------------------------------------------------
+-keepclassmembers,allowobfuscation interface * {
+    @retrofit2.http.* <methods>;
+}
+-dontwarn retrofit2.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+
+# ------------------------------------------------------------------------------
+# WorkManager (HiltWorker)
+# ------------------------------------------------------------------------------
+-keep class * extends androidx.work.ListenableWorker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+
+# ------------------------------------------------------------------------------
+# Third Party Warnings Suppression
+# ------------------------------------------------------------------------------
 -dontwarn com.google.android.gms.ads.**
--keep class com.google.android.gms.common.** { *; }
--keep class com.google.android.gms.internal.** { *; }
-
-# Next-Gen AdMob SDK
--keep class com.google.android.libraries.ads.mobile.sdk.** { *; }
--keep public class com.google.android.libraries.ads.mobile.sdk.common.AdActivity
--dontwarn com.google.android.libraries.ads.mobile.sdk.**
-
-# Google Play Billing
--keep class com.android.billingclient.** { *; }
--dontwarn com.android.billingclient.**
--keep class com.android.vending.billing.** { *; }
-
-# User Messaging Platform (UMP)
--keep class com.google.android.ump.** { *; }
--dontwarn com.google.android.ump.**
-
-# Facebook Audience Network
+-dontwarn com.google.ads.mediation.**
 -dontwarn com.facebook.infer.annotation.**
 -dontwarn com.facebook.ads.**
 -dontwarn com.facebook.**
--keep class com.facebook.ads.** { *; }
--keep interface com.facebook.ads.** { *; }
--keepattributes Signature
--keepattributes *Annotation*
--keep class com.facebook.** { *; }
-
-# Ignore warnings about missing Facebook annotations
 -dontwarn javax.annotation.**
 -dontwarn org.checkerframework.**
-
-# Additional rules to prevent R8 errors
--dontwarn com.facebook.infer.**
 -dontwarn com.google.errorprone.annotations.**
-
+-dontwarn java.lang.invoke.**

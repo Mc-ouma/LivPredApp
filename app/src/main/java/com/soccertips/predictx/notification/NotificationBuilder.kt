@@ -316,9 +316,11 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
                     // Check cache first
                     logoCache[url]?.let { return@withContext it }
 
-                    // Load from network if not cached
+                    // Load from network if not cached with explicit downsampling
                     val imageRequest = ImageRequest.Builder(context)
                         .data(url)
+                        .size(144, 144)
+                        .precision(coil.size.Precision.INEXACT)
                         .allowHardware(false) // Required for notification compatibility
                         .build()
                     val drawable = context.imageLoader.execute(imageRequest).drawable

@@ -1,18 +1,12 @@
 package com.soccertips.predictx.data.model.team.teamscreen
 
 data class TeamStatisticsResponse(
-    val get: String,
-    val parameters: Parameters,
-    val errors: List<String>,
-    val results: Int,
-    val paging: Paging,
+    val get: String? = null,
+    val parameters: Any? = null,
+    val errors: Any? = null,
+    val results: Int? = null,
+    val paging: Paging? = null,
     val response: TeamStatistics
-)
-
-data class Parameters(
-    val league: String,
-    val season: String,
-    val team: String
 )
 
 data class Paging(

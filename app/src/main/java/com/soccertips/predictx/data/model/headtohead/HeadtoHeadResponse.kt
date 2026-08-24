@@ -1,17 +1,12 @@
 package com.soccertips.predictx.data.model.headtohead
 
 data class HeadToHeadResponse(
-    val get: String,
-    val parameters: Parameters,
-    val errors: List<String>,
-    val results: Int,
-    val paging: Paging,
-    val response: List<FixtureDetails>,
-)
-
-data class Parameters(
-    val h2h: String,
-    val last: String,
+    val get: String? = null,
+    val parameters: Any? = null,
+    val errors: Any? = null,
+    val results: Int? = null,
+    val paging: Paging? = null,
+    val response: List<FixtureDetails> = emptyList(),
 )
 
 data class Paging(

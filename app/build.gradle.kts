@@ -44,8 +44,8 @@ ApplicationExtension::class.java.cast(extensions.getByName("android")).apply {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 32
-        versionName = "2.1.2"
+        versionCode = 34
+        versionName = "2.1.3 (34)"
 
         buildConfigField("boolean", "DEBUG", "true")
 
@@ -136,7 +136,6 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-    implementation(libs.androidx.lifecycle.runtimeCompose)
 
     implementation(libs.hilt.android.core)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -148,7 +147,6 @@ dependencies {
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compiler)
     implementation(composeBom)
     implementation(libs.androidx.compose.material.iconsExtended)
     implementation(libs.androidx.compose.foundation.core)
@@ -162,7 +160,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtimeCompose)
     implementation(libs.androidx.lifecycle.viewModelCompose)
     implementation(libs.accompanist.appcompat.theme)
-    implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.permissions)
 

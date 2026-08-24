@@ -1,47 +1,47 @@
 package com.soccertips.predictx.data.model.team.transfer
 
 data class TransferResponse(
-    val get: String,
-    val parameters: Parameters,
-    val errors: List<Any>,
-    val results: Int,
-    val paging: Paging,
-    val response: List<Response2>
+    val get: String? = null,
+    val parameters: Parameters? = null,
+    val errors: List<Any>? = null,
+    val results: Int? = null,
+    val paging: Paging? = null,
+    val response: List<Response2> = emptyList()
 )
 
 data class Parameters(
-    val team: String
+    val team: String? = null
 )
 
 data class Paging(
-    val current: Int,
-    val total: Int
+    val current: Int? = null,
+    val total: Int? = null
 )
 
 data class Response2(
-    val player: Player2,
-    val update: String,
-    val transfers: List<Transfer>
+    val player: Player2? = null,
+    val update: String? = null,
+    val transfers: List<Transfer> = emptyList()
 )
 
 data class Player2(
-    val id: Int,
-    val name: String
+    val id: Int? = null,
+    val name: String? = null
 )
 
 data class Transfer(
-    val date: String,
-    val type: String?,
-    val teams: Teams
+    val date: String? = null,
+    val type: String? = null,
+    val teams: Teams? = null
 )
 
 data class Teams(
-    val `in`: Team,
-    val `out`: Team
+    val `in`: Team? = null,
+    val `out`: Team? = null
 )
 
 data class Team(
-    val id: Int,
-    val name: String,
-    val logo: String
+    val id: Int? = null,
+    val name: String? = null,
+    val logo: String? = null
 )

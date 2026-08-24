@@ -260,6 +260,8 @@ fun FixtureCard(
                             rememberAsyncImagePainter(
                                 ImageRequest.Builder(LocalContext.current)
                                     .data(fixture.teams.home.logo)
+                                    .size(96, 96)
+                                    .precision(coil.size.Precision.INEXACT)
                                     .crossfade(true)
                                     .build()
                             ),
@@ -281,6 +283,8 @@ fun FixtureCard(
                             rememberAsyncImagePainter(
                                 ImageRequest.Builder(LocalContext.current)
                                     .data(fixture.teams.away.logo)
+                                    .size(96, 96)
+                                    .precision(coil.size.Precision.INEXACT)
                                     .crossfade(true)
                                     .build()
                             ),

@@ -4,19 +4,25 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -25,8 +31,9 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -34,13 +41,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
+import kotlinx.coroutines.launch
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predictx.Menu
@@ -62,6 +76,7 @@ import dagger.hilt.components.SingletonComponent
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import timber.log.Timber
+import androidx.compose.ui.platform.LocalLocale
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -183,6 +198,8 @@ fun ItemsListScreen(
         }
     }
 
+    val coroutineScope = rememberCoroutineScope()
+
     // Function to handle back navigation with an interstitial ad
     val navigateBackWithAd: () -> Unit = {
         // Show interstitial ad on back navigation
@@ -234,55 +251,93 @@ fun ItemsListScreen(
     Scaffold(
         Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    val canSwipeLeft = pagerState.currentPage > 0
-                    val canSwipeRight = pagerState.currentPage < pageCount - 1
-                    val activeColor = MaterialTheme.colorScheme.onSurface
-                    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                    val leftColor by animateColorAsState(
-                        if (canSwipeLeft) activeColor else inactiveColor,
-                        label = "leftChevron"
-                    )
-                    val rightColor by animateColorAsState(
-                        if (canSwipeRight) activeColor else inactiveColor,
-                        label = "rightChevron"
-                    )
+            Column {
+                CenterAlignedTopAppBar(
+                    title = {
+                        val canSwipeLeft = pagerState.currentPage > 0
+                        val canSwipeRight = pagerState.currentPage < pageCount - 1
+                        val activeColor = MaterialTheme.colorScheme.onSurface
+                        val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+                        val leftColor = if (canSwipeLeft) activeColor else inactiveColor
+                        val rightColor = if (canSwipeRight) activeColor else inactiveColor
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = null,
-                            tint = leftColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(text = formattedDate)
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = rightColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                },
-                // show  interstitial ad when the back button is pressed
-                navigationIcon = {
-                    IconButton(onClick = navigateBackWithAd) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    Menu(
-                        onNavigateToSubscription = {
-                            navController.navigate(com.soccertips.predictx.navigation.Routes.Subscription.route)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    if (canSwipeLeft) {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                        }
+                                    }
+                                },
+                                enabled = canSwipeLeft
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription = "Previous Day",
+                                    tint = leftColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Text(
+                                text = formattedDate,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            IconButton(
+                                onClick = {
+                                    if (canSwipeRight) {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                        }
+                                    }
+                                },
+                                enabled = canSwipeRight
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = "Next Day",
+                                    tint = rightColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
-                    )
-                },
-                scrollBehavior = scrollBehavior,
-            )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = navigateBackWithAd) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        Menu(
+                            onNavigateToSubscription = {
+                                navController.navigate(com.soccertips.predictx.navigation.Routes.Subscription.route)
+                            }
+                        )
+                    },
+                    scrollBehavior = scrollBehavior,
+                )
+
+                // Interactive Horizontal Date Tab Selector Bar
+                DateSelectorRow(
+                    pagerState = pagerState,
+                    pageCount = pageCount,
+                    pageToDate = ::pageToDate,
+                    onDateSelected = { targetPage ->
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(targetPage)
+                        }
+                    }
+                )
+            }
         },
         bottomBar = {
             CollapsibleBannerAdView(
@@ -372,6 +427,99 @@ fun ItemsListScreen(
                     }
 
                     is UiState.ShowSnackbar -> { /* Handled elsewhere */ }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Modern, interactive horizontal date selector bar.
+ * Provides clear visual affordance that multiple dates are available to browse via tap or swipe.
+ */
+@Composable
+private fun DateSelectorRow(
+    pagerState: PagerState,
+    pageCount: Int,
+    pageToDate: (Int) -> LocalDate,
+    onDateSelected: (Int) -> Unit
+) {
+    val lazyListState = rememberLazyListState()
+    val today = remember { LocalDate.now() }
+
+    // Auto-scroll the selected chip into view when page changes (via swipe or tap)
+    LaunchedEffect(pagerState.currentPage) {
+        lazyListState.animateScrollToItem(
+            index = pagerState.currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
+            scrollOffset = -120
+        )
+    }
+
+    LazyRow(
+        state = lazyListState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items(pageCount) { page ->
+            val date = pageToDate(page)
+            val isSelected = pagerState.currentPage == page
+            val isToday = date == today
+
+            val dayLabel = when (date) {
+                today -> stringResource(R.string.today)
+                today.minusDays(1) -> stringResource(R.string.yesterday)
+                today.plusDays(1) -> stringResource(R.string.tomorrow)
+                else -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, LocalLocale.current.platformLocale)
+            }
+
+            val dateText = date.format(DateTimeFormatter.ofPattern("d MMM"))
+
+            val containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else if (isToday) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            }
+
+            val contentColor = if (isSelected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else if (isToday) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+
+            Surface(
+                onClick = { onDateSelected(page) },
+                shape = RoundedCornerShape(14.dp),
+                color = containerColor,
+                border = if (isToday && !isSelected) {
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                } else null,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .height(50.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = dayLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium,
+                        color = contentColor
+                    )
+                    Text(
+                        text = dateText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = if (isSelected) 0.9f else 0.75f)
+                    )
                 }
             }
         }

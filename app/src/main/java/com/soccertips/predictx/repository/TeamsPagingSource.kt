@@ -22,7 +22,8 @@ class TransferPagingSource(
         return try {
             if (allData.isEmpty()) {
                 val response = teamsService.getTransfers(teamId)
-                allData = response.response.sortedByDescending { transferResponse ->
+                val rawList = response.response ?: emptyList()
+                allData = rawList.sortedByDescending { transferResponse ->
                     transferResponse.transfers.firstOrNull()?.date?.let { dateString ->
                         try {
                             val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())

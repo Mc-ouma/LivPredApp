@@ -1,21 +1,17 @@
 package com.soccertips.predictx.data.model.team.squad
 
 data class SquadResponse(
-    val errors: List<Any>,
-    val `get`: String,
-    val paging: Paging,
-    val parameters: Parameters,
-    val response: List<Response>,
-    val results: Int
+    val errors: Any? = null,
+    val `get`: String? = null,
+    val paging: Paging? = null,
+    val parameters: Any? = null,
+    val response: List<Response> = emptyList(),
+    val results: Int? = null
 )
 
 data class Paging(
-    val current: Int,
-    val total: Int
-)
-
-data class Parameters(
-    val team: String
+    val current: Int? = null,
+    val total: Int? = null
 )
 
 data class Response(

@@ -330,11 +330,14 @@ object AppModule {
     @Provides
     @Singleton
     @Named("fixtureDetailsRetrofit")
-    fun provideRetrofit(@Named("fixtureDetailsOkHttpClient") client: OkHttpClient): Retrofit {
+    fun provideRetrofit(
+        @Named("fixtureDetailsOkHttpClient") client: OkHttpClient,
+        gson: Gson
+    ): Retrofit {
         return Retrofit.Builder()
             .baseUrl(Constants.API_BASE_URL_VALUE)
             .client(client) // Use the OkHttp client with cache
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
@@ -499,6 +502,7 @@ object AppModule {
             .respectCacheHeaders(false) // Use our own cache policy
             .diskCachePolicy(CachePolicy.ENABLED)
             .memoryCachePolicy(CachePolicy.ENABLED)
+            .allowRgb565(true) // Optimize bitmap memory footprint
             .apply {
                 // Enable debug logging in debug builds
                 if (com.soccertips.predictx.BuildConfig.DEBUG) {

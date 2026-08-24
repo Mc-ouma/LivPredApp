@@ -1,16 +1,12 @@
 package com.soccertips.predictx.data.model.prediction
 
 data class PredictionResponse(
-    val get: String,
-    val parameters: Parameters,
-    val errors: List<String>,
-    val results: Int,
-    val paging: Paging,
-    val response: List<Response>
-)
-
-data class Parameters(
-    val fixture: String
+    val get: String? = null,
+    val parameters: Any? = null,
+    val errors: Any? = null,
+    val results: Int? = null,
+    val paging: Paging? = null,
+    val response: List<Response> = emptyList()
 )
 
 data class Paging(

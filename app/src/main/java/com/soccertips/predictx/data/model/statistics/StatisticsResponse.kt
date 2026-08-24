@@ -1,22 +1,17 @@
 package com.soccertips.predictx.data.model.statistics
 
 data class StatisticsResponse(
-    val get: String,
-    val parameters: Parameters,
-    val errors: List<Any>,
-    val results: Int,
-    val paging: Paging,
-    val response: List<Response>,
-)
-
-data class Parameters(
-    val team: String,
-    val fixture: String,
+    val get: String? = null,
+    val parameters: Any? = null,
+    val errors: Any? = null,
+    val results: Int? = null,
+    val paging: Paging? = null,
+    val response: List<Response> = emptyList(),
 )
 
 data class Paging(
-    val current: Int,
-    val total: Int,
+    val current: Int? = null,
+    val total: Int? = null,
 )
 
 data class Response(
@@ -25,12 +20,12 @@ data class Response(
 )
 
 data class Team(
-    val id: Int,
-    val name: String,
-    val logo: String,
+    val id: Int = 0,
+    val name: String = "",
+    val logo: String = "",
 )
 
 data class Statistic(
-    val type: String,
-    val value: Any?,
+    val type: String = "",
+    val value: Any? = null,
 )

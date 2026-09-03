@@ -44,8 +44,11 @@ constructor(
         viewModelScope.launch {
             try {
                 remoteConfigRepository.getAnnouncements().collect { announcements ->
-                    Timber.d("Announcements loaded: ${announcements.size}")
-                    _announcements.value = announcements
+                    val distinct = announcements
+                        .filter { it.id.isNotBlank() }
+                        .distinctBy { it.id.trim() }
+                    Timber.d("Announcements loaded: ${distinct.size}")
+                    _announcements.value = distinct
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error loading announcements")
@@ -62,7 +65,10 @@ constructor(
                 categoryRepository.getCategories().collect { result ->
                     result.fold(
                         onSuccess = { categories ->
-                            if (categories.isEmpty()) {
+                            val distinct = categories
+                                .filter { it.url.isNotBlank() }
+                                .distinctBy { it.uniqueKey }
+                            if (distinct.isEmpty()) {
                                 Timber.tag("Categories")
                                     .d("loadCategories: No categories found")
                                 _uiState.value =
@@ -72,7 +78,7 @@ constructor(
                             } else {
                                 Timber.tag("Categories")
                                     .d("loadCategories: Categories loaded successfully")
-                                _uiState.value = UiState.Success(categories)
+                                _uiState.value = UiState.Success(distinct)
                             }
                         },
                         onFailure = { error ->

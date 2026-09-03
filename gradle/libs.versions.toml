@@ -4,7 +4,7 @@ accompanistNavigationMaterial = "0.36.0"
 accompanistPermissions = "0.37.3"
 adsMobileSdk = "1.0.0"
 annotation = "1.10.0"
-androidGradlePlugin = "9.3.1"
+androidGradlePlugin = "9.3.2"
 androidxActivity = "1.12.4"
 
 androidxComposeBom = "2026.02.01"

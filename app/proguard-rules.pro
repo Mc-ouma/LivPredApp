@@ -13,6 +13,10 @@
 # ------------------------------------------------------------------------------
 # Data Models & Serialization (Gson / Room)
 # ------------------------------------------------------------------------------
+# Preserve all data models and their fields so Gson reflection matches JSON keys in Release
+-keep class com.soccertips.predictx.data.model.** { *; }
+-keepclassmembers class com.soccertips.predictx.data.model.** { *; }
+
 # Keep fields serialized by Gson
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
@@ -27,6 +31,8 @@
 -keep class * extends com.google.gson.TypeAdapter { *; }
 
 # Keep Room database entities & DAOs
+-keep class com.soccertips.predictx.data.local.** { *; }
+-keepclassmembers class com.soccertips.predictx.data.local.** { *; }
 -keep @androidx.room.Entity class * { *; }
 -keep @androidx.room.Dao interface * { *; }
 -keep class * extends androidx.room.RoomDatabase { *; }

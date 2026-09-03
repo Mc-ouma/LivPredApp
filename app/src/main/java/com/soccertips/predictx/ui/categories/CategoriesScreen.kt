@@ -126,7 +126,7 @@ fun CategoriesScreen(
                 categories = categories,
                 announcements = visibleAnnouncements,
                 onDismissAnnouncement = { announcementId ->
-                    dismissedAnnouncementIds + announcementId
+                    dismissedAnnouncementIds = dismissedAnnouncementIds + announcementId
                 },
                 onAnnouncementActionClick = { url ->
                     try {
@@ -166,6 +166,13 @@ fun CategoriesContent(
             .getBoolean("is_subscribed", false)
     }
 
+    val distinctAnnouncements = remember(announcements) {
+        announcements.filter { it.id.isNotBlank() }.distinctBy { it.id.trim() }
+    }
+    val distinctCategories = remember(categories) {
+        categories.filter { it.url.isNotBlank() }.distinctBy { it.uniqueKey }
+    }
+
     // Use a single LazyVerticalGrid to avoid nested scrollables and fixed heights
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 150.dp),
@@ -176,11 +183,11 @@ fun CategoriesContent(
     ) {
         // Announcements span full width (all columns)
         items(
-            count = announcements.size,
-            key = { index -> announcements[index].id },
+            count = distinctAnnouncements.size,
+            key = { index -> "announcement_${distinctAnnouncements[index].id.trim()}" },
             span = { GridItemSpan(maxLineSpan) }
         ) { index ->
-            val announcement = announcements[index]
+            val announcement = distinctAnnouncements[index]
             AnnouncementCard(
                 announcement = announcement,
                 onDismiss = { onDismissAnnouncement(announcement.id) },
@@ -190,10 +197,10 @@ fun CategoriesContent(
 
         // Category items
         items(
-            count = categories.size,
-            key = { index -> categories[index].url },
+            count = distinctCategories.size,
+            key = { index -> "category_${distinctCategories[index].uniqueKey}" },
         ) { index ->
-            val category = categories[index]
+            val category = distinctCategories[index]
 
             CategoryCard(
                 category = category,
@@ -207,7 +214,10 @@ fun CategoriesContent(
 
         // Upgrade banner for non-subscribers at the bottom
         if (!isSubscribed) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
+            item(
+                key = "upgrade_banner",
+                span = { GridItemSpan(maxLineSpan) }
+            ) {
                 UpgradeBannerCard(
                     onClick = { navController.navigate(Routes.Subscription.route) }
                 )

@@ -71,7 +71,10 @@ constructor(private val remoteConfig: FirebaseRemoteConfig, private val gson: Gs
 
                 // Filter visible announcements and sort by priority
                 val visibleAnnouncements =
-                    announcements.filter { it.isVisible }.sortedByDescending { it.priority }
+                    announcements
+                        .filter { it.isVisible && it.id.isNotBlank() }
+                        .distinctBy { it.id.trim() }
+                        .sortedByDescending { it.priority }
 
                 emit(visibleAnnouncements)
             } else {

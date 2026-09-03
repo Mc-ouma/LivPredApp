@@ -44,8 +44,8 @@ ApplicationExtension::class.java.cast(extensions.getByName("android")).apply {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 34
-        versionName = "2.1.3 (34)"
+        versionCode = 35
+        versionName = "2.1.3 (35)"
 
         buildConfigField("boolean", "DEBUG", "true")
 

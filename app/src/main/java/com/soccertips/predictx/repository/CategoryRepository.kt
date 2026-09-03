@@ -64,6 +64,8 @@ class CategoryRepository @Inject constructor(
             if (!categories.isNullOrEmpty()) {
                 Timber.tag(TAG).d("Categories revalidated from Firebase Realtime Database")
                 freshCategories = categories
+                    .filter { it.url.isNotBlank() }
+                    .distinctBy { it.uniqueKey }
             }
         } catch (e: TimeoutCancellationException) {
             Timber.tag(TAG).w("Firebase Realtime Database timed out after ${FIREBASE_TIMEOUT_MS}ms")
@@ -86,11 +88,14 @@ class CategoryRepository @Inject constructor(
 
         // Step 4: Handle fresh categories or fallback
         if (!freshCategories.isNullOrEmpty()) {
-            cacheCategories(freshCategories)
+            val cleanFresh = freshCategories
+                .filter { it.url.isNotBlank() }
+                .distinctBy { it.uniqueKey }
+            cacheCategories(cleanFresh)
             // Emit if no cached data was previously emitted or if data changed
-            if (cached.isEmpty() || freshCategories != cached) {
-                Timber.tag(TAG).d("Emitting fresh categories (${freshCategories.size} items)")
-                emit(Result.success(freshCategories))
+            if (cached.isEmpty() || cleanFresh != cached) {
+                Timber.tag(TAG).d("Emitting fresh categories (${cleanFresh.size} items)")
+                emit(Result.success(cleanFresh))
             }
         } else if (cached.isEmpty()) {
             // Only emit failure if nothing was previously emitted from cache
@@ -123,14 +128,21 @@ class CategoryRepository @Inject constructor(
 
         val type = object : TypeToken<Map<String, CategoryDto>>() {}.type
         val dtosMap: Map<String, CategoryDto> = gson.fromJson(json, type)
-        return dtosMap.values.map { it.toCategory(firebaseRepository) }
+        return dtosMap.entries
+            .map { (key, dto) -> dto.toCategory(firebaseRepository, key) }
+            .filter { it.url.isNotBlank() }
+            .distinctBy { it.uniqueKey }
     }
 
     private fun cacheCategories(categories: List<Category>) {
-        memoryCachedCategories = categories
-        val dtos = categories.map { cat ->
+        val distinct = categories
+            .filter { it.url.isNotBlank() }
+            .distinctBy { it.uniqueKey }
+        memoryCachedCategories = distinct
+        val dtos = distinct.map { cat ->
             CategoryDto(
-                url = cat.url,
+                id = cat.id,
+                url = cat.url.trim(),
                 name = cat.name,
                 iconResId = getIconName(cat.iconResId),
                 colorHex = cat.colorHex
@@ -149,7 +161,10 @@ class CategoryRepository @Inject constructor(
         return try {
             val type = object : TypeToken<List<CategoryDto>>() {}.type
             val dtos: List<CategoryDto> = gson.fromJson(json, type)
-            val categories = dtos.map { it.toCategory(firebaseRepository) }
+            val categories = dtos
+                .map { it.toCategory(firebaseRepository, it.id) }
+                .filter { it.url.isNotBlank() }
+                .distinctBy { it.uniqueKey }
             memoryCachedCategories = categories
             categories
         } catch (e: Exception) {
@@ -162,9 +177,9 @@ class CategoryRepository @Inject constructor(
         val cached = getCachedCategories()
         if (cached.isNotEmpty()) return cached
         return listOf(
-            Category(url = "today.php", name = "Today Tips", iconResId = com.soccertips.predictx.R.drawable.ic_trending_up_24, colorHex = "#4CAF50"),
-            Category(url = "sure2.php", name = "Sure 2 Odds", iconResId = com.soccertips.predictx.R.drawable.ic_filter_2_24, colorHex = "#2196F3"),
-            Category(url = "daily_bonus.php", name = "Daily Bonus", iconResId = com.soccertips.predictx.R.drawable.ic_star_24, colorHex = "#FF9800")
+            Category(url = "today.php", name = "Today Tips", iconResId = com.soccertips.predictx.R.drawable.ic_trending_up_24, colorHex = "#4CAF50", id = "seed_today"),
+            Category(url = "sure2.php", name = "Sure 2 Odds", iconResId = com.soccertips.predictx.R.drawable.ic_filter_2_24, colorHex = "#2196F3", id = "seed_sure2"),
+            Category(url = "daily_bonus.php", name = "Daily Bonus", iconResId = com.soccertips.predictx.R.drawable.ic_star_24, colorHex = "#FF9800", id = "seed_bonus")
         )
     }
 }
@@ -174,18 +189,21 @@ class CategoryRepository @Inject constructor(
  * Remote Config uses the same JSON format as Firebase: a map of category keys to objects.
  */
 private data class CategoryDto(
+    val id: String? = null,
     val url: String = "",
     val name: String = "",
     val iconResId: String? = null,
     val colorHex: String? = null,
     val requiresRewardAd: Boolean = false
 ) {
-    fun toCategory(firebaseRepository: FirebaseRepository): Category {
+    fun toCategory(firebaseRepository: FirebaseRepository, key: String? = null): Category {
+        val categoryId = key ?: id ?: ""
         return Category(
             url = url,
             name = name,
             iconResId = firebaseRepository.getIconResourceId(iconResId),
-            colorHex = colorHex
+            colorHex = colorHex,
+            id = categoryId
         )
     }
 }

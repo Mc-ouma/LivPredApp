@@ -29,10 +29,17 @@ class FirebaseRepository @Inject constructor() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     try {
                         val categories = mutableListOf<Category>()
+                        val seenKeys = mutableSetOf<String>()
                         for (categorySnapshot in snapshot.children) {
-                            val url =
+                            val key = categorySnapshot.key ?: ""
+                            val rawUrl =
                                 categorySnapshot.child("url").getValue(String::class.java)
                                     ?: ""
+                            val url = rawUrl.trim()
+                            val uniqueId = key.ifBlank { url }
+                            if (url.isBlank() || !seenKeys.add(uniqueId)) {
+                                continue
+                            }
                             val name =
                                 categorySnapshot.child("name").getValue(String::class.java)
                                     ?: ""
@@ -48,7 +55,13 @@ class FirebaseRepository @Inject constructor() {
                             val iconResId = getIconResourceId(iconResIdString)
 
                             categories.add(
-                                Category(url, name, iconResId, colorHex)
+                                Category(
+                                    url = url,
+                                    name = name,
+                                    iconResId = iconResId,
+                                    colorHex = colorHex,
+                                    id = key
+                                )
                             )
                         }
                         trySend(Result.success(categories))

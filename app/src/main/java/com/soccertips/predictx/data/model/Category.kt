@@ -3,8 +3,12 @@ package com.soccertips.predictx.data.model
 import com.soccertips.predictx.R
 
 data class Category(
-        val url: String,
-        val name: String,
-        val iconResId: Int = R.drawable.outline_add_circle_outline_24, // Default icon
-        val colorHex: String? = null // Optional color override
-)
+    val url: String,
+    val name: String,
+    val iconResId: Int = R.drawable.outline_add_circle_outline_24, // Default icon
+    val colorHex: String? = null, // Optional color override
+    val id: String = "" // Database key (e.g. "category_key_1")
+) {
+    val uniqueKey: String
+        get() = id.ifBlank { url }
+}

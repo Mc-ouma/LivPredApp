@@ -43,6 +43,14 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
     // Track ad failure events for analytics
     private var adFailureListener: ((String) -> Unit)? = null
 
+    // Handler for scheduling load retries — stored so pending callbacks can be cancelled
+    private val retryHandler = Handler(Looper.getMainLooper())
+    private val retryRunnable = Runnable {
+        if (!isAdAvailable() && !isLoadingAd) {
+            loadAppOpenAd()
+        }
+    }
+
     companion object {
         private const val AD_TIMEOUT = 4 * 60 * 60 * 1000L // 4 hours in milliseconds
 
@@ -219,16 +227,9 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
     }
 
     private fun scheduleAdLoadRetry() {
-        // Retry loading the ad after a delay
-        Handler(Looper.getMainLooper())
-                .postDelayed(
-                        {
-                            if (!isAdAvailable() && !isLoadingAd) {
-                                loadAppOpenAd()
-                            }
-                        },
-                        60000
-                ) // Retry after 1 minute
+        // Cancel any pending retry before scheduling a new one to prevent stacked callbacks
+        retryHandler.removeCallbacks(retryRunnable)
+        retryHandler.postDelayed(retryRunnable, 60_000) // Retry after 1 minute
     }
 
     fun showAdIfAvailable(activity: Activity, onShowAdCompleteListener: () -> Unit) {

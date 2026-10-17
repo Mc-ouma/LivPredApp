@@ -917,6 +917,10 @@ constructor(
     private var lastLoadAttemptTime = 0L
     private val minLoadIntervalMs = 5000L
 
+    // Handler for exponential-backoff retries — stored so stacked callbacks can be cancelled
+    private val retryHandler = Handler(Looper.getMainLooper())
+    private var retryRunnable: Runnable? = null
+
 
     fun setActivityContext(activity: Activity?) {
         val previous = currentActivityContext
@@ -1146,9 +1150,11 @@ constructor(
 
         val delay = (2.0.pow(retryAttempt)).toLong() * 1000
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            loadAdIfNeeded()
-        }, delay)
+        // Cancel any pending retry before scheduling a new one
+        retryRunnable?.let { retryHandler.removeCallbacks(it) }
+        retryRunnable = Runnable { loadAdIfNeeded() }.also {
+            retryHandler.postDelayed(it, delay)
+        }
     }
 
     fun isCurrentlyLoading(): Boolean = isAdLoading

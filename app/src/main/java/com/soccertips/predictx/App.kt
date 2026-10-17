@@ -103,6 +103,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     // Flag to avoid showing ads during initial app startup
     private var isInitialAppStart = true
 
+    // Prevents both onActivityStarted and onActivityResumed from each triggering an
+    // App Open Ad during the same foreground transition cycle. Reset in onActivityStopped.
+    private var adShownThisForegroundCycle = false
+
+
     // Cached first-launch result so isFirstLaunch() only writes to SharedPreferences once
     private var _isFirstLaunch: Boolean? = null
 
@@ -803,9 +808,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
             if (isMobileAdsInitialized.value && !isInitialAppStart && !(isLowMemory && isInitialAppStart)) {
                 Timber.d("AppOpenAdManager: Checking if ad can be shown on resume")
-                // Check if the app is eligible to show ad on app resume
-                if (appOpenAdManager.shouldShowAdOnAppResume()) {
+                // Skip if onActivityStarted already triggered an ad this foreground cycle
+                if (adShownThisForegroundCycle) {
+                    Timber.d("AppOpenAdManager: Skipping resume ad - already shown this foreground cycle")
+                } else if (appOpenAdManager.shouldShowAdOnAppResume()) {
                     Timber.d("AppOpenAdManager: Showing ad on resume")
+                    adShownThisForegroundCycle = true
                     showAppOpenAd(activity)
                 } else {
                     Timber.d("AppOpenAdManager: Not showing ad on resume (not eligible)")
@@ -840,6 +848,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             Timber.d("AppOpenAdManager: Checking if ad can be shown on activity start")
             if (appOpenAdManager.shouldShowAdOnAppStart(isFirstLaunchCheck)) {
                 Timber.d("AppOpenAdManager: Attempting to show app open ad on activity start")
+                adShownThisForegroundCycle = true
                 showAppOpenAd(activity)
             } else {
                 Timber.d("AppOpenAdManager: Not showing app open ad on start (not eligible)")
@@ -856,6 +865,8 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         if (currentActivity == activity) {
             appInForeground = false
             appOpenAdManager.onAppBackgrounded()
+            // Reset so the next foreground cycle can show an ad again
+            adShownThisForegroundCycle = false
         }
         try {
             FirebaseCrashlytics.getInstance()

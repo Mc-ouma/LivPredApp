@@ -64,7 +64,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.pow
@@ -765,7 +764,7 @@ private fun createItemCardStyleNativeAd(
 
     // Advertiser name (like league name)
     val advertiserView = TextView(context).apply {
-        text = nativeAd.advertiser ?: "Sponsored"
+        text = nativeAd.advertiser ?: context.getString(R.string.native_sponsored)
         textSize = 14f
         setTextColor(onSurfaceColor)
         setTypeface(typeface, Typeface.BOLD)
@@ -782,7 +781,7 @@ private fun createItemCardStyleNativeAd(
 
     // "Ad" badge (positioned like date in MatchHeader)
     val adBadge = TextView(context).apply {
-        text = "Ad"
+        text = context.getString(R.string.ad_badge)
         textSize = 10f
         setTextColor(Color.WHITE)
         setPadding(6.dp(), 2.dp(), 6.dp(), 2.dp())
@@ -1141,16 +1140,14 @@ constructor(
 
                 override fun onAdDismissedFullScreenContent() {
                     baseCallback?.onAdDismissedFullScreenContent()
-                    android.os.Handler(android.os.Looper.getMainLooper()).post {
-                        onAdDismissed()
-                    }
+                    // SDK delivers callbacks on the main thread — no Handler.post needed
+                    onAdDismissed()
                 }
 
                 override fun onAdFailedToShowFullScreenContent(error: FullScreenContentError) {
                     baseCallback?.onAdFailedToShowFullScreenContent(error)
-                    android.os.Handler(android.os.Looper.getMainLooper()).post {
-                        onAdDismissed()
-                    }
+                    // SDK delivers callbacks on the main thread — no Handler.post needed
+                    onAdDismissed()
                 }
 
                 override fun onAdImpression() {

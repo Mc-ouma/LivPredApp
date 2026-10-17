@@ -489,6 +489,8 @@
     <string name="upgrade_banner_title">Tired of ads?</string>
     <string name="upgrade_banner_subtitle">Go Premium for an ad-free experience</string>
     <string name="upgrade_button">Upgrade</string>
+    <string name="ad_badge">Ad</string>
+    <string name="native_sponsored">Sponsored</string>
 
     <!-- Exact Alarm Permission -->
     <string name="exact_alarm_permission_title">Exact Alarm Permission Required</string>

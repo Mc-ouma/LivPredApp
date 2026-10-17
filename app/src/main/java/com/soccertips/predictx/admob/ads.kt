@@ -155,8 +155,13 @@ class AdStateManager @Inject constructor() {
     // Tracks subscription status - when true, all ads are suppressed
     private val _isSubscribed = java.util.concurrent.atomic.AtomicBoolean(false)
 
+    // Reactive subscription state for Compose observers
+    private val _isSubscribedFlow = MutableStateFlow(false)
+    val isSubscribedFlow: StateFlow<Boolean> = _isSubscribedFlow.asStateFlow()
+
     fun setSubscribed(subscribed: Boolean) {
         _isSubscribed.set(subscribed)
+        _isSubscribedFlow.value = subscribed
         Timber.tag("AdStateManager").d("Subscription state: $subscribed")
     }
 
@@ -185,14 +190,22 @@ class AdStateManager @Inject constructor() {
 }
 
 /**
- * Checks if the user is subscribed by reading cached preference.
- * Used by ad composables to skip rendering when user has active subscription.
+ * Reactively checks if the user is subscribed via [AdStateManager]'s StateFlow.
+ * Recomposes only when the subscription state actually changes, avoiding
+ * SharedPreferences reads on every recomposition.
  */
 @Composable
 private fun isUserSubscribed(): Boolean {
-    val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE) }
-    return prefs.getBoolean("is_subscribed", false)
+    val app = LocalContext.current.applicationContext as? com.soccertips.predictx.App
+    // AdStateManager is a Hilt singleton — access it via the App field
+    // Fall back to false (show ads) if it's unavailable.
+    val adStateManager = remember(app) {
+        app?.let {
+            // Retrieve the singleton from the Hilt component via the application class
+            it.adStateManagerProvider()
+        }
+    }
+    return adStateManager?.isSubscribedFlow?.collectAsState()?.value ?: false
 }
 
 /**

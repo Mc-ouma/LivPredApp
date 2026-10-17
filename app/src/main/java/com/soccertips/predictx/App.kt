@@ -92,6 +92,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     @Inject
     lateinit var imageLoader: coil.ImageLoader
 
+    /** Allows Compose code in the admob package to access the Hilt-managed singleton. */
+    fun adStateManagerProvider(): com.soccertips.predictx.admob.AdStateManager = adStateManager
+
     private var currentActivity: Activity? = null
 
     // Track app foreground status

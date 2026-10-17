@@ -266,11 +266,20 @@ fun BannerAdView(
     val activity = context.findActivity()
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
-    var adFailed by remember { mutableStateOf(false) }
+    // Key on adUnitId so state resets if the ID changes
+    var adFailed by remember(adUnitId) { mutableStateOf(false) }
     var adViewRef by remember { mutableStateOf<AdView?>(null) }
 
     val adSize = remember(screenWidthDp) {
         AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, screenWidthDp)
+    }
+
+    // Retry after a delay when the banner fails, so it recovers when network returns
+    LaunchedEffect(adFailed) {
+        if (adFailed) {
+            kotlinx.coroutines.delay(30_000)
+            adFailed = false
+        }
     }
 
     DisposableEffect(Unit) {
@@ -351,11 +360,19 @@ fun CollapsibleBannerAdView(
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
 
-    var adFailed by remember { mutableStateOf(false) }
+    var adFailed by remember(adUnitId) { mutableStateOf(false) }
     var adViewRef by remember { mutableStateOf<AdView?>(null) }
 
     val adSize = remember(screenWidthDp) {
         AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, screenWidthDp)
+    }
+
+    // Retry after a delay when the banner fails, so it recovers when network returns
+    LaunchedEffect(adFailed) {
+        if (adFailed) {
+            kotlinx.coroutines.delay(30_000)
+            adFailed = false
+        }
     }
 
     DisposableEffect(Unit) {
@@ -440,11 +457,19 @@ fun InlineBannerAdView(
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
 
-    var adFailed by remember { mutableStateOf(false) }
+    var adFailed by remember(adUnitId) { mutableStateOf(false) }
     var adViewRef by remember { mutableStateOf<AdView?>(null) }
 
     val adSize = remember(screenWidthDp) {
         AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, screenWidthDp)
+    }
+
+    // Retry after a delay when the banner fails, so it recovers when network returns
+    LaunchedEffect(adFailed) {
+        if (adFailed) {
+            kotlinx.coroutines.delay(30_000)
+            adFailed = false
+        }
     }
 
     DisposableEffect(Unit) {

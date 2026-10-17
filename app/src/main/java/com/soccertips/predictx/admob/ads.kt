@@ -92,8 +92,9 @@ import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest
 import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdView
 import com.google.android.ump.UserMessagingPlatform
 
-// Helper function to check consent status efficiently
-private fun canShowAdsWithConsent(activity: Activity): Boolean {
+// Helper function to check consent status efficiently.
+// Internal so all ad managers in this package can share the same logic.
+internal fun canShowAdsWithConsent(activity: Activity): Boolean {
     return try {
         val consentInfo = UserMessagingPlatform.getConsentInformation(activity)
         val canRequest = consentInfo.canRequestAds()

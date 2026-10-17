@@ -263,6 +263,35 @@ fun UpgradePromptBanner(
     }
 }
 
+private fun BannerAd.setupBannerCallbacks(adStateManager: AdStateManager?, adType: String) {
+    this.adEventCallback = object : BannerAdEventCallback {
+        override fun onAdImpression() {
+            Timber.d("$adType impression recorded")
+        }
+
+        override fun onAdClicked() {
+            Timber.d("$adType clicked")
+        }
+
+        override fun onAdShowedFullScreenContent() {
+            Timber.d("$adType showed full screen content")
+            adStateManager?.setFullScreenAdShowing(true)
+        }
+
+        override fun onAdDismissedFullScreenContent() {
+            Timber.d("$adType dismissed full screen content")
+            adStateManager?.setFullScreenAdShowing(false)
+        }
+
+        override fun onAdFailedToShowFullScreenContent(
+            fullScreenContentError: FullScreenContentError
+        ) {
+            Timber.w("$adType failed to show: $fullScreenContentError")
+            adStateManager?.setFullScreenAdShowing(false)
+        }
+    }
+}
+
 @Composable
 fun BannerAdView(
     modifier: Modifier = Modifier,
@@ -276,6 +305,7 @@ fun BannerAdView(
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
 
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
     val activity = context.findActivity()
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
@@ -328,6 +358,7 @@ fun BannerAdView(
                         request,
                         object : AdLoadCallback<BannerAd> {
                             override fun onAdLoaded(ad: BannerAd) {
+                                ad.setupBannerCallbacks(adStateManager, "Banner")
                                 activity?.let { registerBannerAd(ad, it) }
                             }
 
@@ -368,6 +399,7 @@ fun CollapsibleBannerAdView(
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
 
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
     val activity = context.findActivity()
 
     val configuration = LocalConfiguration.current
@@ -433,6 +465,7 @@ fun CollapsibleBannerAdView(
                             object : AdLoadCallback<BannerAd> {
                                 override fun onAdLoaded(ad: BannerAd) {
                                     Timber.d("Collapsible banner loaded. isCollapsible=${ad.isCollapsible()}")
+                                    ad.setupBannerCallbacks(adStateManager, "Collapsible banner")
                                     activity?.let { registerBannerAd(ad, it) }
                                 }
 
@@ -465,6 +498,7 @@ fun InlineBannerAdView(
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
 
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
     val activity = context.findActivity()
 
     val configuration = LocalConfiguration.current
@@ -520,31 +554,7 @@ fun InlineBannerAdView(
                         object : AdLoadCallback<BannerAd> {
                             override fun onAdLoaded(ad: BannerAd) {
                                 Timber.d("Inline banner loaded")
-
-                                ad.adEventCallback = object : BannerAdEventCallback {
-                                    override fun onAdImpression() {
-                                        Timber.d("Inline banner recorded an impression")
-                                    }
-
-                                    override fun onAdClicked() {
-                                        Timber.d("Inline banner clicked")
-                                    }
-
-                                    override fun onAdShowedFullScreenContent() {
-                                        Timber.d("Inline banner showed full screen content")
-                                    }
-
-                                    override fun onAdDismissedFullScreenContent() {
-                                        Timber.d("Inline banner dismissed full screen content")
-                                    }
-
-                                    override fun onAdFailedToShowFullScreenContent(
-                                        fullScreenContentError: FullScreenContentError
-                                    ) {
-                                        Timber.w("Inline banner failed to show: $fullScreenContentError")
-                                    }
-                                }
-
+                                ad.setupBannerCallbacks(adStateManager, "Inline banner")
                                 activity?.let { registerBannerAd(ad, it) }
                             }
 
@@ -582,6 +592,7 @@ fun NativeAdItem(
     val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
     if (!isMobileAdsInitialized) return
 
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
     val nativeTypes = remember { listOf(NativeAd.NativeAdType.NATIVE) }
     var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
 
@@ -613,6 +624,23 @@ fun NativeAdItem(
 
                                 override fun onAdClicked() {
                                     Timber.d("Native ad clicked")
+                                }
+
+                                override fun onAdShowedFullScreenContent() {
+                                    Timber.d("Native ad showed full screen content")
+                                    adStateManager?.setFullScreenAdShowing(true)
+                                }
+
+                                override fun onAdDismissedFullScreenContent() {
+                                    Timber.d("Native ad dismissed full screen content")
+                                    adStateManager?.setFullScreenAdShowing(false)
+                                }
+
+                                override fun onAdFailedToShowFullScreenContent(
+                                    fullScreenContentError: FullScreenContentError
+                                ) {
+                                    Timber.w("Native ad failed to show: $fullScreenContentError")
+                                    adStateManager?.setFullScreenAdShowing(false)
                                 }
                             }
                     }

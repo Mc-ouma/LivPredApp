@@ -337,7 +337,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 isMobileAdsInitializing = true
 
                 val initConfig =
-                    InitializationConfig.Builder("ca-app-pub-8504414839434291~8215753517")
+                    InitializationConfig.Builder(getString(R.string.admob_app_id))
                         .build()
 
                 MobileAds.initialize(applicationContext, initConfig) { initializationStatus ->

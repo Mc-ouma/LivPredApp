@@ -100,6 +100,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     // Flag to avoid showing ads during initial app startup
     private var isInitialAppStart = true
 
+    // Cached first-launch result so isFirstLaunch() only writes to SharedPreferences once
+    private var _isFirstLaunch: Boolean? = null
+
     // Track when Mobile Ads SDK has been initialized
     //private var isMobileAdsInitialized = false
     private val _isMobileAdsInitialized = MutableStateFlow(false)
@@ -861,15 +864,15 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     }
 
     private fun isFirstLaunch(): Boolean {
+        if (_isFirstLaunch != null) return _isFirstLaunch!!
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val isFirstLaunch = sharedPreferences.getBoolean(KEY_FIRST_LAUNCH, true)
-
-        if (isFirstLaunch) {
+        val firstLaunch = sharedPreferences.getBoolean(KEY_FIRST_LAUNCH, true)
+        if (firstLaunch) {
             sharedPreferences.edit { putBoolean(KEY_FIRST_LAUNCH, false) }
             Timber.d("App is launching for the first time")
-            return true
         }
-        return false
+        _isFirstLaunch = firstLaunch
+        return firstLaunch
     }
 
     private fun showAppOpenAd(activity: Activity) {

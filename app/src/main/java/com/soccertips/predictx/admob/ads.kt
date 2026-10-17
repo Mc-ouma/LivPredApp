@@ -149,27 +149,27 @@ private fun isProblematicDeviceForFullScreenAds(): Boolean {
 @Singleton
 class AdStateManager @Inject constructor() {
     // Tracks if any full screen ad is currently showing
-    private var isAnyFullScreenAdShowing = false
+    private val isAnyFullScreenAdShowing = java.util.concurrent.atomic.AtomicBoolean(false)
 
     // Tracks subscription status - when true, all ads are suppressed
-    private var _isSubscribed = false
+    private val _isSubscribed = java.util.concurrent.atomic.AtomicBoolean(false)
 
     fun setSubscribed(subscribed: Boolean) {
-        _isSubscribed = subscribed
+        _isSubscribed.set(subscribed)
         Timber.tag("AdStateManager").d("Subscription state: $subscribed")
     }
 
-    fun isSubscribed(): Boolean = _isSubscribed
+    fun isSubscribed(): Boolean = _isSubscribed.get()
 
     // Lock any full screen ad from showing
     fun setFullScreenAdShowing(isShowing: Boolean) {
-        isAnyFullScreenAdShowing = isShowing
-        Timber.tag("AdStateManager").d("Full screen ad state: $isAnyFullScreenAdShowing")
+        isAnyFullScreenAdShowing.set(isShowing)
+        Timber.tag("AdStateManager").d("Full screen ad state: $isShowing")
     }
 
     // Check if any full screen ad is currently showing
     fun isFullScreenAdShowing(): Boolean {
-        return isAnyFullScreenAdShowing
+        return isAnyFullScreenAdShowing.get()
     }
 
     // Check if device is safe for full screen ads
@@ -179,7 +179,7 @@ class AdStateManager @Inject constructor() {
 
     // Check if ads should be shown (not subscribed and device is safe)
     fun shouldShowAds(): Boolean {
-        return !_isSubscribed
+        return !_isSubscribed.get()
     }
 }
 

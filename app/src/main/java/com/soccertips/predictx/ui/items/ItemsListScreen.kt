@@ -59,9 +59,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predictx.Menu
 import com.soccertips.predictx.R
+import com.soccertips.predictx.admob.AdManagerEntryPoint
 import com.soccertips.predictx.admob.CollapsibleBannerAdView
 import com.soccertips.predictx.admob.InterstitialAdManager
 import com.soccertips.predictx.admob.NativeAdItem
+import com.soccertips.predictx.admob.findActivity
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.UiState
@@ -69,32 +71,11 @@ import com.soccertips.predictx.ui.components.DateUtils
 import com.soccertips.predictx.ui.components.ErrorMessage
 import com.soccertips.predictx.ui.components.LoadingIndicator
 import com.soccertips.predictx.viewmodel.ItemsListViewModel
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import timber.log.Timber
 import androidx.compose.ui.platform.LocalLocale
-
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface AdManagerEntryPoint {
-    fun interstitialAdManager(): InterstitialAdManager
-}
-
-// Extension function to safely find the Activity from any Context
-fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) {
-            return context
-        }
-        context = context.baseContext
-    }
-    return null
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

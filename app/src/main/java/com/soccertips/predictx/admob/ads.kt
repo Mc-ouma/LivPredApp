@@ -58,6 +58,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.soccertips.predictx.R
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import com.soccertips.predictx.ui.theme.LocalCardColors
 import com.soccertips.predictx.ui.theme.LocalCardElevation
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -106,7 +109,7 @@ internal fun canShowAdsWithConsent(activity: Activity): Boolean {
     }
 }
 
-private fun Context.findActivity(): Activity? {
+fun Context.findActivity(): Activity? {
     var current = this
     while (current is android.content.ContextWrapper) {
         if (current is Activity) return current
@@ -955,6 +958,13 @@ private fun createItemCardStyleNativeAd(
     }
 
     return mainLayout
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface AdManagerEntryPoint {
+    fun interstitialAdManager(): InterstitialAdManager
+    fun adStateManager(): AdStateManager
 }
 
 @Singleton

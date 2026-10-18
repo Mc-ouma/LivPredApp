@@ -47,19 +47,11 @@ import com.soccertips.predictx.ui.UiState
 import com.soccertips.predictx.ui.components.AnnouncementCard
 import com.soccertips.predictx.ui.components.LoadingIndicator
 import com.soccertips.predictx.ui.fixturedetails.EmptyScreen
+import com.soccertips.predictx.admob.AdManagerEntryPoint
 import com.soccertips.predictx.ui.fixturedetails.ErrorScreen
 import com.soccertips.predictx.viewmodel.CategoriesViewModel
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
 import timber.log.Timber
-
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface CategoriesInterstitialAdManagerEntryPoint {
-    fun interstitialAdManager(): InterstitialAdManager
-}
 
 // CategoriesScreen.kt
 @Composable
@@ -76,7 +68,7 @@ fun CategoriesScreen(
     val interstitialAdManager = remember {
         EntryPointAccessors.fromApplication(
             context.applicationContext,
-            CategoriesInterstitialAdManagerEntryPoint::class.java
+            AdManagerEntryPoint::class.java
         ).interstitialAdManager()
     }
 

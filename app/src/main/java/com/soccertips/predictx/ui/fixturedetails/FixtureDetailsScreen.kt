@@ -79,6 +79,7 @@ import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.UiState
 import androidx.activity.compose.BackHandler
 import com.soccertips.predictx.admob.AdManagerEntryPoint
+import com.soccertips.predictx.admob.CollapsibleBannerAdView
 import com.soccertips.predictx.admob.findActivity
 import com.soccertips.predictx.viewmodel.FixtureDetailsViewModel
 import com.soccertips.predictx.viewmodel.SharedViewModel
@@ -208,6 +209,11 @@ fun FixtureDetailsScreen(
                                 3.dp
                             ),
                     )
+            )
+        },
+        bottomBar = {
+            CollapsibleBannerAdView(
+                onUpgradeClick = { navController.navigate(Routes.Subscription.route) }
             )
         }
     ) { paddingValues ->

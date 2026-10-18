@@ -45,7 +45,6 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.soccertips.predictx.R
-import com.soccertips.predictx.admob.InlineBannerAdView
 import com.soccertips.predictx.data.model.Fixture
 import com.soccertips.predictx.data.model.ResponseData
 import com.soccertips.predictx.data.model.prediction.Comparison
@@ -109,12 +108,6 @@ fun FixtureMatchDetailsScreen(
         item {
             // Fixture detail card
             FixtureDetailCard(fixture = fixtureDetails.fixture)
-        }
-
-        item {
-            InlineBannerAdView(
-                onUpgradeClick = { navController.navigate(Routes.Subscription.route) }
-            )
         }
 
         item {

@@ -987,6 +987,55 @@ constructor(
     private val retryHandler = Handler(Looper.getMainLooper())
     private var retryRunnable: Runnable? = null
 
+    // Frequency and interval tracking to prevent ad fatigue
+    private var actionCount = 0
+    private var lastAdShownTimestamp = 0L
+    private val minDisplayIntervalMs = 75_000L // 75 seconds minimum between interstitials
+
+    /**
+     * Checks if an interstitial ad should be shown based on user action frequency
+     * and a minimum cooldown interval to maintain a good user experience.
+     *
+     * @param interval The number of actions (e.g. item/category clicks) before an ad can show.
+     */
+    fun shouldShowByFrequency(interval: Int = 3): Boolean {
+        actionCount++
+        val now = System.currentTimeMillis()
+        val elapsed = now - lastAdShownTimestamp
+        val eligible = actionCount >= interval && (lastAdShownTimestamp == 0L || elapsed >= minDisplayIntervalMs)
+        Timber.tag("InterstitialAd").d("Frequency check: actionCount=$actionCount/$interval, elapsed=${elapsed}ms (min ${minDisplayIntervalMs}ms), eligible=$eligible")
+        if (eligible) {
+            actionCount = 0
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Shows the interstitial ad only if the frequency threshold and cooldown have passed.
+     * If not eligible or ad is not ready, calls [onComplete] directly and preloads if needed.
+     */
+    fun showIfEligibleByFrequency(
+        activity: Activity,
+        interval: Int = 3,
+        onComplete: () -> Unit
+    ) {
+        if (adStateManager.isSubscribed()) {
+            onComplete()
+            return
+        }
+
+        if (!shouldShowByFrequency(interval)) {
+            loadAdIfNeeded()
+            onComplete()
+            return
+        }
+
+        showInterstitialAdWithCallback(activity) {
+            lastAdShownTimestamp = System.currentTimeMillis()
+            onComplete()
+        }
+    }
 
     fun setActivityContext(activity: Activity?) {
         val previous = currentActivityContext
@@ -1191,6 +1240,7 @@ constructor(
 
             // Immediately mark as showing to preempt rapid double-clicks
             adStateManager.setFullScreenAdShowing(true)
+            lastAdShownTimestamp = System.currentTimeMillis()
             ad.show(activity)
 
         } catch (e: Exception) {

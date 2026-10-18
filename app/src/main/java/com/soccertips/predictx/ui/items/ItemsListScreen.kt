@@ -165,7 +165,7 @@ fun ItemsListScreen(
     val initialPage = if (!pendingNavigationDate.isNullOrEmpty()) {
         try {
             val parsedDate = LocalDate.parse(pendingNavigationDate)
-            sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
+            sharedPrefs.edit().remove("pending_navigation_date").apply()
             val daysFromToday = ChronoUnit.DAYS.between(today, parsedDate).toInt()
             (todayPageIndex + daysFromToday).coerceIn(0, pageCount - 1)
         } catch (e: Exception) {
@@ -202,45 +202,13 @@ fun ItemsListScreen(
 
     // Function to handle back navigation with an interstitial ad
     val navigateBackWithAd: () -> Unit = {
-        // Show interstitial ad on back navigation
-        val isAdCurrentlyLoading = interstitialAdManager.isCurrentlyLoading()
-        Timber.tag("InterstitialAd")
-            .d(
-                "Back navigation: isAdReady = $isAdReady, isAdLoading = $isAdCurrentlyLoading"
-            )
-        if (isAdReady && !isAdCurrentlyLoading) {
-            try {
-                val activity = navController.context as? Activity
-                activity?.let {
-                    Timber.tag("InterstitialAd")
-                        .d("Showing interstitial ad for back navigation")
-                    interstitialAdManager.showInterstitialAdWithCallback(
-                        it,
-                        onAdDismissed = {
-                            // Navigate back after ad is dismissed
-                            Timber.tag("InterstitialAd").d("Ad dismissed, navigating back")
-                            navController.popBackStack()
-                        }
-                    )
-                }
-                    ?: run {
-                        Timber.tag("InterstitialAd")
-                            .w("Activity is null, fallback navigation")
-                        navController.popBackStack() // Fallback if activity is null
-                    }
-            } catch (e: Exception) {
-                Timber.tag("InterstitialAd").e("Error showing ad: ${e.message}")
-                e.printStackTrace()
-                navController.popBackStack() // Fallback on error
+        val activity = navController.context as? Activity
+        if (activity != null) {
+            interstitialAdManager.showIfEligibleByFrequency(activity, interval = 2) {
+                Timber.tag("InterstitialAd").d("Back navigation completed")
+                navController.popBackStack()
             }
         } else {
-            // If no ad is ready, just navigate back
-            if (isAdCurrentlyLoading) {
-                Timber.tag("InterstitialAd")
-                    .d("Ad is loading, direct navigation without waiting")
-            } else {
-                Timber.tag("InterstitialAd").d("No ad ready, direct navigation")
-            }
             navController.popBackStack()
         }
     }
@@ -397,19 +365,25 @@ fun ItemsListScreen(
                                     ItemCard(
                                         item = item,
                                         onClick = {
-                                            navController.navigate(
-                                                Routes.FixtureDetails.createRoute(
-                                                    item.fixtureId ?: ""
-                                                ),
+                                            val fixtureRoute = Routes.FixtureDetails.createRoute(
+                                                item.fixtureId ?: ""
                                             )
+                                            val activity = navController.context as? Activity
+                                            if (activity != null) {
+                                                interstitialAdManager.showIfEligibleByFrequency(activity, interval = 3) {
+                                                    navController.navigate(fixtureRoute)
+                                                }
+                                            } else {
+                                                navController.navigate(fixtureRoute)
+                                            }
                                         },
                                         onFavoriteClick = { viewModel.toggleFavorite(item) },
                                         viewModel = viewModel
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    // Insert native ad after 5th item (index 4)
-                                    if (showNativeAd && index == 4) {
+                                    // Insert native ad after 5th item (index 4) and every 8 items thereafter in long lists
+                                    if (showNativeAd && (index == 4 || (index > 4 && (index - 4) % 8 == 0))) {
                                         NativeAdItem()
                                         Spacer(modifier = Modifier.height(8.dp))
                                     }

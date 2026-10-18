@@ -136,6 +136,17 @@ fun CategoriesScreen(
                     } catch (e: Exception) {
                         // Handle error silently
                     }
+                },
+                onCategoryClick = { category ->
+                    val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
+                    val targetRoute = Routes.ItemsList.createRoute(encodedUrl)
+                    if (activity != null) {
+                        interstitialAdManager.showIfEligibleByFrequency(activity, interval = 4) {
+                            navController.navigate(targetRoute)
+                        }
+                    } else {
+                        navController.navigate(targetRoute)
+                    }
                 }
             )
         }
@@ -158,7 +169,11 @@ fun CategoriesContent(
     categories: List<Category>,
     announcements: List<Announcement> = emptyList(),
     onDismissAnnouncement: (String) -> Unit = {},
-    onAnnouncementActionClick: (String) -> Unit = {}
+    onAnnouncementActionClick: (String) -> Unit = {},
+    onCategoryClick: (Category) -> Unit = { category ->
+        val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
+        navController.navigate(Routes.ItemsList.createRoute(encodedUrl))
+    }
 ) {
     val context = LocalContext.current
     val isSubscribed = remember {
@@ -204,11 +219,7 @@ fun CategoriesContent(
 
             CategoryCard(
                 category = category,
-                onClick = {
-                    // Navigate directly to category - interstitial ad shows on back
-                    val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
-                    navController.navigate(Routes.ItemsList.createRoute(encodedUrl))
-                },
+                onClick = { onCategoryClick(category) },
             )
         }
 

@@ -187,7 +187,6 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
                 adStateManager.setFullScreenAdShowing(false)
                 appOpenAd = null
                 onShowAdCompleteListener?.invoke()
-                loadAppOpenAd()
             }
 
             override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
@@ -201,7 +200,6 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
                 adFailureListener?.invoke(fullScreenContentError.message)
                 appOpenAd = null
                 onShowAdCompleteListener?.invoke()
-                loadAppOpenAd()
             }
 
             override fun onAdShowedFullScreenContent() {

@@ -357,9 +357,6 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                         isInitialAppStart = false
                         Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
                     }
-
-                    maybePreloadAppOpenAd()
-
                 }
             } catch (e: Exception) {
                 Timber.e("Error initializing MobileAds: ${e.message}")
@@ -867,6 +864,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             appOpenAdManager.onAppBackgrounded()
             // Reset so the next foreground cycle can show an ad again
             adShownThisForegroundCycle = false
+
+            // Preload an App Open ad while in background so it is ready when the user returns
+            if (isMobileAdsInitialized.value && !adStateManager.isSubscribed()) {
+                maybePreloadAppOpenAd()
+            }
         }
         try {
             FirebaseCrashlytics.getInstance()

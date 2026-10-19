@@ -1,16 +1,12 @@
 package com.soccertips.predictx.data.model.events
 
 data class FixtureEventsResponse(
-        val get: String,
-        val parameters: FixtureParameters,
-        val errors: List<String>,
-        val results: Int,
-        val paging: Paging,
-        val response: List<FixtureEvent>,
-)
-
-data class FixtureParameters(
-        val fixture: String,
+        val get: String? = null,
+        val parameters: Any? = null,
+        val errors: Any? = null,
+        val results: Int? = null,
+        val paging: Paging? = null,
+        val response: List<FixtureEvent> = emptyList(),
 )
 
 data class Paging(

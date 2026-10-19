@@ -204,5 +204,80 @@ class TokenRepository @Inject constructor(@ApplicationContext private val contex
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_IS_PLACEHOLDER = "is_placeholder_token"
         private const val KEY_FIREBASE_ERROR = "had_firebase_error"
+        private const val KEY_SUBSCRIBED_TOPICS = "subscribed_topics"
+
+        // FCM Topics
+        const val TOPIC_BETTING_SUCCESS = "betting_success"
+        const val TOPIC_DAILY_TIPS = "daily_tips"
+        const val TOPIC_MATCH_UPDATES = "match_updates"
+    }
+
+    /**
+     * Subscribe to FCM topics for server-side notifications.
+     * Call this during app initialization or after user grants notification permission.
+     */
+    suspend fun subscribeToDefaultTopics() {
+        subscribeToTopic(TOPIC_BETTING_SUCCESS)
+        subscribeToTopic(TOPIC_DAILY_TIPS)
+    }
+
+    /**
+     * Subscribe to a specific FCM topic.
+     * @param topic The topic name to subscribe to
+     */
+    suspend fun subscribeToTopic(topic: String) {
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance()
+                .subscribeToTopic(topic)
+                .await()
+
+            // Track subscribed topics locally
+            val subscribedTopics = getSubscribedTopics().toMutableSet()
+            subscribedTopics.add(topic)
+            sharedPreferences.edit {
+                putStringSet(KEY_SUBSCRIBED_TOPICS, subscribedTopics)
+            }
+
+            Timber.d("Successfully subscribed to FCM topic: $topic")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to subscribe to FCM topic: $topic")
+        }
+    }
+
+    /**
+     * Unsubscribe from a specific FCM topic.
+     * @param topic The topic name to unsubscribe from
+     */
+    suspend fun unsubscribeFromTopic(topic: String) {
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance()
+                .unsubscribeFromTopic(topic)
+                .await()
+
+            // Update local tracking
+            val subscribedTopics = getSubscribedTopics().toMutableSet()
+            subscribedTopics.remove(topic)
+            sharedPreferences.edit {
+                putStringSet(KEY_SUBSCRIBED_TOPICS, subscribedTopics)
+            }
+
+            Timber.d("Successfully unsubscribed from FCM topic: $topic")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to unsubscribe from FCM topic: $topic")
+        }
+    }
+
+    /**
+     * Get the set of currently subscribed topics.
+     */
+    fun getSubscribedTopics(): Set<String> {
+        return sharedPreferences.getStringSet(KEY_SUBSCRIBED_TOPICS, emptySet()) ?: emptySet()
+    }
+
+    /**
+     * Check if subscribed to a specific topic.
+     */
+    fun isSubscribedToTopic(topic: String): Boolean {
+        return getSubscribedTopics().contains(topic)
     }
 }

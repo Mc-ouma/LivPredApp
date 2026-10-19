@@ -1,51 +1,104 @@
 package com.soccertips.predictx.admob
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.TextUtils
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.android.gms.ads.rewarded.RewardItem
-import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.soccertips.predictx.R
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.math.pow
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import com.soccertips.predictx.ui.theme.LocalCardColors
+import com.soccertips.predictx.ui.theme.LocalCardElevation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.math.pow
+import androidx.core.graphics.toColorInt
+import com.google.android.libraries.ads.mobile.sdk.MobileAds.Companion.getInitializationStatus
+import com.google.android.libraries.ads.mobile.sdk.banner.AdSize
+import com.google.android.libraries.ads.mobile.sdk.banner.AdView
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAd
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdEventCallback
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerAdRequest
+import com.google.android.libraries.ads.mobile.sdk.banner.BannerRequest
+import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
+import com.google.android.libraries.ads.mobile.sdk.common.AdChoicesPlacement
+import com.google.android.libraries.ads.mobile.sdk.common.AdRequest
+import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError
+import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
+import com.google.android.libraries.ads.mobile.sdk.common.VideoOptions
+import com.google.android.libraries.ads.mobile.sdk.nativead.MediaView
+import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAd
+import com.google.android.libraries.ads.mobile.sdk.interstitial.InterstitialAdEventCallback
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAd
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoader
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdLoaderCallback
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdRequest
+import com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdView
+import com.google.android.ump.UserMessagingPlatform
 
-// Helper function to check consent status efficiently
-private fun canShowAdsWithConsent(activity: Activity): Boolean {
+// Helper function to check consent status efficiently.
+// Internal so all ad managers in this package can share the same logic.
+internal fun canShowAdsWithConsent(activity: Activity): Boolean {
     return try {
-        val consentInfo = com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
+        val consentInfo = UserMessagingPlatform.getConsentInformation(activity)
         val canRequest = consentInfo.canRequestAds()
         Timber.d("Consent check: canRequestAds = $canRequest, status = ${consentInfo.consentStatus}")
         canRequest
@@ -54,6 +107,15 @@ private fun canShowAdsWithConsent(activity: Activity): Boolean {
         // Default to false for safety - don't show ads if we can't verify consent
         false
     }
+}
+
+fun Context.findActivity(): Activity? {
+    var current = this
+    while (current is android.content.ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return null
 }
 
 // Helper function to check if device/manufacturer has known AdActivity issues
@@ -79,7 +141,8 @@ private fun isProblematicDeviceForFullScreenAds(): Boolean {
 
     // Additional check for specific Android versions with high crash rates
     if (Build.VERSION.SDK_INT in 28..30) { // Android 9, 10, 11
-        Timber.tag("AdSafety").d("Device on Android ${Build.VERSION.SDK_INT} - monitoring for issues")
+        Timber.tag("AdSafety")
+            .d("Device on Android ${Build.VERSION.SDK_INT} - monitoring for issues")
     }
 
     return false
@@ -89,49 +152,232 @@ private fun isProblematicDeviceForFullScreenAds(): Boolean {
 @Singleton
 class AdStateManager @Inject constructor() {
     // Tracks if any full screen ad is currently showing
-    private var isAnyFullScreenAdShowing = false
+    private val isAnyFullScreenAdShowing = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    // Tracks subscription status - when true, all ads are suppressed
+    private val _isSubscribed = java.util.concurrent.atomic.AtomicBoolean(false)
+
+    // Reactive subscription state for Compose observers
+    private val _isSubscribedFlow = MutableStateFlow(false)
+    val isSubscribedFlow: StateFlow<Boolean> = _isSubscribedFlow.asStateFlow()
+
+    fun setSubscribed(subscribed: Boolean) {
+        _isSubscribed.set(subscribed)
+        _isSubscribedFlow.value = subscribed
+        Timber.tag("AdStateManager").d("Subscription state: $subscribed")
+    }
+
+    fun isSubscribed(): Boolean = _isSubscribed.get()
 
     // Lock any full screen ad from showing
     fun setFullScreenAdShowing(isShowing: Boolean) {
-        isAnyFullScreenAdShowing = isShowing
-        Timber.tag("AdStateManager").d("Full screen ad state: $isAnyFullScreenAdShowing")
+        isAnyFullScreenAdShowing.set(isShowing)
+        Timber.tag("AdStateManager").d("Full screen ad state: $isShowing")
     }
 
     // Check if any full screen ad is currently showing
     fun isFullScreenAdShowing(): Boolean {
-        return isAnyFullScreenAdShowing
+        return isAnyFullScreenAdShowing.get()
     }
 
     // Check if device is safe for full screen ads
     fun isSafeForFullScreenAds(): Boolean {
         return !isProblematicDeviceForFullScreenAds()
     }
+
+    // Check if ads should be shown (not subscribed and device is safe)
+    fun shouldShowAds(): Boolean {
+        return !_isSubscribed.get()
+    }
+}
+
+/**
+ * Reactively checks if the user is subscribed via [AdStateManager]'s StateFlow.
+ * Recomposes only when the subscription state actually changes, avoiding
+ * SharedPreferences reads on every recomposition.
+ */
+@Composable
+private fun isUserSubscribed(): Boolean {
+    val app = LocalContext.current.applicationContext as? com.soccertips.predictx.App
+    // AdStateManager is a Hilt singleton — access it via the App field
+    // Fall back to false (show ads) if it's unavailable.
+    val adStateManager = remember(app) {
+        app?.let {
+            // Retrieve the singleton from the Hilt component via the application class
+            it.adStateManagerProvider()
+        }
+    }
+    return adStateManager?.isSubscribedFlow?.collectAsState()?.value ?: false
+}
+
+/**
+ * Compact upgrade prompt shown as fallback when banner ads fail to load.
+ */
+@Composable
+fun UpgradePromptBanner(
+    modifier: Modifier = Modifier,
+    onUpgradeClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onUpgradeClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        shape = RoundedCornerShape(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Star,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.upgrade_banner_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = stringResource(R.string.upgrade_banner_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = onUpgradeClick,
+                contentPadding = ButtonDefaults.ContentPadding
+            ) {
+                Text(
+                    text = stringResource(R.string.upgrade_button),
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+    }
+}
+
+private fun BannerAd.setupBannerCallbacks(adStateManager: AdStateManager?, adType: String) {
+    this.adEventCallback = object : BannerAdEventCallback {
+        override fun onAdImpression() {
+            Timber.d("$adType impression recorded")
+        }
+
+        override fun onAdClicked() {
+            Timber.d("$adType clicked")
+        }
+
+        override fun onAdShowedFullScreenContent() {
+            Timber.d("$adType showed full screen content")
+            adStateManager?.setFullScreenAdShowing(true)
+        }
+
+        override fun onAdDismissedFullScreenContent() {
+            Timber.d("$adType dismissed full screen content")
+            adStateManager?.setFullScreenAdShowing(false)
+        }
+
+        override fun onAdFailedToShowFullScreenContent(
+            fullScreenContentError: FullScreenContentError
+        ) {
+            Timber.w("$adType failed to show: $fullScreenContentError")
+            adStateManager?.setFullScreenAdShowing(false)
+        }
+    }
 }
 
 @Composable
 fun BannerAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = stringResource(R.string.banner_id) // Test banner ID
+    adUnitId: String = stringResource(R.string.banner_id),
+    onUpgradeClick: (() -> Unit)? = null
 ) {
+    if (isUserSubscribed()) return
     val context = LocalContext.current
-    AndroidView(
-        modifier =
-            modifier.fillMaxWidth()
-                // Add WindowInsets.navigationBars padding to avoid overlap with
-                // navigation buttons
-                .windowInsetsPadding(
-                    androidx.compose.foundation.layout.WindowInsets.navigationBars
-                ),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(
-                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
-                )
-                this.adUnitId = adUnitId
-                loadAd(AdRequest.Builder().build())
+
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
+    val activity = context.findActivity()
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp
+    // Key on adUnitId so state resets if the ID changes
+    var adFailed by remember(adUnitId) { mutableStateOf(false) }
+    var adViewRef by remember { mutableStateOf<AdView?>(null) }
+
+    val adSize = remember(screenWidthDp) {
+        AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, screenWidthDp)
+    }
+
+    // Retry after a delay when the banner fails, so it recovers when network returns
+    LaunchedEffect(adFailed) {
+        if (adFailed) {
+            kotlinx.coroutines.delay(30_000)
+            adFailed = false
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                adViewRef?.let { view ->
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    view.destroy()
+                }
+            } catch (e: Exception) {
+                Timber.e("Error destroying AdView: ${e.message}")
+            } finally {
+                adViewRef = null
             }
         }
-    )
+    }
+
+    if (adFailed && onUpgradeClick != null) {
+        UpgradePromptBanner(modifier = modifier, onUpgradeClick = onUpgradeClick)
+    } else {
+        AndroidView(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(
+                        WindowInsets.navigationBars
+                    ),
+            factory = { factoryContext ->
+                AdView(factoryContext).apply {
+                    adViewRef = this
+                    val request = BannerAdRequest.Builder(adUnitId, adSize).build()
+                    loadAd(
+                        request,
+                        object : AdLoadCallback<BannerAd> {
+                            override fun onAdLoaded(ad: BannerAd) {
+                                ad.setupBannerCallbacks(adStateManager, "Banner")
+                                activity?.let { registerBannerAd(ad, it) }
+                            }
+
+                            override fun onAdFailedToLoad(adError: LoadAdError) {
+                                Timber.e("Banner ad failed to load: ${adError.message}")
+                                adFailed = true
+                            }
+                        }
+                    )
+                }
+            },
+            update = { view ->
+                adViewRef = view
+            }
+        )
+    }
 }
 
 /**
@@ -146,705 +392,894 @@ fun BannerAdView(
 fun CollapsibleBannerAdView(
     modifier: Modifier = Modifier,
     adUnitId: String = stringResource(R.string.banner_id),
-    collapsiblePosition: String = "bottom"
+    collapsiblePosition: String = "bottom",
+    onUpgradeClick: (() -> Unit)? = null
 ) {
+    if (isUserSubscribed()) return
     val context = LocalContext.current
-    var adView by remember { mutableStateOf<AdView?>(null) }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            adView?.destroy()
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
+    val activity = context.findActivity()
+
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp
+
+    var adFailed by remember(adUnitId) { mutableStateOf(false) }
+    var adViewRef by remember { mutableStateOf<AdView?>(null) }
+
+    val adSize = remember(screenWidthDp) {
+        AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, screenWidthDp)
+    }
+
+    // Retry after a delay when the banner fails, so it recovers when network returns
+    LaunchedEffect(adFailed) {
+        if (adFailed) {
+            kotlinx.coroutines.delay(30_000)
+            adFailed = false
         }
     }
 
-    AndroidView(
-        modifier = modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(
-                androidx.compose.foundation.layout.WindowInsets.navigationBars
-            ),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(
-                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, 360)
-                )
-                this.adUnitId = adUnitId
-
-                // Set up ad listener to track load state
-                adListener = object : AdListener() {
-                    override fun onAdLoaded() {
-                        Timber.d("Collapsible banner ad loaded")
-                    }
-
-                    override fun onAdFailedToLoad(error: LoadAdError) {
-                        Timber.e("Collapsible banner ad failed to load: ${error.message}")
-                    }
-
-                    override fun onAdClosed() {
-                        Timber.d("Collapsible banner ad closed by user")
-                    }
-
-                    override fun onAdOpened() {
-                        Timber.d("Collapsible banner ad opened/expanded")
-                    }
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                adViewRef?.let { view ->
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    view.destroy()
                 }
-
-                // Build ad request with collapsible banner extras
-                val extras = Bundle().apply {
-                    putString("collapsible", collapsiblePosition)
-                }
-
-                val adRequest = AdRequest.Builder()
-                    .addNetworkExtrasBundle(com.google.ads.mediation.admob.AdMobAdapter::class.java, extras)
-                    .build()
-
-                loadAd(adRequest)
-                adView = this
+            } catch (e: Exception) {
+                Timber.e("Error destroying AdView: ${e.message}")
+            } finally {
+                adViewRef = null
             }
-        },
-        update = { view ->
-            adView = view
         }
-    )
+    }
+
+    when {
+        adFailed && onUpgradeClick != null -> {
+            UpgradePromptBanner(modifier = modifier, onUpgradeClick = onUpgradeClick)
+        }
+
+        else -> {
+            AndroidView(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .windowInsetsPadding(WindowInsets.navigationBars),
+                factory = { factoryContext ->
+                    AdView(factoryContext).apply {
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        adViewRef = this
+                        val extras = Bundle().apply {
+                            putString("collapsible", collapsiblePosition)
+                        }
+                        val request = BannerAdRequest.Builder(adUnitId, adSize)
+                            .setGoogleExtrasBundle(extras)
+                            .build()
+
+                        loadAd(
+                            request,
+                            object : AdLoadCallback<BannerAd> {
+                                override fun onAdLoaded(ad: BannerAd) {
+                                    Timber.d("Collapsible banner loaded. isCollapsible=${ad.isCollapsible()}")
+                                    ad.setupBannerCallbacks(adStateManager, "Collapsible banner")
+                                    activity?.let { registerBannerAd(ad, it) }
+                                }
+
+                                override fun onAdFailedToLoad(adError: LoadAdError) {
+                                    Timber.e("Collapsible banner failed: ${adError.message}")
+                                    adFailed = true
+                                }
+                            }
+                        )
+                    }
+                },
+                update = { view ->
+                    adViewRef = view
+                }
+            )
+        }
+    }
 }
 
 @Composable
 fun InlineBannerAdView(
     modifier: Modifier = Modifier,
-    adUnitId: String = stringResource(R.string.banner_id)
+    adUnitId: String = stringResource(R.string.banner_id),
+    onUpgradeClick: (() -> Unit)? = null
 ) {
+    if (isUserSubscribed()) return
     val context = LocalContext.current
-    AndroidView(
-        modifier = modifier.fillMaxWidth(),
-        factory = { factoryContext ->
-            AdView(factoryContext).apply {
-                setAdSize(AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, 360))
-                this.adUnitId = adUnitId
-                loadAd(AdRequest.Builder().build())
+
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
+    val activity = context.findActivity()
+
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp
+
+    var adFailed by remember(adUnitId) { mutableStateOf(false) }
+    var adViewRef by remember { mutableStateOf<AdView?>(null) }
+
+    val adSize = remember(screenWidthDp) {
+        AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, screenWidthDp)
+    }
+
+    // Retry after a delay when the banner fails, so it recovers when network returns
+    LaunchedEffect(adFailed) {
+        if (adFailed) {
+            kotlinx.coroutines.delay(30_000)
+            adFailed = false
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                adViewRef?.let { view ->
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    view.destroy()
+                }
+            } catch (e: Exception) {
+                Timber.e("Error destroying AdView: ${e.message}")
+            } finally {
+                adViewRef = null
             }
         }
-    )
+    }
+
+    if (adFailed && onUpgradeClick != null) {
+        UpgradePromptBanner(modifier = modifier, onUpgradeClick = onUpgradeClick)
+    } else {
+        AndroidView(
+            modifier = modifier.fillMaxWidth(),
+            factory = { factoryContext ->
+                AdView(factoryContext).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                    adViewRef = this
+
+                    val request = BannerAdRequest.Builder(adUnitId, adSize).build()
+
+                    loadAd(
+                        request,
+                        object : AdLoadCallback<BannerAd> {
+                            override fun onAdLoaded(ad: BannerAd) {
+                                Timber.d("Inline banner loaded")
+                                ad.setupBannerCallbacks(adStateManager, "Inline banner")
+                                activity?.let { registerBannerAd(ad, it) }
+                            }
+
+                            override fun onAdFailedToLoad(adError: LoadAdError) {
+                                Timber.e("Inline banner failed to load: ${adError.message}")
+                                adFailed = true
+                            }
+                        }
+                    )
+                }
+            },
+            update = { view ->
+                adViewRef = view
+            }
+        )
+    }
+}
+
+/**
+ * Native Ad View Composable for displaying native ads in lists.
+ * Styled to match the ItemCard design for a seamless user experience.
+ *
+ * @param modifier Modifier for the composable
+ * @param adUnitId The AdMob ad unit ID for the native ad
+ */
+@Composable
+fun NativeAdItem(
+    modifier: Modifier = Modifier,
+    adUnitId: String = stringResource(R.string.native_id)
+) {
+    if (isUserSubscribed()) return
+    val context = LocalContext.current
+
+    val app = context.applicationContext as? com.soccertips.predictx.App
+    val isMobileAdsInitialized by app?.isMobileAdsInitialized?.collectAsState() ?: mutableStateOf(false)
+    if (!isMobileAdsInitialized) return
+
+    val adStateManager = remember(app) { app?.adStateManagerProvider() }
+    val nativeTypes = remember { listOf(NativeAd.NativeAdType.NATIVE) }
+    var currentNativeAd by remember { mutableStateOf<NativeAd?>(null) }
+
+    // Load native ad
+    DisposableEffect(adUnitId) {
+        val request = NativeAdRequest.Builder(adUnitId, nativeTypes)
+            .setAdChoicesPlacement(AdChoicesPlacement.TOP_RIGHT)
+            .setMediaAspectRatio(NativeAd.NativeMediaAspectRatio.LANDSCAPE)
+            .setVideoOptions(
+                VideoOptions.Builder()
+                    .setStartMuted(true)
+                    .setClickToExpandRequested(true)
+                    .build()
+            )
+            .build()
+
+        NativeAdLoader.load(
+            request,
+            object : NativeAdLoaderCallback {
+                override fun onNativeAdLoaded(nativeAd: NativeAd) {
+                    currentNativeAd?.destroy()
+                    currentNativeAd = nativeAd.apply {
+                        adEventCallback =
+                            object :
+                                com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdEventCallback {
+                                override fun onAdImpression() {
+                                    Timber.d("Native ad impression recorded")
+                                }
+
+                                override fun onAdClicked() {
+                                    Timber.d("Native ad clicked")
+                                }
+
+                                override fun onAdShowedFullScreenContent() {
+                                    Timber.d("Native ad showed full screen content")
+                                    adStateManager?.setFullScreenAdShowing(true)
+                                }
+
+                                override fun onAdDismissedFullScreenContent() {
+                                    Timber.d("Native ad dismissed full screen content")
+                                    adStateManager?.setFullScreenAdShowing(false)
+                                }
+
+                                override fun onAdFailedToShowFullScreenContent(
+                                    fullScreenContentError: FullScreenContentError
+                                ) {
+                                    Timber.w("Native ad failed to show: $fullScreenContentError")
+                                    adStateManager?.setFullScreenAdShowing(false)
+                                }
+                            }
+                    }
+                    Timber.d("Native ad loaded successfully")
+                }
+
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Timber.e("Native ad failed to load: ${adError.message}")
+                    currentNativeAd = null
+                }
+            }
+        )
+
+        onDispose {
+            try {
+                currentNativeAd?.destroy()
+            } catch (e: Exception) {
+                Timber.e("Error destroying NativeAd: ${e.message}")
+            } finally {
+                currentNativeAd = null
+            }
+        }
+    }
+
+    // Only show the ad view when the ad is loaded
+    if (currentNativeAd != null) {
+        NativeAdContent(
+            nativeAd = currentNativeAd!!,
+            modifier = modifier
+        )
+    }
+}
+
+/**
+ * Compose-based native ad content styled to match ItemCard design.
+ */
+@Composable
+private fun NativeAdContent(
+    nativeAd: NativeAd,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val cardColors = LocalCardColors.current
+    val cardElevation = LocalCardElevation.current
+
+    // Get Material theme colors to pass to Android Views
+    val primaryContainerColor =
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f).toArgb()
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f).toArgb()
+    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    val secondaryContainerColor =
+        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f).toArgb()
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        colors = cardColors,
+        elevation = cardElevation,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        // We need AndroidView to wrap content in NativeAdView for proper ad tracking
+        AndroidView(
+            modifier = Modifier.fillMaxWidth(),
+            factory = { ctx ->
+                NativeAdView(ctx)
+            },
+            onRelease = { view ->
+                try {
+                    view.removeAllViews()
+                    view.destroy()
+                } catch (e: Exception) {
+                    Timber.e("Error destroying NativeAdView: ${e.message}")
+                }
+            },
+            update = { nativeAdView ->
+                // Clear previous views
+                nativeAdView.removeAllViews()
+
+                // Create and add the content view styled like ItemCard
+                val contentView = createItemCardStyleNativeAd(
+                    context = context,
+                    nativeAd = nativeAd,
+                    nativeAdView = nativeAdView,
+                    primaryContainerColor = primaryContainerColor,
+                    onSurfaceColor = onSurfaceColor,
+                    onSurfaceVariantColor = onSurfaceVariantColor,
+                    primaryColor = primaryColor,
+                    secondaryContainerColor = secondaryContainerColor
+                )
+                nativeAdView.addView(contentView)
+            }
+        )
+    }
+}
+
+/**
+ * Creates native ad content view styled to match ItemCard design.
+ */
+@SuppressLint("UseKtx", "SetTextI18n")
+private fun createItemCardStyleNativeAd(
+    context: Context,
+    nativeAd: NativeAd,
+    nativeAdView: NativeAdView,
+    primaryContainerColor: Int,
+    onSurfaceColor: Int,
+    onSurfaceVariantColor: Int,
+    primaryColor: Int,
+    secondaryContainerColor: Int
+): View {
+    val density = context.resources.displayMetrics.density
+    fun Int.dp() = (this * density).toInt()
+    fun Float.dp() = (this * density)
+
+    // Main container (matches ItemCard Column structure)
+    val mainLayout = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    // === HEADER (matches MatchHeader style) ===
+    val headerLayout = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        setBackgroundColor(primaryContainerColor)
+        setPadding(12.dp(), 8.dp(), 12.dp(), 8.dp())
+        gravity = Gravity.CENTER_VERTICAL
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    // Ad icon in header (like league logo)
+    val iconView = ImageView(context).apply {
+        layoutParams = LinearLayout.LayoutParams(24.dp(), 24.dp()).apply {
+            marginEnd = 8.dp()
+        }
+        scaleType = ImageView.ScaleType.CENTER_CROP
+    }
+    nativeAd.icon?.drawable?.let {
+        iconView.setImageDrawable(it)
+        headerLayout.addView(iconView)
+        nativeAdView.iconView = iconView
+    }
+
+    // Advertiser name (like league name)
+    val advertiserView = TextView(context).apply {
+        text = nativeAd.advertiser ?: context.getString(R.string.native_sponsored)
+        textSize = 14f
+        setTextColor(onSurfaceColor)
+        setTypeface(typeface, Typeface.BOLD)
+        maxLines = 1
+        ellipsize = TextUtils.TruncateAt.END
+        layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+    }
+    headerLayout.addView(advertiserView)
+    nativeAd.advertiser?.let { nativeAdView.advertiserView = advertiserView }
+
+    // "Ad" badge (positioned like date in MatchHeader)
+    val adBadge = TextView(context).apply {
+        text = context.getString(R.string.ad_badge)
+        textSize = 10f
+        setTextColor(Color.WHITE)
+        setPadding(6.dp(), 2.dp(), 6.dp(), 2.dp())
+        setBackgroundColor(primaryColor)
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            marginStart = 8.dp()
+        }
+    }
+    headerLayout.addView(adBadge)
+
+    mainLayout.addView(headerLayout)
+
+    // === CONTENT SECTION (matches TeamsRow style) ===
+    val contentLayout = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    // Headline (main title - like team names importance)
+    val headlineView = TextView(context).apply {
+        text = nativeAd.headline
+        textSize = 16f
+        setTextColor(onSurfaceColor)
+        setTypeface(typeface, Typeface.BOLD)
+        maxLines = 2
+        ellipsize = TextUtils.TruncateAt.END
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+    }
+    contentLayout.addView(headlineView)
+    nativeAdView.headlineView = headlineView
+
+    // Body text (description)
+    nativeAd.body?.let { body ->
+        val bodyView = TextView(context).apply {
+            text = body
+            textSize = 13f
+            setTextColor(onSurfaceVariantColor)
+            maxLines = 2
+            ellipsize = TextUtils.TruncateAt.END
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 4.dp()
+            }
+        }
+        contentLayout.addView(bodyView)
+        nativeAdView.bodyView = bodyView
+    }
+
+    // Star rating
+    nativeAd.starRating?.let { rating ->
+        val ratingContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 4.dp()
+            }
+        }
+
+        val intRating = rating.toInt().coerceIn(0, 5)
+        val ratingText = TextView(context).apply {
+            text = "★".repeat(intRating) + "☆".repeat(5 - intRating)
+            textSize = 12f
+            setTextColor("#FFC107".toColorInt())
+        }
+        ratingContainer.addView(ratingText)
+
+        val ratingValue = TextView(context).apply {
+            text = " (${String.format("%.1f", rating)})"
+            textSize = 12f
+            setTextColor(onSurfaceVariantColor)
+        }
+        ratingContainer.addView(ratingValue)
+
+        contentLayout.addView(ratingContainer)
+        nativeAdView.starRatingView = ratingContainer
+    }
+
+    mainLayout.addView(contentLayout)
+
+    // === MEDIA VIEW (for images and videos) ===
+    val mediaContent = nativeAd.mediaContent
+    val mediaView = MediaView(context)
+    val aspectRatio = mediaContent.aspectRatio
+    val calculatedHeight = if (aspectRatio > 0) {
+        ((context.resources.displayMetrics.widthPixels - 24.dp()) / aspectRatio).toInt()
+            .coerceIn(100.dp(), 250.dp()) // Min/max bounds
+    } else {
+        180.dp()
+    }
+
+    mediaView.layoutParams = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        calculatedHeight
+    ).apply {
+        setMargins(12.dp(), 0, 12.dp(), 12.dp())
+    }
+    mediaView.imageScaleType = ImageView.ScaleType.FIT_CENTER // Better for varied content
+    mediaView.mediaContent = mediaContent
+    mainLayout.addView(mediaView)
+    nativeAdView.registerNativeAd(nativeAd, mediaView)
+
+    // === FOOTER (matches MatchStatusRow style) ===
+    nativeAd.callToAction?.let { cta ->
+        val footerLayout = FrameLayout(context).apply {
+            setBackgroundColor(secondaryContainerColor)
+            setPadding(12.dp(), 8.dp(), 12.dp(), 8.dp())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val ctaButton = TextView(context).apply {
+            text = cta.uppercase()
+            textSize = 14f
+            setTextColor(primaryColor)
+            setTypeface(typeface, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        footerLayout.addView(ctaButton)
+        nativeAdView.callToActionView = ctaButton
+
+        mainLayout.addView(footerLayout)
+    }
+
+    return mainLayout
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface AdManagerEntryPoint {
+    fun interstitialAdManager(): InterstitialAdManager
+    fun adStateManager(): AdStateManager
 }
 
 @Singleton
 class InterstitialAdManager
 @Inject
-constructor(private val applicationContext: Context, private val adStateManager: AdStateManager) {
+constructor(
+    private val applicationContext: Context,
+    private val adStateManager: AdStateManager
+) {
+
     private var interstitialAd: InterstitialAd? = null
 
-    // Get ad unit ID lazily to avoid accessing string resources from non-visual context
     private val adUnitId: String by lazy {
-        currentActivityContext?.getString(R.string.interstitial_id)
-            ?: applicationContext.getString(R.string.interstitial_id)
+        applicationContext.getString(R.string.interstitial_id)
     }
 
-    // Reactive state for ad readiness
     private val _isAdReady = MutableStateFlow(false)
     val isAdReady: StateFlow<Boolean> = _isAdReady.asStateFlow()
 
-    // Track current activity context for loading ads
     private var currentActivityContext: Activity? = null
 
-    // Flag to control whether to use Activity context for ad loading
-    private var useActivityContextForLoading = true
-
-    // Track ad loading state to prevent multiple simultaneous loads
     private var isAdLoading = false
     private var retryAttempt = 0
     private val maxRetries = 5
 
-    // Method to set the current activity context
+    private var lastLoadAttemptTime = 0L
+    private val minLoadIntervalMs = 5000L
+
+    // Handler for exponential-backoff retries — stored so stacked callbacks can be cancelled
+    private val retryHandler = Handler(Looper.getMainLooper())
+    private var retryRunnable: Runnable? = null
+
+    // Frequency and interval tracking to prevent ad fatigue
+    private var actionCount = 0
+    private var lastAdShownTimestamp = 0L
+    private val minDisplayIntervalMs = 75_000L // 75 seconds minimum between interstitials
+
+    /**
+     * Checks if an interstitial ad should be shown based on user action frequency
+     * and a minimum cooldown interval to maintain a good user experience.
+     *
+     * @param interval The number of actions (e.g. item/category clicks) before an ad can show.
+     */
+    fun shouldShowByFrequency(interval: Int = 3): Boolean {
+        actionCount++
+        val now = System.currentTimeMillis()
+        val elapsed = now - lastAdShownTimestamp
+        val eligible = actionCount >= interval && (lastAdShownTimestamp == 0L || elapsed >= minDisplayIntervalMs)
+        Timber.tag("InterstitialAd").d("Frequency check: actionCount=$actionCount/$interval, elapsed=${elapsed}ms (min ${minDisplayIntervalMs}ms), eligible=$eligible")
+        if (eligible) {
+            actionCount = 0
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Shows the interstitial ad only if the frequency threshold and cooldown have passed.
+     * If not eligible or ad is not ready, calls [onComplete] directly and preloads if needed.
+     */
+    fun showIfEligibleByFrequency(
+        activity: Activity,
+        interval: Int = 3,
+        onComplete: () -> Unit
+    ) {
+        if (adStateManager.isSubscribed()) {
+            onComplete()
+            return
+        }
+
+        if (!shouldShowByFrequency(interval)) {
+            loadAdIfNeeded()
+            onComplete()
+            return
+        }
+
+        showInterstitialAdWithCallback(activity) {
+            lastAdShownTimestamp = System.currentTimeMillis()
+            onComplete()
+        }
+    }
+
     fun setActivityContext(activity: Activity?) {
+        val previous = currentActivityContext
         currentActivityContext = activity
-        // Preload ad when activity context is set (important for reducing latency)
-        if (activity != null && interstitialAd == null && !isAdLoading) {
-            loadInterstitialAd()
+
+        if (activity != null && activity != previous &&
+            interstitialAd == null && !isAdLoading
+        ) {
+            Timber.tag("InterstitialAd").d("New activity → load trigger")
+            loadAdIfNeeded()
         }
     }
 
-    // Method to configure whether to use activity context
-    fun useActivityContextForAdLoading(enable: Boolean) {
-        useActivityContextForLoading = enable
-    }
-
-    // Method to request ad loading if needed (called after dismissal or failure)
     fun loadAdIfNeeded() {
-        if (interstitialAd == null && !isAdLoading && currentActivityContext != null) {
+        val now = System.currentTimeMillis()
+        val diff = now - lastLoadAttemptTime
+
+        if (diff < minLoadIntervalMs && lastLoadAttemptTime > 0) {
+            Timber.tag("InterstitialAd").d("Rate limited ($diff ms)")
+            return
+        }
+
+        if (interstitialAd == null && !isAdLoading) {
             loadInterstitialAd()
         }
     }
 
-    fun loadInterstitialAd() {
-        if (isAdLoading) {
-            Timber.tag("InterstitialAd").d("Ad is already loading.")
+    fun forceLoadAd() {
+        val app = applicationContext as? com.soccertips.predictx.App
+        if (app?.isMobileAdsInitialized?.value != true) {
+            Timber.tag("InterstitialAd").w("MobileAds not initialized yet, skipping force load")
             return
         }
 
+        if (interstitialAd == null && !isAdLoading) {
+            Timber.tag("InterstitialAd").d("Force loading ad")
+            loadInterstitialAd()
+        }
+    }
+
+    private fun loadInterstitialAd() {
+        if (isAdLoading) return
         if (interstitialAd != null) {
-            Timber.tag("InterstitialAd").d("Ad is already loaded.")
+            _isAdReady.value = true
             return
         }
 
-        // Choose the appropriate context for loading. If Activity context is required but
-        // unavailable, skip loading to avoid using a non-visual context.
-        val activity = currentActivityContext
-        if (activity == null) {
-            Timber.tag("InterstitialAd")
-                .w("No active activity context; deferring interstitial load")
+        val app = applicationContext as? com.soccertips.predictx.App
+        if (app?.isMobileAdsInitialized?.value != true) {
+            Timber.tag("InterstitialAd").w("MobileAds not initialized yet, skipping load")
             return
         }
-
-        if (activity.isFinishing || activity.isDestroyed) {
-            Timber.tag("InterstitialAd")
-                .w("Activity is finishing or destroyed; deferring interstitial load")
-            return
-        }
-
-        val contextToUse: Context = activity
 
         isAdLoading = true
-        Timber.tag("InterstitialAd").d("Starting to load interstitial ad...")
-        try {
-            FirebaseCrashlytics.getInstance().log("Interstitial: load start")
-        } catch (_: Exception) {
-        }
+        lastLoadAttemptTime = System.currentTimeMillis()
+
+        Timber.tag("InterstitialAd").d("Loading interstitial...")
+        val request = AdRequest.Builder(adUnitId).build()
 
         InterstitialAd.load(
-            contextToUse,
-            adUnitId,
-            AdRequest.Builder().build(),
-            object : InterstitialAdLoadCallback() {
+            request,
+            object : AdLoadCallback<InterstitialAd> {
+
                 override fun onAdLoaded(ad: InterstitialAd) {
-                    Timber.tag("InterstitialAd").d("Ad loaded successfully")
-                    try {
-                        FirebaseCrashlytics.getInstance().log("Interstitial: onAdLoaded")
-                    } catch (_: Exception) {
-                    }
+                    Timber.tag("InterstitialAd").d("Ad loaded")
+
                     interstitialAd = ad
-                    _isAdReady.value = true
                     isAdLoading = false
-                    retryAttempt = 0 // Reset retry counter on success
+                    retryAttempt = 0
+                    _isAdReady.value = true
 
-                    ad.fullScreenContentCallback =
-                        object : FullScreenContentCallback() {
-                            override fun onAdShowedFullScreenContent() {
-                                Timber.tag("InterstitialAd")
-                                    .d("Ad showed full screen content")
-                                try {
-                                    FirebaseCrashlytics.getInstance()
-                                        .log(
-                                            "Interstitial: onAdShowedFullScreenContent"
-                                        )
-                                } catch (_: Exception) {
-                                }
-                                adStateManager.setFullScreenAdShowing(true)
-                            }
-
-                            override fun onAdDismissedFullScreenContent() {
-                                Timber.tag("InterstitialAd")
-                                    .d("Ad dismissed full screen content")
-                                try {
-                                    FirebaseCrashlytics.getInstance()
-                                        .log(
-                                            "Interstitial: onAdDismissedFullScreenContent"
-                                        )
-                                } catch (_: Exception) {
-                                }
-                                adStateManager.setFullScreenAdShowing(false)
-                                interstitialAd = null
-                                _isAdReady.value = false
-                                retryAttempt = 0 // Reset retry counter
-                                loadAdIfNeeded() // Preload next ad immediately
-                            }
-
-                            override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                                Timber.tag("InterstitialAd")
-                                    .e("Failed to show ad: ${error.message} (code: ${error.code})")
-                                try {
-                                    FirebaseCrashlytics.getInstance()
-                                        .log(
-                                            "Interstitial: onAdFailedToShow ${error.code}"
-                                        )
-                                } catch (_: Exception) {
-                                }
-                                adStateManager.setFullScreenAdShowing(false)
-                                interstitialAd = null
-                                _isAdReady.value = false
-                                loadAdIfNeeded() // Try to preload next ad
-                            }
-                        }
+                    attachCallbacks(ad)
                 }
 
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    Timber.tag("InterstitialAd").e("Failed to load ad: ${error.message} (code: ${error.code})")
-                    try {
-                        FirebaseCrashlytics.getInstance()
-                            .log("Interstitial: onAdFailedToLoad ${error.code}")
-                    } catch (_: Exception) {
-                    }
-                    interstitialAd = null
-                    _isAdReady.value = false
-                    isAdLoading = false
-                    retryAttempt++
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Timber.tag("InterstitialAd")
+                        .e("Load failed: ${adError.message} (${adError.code})")
 
-                    // Exponential backoff retry (2s, 4s, 8s, 16s, 32s)
-                    if (retryAttempt <= maxRetries) {
-                        val delay = TimeUnit.SECONDS.toMillis(2.0.pow(retryAttempt).toLong())
-                        Timber.tag("InterstitialAd")
-                            .d("Retrying ad load in $delay ms (attempt $retryAttempt)")
-                        Handler(Looper.getMainLooper()).postDelayed({ loadAdIfNeeded() }, delay)
-                    } else {
-                        Timber.tag("InterstitialAd")
-                            .e("Exceeded max retry attempts for interstitial ad loading.")
-                        // Reset retry counter after 5 minutes to allow future retries
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            retryAttempt = 0
-                            Timber.tag("InterstitialAd").d("Retry counter reset after cooldown")
-                        }, 300000) // 5 minutes
-                    }
+                    interstitialAd = null
+                    isAdLoading = false
+                    _isAdReady.value = false
+
+                    retryWithBackoff()
                 }
             }
         )
     }
 
-    // Method that accepts a callback to execute after ad is dismissed
-    fun showInterstitialAdWithCallback(activity: Activity, onAdDismissed: () -> Unit) {
-        Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback called")
-        Timber.tag("InterstitialAd").d("Activity: ${activity.javaClass.simpleName}")
-        Timber.tag("InterstitialAd").d("Activity isFinishing: ${activity.isFinishing}")
-        Timber.tag("InterstitialAd").d("Activity isDestroyed: ${activity.isDestroyed}")
-        Timber.tag("InterstitialAd")
-            .d("Ad state manager showing: ${adStateManager.isFullScreenAdShowing()}")
-        Timber.tag("InterstitialAd").d("Interstitial ad object: $interstitialAd")
+    // ✅ PURE Next-Gen callback system
+    private fun attachCallbacks(ad: InterstitialAd) {
+        ad.adEventCallback = object : InterstitialAdEventCallback {
 
-        // CRITICAL: Check if device is safe for full screen ads
+            override fun onAdImpression() {
+                Timber.tag("InterstitialAd").d("Impression")
+            }
+
+            override fun onAdClicked() {
+                Timber.tag("InterstitialAd").d("Clicked")
+            }
+
+            override fun onAdShowedFullScreenContent() {
+                Timber.tag("InterstitialAd").d("Ad showed")
+                adStateManager.setFullScreenAdShowing(true)
+            }
+
+            override fun onAdDismissedFullScreenContent() {
+                Timber.tag("InterstitialAd").d("Ad dismissed")
+
+                adStateManager.setFullScreenAdShowing(false)
+
+                interstitialAd = null
+                _isAdReady.value = false
+                retryAttempt = 0
+
+                loadAdIfNeeded()
+            }
+
+            override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
+                Timber.tag("InterstitialAd")
+                    .e("Show failed: ${fullScreenContentError.message}")
+
+                adStateManager.setFullScreenAdShowing(false)
+
+                interstitialAd = null
+                _isAdReady.value = false
+
+                loadAdIfNeeded()
+            }
+        }
+    }
+
+    fun showInterstitialAdWithCallback(
+        activity: Activity,
+        onAdDismissed: () -> Unit
+    ) {
+
+        if (adStateManager.isSubscribed()) {
+            onAdDismissed()
+            return
+        }
+
         if (!adStateManager.isSafeForFullScreenAds()) {
-            Timber.tag("InterstitialAd").w("Skipping ad on problematic device: ${Build.MANUFACTURER} ${Build.MODEL}")
-            try {
-                FirebaseCrashlytics.getInstance()
-                    .log("Interstitial: Skipped on ${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.SDK_INT})")
-            } catch (_: Exception) {
-            }
             onAdDismissed()
             return
         }
 
-        // CRITICAL: Validate activity state before showing ad to prevent crashes
         if (activity.isFinishing || activity.isDestroyed) {
-            Timber.tag("InterstitialAd").w("Cannot show ad - activity is finishing or destroyed")
             onAdDismissed()
             return
         }
 
-        // Validate that activity has a valid window and decor view
-        try {
-            val window = activity.window
-            if (window == null) {
-                Timber.tag("InterstitialAd").w("Cannot show ad - activity window is null")
-                onAdDismissed()
-                return
-            }
-
-            val decorView = window.decorView
-            if (decorView == null || !decorView.isAttachedToWindow) {
-                Timber.tag("InterstitialAd").w("Cannot show ad - decor view not attached to window")
-                onAdDismissed()
-                return
-            }
-        } catch (e: Exception) {
-            Timber.tag("InterstitialAd").e("Error validating activity window state: ${e.message}")
-            onAdDismissed()
-            return
-        }
-
-        // Check MobileAds initialization status
-        try {
-            val initStatus = com.google.android.gms.ads.MobileAds.getInitializationStatus()
-            Timber.tag("InterstitialAd")
-                .d("MobileAds initialization status: ${initStatus?.adapterStatusMap}")
-        } catch (e: Exception) {
-            Timber.tag("InterstitialAd").e("Error checking MobileAds init status: ${e.message}")
-        }
-
-        // Check consent status before showing ad
         if (!canShowAdsWithConsent(activity)) {
-            Timber.tag("InterstitialAd").w("Cannot show ad - consent not granted or not available")
             onAdDismissed()
             return
         }
 
-        // Don't show if another full screen ad is showing
         if (adStateManager.isFullScreenAdShowing()) {
             Timber.tag("InterstitialAd")
-                .d("Skipped showing ad because another full screen ad is already showing")
-            onAdDismissed() // Execute callback immediately if we can't show the ad
+                .w("Ad already showing, swallowing duplicate invocation to prevent double navigation/crash")
             return
         }
 
         val ad = interstitialAd
         if (ad == null) {
-            Timber.tag("InterstitialAd").e("The interstitial ad wasn't ready yet.")
-            loadAdIfNeeded() // Attempt to load a new ad if the current one is null
-            onAdDismissed() // Execute callback immediately since we can't show an ad
+            loadAdIfNeeded()
+            onAdDismissed()
             return
         }
 
-        // Set a new callback that will trigger our navigation callback when ad is dismissed
-        ad.fullScreenContentCallback =
-            object : FullScreenContentCallback() {
+        try {
+            // 🎯 Wrap callback WITHOUT breaking base lifecycle
+            val baseCallback = ad.adEventCallback
+
+            ad.adEventCallback = object : InterstitialAdEventCallback {
+
                 override fun onAdShowedFullScreenContent() {
-                    Timber.tag("InterstitialAd").d("Ad showed full screen content")
-                    adStateManager.setFullScreenAdShowing(true)
+                    baseCallback?.onAdShowedFullScreenContent()
                 }
 
                 override fun onAdDismissedFullScreenContent() {
-                    Timber.tag("InterstitialAd").d("Ad dismissed full screen content")
-                    adStateManager.setFullScreenAdShowing(false)
-
-                    interstitialAd = null
-                    _isAdReady.value = false
-                    retryAttempt = 0 // Reset retry counter after successful show
-                    loadAdIfNeeded() // Preload next ad immediately
-
-                    // Execute the provided callback when ad is dismissed
+                    baseCallback?.onAdDismissedFullScreenContent()
+                    // SDK delivers callbacks on the main thread — no Handler.post needed
                     onAdDismissed()
                 }
 
-                override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                    Timber.tag("InterstitialAd").e("Failed to show ad: ${error.message} (code: ${error.code})")
-                    adStateManager.setFullScreenAdShowing(false)
-
-                    interstitialAd = null
-                    _isAdReady.value = false
-                    loadAdIfNeeded() // Try to preload next ad
-
-                    // Execute the provided callback when ad fails to show
+                override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
+                    baseCallback?.onAdFailedToShowFullScreenContent(fullScreenContentError)
+                    // SDK delivers callbacks on the main thread — no Handler.post needed
                     onAdDismissed()
+                }
+
+                override fun onAdImpression() {
+                    baseCallback?.onAdImpression()
+                }
+
+                override fun onAdClicked() {
+                    baseCallback?.onAdClicked()
                 }
             }
 
-        Timber.tag("InterstitialAd").d("Showing interstitial ad with callback")
-        Timber.tag("InterstitialAd").d("About to call ad.show() with activity: $activity")
-        try {
-            FirebaseCrashlytics.getInstance().log("Interstitial: show with callback")
-        } catch (_: Exception) {
-        }
+            Timber.tag("InterstitialAd").d("Showing ad")
 
-        try {
-            Timber.tag("InterstitialAd").d("Calling ad.show(activity) now...")
+            // Immediately mark as showing to preempt rapid double-clicks
+            adStateManager.setFullScreenAdShowing(true)
+            lastAdShownTimestamp = System.currentTimeMillis()
             ad.show(activity)
-            Timber.tag("InterstitialAd").d("ad.show(activity) called successfully")
+
         } catch (e: Exception) {
             Timber.tag("InterstitialAd")
-                .e("Exception showing interstitial ad with callback: ${e.message}")
-            Timber.tag("InterstitialAd")
-                .e("Exception stack trace: ${e.stackTrace.joinToString("\n")}")
-            try {
-                FirebaseCrashlytics.getInstance().recordException(e)
-                FirebaseCrashlytics.getInstance()
-                    .log("Interstitial with callback: show exception - ${e.message}")
-            } catch (_: Exception) {
-            }
-            // Clean up state
+                .e("Show exception: ${e.message}")
+
             adStateManager.setFullScreenAdShowing(false)
+
             interstitialAd = null
             _isAdReady.value = false
-            // Execute callback and try to load a new ad
+
             onAdDismissed()
             loadAdIfNeeded()
         }
     }
 
+    private fun retryWithBackoff() {
+        retryAttempt++
+
+        if (retryAttempt > maxRetries) return
+
+        val delay = (2.0.pow(retryAttempt)).toLong() * 1000
+
+        // Cancel any pending retry before scheduling a new one
+        retryRunnable?.let { retryHandler.removeCallbacks(it) }
+        retryRunnable = Runnable { loadAdIfNeeded() }.also {
+            retryHandler.postDelayed(it, delay)
+        }
+    }
+
     fun isCurrentlyLoading(): Boolean = isAdLoading
-}
-
-@Singleton
-class RewardedAdManager
-@Inject
-constructor(private val context: Context, private val adStateManager: AdStateManager) {
-    private var rewardedAd: RewardedAd? = null
-
-    // Lazy load ad unit ID only when actually needed, not during construction
-    private val adUnitId: String by lazy { context.getString(R.string.reward) }
-
-    // Track ad loading state
-    private var isAdLoading = false
-
-    // Retry logic for failed loads
-    private var retryAttempt = 0
-    private val maxRetries = 5
-
-    // Reactive state for ad readiness
-    private val _isAdReady = MutableStateFlow(false)
-    val isAdReady: StateFlow<Boolean> = _isAdReady.asStateFlow()
-
-    // Track current activity context for loading ads
-    private var currentActivityContext: Activity? = null
-
-    // Flag to control whether to use Activity context for ad loading
-    private var useActivityContextForLoading = true
-
-    // Method to set the current activity context
-    fun setActivityContext(activity: Activity?) {
-        currentActivityContext = activity
-        // Preload ad when activity context is set (important for reducing latency)
-        if (activity != null && rewardedAd == null && !isAdLoading) {
-            loadRewardedAd()
-        }
-    }
-
-    // Method to configure whether to use activity context
-    fun useActivityContextForAdLoading(enable: Boolean) {
-        useActivityContextForLoading = enable
-    }
-
-    // Method to request ad loading if needed
-    fun loadAdIfNeeded() {
-        if (rewardedAd == null && !isAdLoading && currentActivityContext != null) {
-            loadRewardedAd()
-        }
-    }
-
-    fun loadRewardedAd() {
-        // Prevent multiple simultaneous loads
-        if (isAdLoading) {
-            Timber.tag("RewardedAd").d("Ad is already loading.")
-            return
-        }
-
-        if (rewardedAd != null) {
-            Timber.tag("RewardedAd").d("Ad is already loaded.")
-            return
-        }
-
-        // Choose the appropriate context for loading. If Activity context is required but
-        // unavailable, skip loading to avoid using a non-visual context.
-        val activity = currentActivityContext
-        if (activity == null) {
-            Timber.tag("RewardedAd").w("No active activity context; deferring rewarded load")
-            return
-        }
-
-        if (activity.isFinishing || activity.isDestroyed) {
-            Timber.tag("RewardedAd")
-                .w("Activity is finishing or destroyed; deferring rewarded load")
-            return
-        }
-
-        val contextToUse: Context = activity
-
-        isAdLoading = true
-        Timber.tag("RewardedAd").d("Starting to load rewarded ad...")
-        try {
-            FirebaseCrashlytics.getInstance().log("Rewarded: load start")
-        } catch (_: Exception) {
-        }
-
-        RewardedAd.load(
-            contextToUse,
-            adUnitId,
-            AdRequest.Builder().build(),
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: RewardedAd) {
-                    Timber.tag("RewardedAd").d("Rewarded ad loaded successfully")
-                    try {
-                        FirebaseCrashlytics.getInstance().log("Rewarded: onAdLoaded")
-                    } catch (_: Exception) {
-                    }
-                    rewardedAd = ad
-                    _isAdReady.value = true
-                    isAdLoading = false
-                    retryAttempt = 0 // Reset retry counter on success
-                }
-
-                override fun onAdFailedToLoad(error: LoadAdError) {
-                    Timber.tag("RewardedAd")
-                        .e("Failed to load rewarded ad: ${error.message} (code: ${error.code})")
-                    try {
-                        FirebaseCrashlytics.getInstance()
-                            .log("Rewarded: onAdFailedToLoad ${error.code}")
-                    } catch (_: Exception) {
-                    }
-                    rewardedAd = null
-                    _isAdReady.value = false
-                    isAdLoading = false
-                    retryAttempt++
-
-                    // Exponential backoff retry (2s, 4s, 8s, 16s, 32s)
-                    if (retryAttempt <= maxRetries) {
-                        val delay = TimeUnit.SECONDS.toMillis(2.0.pow(retryAttempt).toLong())
-                        Timber.tag("RewardedAd")
-                            .d("Retrying rewarded ad load in $delay ms (attempt $retryAttempt)")
-                        Handler(Looper.getMainLooper()).postDelayed({ loadAdIfNeeded() }, delay)
-                    } else {
-                        Timber.tag("RewardedAd")
-                            .e("Exceeded max retry attempts for rewarded ad loading.")
-                        // Reset retry counter after some time to allow future retries
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            retryAttempt = 0
-                        }, 300000) // Reset after 5 minutes
-                    }
-                }
-            }
-        )
-    }
-
-    fun showRewardedAd(
-        activity: Activity,
-        onRewardEarned: (rewardItem: RewardItem) -> Unit,
-        onFailure: () -> Unit
-    ) {
-        Timber.tag("RewardedAd").d("showRewardedAd called")
-        Timber.tag("RewardedAd").d("Activity: ${activity.javaClass.simpleName}")
-        Timber.tag("RewardedAd").d("Activity isFinishing: ${activity.isFinishing}")
-        Timber.tag("RewardedAd").d("Activity isDestroyed: ${activity.isDestroyed}")
-        Timber.tag("RewardedAd")
-            .d("Ad state manager showing: ${adStateManager.isFullScreenAdShowing()}")
-        Timber.tag("RewardedAd").d("Rewarded ad object: $rewardedAd")
-
-        // CRITICAL: Check if device is safe for full screen ads
-        if (!adStateManager.isSafeForFullScreenAds()) {
-            Timber.tag("RewardedAd").w("Skipping ad on problematic device: ${Build.MANUFACTURER} ${Build.MODEL}")
-            try {
-                FirebaseCrashlytics.getInstance()
-                    .log("Rewarded: Skipped on ${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.SDK_INT})")
-            } catch (_: Exception) {
-            }
-            onFailure()
-            return
-        }
-
-        // Check MobileAds initialization status
-        try {
-            val initStatus = com.google.android.gms.ads.MobileAds.getInitializationStatus()
-            Timber.tag("RewardedAd")
-                .d("MobileAds initialization status: ${initStatus?.adapterStatusMap}")
-        } catch (e: Exception) {
-            Timber.tag("RewardedAd").e("Error checking MobileAds init status: ${e.message}")
-        }
-
-        // CRITICAL: Validate activity state before showing ad to prevent crashes
-        if (activity.isFinishing || activity.isDestroyed) {
-            Timber.tag("RewardedAd").w("Cannot show ad - activity is finishing or destroyed")
-            onFailure()
-            return
-        }
-
-        // Check consent status before showing ad
-        if (!canShowAdsWithConsent(activity)) {
-            Timber.tag("RewardedAd").w("Cannot show ad - consent not granted or not available")
-            onFailure()
-            return
-        }
-
-        // Don't show if another full screen ad is showing
-        if (adStateManager.isFullScreenAdShowing()) {
-            Timber.tag("RewardedAd")
-                .d("Skipped showing ad because another full screen ad is already showing")
-            try {
-                FirebaseCrashlytics.getInstance().log("Rewarded: show skipped - another ad showing")
-            } catch (_: Exception) {
-            }
-            onFailure()
-            return
-        }
-
-        if (rewardedAd == null) {
-            Timber.tag("RewardedAd").e("Attempted to show rewarded ad, but ad was null")
-            try {
-                FirebaseCrashlytics.getInstance().log("Rewarded: show requested but ad=null")
-            } catch (_: Exception) {
-            }
-            loadRewardedAd()
-            onFailure()
-            return
-        }
-
-        Timber.tag("RewardedAd").d("Attempting to show rewarded ad now...")
-        try {
-            FirebaseCrashlytics.getInstance().log("Rewarded: show")
-        } catch (_: Exception) {
-        }
-
-        // Set up proper edge-to-edge handling for rewarded ads
-        rewardedAd?.fullScreenContentCallback =
-            object : FullScreenContentCallback() {
-                override fun onAdShowedFullScreenContent() {
-                    Timber.tag("RewardedAd").d("Rewarded ad showed full screen content")
-                    try {
-                        FirebaseCrashlytics.getInstance()
-                            .log("Rewarded: onAdShowedFullScreenContent")
-                    } catch (_: Exception) {
-                    }
-                    adStateManager.setFullScreenAdShowing(true)
-                }
-
-                override fun onAdDismissedFullScreenContent() {
-                    Timber.tag("RewardedAd").d("Rewarded ad dismissed full screen content")
-                    try {
-                        FirebaseCrashlytics.getInstance()
-                            .log("Rewarded: onAdDismissedFullScreenContent")
-                    } catch (_: Exception) {
-                    }
-                    adStateManager.setFullScreenAdShowing(false)
-
-                    rewardedAd = null
-                    _isAdReady.value = false
-                    retryAttempt = 0 // Reset retry counter
-                    loadAdIfNeeded() // Preload next ad immediately
-                }
-
-                override fun onAdFailedToShowFullScreenContent(error: AdError) {
-                    Timber.tag("RewardedAd")
-                        .e("Failed to show rewarded ad: ${error.message}")
-                    try {
-                        FirebaseCrashlytics.getInstance()
-                            .log("Rewarded: onAdFailedToShow ${error.code}")
-                    } catch (_: Exception) {
-                    }
-                    adStateManager.setFullScreenAdShowing(false)
-
-                    rewardedAd = null
-                    _isAdReady.value = false
-                    loadAdIfNeeded() // Try to preload next ad
-                }
-            }
-
-        try {
-            Timber.tag("RewardedAd").d("Calling rewardedAd.show() now...")
-            rewardedAd?.show(activity) { rewardItem ->
-                Timber.tag("RewardedAd")
-                    .d("User earned reward: ${rewardItem.amount} ${rewardItem.type}")
-                try {
-                    FirebaseCrashlytics.getInstance()
-                        .log(
-                            "Rewarded: onUserEarnedReward amount=${rewardItem.amount} type=${rewardItem.type}"
-                        )
-                } catch (_: Exception) {
-                }
-                onRewardEarned(rewardItem)
-            }
-                ?: run {
-                    Timber.tag("RewardedAd").e("The rewarded ad wasn't ready yet.")
-                    loadAdIfNeeded() // Attempt to load a new ad if the current one is null
-                    onFailure()
-                }
-        } catch (e: Exception) {
-            Timber.tag("RewardedAd").e("Exception showing rewarded ad: ${e.message}")
-            try {
-                FirebaseCrashlytics.getInstance().recordException(e)
-                FirebaseCrashlytics.getInstance().log("Rewarded: show exception - ${e.message}")
-            } catch (_: Exception) {
-            }
-            // Clean up state
-            adStateManager.setFullScreenAdShowing(false)
-            rewardedAd = null
-            _isAdReady.value = false
-            // Try to load a new ad
-            loadAdIfNeeded()
-            onFailure()
-        }
-    }
-
-    fun isAdLoading(): Boolean = this.isAdLoading
 }

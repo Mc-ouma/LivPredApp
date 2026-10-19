@@ -33,7 +33,6 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.soccertips.predictx.admob.AdStateManager
 import com.soccertips.predictx.admob.AppOpenAdManager
 import com.soccertips.predictx.admob.InterstitialAdManager
-import com.soccertips.predictx.admob.RewardedAdManager
 import com.soccertips.predictx.ui.theme.PredictXTheme
 import com.soccertips.predictx.update.CustomAppUpdateManager
 import com.soccertips.predictx.update.UpdateHandler
@@ -46,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.checkerframework.checker.initialization.qual.Initialized
 import timber.log.Timber
 
 /**
@@ -58,15 +58,16 @@ import timber.log.Timber
 @Composable
 private fun AdInitializedContent(
     interstitialAdManager: InterstitialAdManager,
-    rewardedAdManager: RewardedAdManager,
     devicePerformanceManager: DevicePerformanceManager,
+    isMobileAdsInitialized: Boolean,
     content: @Composable () -> Unit
 ) {
     // Get the current activity context in the composable context
     val activity = LocalContext.current as? AppCompatActivity
 
     // Use LaunchedEffect to initialize ad managers after first composition
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isMobileAdsInitialized) {
+        if (!isMobileAdsInitialized) return@LaunchedEffect
         // Device-aware delay - longer on low-memory devices to prioritize UI
         val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
         val initDelay = if (isLowMemory) {
@@ -81,24 +82,18 @@ private fun AdInitializedContent(
         activity?.let {
             // Set up ad managers with Activity context
             interstitialAdManager.setActivityContext(it)
-            interstitialAdManager.useActivityContextForAdLoading(true)
-            rewardedAdManager.setActivityContext(it)
-            rewardedAdManager.useActivityContextForAdLoading(true)
 
             // On low-memory devices, skip aggressive preloading during startup
             // Ads will be loaded when needed
             if (!isLowMemory) {
-                // PRELOAD BOTH ad types immediately for faster availability
-                // This significantly reduces latency when ads are needed
+                // Preload interstitial ad for faster availability
                 interstitialAdManager.loadAdIfNeeded()
-                rewardedAdManager.loadAdIfNeeded()
-                Timber.d("Ad managers initialized - preloading interstitial and rewarded ads")
+                Timber.d("Ad managers initialized - preloading interstitial ad")
             } else {
                 Timber.d("Ad managers initialized - skipping preload on low-memory device")
                 // Defer preloading on low-memory devices
                 delay(devicePerformanceManager.getStartupConfig().deferPreloadingMs)
                 interstitialAdManager.loadAdIfNeeded()
-                // Only preload rewarded ads if really needed (they're used less frequently)
             }
         }
     }
@@ -125,9 +120,6 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var interstitialAdManager: InterstitialAdManager
-
-    @Inject
-    lateinit var rewardedAdManager: RewardedAdManager
 
     @Inject
     lateinit var devicePerformanceManager: DevicePerformanceManager
@@ -173,14 +165,15 @@ class MainActivity : AppCompatActivity() {
         // Set content and observe the splash state
         setContent {
             val isReady by splashViewModel.isReady.collectAsState()
+            val isMobileAdsInitialized by (applicationContext as App).isMobileAdsInitialized.collectAsState()
 
             // Only show content when ready
             if (isReady) {
                 // Initialize ad managers after UI is ready
                 AdInitializedContent(
                     interstitialAdManager = interstitialAdManager,
-                    rewardedAdManager = rewardedAdManager,
                     devicePerformanceManager = devicePerformanceManager,
+                    isMobileAdsInitialized = isMobileAdsInitialized,
                 ) {
                     PredictXTheme {
                         Surface(
@@ -216,6 +209,7 @@ class MainActivity : AppCompatActivity() {
             delay(1000) // Wait for splash to complete
             initializeBackgroundComponents()
         }
+
     }
 
     private suspend fun initializeBackgroundComponents() {

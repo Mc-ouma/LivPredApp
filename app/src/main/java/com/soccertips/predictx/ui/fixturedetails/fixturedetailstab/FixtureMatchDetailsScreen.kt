@@ -45,7 +45,6 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.soccertips.predictx.R
-import com.soccertips.predictx.admob.InlineBannerAdView
 import com.soccertips.predictx.data.model.Fixture
 import com.soccertips.predictx.data.model.ResponseData
 import com.soccertips.predictx.data.model.prediction.Comparison
@@ -109,10 +108,6 @@ fun FixtureMatchDetailsScreen(
         item {
             // Fixture detail card
             FixtureDetailCard(fixture = fixtureDetails.fixture)
-        }
-
-        item {
-            InlineBannerAdView()
         }
 
         item {
@@ -258,6 +253,8 @@ fun FixtureCard(
                             rememberAsyncImagePainter(
                                 ImageRequest.Builder(LocalContext.current)
                                     .data(fixture.teams.home.logo)
+                                    .size(96, 96)
+                                    .precision(coil.size.Precision.INEXACT)
                                     .crossfade(true)
                                     .build()
                             ),
@@ -279,6 +276,8 @@ fun FixtureCard(
                             rememberAsyncImagePainter(
                                 ImageRequest.Builder(LocalContext.current)
                                     .data(fixture.teams.away.logo)
+                                    .size(96, 96)
+                                    .precision(coil.size.Precision.INEXACT)
                                     .crossfade(true)
                                     .build()
                             ),

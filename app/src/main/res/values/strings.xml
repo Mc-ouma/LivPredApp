@@ -27,10 +27,12 @@
     <string name="category">Category</string>
 
     <!-- ads -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-8504414839434291~8215753517</string>
     <string name="banner_id" translatable="false">ca-app-pub-8504414839434291/2963426838</string>
     <string name="interstitial_id" translatable="false">ca-app-pub-8504414839434291/8656802297</string>
     <string name="reward" translatable="false">ca-app-pub-8504414839434291/1819931205</string>
     <string name="appOpen_id" translatable="false">ca-app-pub-8504414839434291/1005542982</string>
+    <string name="native_id" translatable="false">ca-app-pub-8504414839434291/2094990267</string>
 
     <!-- Navigation and UI -->
     <string name="categories">Categories</string>
@@ -467,6 +469,30 @@
     <string name="notification_enabled_toast">Notifications enabled! 🎉</string>
     <string name="notification_disabled_toast">Notifications disabled. You can enable them in Settings.</string>
     
+    <!-- Subscription -->
+    <string name="remove_ads">Remove Ads</string>
+    <string name="subscription_title">Go Premium</string>
+    <string name="subscription_header">Enjoy an Ad-Free Experience</string>
+    <string name="subscription_subheader">Subscribe to remove all ads and support the development of AI ScoreCast</string>
+    <string name="subscription_active_title">You\'re Premium!</string>
+    <string name="subscription_active_description">You have an active subscription. Enjoy your ad-free experience!</string>
+    <string name="subscription_manage_hint">To manage your subscription, go to Google Play Store > Subscriptions</string>
+    <string name="subscription_loading">Loading subscription plans…</string>
+    <string name="subscription_subscribe_button">Subscribe Now</string>
+    <string name="subscription_restore">Restore Purchases</string>
+    <string name="subscription_terms">Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage your subscription in Google Play Store settings.</string>
+    <string name="benefit_no_ads">No banner, interstitial, or pop-up ads</string>
+    <string name="benefit_faster_experience">Faster and cleaner app experience</string>
+    <string name="benefit_support_development">Support ongoing app development</string>
+    <string name="plan_monthly">Monthly</string>
+    <string name="plan_yearly">Yearly</string>
+    <string name="best_value">BEST VALUE</string>
+    <string name="upgrade_banner_title">Tired of ads?</string>
+    <string name="upgrade_banner_subtitle">Go Premium for an ad-free experience</string>
+    <string name="upgrade_button">Upgrade</string>
+    <string name="ad_badge">Ad</string>
+    <string name="native_sponsored">Sponsored</string>
+
     <!-- Exact Alarm Permission -->
     <string name="exact_alarm_permission_title">Exact Alarm Permission Required</string>
     <string name="exact_alarm_permission_message">This app requires permission to schedule exact alarms. Please grant the permission in the settings.</string>

@@ -456,4 +456,26 @@
     <string name="use_pass">Use Pass</string>
     <string name="watch_ad_to_earn">Watch ad to earn passes</string>
 
+    <!-- Subscription -->
+    <string name="remove_ads">Remove Ads</string>
+    <string name="subscription_title">Go Premium</string>
+    <string name="subscription_header">Enjoy an Ad-Free Experience</string>
+    <string name="subscription_subheader">Subscribe to remove all ads and support the development of AI ScoreCast</string>
+    <string name="subscription_active_title">You\'re Premium!</string>
+    <string name="subscription_active_description">You have an active subscription. Enjoy your ad-free experience!</string>
+    <string name="subscription_manage_hint">To manage your subscription, go to Google Play Store > Subscriptions</string>
+    <string name="subscription_loading">Loading subscription plans…</string>
+    <string name="subscription_subscribe_button">Subscribe Now</string>
+    <string name="subscription_restore">Restore Purchases</string>
+    <string name="subscription_terms">Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage your subscription in Google Play Store settings.</string>
+    <string name="benefit_no_ads">No banner, interstitial, or pop-up ads</string>
+    <string name="benefit_faster_experience">Faster and cleaner app experience</string>
+    <string name="benefit_support_development">Support ongoing app development</string>
+    <string name="plan_monthly">Monthly</string>
+    <string name="plan_yearly">Yearly</string>
+    <string name="best_value">BEST VALUE</string>
+    <string name="upgrade_banner_title">Tired of ads?</string>
+    <string name="upgrade_banner_subtitle">Go Premium for an ad-free experience</string>
+    <string name="upgrade_button">Upgrade</string>
+
 </resources>

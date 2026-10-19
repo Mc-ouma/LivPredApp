@@ -48,87 +48,165 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
                     }
                 }
             }
-    private val _uiState = MutableStateFlow<UiState<List<ServerResponse>>>(UiState.Loading)
-    val uiState: StateFlow<UiState<List<ServerResponse>>> = _uiState.asStateFlow()
+    // Per-date UI state so each pager page has independent state
+    private val _dateUiStates = MutableStateFlow<Map<LocalDate, UiState<List<ServerResponse>>>>(emptyMap())
+    val dateUiStates: StateFlow<Map<LocalDate, UiState<List<ServerResponse>>>> = _dateUiStates.asStateFlow()
 
-    // Fetch data only if not already cached for the given date
+    private val _tomorrowHasItems = MutableStateFlow(false)
+    val tomorrowHasItems: StateFlow<Boolean> = _tomorrowHasItems.asStateFlow()
+
+    // Cache of favorite fixture IDs for efficient lookups - reactively updated
+    private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
+    val favoriteIds: StateFlow<Set<String>> = _favoriteIds.asStateFlow()
+
+    init {
+        // Observe favorites and update the cached set reactively
+        viewModelScope.launch {
+            favoriteDao.getAllFavoritesFlow().collect { favorites ->
+                _favoriteIds.value = favorites.map { it.fixtureId }.toSet()
+            }
+        }
+    }
+
+    companion object {
+        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    }
+
+    // Fetch data using Stale-While-Revalidate with batch date grouping
     fun fetchItems(categoryEndpoint: String, date: LocalDate?) {
-        val cacheKey = "${categoryEndpoint}_$date"
+        val resolvedDate = date ?: LocalDate.now()
+        val cacheKey = "${categoryEndpoint}_$resolvedDate"
         val cachedItems = cachedData.get(cacheKey)
 
         if (cachedItems != null) {
             val (timestamp, items) = cachedItems
             val currentTime = System.currentTimeMillis()
             if (currentTime - timestamp < cacheExpirationDuration) {
-                _uiState.value = UiState.Success(items)
+                updateDateState(resolvedDate, UiState.Success(items))
                 return
             } else {
                 cachedData.remove(cacheKey) // Remove expired cache
             }
         }
 
+        // If no cached success state is currently visible for this date, show Loading
+        if (_dateUiStates.value[resolvedDate] !is UiState.Success) {
+            updateDateState(resolvedDate, UiState.Loading)
+        }
+
         viewModelScope.launch {
-            _uiState.value = UiState.Loading
             try {
-                val response = repository.getCategoryData(categoryEndpoint)
-
-                val items =
-                        withContext(Dispatchers.IO) {
-                            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                            response.serverResponse
-                                    .filter { serverResponse ->
-                                        val mDate = serverResponse.mDate ?: ""
-                                        mDate != "0000-00-00" &&
-                                                try {
-                                                    LocalDate.parse(mDate, formatter) == date
-                                                } catch (e: Exception) {
-                                                    Timber.e(e, "Error parsing date: $mDate")
-                                                    false // Ignore items with invalid dates
-                                                }
-                                    }
-                                    .map { serverResponse ->
-                                        // Calculate outcome if not provided
-
-                                        val color =
-                                                when (serverResponse.outcome?.lowercase()) {
-                                                    "win" -> Color.Green
-                                                    "lose" -> Color.Red
-                                                    else -> Color.Unspecified
-                                                }
-
-                                        // Convert UTC time to local timezone
-                                        val localTime = TimeZoneConverter.convertUtcToLocal(
-                                            serverResponse.mTime,
-                                            serverResponse.mDate
-                                        )
-
-                                        ServerResponse(
-                                                fixtureId = serverResponse.fixtureId ?: "",
-                                                pick = serverResponse.pick ?: "Unknown",
-                                                homeTeam = serverResponse.homeTeam ?: "Unknown",
-                                                awayTeam = serverResponse.awayTeam ?: "Unknown",
-                                                mDate = serverResponse.mDate ?: "Unknown",
-                                                league = serverResponse.league ?: "Unknown",
-                                                mTime = localTime,
-                                                betOdds = serverResponse.betOdds ?: "Unknown",
-                                                outcome = serverResponse.outcome ?: "Unknown",
-                                                htScore = serverResponse.htScore ?: "Unknown",
-                                                result = serverResponse.result ?: "Unknown",
-                                                hLogoPath = serverResponse.hLogoPath ?: "Unknown",
-                                                aLogoPath = serverResponse.aLogoPath ?: "Unknown",
-                                                leagueLogo = serverResponse.leagueLogo ?: "Unknown",
-                                                mStatus = serverResponse.mStatus ?: "Unknown",
-                                                color = color,
-                                        )
-                                    }
-                                .sortedBy { it.mTime }
-                        }
-
-                cachedData.put(cacheKey, System.currentTimeMillis() to items)
-                _uiState.value = UiState.Success(items)
+                repository.getCategoryDataFlow(categoryEndpoint).collect { response ->
+                    processResponse(categoryEndpoint, response, resolvedDate)
+                }
             } catch (e: Exception) {
-                _uiState.value =
-                        UiState.Error(e.localizedMessage ?: "An unexpected error occurred.")
+                if (_dateUiStates.value[resolvedDate] !is UiState.Success) {
+                    updateDateState(resolvedDate, UiState.Error(e.localizedMessage ?: "An unexpected error occurred."))
+                }
+            }
+        }
+    }
+
+    private suspend fun processResponse(categoryEndpoint: String, response: com.soccertips.predictx.data.model.RootResponse, resolvedDate: LocalDate) = withContext(Dispatchers.Default) {
+        val today = LocalDate.now()
+        val tomorrow = today.plusDays(1)
+        val currentTime = System.currentTimeMillis()
+
+        // Parse and map all items in the category response in a single pass
+        val parsedItems = response.serverResponse
+            .filter { serverResponse ->
+                val mDate = serverResponse.mDate ?: ""
+                mDate != "0000-00-00" && mDate.isNotBlank()
+            }
+            .mapNotNull { serverResponse ->
+                val mDate = serverResponse.mDate ?: return@mapNotNull null
+                val parsedDate = try {
+                    LocalDate.parse(mDate, DATE_FORMATTER)
+                } catch (e: Exception) {
+                    Timber.e(e, "Error parsing date: $mDate")
+                    return@mapNotNull null
+                }
+
+                val color = when (serverResponse.outcome?.lowercase()) {
+                    "win" -> Color.Green
+                    "lose" -> Color.Red
+                    else -> Color.Unspecified
+                }
+
+                val localTime = TimeZoneConverter.convertUtcToLocal(
+                    serverResponse.mTime,
+                    serverResponse.mDate
+                )
+
+                parsedDate to ServerResponse(
+                    fixtureId = serverResponse.fixtureId ?: "",
+                    pick = serverResponse.pick ?: "Unknown",
+                    homeTeam = serverResponse.homeTeam ?: "Unknown",
+                    awayTeam = serverResponse.awayTeam ?: "Unknown",
+                    mDate = serverResponse.mDate ?: "Unknown",
+                    league = serverResponse.league ?: "Unknown",
+                    mTime = localTime,
+                    betOdds = serverResponse.betOdds ?: "Unknown",
+                    outcome = serverResponse.outcome ?: "Unknown",
+                    htScore = serverResponse.htScore ?: "Unknown",
+                    result = serverResponse.result ?: "Unknown",
+                    hLogoPath = serverResponse.hLogoPath ?: "Unknown",
+                    aLogoPath = serverResponse.aLogoPath ?: "Unknown",
+                    leagueLogo = serverResponse.leagueLogo ?: "Unknown",
+                    mStatus = serverResponse.mStatus ?: "Unknown",
+                    color = color,
+                )
+            }
+
+        // Group items by LocalDate and sort by time
+        val groupedByDate = parsedItems
+            .groupBy({ it.first }, { it.second })
+            .mapValues { entry -> entry.value.sortedBy { it.mTime } }
+
+        // Update tomorrow has items flag
+        val tomorrowItems = groupedByDate[tomorrow]
+        _tomorrowHasItems.value = !tomorrowItems.isNullOrEmpty()
+
+        // Pre-populate all dates in the standard pager range (past 5 days, today, tomorrow)
+        val pastDays = 5
+        val allDatesInRange = (0..pastDays).map { today.minusDays(it.toLong()) } + tomorrow
+
+        val newStates = mutableMapOf<LocalDate, UiState<List<ServerResponse>>>()
+        allDatesInRange.forEach { date ->
+            val items = groupedByDate[date] ?: emptyList()
+            val cacheKey = "${categoryEndpoint}_$date"
+            cachedData.put(cacheKey, currentTime to items)
+            newStates[date] = UiState.Success(items)
+        }
+
+        // Also include any other dates present in the response outside the default range
+        groupedByDate.forEach { (date, items) ->
+            if (!newStates.containsKey(date)) {
+                val cacheKey = "${categoryEndpoint}_$date"
+                cachedData.put(cacheKey, currentTime to items)
+                newStates[date] = UiState.Success(items)
+            }
+        }
+
+        withContext(Dispatchers.Main) {
+            _dateUiStates.value = _dateUiStates.value + newStates
+        }
+    }
+
+    private fun updateDateState(date: LocalDate, state: UiState<List<ServerResponse>>) {
+        _dateUiStates.value = _dateUiStates.value + (date to state)
+    }
+
+    fun checkTomorrowItems(categoryEndpoint: String) {
+        val tomorrow = LocalDate.now().plusDays(1)
+        val cacheKey = "${categoryEndpoint}_$tomorrow"
+        val cachedItems = cachedData.get(cacheKey)
+
+        if (cachedItems != null) {
+            val (timestamp, items) = cachedItems
+            if (System.currentTimeMillis() - timestamp < cacheExpirationDuration) {
+                _tomorrowHasItems.value = items.isNotEmpty()
+                return
             }
         }
     }
@@ -168,8 +246,8 @@ constructor(private val repository: PredictionRepository, private val favoriteDa
         }
     }
 
-    // Check if an item is a favorite
-    suspend fun isFavorite(item: ServerResponse): Boolean {
-        return favoriteDao.getAllFavorites().any { it.fixtureId == item.fixtureId }
+    // Check if an item is a favorite - non-blocking lookup from cached set
+    fun isFavorite(item: ServerResponse): Boolean {
+        return item.fixtureId in _favoriteIds.value
     }
 }

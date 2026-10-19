@@ -128,8 +128,12 @@ constructor(
         }
     }
 
+    private val transfersFlowCache = mutableMapOf<String, Flow<PagingData<Response2>>>()
+
     fun getTransfers(teamId: String): Flow<PagingData<Response2>> {
-        return repository.getTransfers(teamId).cachedIn(viewModelScope)
+        return transfersFlowCache.getOrPut(teamId) {
+            repository.getTransfers(teamId).cachedIn(viewModelScope)
+        }
     }
 
     fun getNextFixtures(teamId: String, season: String, next: String) {

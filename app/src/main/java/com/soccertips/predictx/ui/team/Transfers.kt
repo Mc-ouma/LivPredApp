@@ -76,13 +76,17 @@ fun TransferScreen(
                 contentPadding = PaddingValues(16.dp)
             ) {
                 items(transfers.itemCount) { index ->
-                    transfers[index]?.let { transfer ->
-                        TransferItem(
-                            transfer = transfer.transfers.first(),
-                            teamId = teamId,
-                            playerName = transfer.player.name ?: "Unknown Player",
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                    transfers[index]?.let { responseItem ->
+                        val transferList = responseItem.transfers ?: emptyList()
+                        val firstTransfer = transferList.firstOrNull()
+                        if (firstTransfer != null) {
+                            TransferItem(
+                                transfer = firstTransfer,
+                                teamId = teamId,
+                                playerName = responseItem.player?.name ?: stringResource(R.string.unknown_player),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
 
@@ -115,7 +119,8 @@ fun TransferItem(
     modifier: Modifier = Modifier
 ) {
     // Determine if the transfer is incoming (the current team is the destination)
-    val isIncoming = transfer.teams.`in`.id == teamId.toInt()
+    val currentTeamIdInt = teamId.toIntOrNull()
+    val isIncoming = currentTeamIdInt != null && transfer.teams?.`in`?.id == currentTeamIdInt
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
 
@@ -141,7 +146,10 @@ fun TransferItem(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // "From" team (the team the player is leaving)
-                TeamLogoAndName(team = transfer.teams.out)
+                TeamLogoAndName(
+                    team = transfer.teams?.out,
+                    modifier = Modifier.weight(1f)
+                )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
@@ -157,7 +165,10 @@ fun TransferItem(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 // "To" team (the team the player is joining)
-                TeamLogoAndName(team = transfer.teams.`in`)
+                TeamLogoAndName(
+                    team = transfer.teams?.`in`,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -168,7 +179,7 @@ fun TransferItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = transfer.date ?: "Unknown date",
+                    text = transfer.date ?: stringResource(R.string.unknown_date),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -180,16 +191,19 @@ fun TransferItem(
 }
 
 @Composable
-fun TeamLogoAndName(team: Team, modifier: Modifier = Modifier) {
+fun TeamLogoAndName(team: Team?, modifier: Modifier = Modifier) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         // Load team logo (using Coil's AsyncImage or similar)
         Image(
-            painter = rememberAsyncImagePainter(model = team.logo),
-            contentDescription = team.name,
+            painter = rememberAsyncImagePainter(model = team?.logo),
+            contentDescription = team?.name,
             modifier = Modifier.size(40.dp).clip(CircleShape)
         )
         Spacer(modifier = Modifier.width(4.dp))
-        Text(text = team.name ?: stringResource(R.string.unknown_team), style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = team?.name ?: stringResource(R.string.unknown_team),
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 

@@ -597,7 +597,7 @@ fun NativeAdItem(
 
     val adStateManager = remember(app) { app?.adStateManagerProvider() }
     val nativeTypes = remember { listOf(NativeAd.NativeAdType.NATIVE) }
-    var nativeAd by remember { mutableStateOf<NativeAd?>(null) }
+    var currentNativeAd by remember { mutableStateOf<NativeAd?>(null) }
 
     // Load native ad
     DisposableEffect(adUnitId) {
@@ -615,9 +615,9 @@ fun NativeAdItem(
         NativeAdLoader.load(
             request,
             object : NativeAdLoaderCallback {
-                override fun onNativeAdLoaded(ad: NativeAd) {
-                    nativeAd?.destroy()
-                    nativeAd = ad.apply {
+                override fun onNativeAdLoaded(nativeAd: NativeAd) {
+                    currentNativeAd?.destroy()
+                    currentNativeAd = nativeAd.apply {
                         adEventCallback =
                             object :
                                 com.google.android.libraries.ads.mobile.sdk.nativead.NativeAdEventCallback {
@@ -652,26 +652,26 @@ fun NativeAdItem(
 
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     Timber.e("Native ad failed to load: ${adError.message}")
-                    nativeAd = null
+                    currentNativeAd = null
                 }
             }
         )
 
         onDispose {
             try {
-                nativeAd?.destroy()
+                currentNativeAd?.destroy()
             } catch (e: Exception) {
                 Timber.e("Error destroying NativeAd: ${e.message}")
             } finally {
-                nativeAd = null
+                currentNativeAd = null
             }
         }
     }
 
     // Only show the ad view when the ad is loaded
-    if (nativeAd != null) {
+    if (currentNativeAd != null) {
         NativeAdContent(
-            nativeAd = nativeAd!!,
+            nativeAd = currentNativeAd!!,
             modifier = modifier
         )
     }
@@ -1120,9 +1120,9 @@ constructor(
                     attachCallbacks(ad)
                 }
 
-                override fun onAdFailedToLoad(error: LoadAdError) {
+                override fun onAdFailedToLoad(adError: LoadAdError) {
                     Timber.tag("InterstitialAd")
-                        .e("Load failed: ${error.message} (${error.code})")
+                        .e("Load failed: ${adError.message} (${adError.code})")
 
                     interstitialAd = null
                     isAdLoading = false
@@ -1163,9 +1163,9 @@ constructor(
                 loadAdIfNeeded()
             }
 
-            override fun onAdFailedToShowFullScreenContent(error: FullScreenContentError) {
+            override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
                 Timber.tag("InterstitialAd")
-                    .e("Show failed: ${error.message}")
+                    .e("Show failed: ${fullScreenContentError.message}")
 
                 adStateManager.setFullScreenAdShowing(false)
 
@@ -1231,8 +1231,8 @@ constructor(
                     onAdDismissed()
                 }
 
-                override fun onAdFailedToShowFullScreenContent(error: FullScreenContentError) {
-                    baseCallback?.onAdFailedToShowFullScreenContent(error)
+                override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
+                    baseCallback?.onAdFailedToShowFullScreenContent(fullScreenContentError)
                     // SDK delivers callbacks on the main thread — no Handler.post needed
                     onAdDismissed()
                 }

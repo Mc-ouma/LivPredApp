@@ -48,6 +48,7 @@ import com.soccertips.predictx.ui.components.AnnouncementCard
 import com.soccertips.predictx.ui.components.LoadingIndicator
 import com.soccertips.predictx.ui.fixturedetails.EmptyScreen
 import com.soccertips.predictx.admob.AdManagerEntryPoint
+import com.soccertips.predictx.admob.findActivity
 import com.soccertips.predictx.ui.fixturedetails.ErrorScreen
 import com.soccertips.predictx.viewmodel.CategoriesViewModel
 import dagger.hilt.android.EntryPointAccessors
@@ -132,11 +133,21 @@ fun CategoriesScreen(
                 onCategoryClick = { category ->
                     val encodedUrl = java.net.URLEncoder.encode(category.url, "UTF-8")
                     val targetRoute = Routes.ItemsList.createRoute(encodedUrl)
-                    if (activity != null) {
-                        interstitialAdManager.showIfEligibleByFrequency(activity, interval = 4) {
+                    val act = activity ?: context.findActivity()
+                    Timber.tag("CategoriesScreen").d(
+                        "onCategoryClick: Category '${category.name}' clicked (url='${category.url}'), checking interstitial eligibility (interval=3)"
+                    )
+                    if (act != null) {
+                        interstitialAdManager.showIfEligibleByFrequency(act, interval = 3) {
+                            Timber.tag("CategoriesScreen").d(
+                                "onCategoryClick: Interstitial callback completed for category '${category.name}' -> navigating to $targetRoute"
+                            )
                             navController.navigate(targetRoute)
                         }
                     } else {
+                        Timber.tag("CategoriesScreen").d(
+                            "onCategoryClick: Activity context is null -> navigating directly to $targetRoute"
+                        )
                         navController.navigate(targetRoute)
                     }
                 }
@@ -180,6 +191,12 @@ fun CategoriesContent(
         categories.filter { it.url.isNotBlank() }.distinctBy { it.uniqueKey }
     }
 
+    LaunchedEffect(distinctCategories.size, distinctAnnouncements.size) {
+        Timber.tag("CategoriesScreen").d(
+            "Categories cards count: ${distinctCategories.size} (announcements count: ${distinctAnnouncements.size})"
+        )
+    }
+
     // Use a single LazyVerticalGrid to avoid nested scrollables and fixed heights
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 150.dp),
@@ -211,7 +228,12 @@ fun CategoriesContent(
 
             CategoryCard(
                 category = category,
-                onClick = { onCategoryClick(category) },
+                onClick = {
+                    Timber.tag("CategoriesScreen").d(
+                        "CategoryCard clicked: index=$index (card ${index + 1} of ${distinctCategories.size}), name='${category.name}'"
+                    )
+                    onCategoryClick(category)
+                },
             )
         }
 

@@ -78,12 +78,9 @@ import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.UiState
 import androidx.activity.compose.BackHandler
-import com.soccertips.predictx.admob.AdManagerEntryPoint
 import com.soccertips.predictx.admob.CollapsibleBannerAdView
-import com.soccertips.predictx.admob.findActivity
 import com.soccertips.predictx.viewmodel.FixtureDetailsViewModel
 import com.soccertips.predictx.viewmodel.SharedViewModel
-import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -110,22 +107,8 @@ fun FixtureDetailsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val formState by sharedViewModel.fixturesState.collectAsState()
 
-    val interstitialAdManager = remember {
-        EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            AdManagerEntryPoint::class.java
-        ).interstitialAdManager()
-    }
-    val activity = remember(context) { context.findActivity() }
-
     val onBackNavigate: () -> Unit = {
-        if (activity != null) {
-            interstitialAdManager.showIfEligibleByFrequency(activity, interval = 2) {
-                navController.popBackStack()
-            }
-        } else {
-            navController.popBackStack()
-        }
+        navController.popBackStack()
     }
 
     BackHandler(onBack = onBackNavigate)

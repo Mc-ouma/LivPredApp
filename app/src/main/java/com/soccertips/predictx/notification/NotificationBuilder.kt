@@ -26,6 +26,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class NotificationBuilder @Inject constructor(@ApplicationContext private val context: Context) {
@@ -41,7 +42,7 @@ class NotificationBuilder @Inject constructor(@ApplicationContext private val co
     suspend fun buildMatchNotification(item: FavoriteItem): NotificationCompat.Builder {
         return try {
             // Load images with timeout to prevent notification delays
-            val (homeTeamLogo, awayTeamLogo) = withTimeout(IMAGE_LOAD_TIMEOUT_MS) {
+            val (homeTeamLogo, awayTeamLogo) = withTimeout(IMAGE_LOAD_TIMEOUT_MS.milliseconds) {
                 val home = loadTeamLogo(item.hLogoPath)
                 val away = loadTeamLogo(item.aLogoPath)
                 Pair(home, away)

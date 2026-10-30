@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -149,6 +151,7 @@ class MainActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        initializeViewTreeOwners()
 
         // Handle notification intents on app launch
         intent?.let { handleNotificationIntent(it) }
@@ -210,6 +213,21 @@ class MainActivity : AppCompatActivity() {
             initializeBackgroundComponents()
         }
 
+    }
+
+    override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
+        initializeViewTreeOwners()
+        super.setContentView(view, params)
+    }
+
+    override fun setContentView(view: View?) {
+        initializeViewTreeOwners()
+        super.setContentView(view)
+    }
+
+    override fun setContentView(layoutResID: Int) {
+        initializeViewTreeOwners()
+        super.setContentView(layoutResID)
     }
 
     private suspend fun initializeBackgroundComponents() {
@@ -392,6 +410,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onResume() {
+        // When MainActivity resumes in the foreground, reset any stale full-screen ad flag before lifecycle callbacks
+        if (::adStateManager.isInitialized && adStateManager.isFullScreenAdShowing()) {
+            Timber.tag("MainActivity").d("Resetting stale full-screen ad flag on MainActivity onResume")
+            adStateManager.setFullScreenAdShowing(false)
+        }
+
         super.onResume()
 
         // For IMMEDIATE updates that were interrupted - use custom update manager

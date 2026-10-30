@@ -44,8 +44,8 @@ ApplicationExtension::class.java.cast(extensions.getByName("android")).apply {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 35
-        versionName = "2.1.3 (35)"
+        versionCode = 37
+        versionName = "2.1.3 (37)"
 
         buildConfigField("boolean", "DEBUG", "true")
 
@@ -115,7 +115,7 @@ kotlin {
 
 /*
 Dependency versions are defined in the top level build.gradle file. This helps keeping track of
-all versions in a single place. This improves readability and helps managing project complexity.
+all versions in a single place. This improves readability and helps to manage project complexity.
 */
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
@@ -163,7 +163,6 @@ dependencies {
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.permissions)
 
-    debugImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.tooling.core)
 
     implementation(libs.retrofit)

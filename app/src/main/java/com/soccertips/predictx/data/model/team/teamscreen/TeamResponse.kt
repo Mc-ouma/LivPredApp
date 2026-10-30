@@ -17,14 +17,14 @@ data class Paging(
 data class TeamStatistics(
     val league: League,
     val team: Team,
-    val form: String,
+    val form: String? = null,
     val fixtures: Fixtures,
     val goals: Goals,
     val biggest: Biggest,
     val clean_sheet: CleanSheet,
     val failed_to_score: FailedToScore,
     val penalty: Penalty,
-    val lineups: List<Lineup>,
+    val lineups: List<Lineup>? = null,
     val cards: Cards
 )
 
@@ -69,9 +69,9 @@ data class ForAgainstGoals(
 )
 
 data class AverageGoals(
-    val home: String,
-    val away: String,
-    val total: String
+    val home: String? = null,
+    val away: String? = null,
+    val total: String? = null
 )
 
 data class GoalMinute(
@@ -86,8 +86,8 @@ data class UnderOver(
 
 data class Biggest(
     val streak: Streak,
-    val wins: HomeAway,
-    val loses: HomeAway,
+    val wins: HomeAway? = null,
+    val loses: HomeAway? = null,
     val goals: HomeAwayGoals
 )
 
@@ -98,8 +98,8 @@ data class Streak(
 )
 
 data class HomeAway(
-    val home: String,
-    val away: String
+    val home: String? = null,
+    val away: String? = null
 )
 
 data class HomeAwayGoals(
@@ -127,12 +127,12 @@ data class Penalty(
 
 data class PenaltyDetails(
     val total: Int,
-    val percentage: String
+    val percentage: String? = null
 )
 
 data class Lineup(
-    val formation: String,
-    val played: Int
+    val formation: String? = null,
+    val played: Int = 0
 )
 
 data class Cards(

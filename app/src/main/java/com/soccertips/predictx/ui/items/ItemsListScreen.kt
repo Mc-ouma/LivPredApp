@@ -181,21 +181,12 @@ fun ItemsListScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    // Function to handle back navigation with an interstitial ad
-    val navigateBackWithAd: () -> Unit = {
-        val activity = navController.context as? Activity
-        if (activity != null) {
-            interstitialAdManager.showIfEligibleByFrequency(activity, interval = 2) {
-                Timber.tag("InterstitialAd").d("Back navigation completed")
-                navController.popBackStack()
-            }
-        } else {
-            navController.popBackStack()
-        }
+    val navigateBack: () -> Unit = {
+        navController.popBackStack()
     }
 
     // Handle system back gesture
-    BackHandler { navigateBackWithAd() }
+    BackHandler { navigateBack() }
 
     Scaffold(
         Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -258,7 +249,7 @@ fun ItemsListScreen(
                         }
                     },
                     navigationIcon = {
-                        IconButton(onClick = navigateBackWithAd) {
+                        IconButton(onClick = navigateBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
                                 contentDescription = "Back"
@@ -326,6 +317,9 @@ fun ItemsListScreen(
                     is UiState.Success -> {
                         val items = pageUiState.data
                         if (items.isEmpty()) {
+                            Timber.tag("ItemsListScreen").d(
+                                "ItemsList cards count: 0 for category '${category.name}' on date $pageDate"
+                            )
                             ErrorMessage(
                                 message =
                                     stringResource(
@@ -338,6 +332,12 @@ fun ItemsListScreen(
                             // Show native ad after 5th item when there are 6+ items
                             val showNativeAd = items.size >= 6
 
+                            LaunchedEffect(items.size, pageDate) {
+                                Timber.tag("ItemsListScreen").d(
+                                    "ItemsList cards count: ${items.size} for category '${category.name}' on date $pageDate (showNativeAd: $showNativeAd)"
+                                )
+                            }
+
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -349,12 +349,21 @@ fun ItemsListScreen(
                                             val fixtureRoute = Routes.FixtureDetails.createRoute(
                                                 item.fixtureId ?: ""
                                             )
-                                            val activity = navController.context as? Activity
+                                            val activity = context.findActivity()
+                                            Timber.tag("ItemsListScreen").d(
+                                                "ItemCard clicked: index=$index (card ${index + 1} of ${items.size}), fixtureId=${item.fixtureId}, match='${item.homeTeam} vs ${item.awayTeam}', checking interstitial eligibility (interval=3)"
+                                            )
                                             if (activity != null) {
                                                 interstitialAdManager.showIfEligibleByFrequency(activity, interval = 3) {
+                                                    Timber.tag("ItemsListScreen").d(
+                                                        "ItemCard: Interstitial callback completed for fixtureId=${item.fixtureId} -> navigating to $fixtureRoute"
+                                                    )
                                                     navController.navigate(fixtureRoute)
                                                 }
                                             } else {
+                                                Timber.tag("ItemsListScreen").d(
+                                                    "ItemCard: Activity context is null -> navigating directly to $fixtureRoute"
+                                                )
                                                 navController.navigate(fixtureRoute)
                                             }
                                         },
@@ -365,6 +374,9 @@ fun ItemsListScreen(
 
                                     // Insert native ad after 5th item (index 4) and every 8 items thereafter in long lists
                                     if (showNativeAd && (index == 4 || (index > 4 && (index - 4) % 8 == 0))) {
+                                        Timber.tag("ItemsListScreen").d(
+                                            "NativeAdItem inserted after card index $index (card count rendered so far: ${index + 1} of ${items.size})"
+                                        )
                                         NativeAdItem()
                                         Spacer(modifier = Modifier.height(8.dp))
                                     }

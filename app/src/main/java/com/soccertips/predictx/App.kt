@@ -804,20 +804,20 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Check if ads can be shown - skip on low-memory devices during initial start
             val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
             if (isMobileAdsInitialized.value && !isInitialAppStart && !(isLowMemory && isInitialAppStart)) {
-                Timber.d("AppOpenAdManager: Checking if ad can be shown on resume")
+                Timber.tag("AppOpenAd").d("onActivityResumed: Checking if app open ad can be shown on resume")
                 // Skip if onActivityStarted already triggered an ad this foreground cycle
                 if (adShownThisForegroundCycle) {
-                    Timber.d("AppOpenAdManager: Skipping resume ad - already shown this foreground cycle")
+                    Timber.tag("AppOpenAd").d("onActivityResumed: Skipping resume ad - already shown this foreground cycle")
                 } else if (appOpenAdManager.shouldShowAdOnAppResume()) {
-                    Timber.d("AppOpenAdManager: Showing ad on resume")
+                    Timber.tag("AppOpenAd").d("onActivityResumed: Showing app open ad on resume")
                     adShownThisForegroundCycle = true
                     showAppOpenAd(activity)
                 } else {
-                    Timber.d("AppOpenAdManager: Not showing ad on resume (not eligible)")
+                    Timber.tag("AppOpenAd").d("onActivityResumed: Not showing ad on resume (not eligible)")
                 }
             } else {
-                Timber.d(
-                    "AppOpenAdManager: Not showing ad on resume (initialization state: ads initialized=${isMobileAdsInitialized.value}, initialAppStart=${isInitialAppStart}, lowMemory=$isLowMemory)"
+                Timber.tag("AppOpenAd").d(
+                    "onActivityResumed: Not checking resume ad (ads initialized=${isMobileAdsInitialized.value}, initialAppStart=$isInitialAppStart, lowMemory=$isLowMemory)"
                 )
             }
         }
@@ -835,25 +835,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         try {
             FirebaseCrashlytics.getInstance()
                 .log(
-                    "onActivityStarted: firstLaunch=${'$'}isFirstLaunchCheck activity=${'$'}{activity.javaClass.name}"
+                    "onActivityStarted: firstLaunch=$isFirstLaunchCheck activity=${activity.javaClass.name}"
                 )
         } catch (_: Exception) {
-        }
-
-        // Determine if we should show app open ad on start
-        if (isMobileAdsInitialized.value && !isInitialAppStart && !isFirstLaunchCheck) {
-            Timber.d("AppOpenAdManager: Checking if ad can be shown on activity start")
-            if (appOpenAdManager.shouldShowAdOnAppStart(isFirstLaunchCheck)) {
-                Timber.d("AppOpenAdManager: Attempting to show app open ad on activity start")
-                adShownThisForegroundCycle = true
-                showAppOpenAd(activity)
-            } else {
-                Timber.d("AppOpenAdManager: Not showing app open ad on start (not eligible)")
-            }
-        } else {
-            Timber.d(
-                "AppOpenAdManager: Not showing app open ad on start (initialization state: ads initialized=${isMobileAdsInitialized.value}, initialAppStart=${isInitialAppStart}, firstLaunch=${isFirstLaunchCheck})"
-            )
         }
     }
 
@@ -867,6 +851,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
             // Preload an App Open ad while in background so it is ready when the user returns
             if (isMobileAdsInitialized.value && !adStateManager.isSubscribed()) {
+                Timber.tag("AppOpenAd").d("onActivityStopped: App backgrounded, preloading App Open ad")
                 maybePreloadAppOpenAd()
             }
         }
@@ -893,7 +878,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     private fun showAppOpenAd(activity: Activity) {
         if (appOpenAdManager.isAdAvailable()) {
-            Timber.d("AppOpenAdManager: Showing app open ad")
+            Timber.tag("AppOpenAd").d("showAppOpenAd: Ad available -> invoking showAdIfAvailable on ${activity.javaClass.simpleName}")
             try {
                 FirebaseCrashlytics.getInstance()
                     .log(
@@ -902,7 +887,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             } catch (_: Exception) {
             }
             appOpenAdManager.showAdIfAvailable(activity) {
-                Timber.d("AppOpenAdManager: App open ad shown or dismissed")
+                Timber.tag("AppOpenAd").d("showAppOpenAd: Completion callback executed after ad display/dismissal")
                 try {
                     FirebaseCrashlytics.getInstance().log("showAppOpenAd: onShowAdComplete")
                 } catch (_: Exception) {
@@ -910,7 +895,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 // Any post-ad display actions can go here
             }
         } else {
-            Timber.d("AppOpenAdManager: No app open ad available to show")
+            Timber.tag("AppOpenAd").d("showAppOpenAd: No app open ad available to show -> triggering loadAppOpenAd()")
             try {
                 FirebaseCrashlytics.getInstance()
                     .log("showAppOpenAd: available=false -> loadAppOpenAd")

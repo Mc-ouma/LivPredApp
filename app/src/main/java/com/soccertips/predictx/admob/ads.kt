@@ -56,6 +56,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.soccertips.predictx.R
 import dagger.hilt.EntryPoint
@@ -153,6 +156,8 @@ private fun isProblematicDeviceForFullScreenAds(): Boolean {
 class AdStateManager @Inject constructor() {
     // Tracks if any full screen ad is currently showing
     private val isAnyFullScreenAdShowing = java.util.concurrent.atomic.AtomicBoolean(false)
+    private var fullScreenAdShowingTimestamp = 0L
+    private val adShowingTimeoutMs = 20_000L // 20 seconds maximum watchdog timeout
 
     // Tracks subscription status - when true, all ads are suppressed
     private val _isSubscribed = java.util.concurrent.atomic.AtomicBoolean(false)
@@ -172,12 +177,23 @@ class AdStateManager @Inject constructor() {
     // Lock any full screen ad from showing
     fun setFullScreenAdShowing(isShowing: Boolean) {
         isAnyFullScreenAdShowing.set(isShowing)
+        fullScreenAdShowingTimestamp = if (isShowing) System.currentTimeMillis() else 0L
         Timber.tag("AdStateManager").d("Full screen ad state: $isShowing")
     }
 
     // Check if any full screen ad is currently showing
     fun isFullScreenAdShowing(): Boolean {
-        return isAnyFullScreenAdShowing.get()
+        if (isAnyFullScreenAdShowing.get()) {
+            val elapsed = System.currentTimeMillis() - fullScreenAdShowingTimestamp
+            if (fullScreenAdShowingTimestamp > 0L && elapsed > adShowingTimeoutMs) {
+                Timber.tag("AdStateManager").w("Full screen ad state timed out after ${elapsed}ms; auto-resetting")
+                isAnyFullScreenAdShowing.set(false)
+                fullScreenAdShowingTimestamp = 0L
+                return false
+            }
+            return true
+        }
+        return false
     }
 
     // Check if device is safe for full screen ads
@@ -1000,7 +1016,11 @@ constructor(
     // Frequency and interval tracking to prevent ad fatigue
     private var actionCount = 0
     private var lastAdShownTimestamp = 0L
-    private val minDisplayIntervalMs = 75_000L // 75 seconds minimum between interstitials
+    private var lastShowCallTime = 0L
+    private val minDisplayIntervalMs = 45_000L // 45 seconds minimum between interstitials
+
+    val currentActionCount: Int
+        get() = actionCount
 
     /**
      * Checks if an interstitial ad should be shown based on user action frequency
@@ -1009,14 +1029,25 @@ constructor(
      * @param interval The number of actions (e.g. item/category clicks) before an ad can show.
      */
     fun shouldShowByFrequency(interval: Int = 3): Boolean {
-        actionCount++
+        actionCount = (actionCount + 1).coerceAtMost(interval)
         val now = System.currentTimeMillis()
         val elapsed = now - lastAdShownTimestamp
-        val eligible = actionCount >= interval && (lastAdShownTimestamp == 0L || elapsed >= minDisplayIntervalMs)
-        Timber.tag("InterstitialAd").d("Frequency check: actionCount=$actionCount/$interval, elapsed=${elapsed}ms (min ${minDisplayIntervalMs}ms), eligible=$eligible")
+        val isCooldownPassed = lastAdShownTimestamp == 0L || elapsed >= minDisplayIntervalMs
+        val isThresholdPassed = actionCount >= interval
+        val eligible = isThresholdPassed && isCooldownPassed
+
+        val cooldownRemainingMs = if (isCooldownPassed) 0L else (minDisplayIntervalMs - elapsed)
+        Timber.tag("InterstitialAd").d(
+            "Frequency check: card clicks / actionCount=$actionCount/$interval, elapsed=${elapsed}ms (cooldown=${minDisplayIntervalMs}ms, remaining=${cooldownRemainingMs}ms), eligible=$eligible"
+        )
         if (eligible) {
             actionCount = 0
+            Timber.tag("InterstitialAd").d("Frequency check: Threshold reached ($interval) and cooldown passed. Reset actionCount to 0; ad is eligible to show.")
             return true
+        } else if (isThresholdPassed && !isCooldownPassed) {
+            Timber.tag("InterstitialAd").d(
+                "Frequency check: Click threshold ($actionCount/$interval) reached, but in cooldown (${cooldownRemainingMs / 1000}s remaining). Ad suppressed to prevent ad fatigue."
+            )
         }
         return false
     }
@@ -1030,19 +1061,32 @@ constructor(
         interval: Int = 3,
         onComplete: () -> Unit
     ) {
+        val now = System.currentTimeMillis()
+        if (now - lastShowCallTime < 600L) {
+            Timber.tag("InterstitialAd").d("showIfEligibleByFrequency: Debouncing rapid show call (${now - lastShowCallTime}ms < 600ms)")
+            return
+        }
+        lastShowCallTime = now
+
+        Timber.tag("InterstitialAd").d("showIfEligibleByFrequency: Checking eligibility (current actionCount=$actionCount, interval=$interval)")
+
         if (adStateManager.isSubscribed()) {
+            Timber.tag("InterstitialAd").d("showIfEligibleByFrequency: User is subscribed, invoking onComplete callback directly")
             onComplete()
             return
         }
 
         if (!shouldShowByFrequency(interval)) {
+            Timber.tag("InterstitialAd").d("showIfEligibleByFrequency: Ineligible by frequency (clicks: $actionCount/$interval), preloading ad if needed and invoking onComplete callback directly")
             loadAdIfNeeded()
             onComplete()
             return
         }
 
+        Timber.tag("InterstitialAd").d("showIfEligibleByFrequency: Eligible for interstitial ad, showing ad with callback")
         showInterstitialAdWithCallback(activity) {
             lastAdShownTimestamp = System.currentTimeMillis()
+            Timber.tag("InterstitialAd").d("showIfEligibleByFrequency: Interstitial ad flow completed, invoking caller onComplete callback")
             onComplete()
         }
     }
@@ -1110,7 +1154,7 @@ constructor(
             object : AdLoadCallback<InterstitialAd> {
 
                 override fun onAdLoaded(ad: InterstitialAd) {
-                    Timber.tag("InterstitialAd").d("Ad loaded")
+                    Timber.tag("InterstitialAd").d("Callback: onAdLoaded - Interstitial ad loaded successfully")
 
                     interstitialAd = ad
                     isAdLoading = false
@@ -1122,7 +1166,7 @@ constructor(
 
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     Timber.tag("InterstitialAd")
-                        .e("Load failed: ${adError.message} (${adError.code})")
+                        .e("Callback: onAdFailedToLoad - Load failed: ${adError.message} (code: ${adError.code})")
 
                     interstitialAd = null
                     isAdLoading = false
@@ -1139,20 +1183,20 @@ constructor(
         ad.adEventCallback = object : InterstitialAdEventCallback {
 
             override fun onAdImpression() {
-                Timber.tag("InterstitialAd").d("Impression")
+                Timber.tag("InterstitialAd").d("Callback: onAdImpression (base) - Interstitial ad impression recorded")
             }
 
             override fun onAdClicked() {
-                Timber.tag("InterstitialAd").d("Clicked")
+                Timber.tag("InterstitialAd").d("Callback: onAdClicked (base) - Interstitial ad clicked")
             }
 
             override fun onAdShowedFullScreenContent() {
-                Timber.tag("InterstitialAd").d("Ad showed")
+                Timber.tag("InterstitialAd").d("Callback: onAdShowedFullScreenContent (base) - Interstitial ad showed full screen")
                 adStateManager.setFullScreenAdShowing(true)
             }
 
             override fun onAdDismissedFullScreenContent() {
-                Timber.tag("InterstitialAd").d("Ad dismissed")
+                Timber.tag("InterstitialAd").d("Callback: onAdDismissedFullScreenContent (base) - Interstitial ad dismissed, reloading next ad")
 
                 adStateManager.setFullScreenAdShowing(false)
 
@@ -1165,7 +1209,7 @@ constructor(
 
             override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
                 Timber.tag("InterstitialAd")
-                    .e("Show failed: ${fullScreenContentError.message}")
+                    .e("Callback: onAdFailedToShowFullScreenContent (base) - Show failed: ${fullScreenContentError.message} (code: ${fullScreenContentError.code})")
 
                 adStateManager.setFullScreenAdShowing(false)
 
@@ -1177,39 +1221,93 @@ constructor(
         }
     }
 
+    private fun runWhenActivityResumed(activity: Activity, action: () -> Unit) {
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        mainHandler.post {
+            if (activity.isFinishing || activity.isDestroyed) {
+                Timber.tag("InterstitialAd").w("runWhenActivityResumed: Activity is finishing or destroyed, dropping callback")
+                return@post
+            }
+            if (activity !is LifecycleOwner) {
+                Timber.tag("InterstitialAd").d("runWhenActivityResumed: Activity is not LifecycleOwner, executing callback on main thread")
+                action()
+                return@post
+            }
+
+            val lifecycle = activity.lifecycle
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                Timber.tag("InterstitialAd").d("runWhenActivityResumed: Activity already RESUMED (${lifecycle.currentState}), executing callback immediately on main thread")
+                action()
+            } else {
+                Timber.tag("InterstitialAd").d("runWhenActivityResumed: Activity not RESUMED yet (currentState=${lifecycle.currentState}), observing onResume on main thread")
+                var executed = false
+                val observer = object : DefaultLifecycleObserver {
+                    override fun onResume(owner: LifecycleOwner) {
+                        owner.lifecycle.removeObserver(this)
+                        if (!executed) {
+                            executed = true
+                            Timber.tag("InterstitialAd").d("runWhenActivityResumed: Activity onResume fired, executing callback")
+                            action()
+                        }
+                    }
+                }
+                lifecycle.addObserver(observer)
+
+                // Safety watchdog fallback (300ms) in case onResume was already processed or missed
+                mainHandler.postDelayed({
+                    if (!executed) {
+                        executed = true
+                        lifecycle.removeObserver(observer)
+                        Timber.tag("InterstitialAd").d("runWhenActivityResumed: Watchdog fallback timer expired (currentState=${lifecycle.currentState}), executing callback")
+                        if (!activity.isFinishing && !activity.isDestroyed) {
+                            action()
+                        }
+                    }
+                }, 300L)
+            }
+        }
+    }
+
     fun showInterstitialAdWithCallback(
         activity: Activity,
         onAdDismissed: () -> Unit
     ) {
+        Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback: Invoked")
 
         if (adStateManager.isSubscribed()) {
+            Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback: User subscribed, executing onAdDismissed callback immediately")
             onAdDismissed()
             return
         }
 
         if (!adStateManager.isSafeForFullScreenAds()) {
+            Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback: Device unsafe for full-screen ads, executing onAdDismissed callback immediately")
             onAdDismissed()
             return
         }
 
         if (activity.isFinishing || activity.isDestroyed) {
+            Timber.tag("InterstitialAd").w("showInterstitialAdWithCallback: Activity finishing or destroyed, executing onAdDismissed callback immediately")
             onAdDismissed()
             return
         }
 
         if (!canShowAdsWithConsent(activity)) {
+            Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback: Consent not granted, executing onAdDismissed callback immediately")
             onAdDismissed()
             return
         }
 
         if (adStateManager.isFullScreenAdShowing()) {
             Timber.tag("InterstitialAd")
-                .w("Ad already showing, swallowing duplicate invocation to prevent double navigation/crash")
+                .w("showInterstitialAdWithCallback: Ad already showing, invoking callback to prevent blocking user navigation/action")
+            onAdDismissed()
             return
         }
 
         val ad = interstitialAd
         if (ad == null) {
+            Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback: Interstitial ad is null (not ready), loading ad and executing onAdDismissed callback immediately")
             loadAdIfNeeded()
             onAdDismissed()
             return
@@ -1222,31 +1320,46 @@ constructor(
             ad.adEventCallback = object : InterstitialAdEventCallback {
 
                 override fun onAdShowedFullScreenContent() {
+                    Timber.tag("InterstitialAd").d("Callback: onAdShowedFullScreenContent (wrapped) - ad presented full screen")
                     baseCallback?.onAdShowedFullScreenContent()
                 }
 
                 override fun onAdDismissedFullScreenContent() {
+                    Timber.tag("InterstitialAd").d("Callback: onAdDismissedFullScreenContent (wrapped) - ad dismissed, delegating to runWhenActivityResumed")
+                    adStateManager.setFullScreenAdShowing(false)
+                    interstitialAd = null
+                    _isAdReady.value = false
                     baseCallback?.onAdDismissedFullScreenContent()
-                    // SDK delivers callbacks on the main thread — no Handler.post needed
-                    onAdDismissed()
+                    runWhenActivityResumed(activity) {
+                        Timber.tag("InterstitialAd").d("Callback: onAdDismissedFullScreenContent -> executing onAdDismissed completion callback")
+                        onAdDismissed()
+                    }
                 }
 
                 override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
+                    Timber.tag("InterstitialAd").e("Callback: onAdFailedToShowFullScreenContent (wrapped) - error: ${fullScreenContentError.message} (code: ${fullScreenContentError.code}), delegating to runWhenActivityResumed")
+                    adStateManager.setFullScreenAdShowing(false)
+                    interstitialAd = null
+                    _isAdReady.value = false
                     baseCallback?.onAdFailedToShowFullScreenContent(fullScreenContentError)
-                    // SDK delivers callbacks on the main thread — no Handler.post needed
-                    onAdDismissed()
+                    runWhenActivityResumed(activity) {
+                        Timber.tag("InterstitialAd").d("Callback: onAdFailedToShowFullScreenContent -> executing onAdDismissed completion callback")
+                        onAdDismissed()
+                    }
                 }
 
                 override fun onAdImpression() {
+                    Timber.tag("InterstitialAd").d("Callback: onAdImpression (wrapped) - impression recorded")
                     baseCallback?.onAdImpression()
                 }
 
                 override fun onAdClicked() {
+                    Timber.tag("InterstitialAd").d("Callback: onAdClicked (wrapped) - ad clicked")
                     baseCallback?.onAdClicked()
                 }
             }
 
-            Timber.tag("InterstitialAd").d("Showing ad")
+            Timber.tag("InterstitialAd").d("showInterstitialAdWithCallback: Showing interstitial ad on activity ${activity.localClassName}")
 
             // Immediately mark as showing to preempt rapid double-clicks
             adStateManager.setFullScreenAdShowing(true)
@@ -1255,7 +1368,7 @@ constructor(
 
         } catch (e: Exception) {
             Timber.tag("InterstitialAd")
-                .e("Show exception: ${e.message}")
+                .e(e, "showInterstitialAdWithCallback: Show exception: ${e.message}, executing onAdDismissed callback")
 
             adStateManager.setFullScreenAdShowing(false)
 

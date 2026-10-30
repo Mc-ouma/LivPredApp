@@ -47,7 +47,7 @@ fun FixtureStandings(
         teamId1: Int,
         lazyListState: LazyListState,
 ) {
-    val groupedStandings = standings.groupBy { it.group }
+    val groupedStandings = standings.groupBy { it.group ?: "" }
 
     LazyColumn(
             state = lazyListState,
@@ -68,29 +68,31 @@ fun FixtureStandings(
 }
 
 @Composable
-fun ModernGroupCard(groupName: String, standings: List<TeamStanding>, highlightedTeamId: Int) {
+fun ModernGroupCard(groupName: String?, standings: List<TeamStanding>, highlightedTeamId: Int) {
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
 
     Card(colors = cardColors, elevation = cardElevation, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Group Header
-            Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                Icon(
-                        imageVector = Icons.Default.EmojiEvents,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                        text = groupName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                )
+            if (!groupName.isNullOrBlank()) {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                ) {
+                    Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                            text = groupName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             // Column Headers
@@ -240,7 +242,7 @@ fun ModernTeamRow(teamStanding: TeamStanding, isHighlighted: Boolean) {
         // Team Name and Description
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                    text = teamStanding.team.name,
+                    text = teamStanding.team.name ?: "",
                     style = MaterialTheme.typography.bodyMedium,
                     fontSize = 14.sp,
                     fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.SemiBold,

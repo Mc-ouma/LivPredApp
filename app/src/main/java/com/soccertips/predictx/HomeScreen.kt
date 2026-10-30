@@ -187,7 +187,7 @@ fun HomeScreen(navController: NavController) {
             SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
         },
         topBar = {
-            HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior)
+            HomeTopBar(selectedItemIndex = selectedItemIndex, scrollBehavior = scrollBehavior, navController = navController)
         },
         bottomBar = {
             AnimatedNavigationBar(
@@ -303,7 +303,8 @@ private fun Circle(
 fun HomeTopBar(
     modifier: Modifier = Modifier,
     selectedItemIndex: Int,
-    scrollBehavior: TopAppBarScrollBehavior
+    scrollBehavior: TopAppBarScrollBehavior,
+    navController: NavController? = null
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -312,7 +313,13 @@ fun HomeTopBar(
         },
         modifier = modifier,
         navigationIcon = {},
-        actions = { Menu() },
+        actions = {
+            Menu(
+                onNavigateToSubscription = navController?.let {
+                    { it.navigate(com.soccertips.predictx.navigation.Routes.Subscription.route) }
+                }
+            )
+        },
         scrollBehavior = scrollBehavior,
     )
 }

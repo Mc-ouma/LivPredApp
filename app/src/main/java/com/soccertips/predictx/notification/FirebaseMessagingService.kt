@@ -26,6 +26,8 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     lateinit var tokenRepository: TokenRepository
     @Inject
     lateinit var realTimeResultMonitor: RealTimeResultMonitor
+    @Inject
+    lateinit var bettingSuccessChecker: BettingSuccessChecker
 
     // Use a SupervisorJob so that failure of one coroutine doesn't cancel others
     private val serviceJob = SupervisorJob()
@@ -48,31 +50,10 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Timber.d("From: ${remoteMessage.from}")
 
-        // Check if message contains a notification payload
-        remoteMessage.notification?.let {
-            Timber.d("Message Notification Body: ${it.body}")
-
-            // Determine notification type from data
-            val notificationType = remoteMessage.data["type"]
-            when (notificationType) {
-                "all_matches_won" -> {
-                    handleBettingSuccessNotification(it.title, it.body, remoteMessage.data)
-                }
-
-                "match_result_update" -> {
-                    // Handle match result updates and trigger real-time monitoring
-                    handleMatchResultUpdate(remoteMessage.data)
-                    sendNotification(it.title, it.body, remoteMessage.data)
-                }
-
-                else -> {
-                    sendNotification(it.title, it.body, remoteMessage.data)
-                }
-            }
-        }
-
-        // Check if message contains a data payload
-        if (remoteMessage.data.isNotEmpty()) {
+        // Prefer data payload handling to avoid duplicate notifications/side effects when
+        // both notification and data payloads are present.
+        when (selectPayloadHandling(remoteMessage.data.isNotEmpty(), remoteMessage.notification != null)) {
+            PayloadHandling.DATA -> {
             Timber.d("Message Data: ${remoteMessage.data}")
 
             val notificationType = remoteMessage.data["type"]
@@ -120,6 +101,38 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                     }
                 }
             }
+
+            // Data payload handled; return early to avoid duplicate handling.
+            return
+            }
+            PayloadHandling.NOTIFICATION -> {
+                // Fallback: handle notification-only payloads
+                remoteMessage.notification?.let {
+                    Timber.d("Message Notification Body: ${it.body}")
+
+                    sendNotification(it.title, it.body, emptyMap())
+                }
+            }
+            PayloadHandling.NONE -> {
+                // Nothing to handle
+            }
+        }
+    }
+
+    internal enum class PayloadHandling {
+        DATA,
+        NOTIFICATION,
+        NONE
+    }
+
+    internal fun selectPayloadHandling(
+        hasData: Boolean,
+        hasNotification: Boolean
+    ): PayloadHandling {
+        return when {
+            hasData -> PayloadHandling.DATA
+            hasNotification -> PayloadHandling.NOTIFICATION
+            else -> PayloadHandling.NONE
         }
     }
 
@@ -130,6 +143,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     ) {
         // Extract betting data
         val date = data["date"] ?: ""
+        val categoryUrl = data["category_url"] ?: ""
         val matchCount = data["match_count"] ?: "0"
         val winCount = data["win_count"] ?: "0"
         val successRate = data["success_rate"] ?: "0"
@@ -139,6 +153,17 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         Timber.d(
             "Betting Success - Date: $date, Matches: $matchCount, Wins: $winCount, Rate: $successRate%"
         )
+
+        // Skip if in-app notification already sent for this date/category
+        if (date.isNotEmpty() && bettingSuccessChecker.isDateAlreadyNotified(date)) {
+            Timber.d("Skipping FCM betting success notification - already notified for date: $date")
+            return
+        }
+
+        // Mark this date as notified to prevent duplicate notifications from WorkManager fallback
+        if (date.isNotEmpty()) {
+            bettingSuccessChecker.markDateAsNotifiedFromFcm(date, categoryUrl)
+        }
 
         // Create enhanced intent for betting success
         val intent =

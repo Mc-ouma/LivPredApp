@@ -98,8 +98,8 @@ class NotificationScheduler @Inject constructor(@ApplicationContext private val 
                         putExtra("notification_type", "match_reminder")
                     }
 
-            // Create a unique request code based on fixture ID and notification time
-            val requestCode = (item.fixtureId.hashCode() + (notificationTime % 10000)).toInt()
+            // Use a stable request code so cancellation can reliably match
+            val requestCode = item.fixtureId.hashCode()
 
             val pendingIntent =
                     PendingIntent.getBroadcast(

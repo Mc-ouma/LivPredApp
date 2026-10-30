@@ -111,15 +111,58 @@ fun GoalsAnalysisCard(teams: Teams) {
                                 fontWeight = FontWeight.Bold
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // Team headers
+                        // Team headers with logos
                         Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
                         ) {
-                                TeamHeader(team = teams.home, modifier = Modifier.weight(1f))
-                                TeamHeader(team = teams.away, modifier = Modifier.weight(1f))
+                                // Home team
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Image(
+                                                painter = rememberAsyncImagePainter(model = teams.home.logo),
+                                                contentDescription = teams.home.name,
+                                                modifier = Modifier.size(40.dp)
+                                        )
+                                        Text(
+                                                text = teams.home.name,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.width(90.dp),
+                                                textAlign = TextAlign.Center,
+                                                color = MaterialTheme.colorScheme.primary
+                                        )
+                                }
+
+                                Text(
+                                        text = "VS",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.outline
+                                )
+
+                                // Away team
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Image(
+                                                painter = rememberAsyncImagePainter(model = teams.away.logo),
+                                                contentDescription = teams.away.name,
+                                                modifier = Modifier.size(40.dp)
+                                        )
+                                        Text(
+                                                text = teams.away.name,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.width(90.dp),
+                                                textAlign = TextAlign.Center,
+                                                color = MaterialTheme.colorScheme.tertiary
+                                        )
+                                }
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -127,66 +170,158 @@ fun GoalsAnalysisCard(teams: Teams) {
                         // Last 5 matches stats
                         Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors =
-                                        CardDefaults.cardColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
+                                colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
                         ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
-                                        Text(
-                                                stringResource(R.string.last_5_matches_goals),
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold
-                                        )
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                Text(
+                                                        stringResource(R.string.last_5_matches_goals),
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.Bold
+                                                )
+                                        }
 
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(modifier = Modifier.height(12.dp))
 
-                                        // Goals For
-                                        GoalsRow(
-                                                homeTeamsName = teams.home.name,
-                                                awayTeamsName = teams.away.name,
+                                        // Goals For - improved visualization
+                                        GoalComparisonRow(
                                                 title = stringResource(R.string.goals_for),
-                                                homeGoals = teams.home.last_5.goals.`for`,
-                                                awayGoals = teams.away.last_5.goals.`for`,
+                                                homeValue = teams.home.last_5.goals.`for`.total,
+                                                homeAvg = teams.home.last_5.goals.`for`.average,
+                                                awayValue = teams.away.last_5.goals.`for`.total,
+                                                awayAvg = teams.away.last_5.goals.`for`.average,
                                                 homeColor = MaterialTheme.colorScheme.primary,
                                                 awayColor = MaterialTheme.colorScheme.tertiary
                                         )
 
                                         Spacer(modifier = Modifier.height(12.dp))
 
-                                        // Goals Against
-                                        GoalsRow(
-                                                awayTeamsName = teams.away.name,
-                                                homeTeamsName = teams.home.name,
+                                        // Goals Against - improved visualization
+                                        GoalComparisonRow(
                                                 title = stringResource(R.string.goals_against),
-                                                homeGoals = teams.home.last_5.goals.against,
-                                                awayGoals = teams.away.last_5.goals.against,
-                                                homeColor = Color.Red.copy(alpha = 0.7f),
-                                                awayColor = Color.Red.copy(alpha = 0.4f)
+                                                homeValue = teams.home.last_5.goals.against.total,
+                                                homeAvg = teams.home.last_5.goals.against.average,
+                                                awayValue = teams.away.last_5.goals.against.total,
+                                                awayAvg = teams.away.last_5.goals.against.average,
+                                                homeColor = Color(0xFFE57373),
+                                                awayColor = Color(0xFFEF9A9A),
+                                                invertBetter = true
                                         )
                                 }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // Season stats
+                        // Season stats card
                         Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors =
-                                        CardDefaults.cardColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
+                                colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
                         ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
-                                        Text(
-                                                stringResource(R.string.season_performance),
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold
-                                        )
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.Center
+                                        ) {
+                                                Text(
+                                                        stringResource(R.string.season_performance),
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.Bold
+                                                )
+                                        }
 
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(modifier = Modifier.height(12.dp))
 
-                                        SeasonStatsRow(homeTeam = teams.home, awayTeam = teams.away)
+                                        // Season stats in a cleaner grid
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                                // Home team stats
+                                                Column(
+                                                        modifier = Modifier.weight(1f),
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.scored),
+                                                                value = teams.home.league.goals.`for`.total.total.toString(),
+                                                                avg = String.format(Locale.getDefault(), "%.1f", teams.home.league.goals.`for`.average.total),
+                                                                color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.conceded),
+                                                                value = teams.home.league.goals.against.total.total.toString(),
+                                                                avg = String.format(Locale.getDefault(), "%.1f", teams.home.league.goals.against.average.total),
+                                                                color = Color(0xFFE57373)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.clean_sheets),
+                                                                value = teams.home.league.clean_sheet.total.toString(),
+                                                                avg = null,
+                                                                color = MaterialTheme.colorScheme.secondary
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.failed_to_score),
+                                                                value = teams.home.league.failed_to_score.total.toString(),
+                                                                avg = null,
+                                                                color = MaterialTheme.colorScheme.outline
+                                                        )
+                                                }
+
+                                                // Divider
+                                                Box(
+                                                        modifier = Modifier
+                                                                .width(1.dp)
+                                                                .height(140.dp)
+                                                                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                                )
+
+                                                // Away team stats
+                                                Column(
+                                                        modifier = Modifier.weight(1f),
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.scored),
+                                                                value = teams.away.league.goals.`for`.total.total.toString(),
+                                                                avg = String.format(Locale.getDefault(), "%.1f", teams.away.league.goals.`for`.average.total),
+                                                                color = MaterialTheme.colorScheme.tertiary
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.conceded),
+                                                                value = teams.away.league.goals.against.total.total.toString(),
+                                                                avg = String.format(Locale.getDefault(), "%.1f", teams.away.league.goals.against.average.total),
+                                                                color = Color(0xFFE57373)
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.clean_sheets),
+                                                                value = teams.away.league.clean_sheet.total.toString(),
+                                                                avg = null,
+                                                                color = MaterialTheme.colorScheme.secondary
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        SeasonStatItem(
+                                                                label = stringResource(R.string.failed_to_score),
+                                                                value = teams.away.league.failed_to_score.total.toString(),
+                                                                avg = null,
+                                                                color = MaterialTheme.colorScheme.outline
+                                                        )
+                                                }
+                                        }
                                 }
                         }
                 }
@@ -194,185 +329,141 @@ fun GoalsAnalysisCard(teams: Teams) {
 }
 
 @Composable
-fun GoalsRow(
-        homeTeamsName: String,
-        awayTeamsName: String,
+fun GoalComparisonRow(
         title: String,
-        homeGoals: GoalData,
-        awayGoals: GoalData,
+        homeValue: Int,
+        homeAvg: Double,
+        awayValue: Int,
+        awayAvg: Double,
         homeColor: Color,
-        awayColor: Color
+        awayColor: Color,
+        invertBetter: Boolean = false
 ) {
-        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(120.dp))
+        val maxValue = maxOf(homeValue, awayValue).toFloat().coerceAtLeast(1f)
+        val homeBetter = if (invertBetter) homeValue < awayValue else homeValue > awayValue
+        val awayBetter = if (invertBetter) awayValue < homeValue else awayValue > homeValue
 
-                GoalBar(
-                        teamName = homeTeamsName,
-                        value = homeGoals.total.toFloat(),
-                        maxValue = maxOf(homeGoals.total, awayGoals.total).toFloat(),
-                        color = homeColor,
-                        text =
-                                "${homeGoals.total} (${
-                                        String.format(
-                                                Locale.getDefault(),
-                                                "%.2f",
-                                                homeGoals.average
-                                        )
-                                })",
-                        modifier = Modifier.weight(2f)
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                GoalBar(
-                        teamName = awayTeamsName,
-                        value = awayGoals.total.toFloat(),
-                        maxValue = maxOf(homeGoals.total, awayGoals.total).toFloat(),
-                        color = awayColor,
-                        text =
-                                "${awayGoals.total} (${
-                                        String.format(
-                                                Locale.getDefault(),
-                                                "%.2f",
-                                                awayGoals.average
-                                        )
-                                })",
-                        modifier = Modifier.weight(3f)
-                )
-        }
-}
-
-@Composable
-fun SeasonStatsRow(homeTeam: Team, awayTeam: Team) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                GoalStatsColumn(
-                        title = homeTeam.name,
-                        goalsScored =
-                                "${homeTeam.league.goals.`for`.total.total} (${
-                                        String.format(
-                                                Locale.getDefault(),
-                                                "%.2f",
-                                                homeTeam.league.goals.`for`.average.total
-                                        )
-                                })",
-                        goalsConceded =
-                                "${homeTeam.league.goals.against.total.total} (${
-                                        String.format(
-                                                Locale.getDefault(),
-                                                "%.2f",
-                                                homeTeam.league.goals.against.average.total
-                                        )
-                                })",
-                        cleanSheets = homeTeam.league.clean_sheet.total.toString(),
-                        failedToScore = homeTeam.league.failed_to_score.total.toString()
-                )
-
-                GoalStatsColumn(
-                        title = awayTeam.name,
-                        goalsScored =
-                                "${awayTeam.league.goals.`for`.total.total} (${
-                                        String.format(
-                                                Locale.getDefault(),
-                                                "%.2f",
-                                                awayTeam.league.goals.`for`.average.total
-                                        )
-                                })",
-                        goalsConceded =
-                                "${awayTeam.league.goals.against.total.total} (${
-                                        String.format(
-                                                Locale.getDefault(),
-                                                "%.2f",
-                                                awayTeam.league.goals.against.average.total
-                                        )
-                                })",
-                        cleanSheets = awayTeam.league.clean_sheet.total.toString(),
-                        failedToScore = awayTeam.league.failed_to_score.total.toString()
-                )
-        }
-}
-
-@Composable
-fun GoalBar(
-        teamName: String,
-        value: Float,
-        maxValue: Float,
-        color: Color,
-        text: String,
-        modifier: Modifier = Modifier
-) {
-        Row(
-                verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                        text = teamName,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = modifier.width(60.dp)
+                        text = title,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
-                Box(
-                        modifier =
-                                modifier.height(16.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(color.copy(alpha = 0.3f))
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                 ) {
-                        val fillPercentage = if (maxValue > 0) value / maxValue else 0f
-                        Box(
-                                modifier =
-                                        modifier.fillMaxHeight()
-                                                .fillMaxWidth(fillPercentage)
-                                                .clip(
-                                                        androidx.compose.foundation.shape.RoundedCornerShape(
-                                                                8.dp
-                                                        )
-                                                )
-                                                .background(color)
-                        )
-                }
+                        // Home value
+                        Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(50.dp)
+                        ) {
+                                Text(
+                                        text = homeValue.toString(),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = if (homeBetter) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (homeBetter) homeColor else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                        text = String.format(Locale.getDefault(), "%.1f/g", homeAvg),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                )
+                        }
 
-                Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = modifier.padding(start = 4.dp),
-                        textAlign = TextAlign.End
-                )
+                        // Progress bars
+                        Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                                // Home bar
+                                Box(
+                                        modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(10.dp)
+                                                .clip(RoundedCornerShape(5.dp))
+                                                .background(homeColor.copy(alpha = 0.2f))
+                                ) {
+                                        Box(
+                                                modifier = Modifier
+                                                        .fillMaxWidth(homeValue / maxValue)
+                                                        .fillMaxHeight()
+                                                        .clip(RoundedCornerShape(5.dp))
+                                                        .background(homeColor)
+                                        )
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                // Away bar
+                                Box(
+                                        modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(10.dp)
+                                                .clip(RoundedCornerShape(5.dp))
+                                                .background(awayColor.copy(alpha = 0.2f))
+                                ) {
+                                        Box(
+                                                modifier = Modifier
+                                                        .fillMaxWidth(awayValue / maxValue)
+                                                        .fillMaxHeight()
+                                                        .clip(RoundedCornerShape(5.dp))
+                                                        .background(awayColor)
+                                        )
+                                }
+                        }
+
+                        // Away value
+                        Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(50.dp)
+                        ) {
+                                Text(
+                                        text = awayValue.toString(),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = if (awayBetter) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (awayBetter) awayColor else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                        text = String.format(Locale.getDefault(), "%.1f/g", awayAvg),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                )
+                        }
+                }
         }
 }
 
 @Composable
-fun GoalStatsColumn(
-        title: String,
-        goalsScored: String,
-        goalsConceded: String,
-        cleanSheets: String,
-        failedToScore: String
+fun SeasonStatItem(
+        label: String,
+        value: String,
+        avg: String?,
+        color: Color
 ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                        text = title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                StatRow(stringResource(R.string.scored), goalsScored)
-                StatRow(stringResource(R.string.conceded), goalsConceded)
-                StatRow(stringResource(R.string.clean_sheets), cleanSheets)
-                StatRow(stringResource(R.string.failed_to_score), failedToScore)
-        }
-}
-
-@Composable
-fun StatRow(label: String, value: String) {
-        Row(modifier = Modifier.padding(vertical = 2.dp)) {
-                Text(
                         text = label,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(text = value, style = MaterialTheme.typography.bodySmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                                text = value,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = color
+                        )
+                        if (avg != null) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                        text = "($avg)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                )
+                        }
+                }
         }
 }
 
@@ -405,11 +496,66 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                                 // H2H Summary
                                 val homeTeam = h2h.first().teams.home.name
                                 val awayTeam = h2h.first().teams.away.name
+                                val homeTeamLogo = h2h.first().teams.home.logo
+                                val awayTeamLogo = h2h.first().teams.away.logo
 
                                 val homeWins = h2h.count { it.teams.home.winner == true }
                                 val awayWins = h2h.count { it.teams.away.winner == true }
                                 val draws =
                                         h2h.count { it.teams.home.winner == null && it.teams.away.winner == null }
+
+                                // Team logos and summary header
+                                Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                        // Home team summary
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Image(
+                                                        painter = rememberAsyncImagePainter(model = homeTeamLogo),
+                                                        contentDescription = homeTeam,
+                                                        modifier = Modifier.size(36.dp)
+                                                )
+                                                Text(
+                                                        text = homeTeam,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.width(80.dp),
+                                                        textAlign = TextAlign.Center
+                                                )
+                                        }
+
+                                        // VS indicator
+                                        Text(
+                                                text = "VS",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.outline
+                                        )
+
+                                        // Away team summary
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Image(
+                                                        painter = rememberAsyncImagePainter(model = awayTeamLogo),
+                                                        contentDescription = awayTeam,
+                                                        modifier = Modifier.size(36.dp)
+                                                )
+                                                Text(
+                                                        text = awayTeam,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.width(80.dp),
+                                                        textAlign = TextAlign.Center
+                                                )
+                                        }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 // Simple win-draw-loss chart
                                 Row(
@@ -417,14 +563,11 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                                                 Modifier.fillMaxWidth()
                                                         .height(30.dp)
                                                         .padding(vertical = 4.dp)
-                                                        .clip(
-                                                                androidx.compose.foundation.shape
-                                                                        .RoundedCornerShape(4.dp)
-                                                        )
+                                                        .clip(RoundedCornerShape(8.dp))
                                 ) {
                                         val total = h2h.size.toFloat()
 
-                                        val homeWeight = maxOf(0.01f, homeWins / total) // to avoid division by zero
+                                        val homeWeight = maxOf(0.01f, homeWins / total)
                                         val drawWeight = maxOf(0.01f, draws / total)
                                         val awayWeight = maxOf(0.01f, awayWins / total)
 
@@ -432,48 +575,102 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                                                 modifier =
                                                         Modifier.weight(homeWeight)
                                                                 .fillMaxHeight()
-                                                                .background(MaterialTheme.colorScheme.primary)
-                                        )
+                                                                .background(MaterialTheme.colorScheme.primary),
+                                                contentAlignment = Alignment.Center
+                                        ) {
+                                                if (homeWins > 0) {
+                                                        Text(
+                                                                text = "$homeWins",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.onPrimary,
+                                                                fontWeight = FontWeight.Bold
+                                                        )
+                                                }
+                                        }
 
                                         Box(
                                                 modifier =
                                                         Modifier.weight(drawWeight)
                                                                 .fillMaxHeight()
-                                                                .background(MaterialTheme.colorScheme.secondary)
-                                        )
+                                                                .background(MaterialTheme.colorScheme.secondary),
+                                                contentAlignment = Alignment.Center
+                                        ) {
+                                                if (draws > 0) {
+                                                        Text(
+                                                                text = "$draws",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.onSecondary,
+                                                                fontWeight = FontWeight.Bold
+                                                        )
+                                                }
+                                        }
 
                                         Box(
                                                 modifier =
                                                         Modifier.weight(awayWeight)
                                                                 .fillMaxHeight()
-                                                                .background(MaterialTheme.colorScheme.tertiary)
-                                        )
+                                                                .background(MaterialTheme.colorScheme.tertiary),
+                                                contentAlignment = Alignment.Center
+                                        ) {
+                                                if (awayWins > 0) {
+                                                        Text(
+                                                                text = "$awayWins",
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                color = MaterialTheme.colorScheme.onTertiary,
+                                                                fontWeight = FontWeight.Bold
+                                                        )
+                                                }
+                                        }
                                 }
 
+                                // Legend row
                                 Row(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                        Text(
-                                                stringResource(R.string.team_wins_format, homeTeam, homeWins),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.primary
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                        modifier = Modifier
+                                                                .size(10.dp)
+                                                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                        text = homeTeam.take(10),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        maxLines = 1
+                                                )
+                                        }
 
-                                        Text(
-                                                stringResource(R.string.draws_format, draws),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.secondary
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                        modifier = Modifier
+                                                                .size(10.dp)
+                                                                .background(MaterialTheme.colorScheme.secondary, CircleShape)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                        text = stringResource(R.string.draws_format, draws).substringBefore(":"),
+                                                        style = MaterialTheme.typography.labelSmall
+                                                )
+                                        }
 
-                                        Text(
-                                                stringResource(R.string.team_wins_format, awayTeam, awayWins),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.tertiary
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                        modifier = Modifier
+                                                                .size(10.dp)
+                                                                .background(MaterialTheme.colorScheme.tertiary, CircleShape)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                        text = awayTeam.take(10),
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        maxLines = 1
+                                                )
+                                        }
                                 }
 
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
 
                                 // Recent matches list
                                 Text(
@@ -498,16 +695,21 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                                                 val formattedDate =
                                                         dateTime.format(DateTimeFormatter.ofPattern("dd MMM yyyy"))
 
+                                                val homeWon = match.teams.home.winner == true
+                                                val awayWon = match.teams.away.winner == true
+                                                val isDraw = match.teams.home.winner == null && match.teams.away.winner == null
+
                                                 Card(
                                                         modifier = Modifier.fillMaxWidth(),
-                                                        colors =
-                                                                CardDefaults.cardColors(
-                                                                        containerColor =
-                                                                                MaterialTheme.colorScheme.surfaceVariant
-                                                                                        .copy(alpha = 0.5f)
-                                                                )
+                                                        colors = CardDefaults.cardColors(
+                                                                containerColor = when {
+                                                                        isDraw -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+                                                                        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                                                }
+                                                        ),
+                                                        shape = RoundedCornerShape(12.dp)
                                                 ) {
-                                                        Column(modifier = Modifier.padding(8.dp)) {
+                                                        Column(modifier = Modifier.padding(10.dp)) {
                                                                 // Date and competition
                                                                 Row(
                                                                         modifier = Modifier.fillMaxWidth(),
@@ -515,12 +717,14 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                                                                 ) {
                                                                         Text(
                                                                                 text = formattedDate,
-                                                                                style = MaterialTheme.typography.bodySmall
+                                                                                style = MaterialTheme.typography.labelSmall,
+                                                                                color = MaterialTheme.colorScheme.outline
                                                                         )
 
                                                                         Text(
                                                                                 text = match.league.name,
-                                                                                style = MaterialTheme.typography.bodySmall,
+                                                                                style = MaterialTheme.typography.labelSmall,
+                                                                                color = MaterialTheme.colorScheme.outline,
                                                                                 maxLines = 1,
                                                                                 overflow = TextOverflow.Ellipsis,
                                                                                 modifier = Modifier.weight(1f),
@@ -528,38 +732,56 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                                                                         )
                                                                 }
 
-                                                                Spacer(modifier = Modifier.height(4.dp))
+                                                                Spacer(modifier = Modifier.height(8.dp))
 
-                                                                // Match result
+                                                                // Match result with team logos
                                                                 Row(
                                                                         modifier = Modifier.fillMaxWidth(),
                                                                         horizontalArrangement = Arrangement.SpaceBetween,
                                                                         verticalAlignment = Alignment.CenterVertically
                                                                 ) {
-                                                                        // Home team
+                                                                        // Home team with logo
                                                                         Row(
                                                                                 verticalAlignment = Alignment.CenterVertically,
                                                                                 modifier = Modifier.weight(2f)
                                                                         ) {
+                                                                                Image(
+                                                                                        painter = rememberAsyncImagePainter(model = match.teams.home.logo),
+                                                                                        contentDescription = match.teams.home.name,
+                                                                                        modifier = Modifier.size(24.dp)
+                                                                                )
+                                                                                Spacer(modifier = Modifier.width(6.dp))
                                                                                 Text(
                                                                                         text = match.teams.home.name,
                                                                                         style = MaterialTheme.typography.bodyMedium,
+                                                                                        fontWeight = if (homeWon) FontWeight.Bold else FontWeight.Normal,
+                                                                                        color = if (homeWon) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                                                                         maxLines = 1,
                                                                                         overflow = TextOverflow.Ellipsis
                                                                                 )
                                                                         }
 
-                                                                        // Score
-                                                                        Text(
-                                                                                text = "${match.goals.home} - ${match.goals.away}",
-                                                                                style =
-                                                                                        MaterialTheme.typography.bodyMedium.copy(
-                                                                                                fontWeight = FontWeight.Bold
-                                                                                        ),
-                                                                                modifier = Modifier.padding(horizontal = 8.dp)
-                                                                        )
+                                                                        // Score with highlight
+                                                                        Box(
+                                                                                modifier = Modifier
+                                                                                        .background(
+                                                                                                when {
+                                                                                                        isDraw -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+                                                                                                        else -> MaterialTheme.colorScheme.primaryContainer
+                                                                                                },
+                                                                                                RoundedCornerShape(8.dp)
+                                                                                        )
+                                                                                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                                                                        ) {
+                                                                                Text(
+                                                                                        text = "${match.goals.home} - ${match.goals.away}",
+                                                                                        style = MaterialTheme.typography.titleSmall,
+                                                                                        fontWeight = FontWeight.Bold,
+                                                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                                                )
+                                                                        }
 
-                                                                        // Away team
+                                                                        // Away team with logo
                                                                         Row(
                                                                                 verticalAlignment = Alignment.CenterVertically,
                                                                                 horizontalArrangement = Arrangement.End,
@@ -568,10 +790,17 @@ fun HeadToHeadCard(h2h: List<H2H>) {
                                                                                 Text(
                                                                                         text = match.teams.away.name,
                                                                                         style = MaterialTheme.typography.bodyMedium,
+                                                                                        fontWeight = if (awayWon) FontWeight.Bold else FontWeight.Normal,
+                                                                                        color = if (awayWon) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface,
                                                                                         maxLines = 1,
                                                                                         overflow = TextOverflow.Ellipsis,
-                                                                                        textAlign = TextAlign.End,
-                                                                                        modifier = Modifier.fillMaxWidth()
+                                                                                        textAlign = TextAlign.End
+                                                                                )
+                                                                                Spacer(modifier = Modifier.width(6.dp))
+                                                                                Image(
+                                                                                        painter = rememberAsyncImagePainter(model = match.teams.away.logo),
+                                                                                        contentDescription = match.teams.away.name,
+                                                                                        modifier = Modifier.size(24.dp)
                                                                                 )
                                                                         }
                                                                 }

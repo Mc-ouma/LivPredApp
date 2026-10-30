@@ -18,7 +18,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 /**
@@ -181,17 +183,23 @@ constructor(
     /** Get all available categories from Firebase repository */
     private suspend fun getAllCategoriesFromRepository(): List<Category> {
         return try {
-            var categories: List<Category> = emptyList()
-            firebaseRepository.getCategories().collect { result ->
-                result.fold(
-                        onSuccess = { cats -> categories = cats },
-                        onFailure = { error ->
-                            Timber.e(error, "Failed to get categories from Firebase")
-                            categories = getFallbackCategories()
-                        }
-                )
+            val result =
+                    withTimeoutOrNull(10_000) {
+                        firebaseRepository.getCategories().first()
+                    }
+
+            if (result == null) {
+                Timber.w("Timed out fetching categories from Firebase, using fallback")
+                return getFallbackCategories()
             }
-            categories
+
+            result.fold(
+                    onSuccess = { cats -> cats },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to get categories from Firebase")
+                        getFallbackCategories()
+                    }
+            )
         } catch (e: Exception) {
             Timber.e(e, "Failed to get categories from Firebase, using fallback")
             getFallbackCategories()

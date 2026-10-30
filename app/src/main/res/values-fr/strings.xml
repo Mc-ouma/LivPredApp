@@ -440,4 +440,26 @@
     <string name="score_format">%d - %d</string>
     <string name="time_format">%1$02d:%2$02d</string>
 
+    <!-- Subscription -->
+    <string name="remove_ads">Supprimer les publicités</string>
+    <string name="subscription_title">Passer Premium</string>
+    <string name="subscription_header">Profitez d\'une expérience sans publicité</string>
+    <string name="subscription_subheader">Abonnez-vous pour supprimer toutes les publicités et soutenir le développement d\'AI ScoreCast</string>
+    <string name="subscription_active_title">Vous êtes Premium !</string>
+    <string name="subscription_active_description">Vous avez un abonnement actif. Profitez de votre expérience sans publicité !</string>
+    <string name="subscription_manage_hint">Pour gérer votre abonnement, allez dans Google Play Store > Abonnements</string>
+    <string name="subscription_loading">Chargement des plans d\'abonnement…</string>
+    <string name="subscription_subscribe_button">S\'abonner maintenant</string>
+    <string name="subscription_restore">Restaurer les achats</string>
+    <string name="subscription_terms">L\'abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période en cours. Gérez votre abonnement dans les paramètres de Google Play Store.</string>
+    <string name="benefit_no_ads">Pas de bannières, interstitiels ou publicités pop-up</string>
+    <string name="benefit_faster_experience">Expérience plus rapide et plus propre</string>
+    <string name="benefit_support_development">Soutenez le développement continu de l\'app</string>
+    <string name="plan_monthly">Mensuel</string>
+    <string name="plan_yearly">Annuel</string>
+    <string name="best_value">MEILLEURE OFFRE</string>
+    <string name="upgrade_banner_title">Marre des publicités ?</string>
+    <string name="upgrade_banner_subtitle">Passez Premium pour une expérience sans publicité</string>
+    <string name="upgrade_button">Améliorer</string>
+
 </resources>

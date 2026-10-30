@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material.icons.outlined.RateReview
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Star
 import androidx.core.os.LocaleListCompat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -69,7 +70,7 @@ import androidx.core.net.toUri
 import timber.log.Timber
 
 @Composable
-fun Menu() {
+fun Menu(onNavigateToSubscription: (() -> Unit)? = null) {
         var expanded by remember { mutableStateOf(false) }
         var showFeedback by remember { mutableStateOf(false) }
         var showAboutUs by remember { mutableStateOf(false) }
@@ -141,6 +142,22 @@ fun Menu() {
                                         )
                                 }
                         )
+                        if (onNavigateToSubscription != null) {
+                                DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.remove_ads)) },
+                                        onClick = {
+                                                expanded = false
+                                                onNavigateToSubscription()
+                                        },
+                                        leadingIcon = {
+                                                Icon(
+                                                        Icons.Outlined.Star,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                )
+                                        }
+                                )
+                        }
                         HorizontalDivider()
                         DropdownMenuItem(
                                 text = { Text(stringResource(R.string.language)) },
@@ -422,15 +439,33 @@ private fun FeatureChip(text: String) {
 }
 
 /**
- * Safely starts an activity, catching ActivityNotFoundException if no app can handle the intent.
+ * Safely starts an activity, catching common exceptions that may occur when starting intents.
+ * Uses a chooser for VIEW intents to avoid issues with apps that have non-exported activities.
  */
 private fun Context.startActivitySafely(intent: Intent): Boolean {
         return try {
-                startActivity(intent)
+                // For VIEW intents, use a chooser to let the user select the app
+                // This avoids SecurityException when an app intercepts URLs but doesn't export its activity
+                val launchIntent = if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
+                        Intent.createChooser(intent, null)
+                } else {
+                        intent
+                }
+                startActivity(launchIntent)
                 true
         } catch (e: android.content.ActivityNotFoundException) {
                 Timber.tag("Menu").e(e, "No activity found to handle intent: $intent")
                 false
+        } catch (e: SecurityException) {
+                Timber.tag("Menu").e(e, "Security exception when starting intent: $intent")
+                // Fallback: try with chooser if we haven't already
+                try {
+                        startActivity(Intent.createChooser(intent, null))
+                        true
+                } catch (e2: Exception) {
+                        Timber.tag("Menu").e(e2, "Fallback also failed for intent: $intent")
+                        false
+                }
         }
 }
 
@@ -533,7 +568,7 @@ fun Feedback(onDismiss: () -> Unit) {
                         ),
                         ExpandableItem(
                                 "Too many ads?",
-                                "We apologize for the inconvenience. We are working on reducing the number of ads in the app."
+                                "We understand! You can subscribe to our Premium plan from the menu to enjoy a completely ad-free experience."
                         ),
                         ExpandableItem(
                                 "Other",

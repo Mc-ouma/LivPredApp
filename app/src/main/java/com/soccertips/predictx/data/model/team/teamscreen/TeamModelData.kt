@@ -1,12 +1,12 @@
 package com.soccertips.predictx.data.model.team.teamscreen
 
 data class TeamModelData(
-        val errors: List<Any>,
-        val `get`: String,
-        val paging: Paging,
-        val parameters: Parameters,
-        val response: List<Response>,
-        val results: Int
+        val errors: Any? = null,
+        val `get`: String? = null,
+        val paging: Paging? = null,
+        val parameters: Any? = null,
+        val response: List<Response> = emptyList(),
+        val results: Int? = null
 )
 
 data class Response(val team: TeamData, val venue: Venue)

@@ -33,7 +33,9 @@ import com.soccertips.predictx.ui.theme.LocalCardElevation
 
 @Composable
 fun SquadScreen(squadResponse: List<Response>, lazyListState: LazyListState) {
-    val playersByPosition = squadResponse.flatMap { it.players }.groupBy { it.position }
+    val playersByPosition = squadResponse
+        .flatMap { it.players ?: emptyList() }
+        .groupBy { it.position ?: "Other" }
 
     // Scrollable Content
     LazyColumn(
@@ -45,10 +47,13 @@ fun SquadScreen(squadResponse: List<Response>, lazyListState: LazyListState) {
             item {
                 Text(
                         text =
-                                if (position == "Goalkeeper") "Goalkeepers"
-                                else if (position == "Defender") "Defence"
-                                else if (position == "Midfielder") "Midfield"
-                                else if (position == "Attacker") "Attack" else position,
+                                when (position) {
+                                    "Goalkeeper" -> "Goalkeepers"
+                                    "Defender" -> "Defence"
+                                    "Midfielder" -> "Midfield"
+                                    "Attacker" -> "Attack"
+                                    else -> position
+                                },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 8.dp)
@@ -87,25 +92,29 @@ fun PlayerItem(player: Player) {
             // Player Details
             Column {
                 Text(
-                        text = player.name,
+                        text = player.name ?: "",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                 )
-                Text(
-                        text = stringResource(R.string.age_years, player.age),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
+                if (player.age != null) {
+                    Text(
+                            text = stringResource(R.string.age_years, player.age),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
             // Player Number
-            Text(
-                    text = "#${player.number}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-            )
+            if (player.number != null) {
+                Text(
+                        text = "#${player.number}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

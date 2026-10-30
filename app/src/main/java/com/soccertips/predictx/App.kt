@@ -8,7 +8,9 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.google.android.gms.ads.MobileAds
+import coil.Coil
+import com.google.android.libraries.ads.mobile.sdk.MobileAds
+import com.google.android.libraries.ads.mobile.sdk.initialization.InitializationConfig
 import com.google.android.ump.ConsentInformation
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.soccertips.predictx.admob.AppOpenAdManager
@@ -26,9 +28,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.guava.await
 import timber.log.Timber
 
 @HiltAndroidApp
@@ -59,6 +65,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     lateinit var appOpenAdManager: AppOpenAdManager
 
     @Inject
+    lateinit var subscriptionRepository: com.soccertips.predictx.repository.SubscriptionRepository
+
+    @Inject
+    lateinit var adStateManager: com.soccertips.predictx.admob.AdStateManager
+
+    @Inject
     lateinit var startupTimeTracker: StartupTimeTracker
 
     @Inject
@@ -75,7 +87,13 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     lateinit var realTimeResultMonitor: com.soccertips.predictx.notification.RealTimeResultMonitor
 
     @Inject
-    lateinit var dailyReminderScheduler: com.soccertips.predictx.notification.DailyReminderScheduler
+    lateinit var dailyReminderAlarmScheduler: com.soccertips.predictx.notification.DailyReminderAlarmScheduler
+
+    @Inject
+    lateinit var imageLoader: coil.ImageLoader
+
+    /** Allows Compose code in the admob package to access the Hilt-managed singleton. */
+    fun adStateManagerProvider(): com.soccertips.predictx.admob.AdStateManager = adStateManager
 
     private var currentActivity: Activity? = null
 
@@ -85,8 +103,19 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     // Flag to avoid showing ads during initial app startup
     private var isInitialAppStart = true
 
+    // Prevents both onActivityStarted and onActivityResumed from each triggering an
+    // App Open Ad during the same foreground transition cycle. Reset in onActivityStopped.
+    private var adShownThisForegroundCycle = false
+
+
+    // Cached first-launch result so isFirstLaunch() only writes to SharedPreferences once
+    private var _isFirstLaunch: Boolean? = null
+
     // Track when Mobile Ads SDK has been initialized
-    private var isMobileAdsInitialized = false
+    //private var isMobileAdsInitialized = false
+    private val _isMobileAdsInitialized = MutableStateFlow(false)
+    val isMobileAdsInitialized: StateFlow<Boolean> = _isMobileAdsInitialized.asStateFlow()
+
 
     // Track if MobileAds initialization is in progress
     private var isMobileAdsInitializing = false
@@ -100,9 +129,6 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     private val PREFS_NAME = "app_preferences"
     private val KEY_FIRST_LAUNCH = "is_first_launch"
     private val KEY_APP_INITIALIZED = "is_app_initialized"
-
-    // Flag to ensure the first ad load happens only once.
-    private var isFirstAdLoadAttempted = false
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -138,6 +164,9 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Initialize network tagging early to prevent socket violations
         networkTaggingInitializer.initialize()
 
+        // Set custom Coil ImageLoader with optimized caching
+        Coil.setImageLoader(imageLoader)
+
         // Register lifecycle callbacks immediately
         registerActivityLifecycleCallbacks(this)
 
@@ -160,10 +189,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     /**
      * Cleans up old and stale WorkManager jobs to prevent the 100-job limit from being exceeded.
      * This method cancels finished/failed jobs and removes old notification jobs.
+     * Made fully async to avoid blocking startup.
      */
-    private fun cleanupOldWorkManagerJobs() {
+    private suspend fun cleanupOldWorkManagerJobs() = withContext(Dispatchers.IO) {
         try {
-            Timber.d("WorkManager: Starting cleanup of old jobs")
+            Timber.d("WorkManager: Starting async cleanup of old jobs")
 
             val workManager = WorkManager.getInstance(this@App)
 
@@ -172,42 +202,46 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Cancel all work by tags for match notifications (old format)
             workManager.cancelAllWorkByTag("match_notification")
 
-            // Get and cancel finished manual betting check jobs
-            workManager.getWorkInfosByTag("manual_betting_check").get()?.forEach { workInfo ->
-                if (workInfo.state == WorkInfo.State.SUCCEEDED ||
-                    workInfo.state == WorkInfo.State.FAILED ||
-                    workInfo.state == WorkInfo.State.CANCELLED
-                ) {
-                    try {
-                        workManager.cancelWorkById(workInfo.id)
-                        cancelledCount++
-                    } catch (e: Exception) {
-                        Timber.w(
-                            "Failed to cancel manual betting work ${workInfo.id}: ${e.message}"
-                        )
+            // Get and cancel finished manual betting check jobs - use async with timeout
+            try {
+                workManager.getWorkInfosByTag("manual_betting_check").await().forEach { workInfo ->
+                    if (workInfo.state == WorkInfo.State.SUCCEEDED ||
+                        workInfo.state == WorkInfo.State.FAILED ||
+                        workInfo.state == WorkInfo.State.CANCELLED
+                    ) {
+                        try {
+                            workManager.cancelWorkById(workInfo.id)
+                            cancelledCount++
+                        } catch (e: Exception) {
+                            Timber.w(
+                                "Failed to cancel manual betting work ${workInfo.id}: ${e.message}"
+                            )
+                        }
                     }
                 }
-            }
 
-            // Get and cancel finished end-of-day check jobs
-            workManager.getWorkInfosByTag("end_of_day_check").get()?.forEach { workInfo ->
-                if (workInfo.state == WorkInfo.State.SUCCEEDED ||
-                    workInfo.state == WorkInfo.State.FAILED ||
-                    workInfo.state == WorkInfo.State.CANCELLED
-                ) {
-                    try {
-                        workManager.cancelWorkById(workInfo.id)
-                        cancelledCount++
-                    } catch (e: Exception) {
-                        Timber.w("Failed to cancel end-of-day work ${workInfo.id}: ${e.message}")
+                // Get and cancel finished end-of-day check jobs
+                workManager.getWorkInfosByTag("end_of_day_check").await().forEach { workInfo ->
+                    if (workInfo.state == WorkInfo.State.SUCCEEDED ||
+                        workInfo.state == WorkInfo.State.FAILED ||
+                        workInfo.state == WorkInfo.State.CANCELLED
+                    ) {
+                        try {
+                            workManager.cancelWorkById(workInfo.id)
+                            cancelledCount++
+                        } catch (e: Exception) {
+                            Timber.w("Failed to cancel end-of-day work ${workInfo.id}: ${e.message}")
+                        }
                     }
                 }
+
+                // Prune completed work from the database
+                workManager.pruneWork()
+
+                Timber.d("WorkManager: Cleanup completed - cancelled $cancelledCount old jobs")
+            } catch (tagError: Exception) {
+                Timber.w("WorkManager: Error getting work info by tag: ${tagError.message}")
             }
-
-            // Prune completed work from the database
-            workManager.pruneWork()
-
-            Timber.d("WorkManager: Cleanup completed - cancelled $cancelledCount old jobs")
         } catch (e: Exception) {
             Timber.e(e, "WorkManager: Error during cleanup")
         }
@@ -217,16 +251,36 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         withContext(Dispatchers.IO) {
             val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
 
-            // On low-memory devices, delay all initialization to prioritize UI rendering
-            if (isLowMemory) {
-                delay(500) // Give UI thread a head start
+            // Connect repositories immediately
+            preloadRepository.setPredictionRepository(predictionRepository)
+
+            // Start immediate priority-driven preloading concurrently without serial delay
+            if (!startupConfig.skipAggressivePreloading) {
+                launch(Dispatchers.IO) {
+                    try {
+                        preloadRepository.preloadCategoryData()
+                    } catch (e: Exception) {
+                        Timber.w(e, "Error during immediate startup preloading")
+                    }
+                }
             }
 
+            // CRITICAL: On ALL devices, give UI thread priority during startup to prevent ANR
+            // Longer delay on low-memory devices
+            val startupDelay = if (isLowMemory) 1000L else 500L
+            delay(startupDelay)
+
+            // Initialize subscription status early so ads are suppressed for subscribers
+            initializeSubscription()
+
             // Clean up old/stale WorkManager jobs first (lightweight, always do this)
+            // This is now async and won't block
             cleanupOldWorkManagerJobs()
 
-            // Initialize non-critical components in background
-            // On low-memory devices, defer this
+            // Initialize non-critical components in background with staggered delays
+            // to avoid resource contention
+            delay(300)
+
             if (!startupConfig.skipNonEssentialInit) {
                 NotificationHelper.createNotificationChannels(this@App)
             } else {
@@ -235,52 +289,37 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 NotificationHelper.createNotificationChannels(this@App)
             }
 
-            // Set up prediction repository dependency
-            preloadRepository.setPredictionRepository(predictionRepository)
-
-            // Initialize API config - this is essential, do it early
+            // Initialize API config - this is essential but can wait for UI
+            delay(300)
             initApiConfig()
 
-            // On low-memory devices, defer non-essential schedulers
-            if (!isLowMemory) {
-                // Initialize betting success checking system
-                bettingSuccessScheduler.initialize()
+            // On ALL devices, defer non-essential schedulers to after UI is stable
+            // Use longer delays than before to ensure UI responsiveness
+            val schedulerDelay = if (isLowMemory) 2000L else 1500L
+            delay(schedulerDelay)
 
-                // Initialize real-time result monitoring system
-                realTimeResultMonitor.startMonitoring()
-                Timber.d("Real-time result monitoring initialized")
+            // Initialize betting success checking system
+            bettingSuccessScheduler.initialize()
+            delay(200)
 
-                // Schedule daily reminder notifications
-                dailyReminderScheduler.scheduleDailyReminder()
-                Timber.d("Daily reminder scheduler initialized")
-            } else {
-                // Defer these initializations on low-memory devices
-                delay(startupConfig.deferFirebaseMs)
-                bettingSuccessScheduler.initialize()
-                realTimeResultMonitor.startMonitoring()
-                Timber.d("Real-time result monitoring initialized (deferred for low-memory device)")
-                dailyReminderScheduler.scheduleDailyReminder()
-                Timber.d("Daily reminder scheduler initialized (deferred for low-memory device)")
-            }
+            // Initialize real-time result monitoring system
+            realTimeResultMonitor.startMonitoring()
+            Timber.d("Real-time result monitoring initialized${if (isLowMemory) " (deferred for low-memory device)" else ""}")
+            delay(200)
+
+            // Schedule daily reminder notifications using AlarmManager (exact timing)
+            dailyReminderAlarmScheduler.scheduleDailyReminders()
+            Timber.d("Daily reminder alarm scheduler initialized${if (isLowMemory) " (deferred for low-memory device)" else ""}")
 
             // Initialize Firebase messaging with device-aware delay
             delay(startupConfig.deferFirebaseMs)
             initFirebaseMessaging()
-
-            // Preloading - skip aggressive preloading on low-memory devices
-            if (!startupConfig.skipAggressivePreloading) {
-                delay(startupConfig.deferPreloadingMs)
-                preloadRepository.preloadCategoryData()
-            } else {
-                Timber.d("Skipping aggressive preloading on low-memory device")
-                // On low-memory devices, only preload when user accesses categories
-            }
         }
     }
 
     private suspend fun initializeMobileAds() {
         // Prevent multiple initialization attempts
-        if (isMobileAdsInitialized || isMobileAdsInitializing) {
+        if (isMobileAdsInitialized.value || isMobileAdsInitializing) {
             Timber.d("MobileAds already initialized or initializing, skipping")
             return
         }
@@ -293,174 +332,35 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             delay(adDelay)
         }
 
-        // Ensure we have an activity context and run on Main thread
-        val activity = currentActivity
-        if (activity == null || activity.isFinishing || activity.isDestroyed) {
-            Timber.w("Cannot initialize MobileAds - no valid activity context available")
+        if (currentActivity == null) {
+            Timber.w("Cannot initialize MobileAds yet - no activity context available")
             return
         }
 
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.IO) {
             try {
                 isMobileAdsInitializing = true
-                Timber.d(
-                    "Initializing MobileAds with activity context: ${activity.javaClass.simpleName}"
-                )
 
-                // Additional validation before calling MobileAds.initialize
-                // Reduce retry count on low-memory devices to avoid blocking
-                val maxChecks = if (isLowMemory) 3 else 5
-                var checks = 0
-                while ((!activity.hasWindowFocus() ||
-                            activity.window?.decorView?.isAttachedToWindow != true) && checks < maxChecks
-                ) {
-                    Timber.w(
-                        "Activity not ready for MobileAds init (focus=${activity.hasWindowFocus()}, attached=${activity.window?.decorView?.isAttachedToWindow}). Retrying..."
-                    )
-                    delay(if (isLowMemory) 500 else 300)
-                    checks++
+                val initConfig =
+                    InitializationConfig.Builder(getString(R.string.admob_app_id))
+                        .build()
 
-                    if (activity.isFinishing || activity.isDestroyed) {
-                        Timber.w(
-                            "Activity became invalid during readiness wait, aborting MobileAds init"
-                        )
-                        isMobileAdsInitializing = false
-                        return@withContext
-                    }
-                }
+                MobileAds.initialize(applicationContext, initConfig) { initializationStatus ->
+                    Timber.d("MobileAds initialized with status: $initializationStatus")
 
-                if (!activity.hasWindowFocus() ||
-                    activity.window?.decorView?.isAttachedToWindow != true
-                ) {
-                    Timber.w("Activity still not ready for MobileAds init, scheduling retry")
+                    _isMobileAdsInitialized.value = true
                     isMobileAdsInitializing = false
-                    CoroutineScope(Dispatchers.Main).launch {
-                        delay(1000)
-                        initializeMobileAds()
+
+                    setupAppOpenAdManager()
+
+                    if (!isFirstLaunch()) {
+                        isInitialAppStart = false
+                        Timber.d("AppOpenAdManager: Ready for ads after MobileAds initialization")
                     }
-                    return@withContext
-                }
-
-                // Use application context for initialization but ensure activity context for ad
-                // operations
-                try {
-                    withTimeout(5000) { // Add timeout to prevent hanging
-                        MobileAds.initialize(activity) { initializationStatus ->
-                            Timber.d("MobileAds initialized with status: $initializationStatus")
-
-                            // Setup app open ad manager on the main thread after initialization
-                            // but only if activity is still valid
-                            if (!activity.isFinishing && !activity.isDestroyed) {
-                                setupAppOpenAdManager()
-                            } else {
-                                Timber.w(
-                                    "Activity invalid after MobileAds init, skipping ad manager setup"
-                                )
-                            }
-
-                            // Mark Mobile Ads as initialized
-                            isMobileAdsInitialized = true
-                            isMobileAdsInitializing = false
-
-                            // If this is not the first launch, allow ads
-                            if (!isFirstLaunch()) {
-                                isInitialAppStart = false
-                                Timber.d(
-                                    "AppOpenAdManager: Ready for ads after MobileAds initialization"
-                                )
-                            }
-
-                            Timber.d(
-                                "AppOpenAdManager: Final state - ads initialized=$isMobileAdsInitialized, initialAppStart=$isInitialAppStart"
-                            )
-
-                            // Load first ad with additional delay to ensure everything is stable
-                            CoroutineScope(Dispatchers.Main).launch {
-                                delay(2000) // Additional delay before loading first ad
-
-                                // Re-check currentActivity to ensure we have the most recent one
-                                val currentValidActivity = currentActivity
-                                if (currentValidActivity != null &&
-                                    !currentValidActivity.isFinishing &&
-                                    !currentValidActivity.isDestroyed &&
-                                    !isFirstAdLoadAttempted
-                                ) {
-
-                                    Timber.d("Loading first App Open ad after initialization delay")
-                                    try {
-                                        // Ensure ad manager has the latest activity context
-                                        appOpenAdManager.setActivityContext(currentValidActivity)
-                                        appOpenAdManager.loadAppOpenAd()
-                                        isFirstAdLoadAttempted = true
-                                    } catch (e: Exception) {
-                                        Timber.e("Error loading first app open ad: ${e.message}")
-                                        if (e.message?.contains("ViewConfiguration") == true ||
-                                            e.message?.contains("WindowManager") ==
-                                            true ||
-                                            e.message?.contains("visual Context") ==
-                                            true
-                                        ) {
-
-                                            Timber.e(
-                                                "Context error during ad loading - will retry later"
-                                            )
-                                            // Retry after additional delay
-                                            CoroutineScope(Dispatchers.Main).launch {
-                                                delay(5000)
-                                                val retryActivity = currentActivity
-                                                if (retryActivity != null &&
-                                                    !retryActivity.isFinishing &&
-                                                    !retryActivity.isDestroyed
-                                                ) {
-                                                    try {
-                                                        // Update context again before retry
-                                                        appOpenAdManager.setActivityContext(
-                                                            retryActivity
-                                                        )
-                                                        appOpenAdManager.loadAppOpenAd()
-                                                        isFirstAdLoadAttempted = true
-                                                    } catch (retryError: Exception) {
-                                                        Timber.e(
-                                                            "Retry failed: ${retryError.message}"
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (timeoutEx: TimeoutCancellationException) {
-                    Timber.e("MobileAds initialization timed out")
-                    isMobileAdsInitializing = false
                 }
             } catch (e: Exception) {
                 Timber.e("Error initializing MobileAds: ${e.message}")
                 isMobileAdsInitializing = false
-
-                // Special handling for context-related errors
-                if (e.message?.contains("ViewConfiguration") == true ||
-                    e.message?.contains("context") == true ||
-                    e.message?.contains("WindowManager") == true ||
-                    e.message?.contains("visual Context") == true
-                ) {
-
-                    Timber.e("Context error detected - will retry with longer delay")
-                    CoroutineScope(Dispatchers.Main).launch {
-                        delay(5000) // Wait 5 seconds before retry
-                        if (currentActivity != null &&
-                            !currentActivity!!.isFinishing &&
-                            !currentActivity!!.isDestroyed
-                        ) {
-                            Timber.d(
-                                "Retrying MobileAds initialization after ViewConfiguration error"
-                            )
-                            initializeMobileAds()
-                        }
-                    }
-                }
             }
         }
     }
@@ -478,14 +378,39 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             // Here you could add code to record the failure in your analytics system
         }
 
-        // Configure AppOpenAdManager to use activity context for ad loading
-        appOpenAdManager.useActivityContextForAdLoading(true)
-
-        // Set the current activity context but don't load ad yet
-        // Ad loading will be handled separately with proper delays
+        // Keep the manager aligned with the current activity; loading is triggered separately.
         currentActivity?.let { activity ->
             appOpenAdManager.setActivityContext(activity)
             Timber.d("AppOpenAdManager setup complete with activity context")
+        }
+    }
+
+    private fun maybePreloadAppOpenAd() {
+        val activity = currentActivity
+        if (!isMobileAdsInitialized.value || activity == null || activity.isFinishing || activity.isDestroyed) {
+            return
+        }
+
+        appOpenAdManager.setActivityContext(activity)
+        appOpenAdManager.loadAppOpenAd()
+    }
+
+    private fun initializeSubscription() {
+        // Sync cached subscription status to AdStateManager immediately
+        val cachedStatus = subscriptionRepository.isSubscribedSync()
+        adStateManager.setSubscribed(cachedStatus)
+        Timber.d("Subscription status synced from cache: $cachedStatus")
+
+        // Initialize billing client to verify/refresh subscription status
+        subscriptionRepository.initialize()
+
+        // Observe changes and keep AdStateManager in sync
+        CoroutineScope(Dispatchers.Main).launch {
+            subscriptionRepository.isSubscribed.collect { isSubscribed ->
+                adStateManager.setSubscribed(isSubscribed)
+                subscriptionRepository.cacheSubscriptionStatus(isSubscribed)
+                Timber.d("Subscription status updated: $isSubscribed")
+            }
         }
     }
 
@@ -707,7 +632,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
     /** Helper function to initialize MobileAds only if all conditions are met */
     private fun initializeMobileAdsIfReady() {
-        if (!isMobileAdsInitialized && !isMobileAdsInitializing && isConsentComplete) {
+        if (!isMobileAdsInitialized.value && !isMobileAdsInitializing && isConsentComplete) {
             CoroutineScope(Dispatchers.Main).launch {
                 // Add delay before initializing after consent
                 delay(1000)
@@ -723,7 +648,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
         } else {
             Timber.d(
-                "Consent: Not initializing MobileAds yet (initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete)"
+                "Consent: Not initializing MobileAds yet (initialized=${isMobileAdsInitialized.value}, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete)"
             )
         }
     }
@@ -775,13 +700,27 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         } catch (_: Exception) {
         }
 
-        // Initialize consent only once (first activity creation)
+        // Defer consent initialization to avoid blocking startup
+        // This is a non-essential operation that can wait until the app is fully rendered
         if (!isConsentInitialized) {
             isConsentInitialized = true
             Timber.d(
-                "Consent: Initializing for first time with activity: ${activity.javaClass.simpleName}"
+                "Consent: Scheduling deferred initialization with activity: ${activity.javaClass.simpleName}"
             )
-            initializeConsent(activity)
+            // Defer consent initialization to after startup completes
+            CoroutineScope(Dispatchers.Main).launch {
+                // Wait for UI to be fully rendered and stable
+                val deferDelay = if (devicePerformanceManager.isLowMemoryDevice()) 2500L else 1500L
+                delay(deferDelay)
+                // Double-check activity is still valid
+                if (currentActivity != null && !activity.isFinishing && !activity.isDestroyed) {
+                    Timber.d("Consent: Starting deferred initialization")
+                    initializeConsent(activity)
+                } else {
+                    Timber.w("Consent: Activity no longer valid, skipping initialization")
+                    isConsentInitialized = false // Allow retry on next activity
+                }
+            }
         } else {
             Timber.d("Consent: Already initialized, skipping")
         }
@@ -811,7 +750,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         // Record first frame for performance tracking (first activity resume)
         if (isInitialAppStart) {
             startupTimeTracker.recordFirstFrameRendered()
-            devicePerformanceManager.logPerformanceInfo()
+            // Defer performance logging to avoid blocking during critical startup
+            CoroutineScope(Dispatchers.Default).launch {
+                delay(500)
+                devicePerformanceManager.logPerformanceInfo()
+            }
         }
 
         // Update AppOpenAdManager with current activity context
@@ -823,7 +766,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
         // Initialize MobileAds with delay after activity is fully resumed and stable
         // Only if consent is complete and MobileAds is not already initialized
-        if (!isMobileAdsInitialized && !isMobileAdsInitializing && isConsentComplete) {
+        if (!isMobileAdsInitialized.value && !isMobileAdsInitializing && isConsentComplete) {
             CoroutineScope(Dispatchers.Main).launch {
                 // Device-aware delay - longer on low-memory devices
                 val stabilizationDelay = if (devicePerformanceManager.isLowMemoryDevice()) {
@@ -845,8 +788,12 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             }
         } else {
             Timber.d(
-                "MobileAds init check: initialized=$isMobileAdsInitialized, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete"
+                "MobileAds init check: initialized=${isMobileAdsInitialized.value}, initializing=$isMobileAdsInitializing, consentComplete=$isConsentComplete"
             )
+        }
+
+        if (isMobileAdsInitialized.value) {
+            maybePreloadAppOpenAd()
         }
 
         // Mark app as in foreground
@@ -856,18 +803,21 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
             // Check if ads can be shown - skip on low-memory devices during initial start
             val isLowMemory = devicePerformanceManager.isLowMemoryDevice()
-            if (isMobileAdsInitialized && !isInitialAppStart && !(isLowMemory && isInitialAppStart)) {
-                Timber.d("AppOpenAdManager: Checking if ad can be shown on resume")
-                // Check if the app is eligible to show ad on app resume
-                if (appOpenAdManager.shouldShowAdOnAppResume()) {
-                    Timber.d("AppOpenAdManager: Showing ad on resume")
+            if (isMobileAdsInitialized.value && !isInitialAppStart && !(isLowMemory && isInitialAppStart)) {
+                Timber.tag("AppOpenAd").d("onActivityResumed: Checking if app open ad can be shown on resume")
+                // Skip if onActivityStarted already triggered an ad this foreground cycle
+                if (adShownThisForegroundCycle) {
+                    Timber.tag("AppOpenAd").d("onActivityResumed: Skipping resume ad - already shown this foreground cycle")
+                } else if (appOpenAdManager.shouldShowAdOnAppResume()) {
+                    Timber.tag("AppOpenAd").d("onActivityResumed: Showing app open ad on resume")
+                    adShownThisForegroundCycle = true
                     showAppOpenAd(activity)
                 } else {
-                    Timber.d("AppOpenAdManager: Not showing ad on resume (not eligible)")
+                    Timber.tag("AppOpenAd").d("onActivityResumed: Not showing ad on resume (not eligible)")
                 }
             } else {
-                Timber.d(
-                    "AppOpenAdManager: Not showing ad on resume (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart}, lowMemory=$isLowMemory)"
+                Timber.tag("AppOpenAd").d(
+                    "onActivityResumed: Not checking resume ad (ads initialized=${isMobileAdsInitialized.value}, initialAppStart=$isInitialAppStart, lowMemory=$isLowMemory)"
                 )
             }
         }
@@ -885,32 +835,25 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
         try {
             FirebaseCrashlytics.getInstance()
                 .log(
-                    "onActivityStarted: firstLaunch=${'$'}isFirstLaunchCheck activity=${'$'}{activity.javaClass.name}"
+                    "onActivityStarted: firstLaunch=$isFirstLaunchCheck activity=${activity.javaClass.name}"
                 )
         } catch (_: Exception) {
-        }
-
-        // Determine if we should show app open ad on start
-        if (isMobileAdsInitialized && !isInitialAppStart && !isFirstLaunchCheck) {
-            Timber.d("AppOpenAdManager: Checking if ad can be shown on activity start")
-            if (appOpenAdManager.shouldShowAdOnAppStart(isFirstLaunchCheck)) {
-                Timber.d("AppOpenAdManager: Attempting to show app open ad on activity start")
-                showAppOpenAd(activity)
-            } else {
-                Timber.d("AppOpenAdManager: Not showing app open ad on start (not eligible)")
-            }
-        } else {
-            Timber.d(
-                "AppOpenAdManager: Not showing app open ad on start (initialization state: ads initialized=${isMobileAdsInitialized}, initialAppStart=${isInitialAppStart}, firstLaunch=${isFirstLaunchCheck})"
-            )
         }
     }
 
     override fun onActivityStopped(activity: Activity) {
-        // When app is stopped, mark it as backgrounded
-        if (activity.isFinishing) {
+        // This app currently uses a single-activity flow, so stopped means backgrounded for ad purposes.
+        if (currentActivity == activity) {
             appInForeground = false
             appOpenAdManager.onAppBackgrounded()
+            // Reset so the next foreground cycle can show an ad again
+            adShownThisForegroundCycle = false
+
+            // Preload an App Open ad while in background so it is ready when the user returns
+            if (isMobileAdsInitialized.value && !adStateManager.isSubscribed()) {
+                Timber.tag("AppOpenAd").d("onActivityStopped: App backgrounded, preloading App Open ad")
+                maybePreloadAppOpenAd()
+            }
         }
         try {
             FirebaseCrashlytics.getInstance()
@@ -922,20 +865,20 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
     }
 
     private fun isFirstLaunch(): Boolean {
+        if (_isFirstLaunch != null) return _isFirstLaunch!!
         val sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val isFirstLaunch = sharedPreferences.getBoolean(KEY_FIRST_LAUNCH, true)
-
-        if (isFirstLaunch) {
+        val firstLaunch = sharedPreferences.getBoolean(KEY_FIRST_LAUNCH, true)
+        if (firstLaunch) {
             sharedPreferences.edit { putBoolean(KEY_FIRST_LAUNCH, false) }
             Timber.d("App is launching for the first time")
-            return true
         }
-        return false
+        _isFirstLaunch = firstLaunch
+        return firstLaunch
     }
 
     private fun showAppOpenAd(activity: Activity) {
         if (appOpenAdManager.isAdAvailable()) {
-            Timber.d("AppOpenAdManager: Showing app open ad")
+            Timber.tag("AppOpenAd").d("showAppOpenAd: Ad available -> invoking showAdIfAvailable on ${activity.javaClass.simpleName}")
             try {
                 FirebaseCrashlytics.getInstance()
                     .log(
@@ -944,7 +887,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
             } catch (_: Exception) {
             }
             appOpenAdManager.showAdIfAvailable(activity) {
-                Timber.d("AppOpenAdManager: App open ad shown or dismissed")
+                Timber.tag("AppOpenAd").d("showAppOpenAd: Completion callback executed after ad display/dismissal")
                 try {
                     FirebaseCrashlytics.getInstance().log("showAppOpenAd: onShowAdComplete")
                 } catch (_: Exception) {
@@ -952,7 +895,7 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                 // Any post-ad display actions can go here
             }
         } else {
-            Timber.d("AppOpenAdManager: No app open ad available to show")
+            Timber.tag("AppOpenAd").d("showAppOpenAd: No app open ad available to show -> triggering loadAppOpenAd()")
             try {
                 FirebaseCrashlytics.getInstance()
                     .log("showAppOpenAd: available=false -> loadAppOpenAd")
@@ -984,10 +927,20 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
 
         // Try to get the token with retry logic
         requestFcmTokenWithRetry()
+
+        // Ensure topic subscriptions for existing users (runs regardless of token refresh)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                tokenRepository.subscribeToDefaultTopics()
+                Timber.d("FCM topic subscriptions ensured")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to ensure FCM topic subscriptions")
+            }
+        }
     }
 
     /** Request FCM token with exponential backoff retry */
-    private fun requestFcmTokenWithRetry(attempt: Int = 0, maxAttempts: Int = 5) {
+    private fun requestFcmTokenWithRetry(attempt: Int = 0, maxAttempts: Int = 3) {
         if (attempt >= maxAttempts) {
             Timber.e("Failed to get FCM token after $maxAttempts attempts")
             // Generate a placeholder token to allow the app to continue working
@@ -1016,9 +969,11 @@ class App : Application(), Configuration.Provider, Application.ActivityLifecycle
                                 val token = task.result
                                 Timber.d("FCM Token retrieved successfully: $token")
 
-                                // Save the token to repository
+                                // Save the token to repository and subscribe to topics
                                 CoroutineScope(Dispatchers.IO).launch {
                                     tokenRepository.saveToken(token)
+                                    // Subscribe to FCM topics for server-side notifications
+                                    tokenRepository.subscribeToDefaultTopics()
                                 }
                             } else {
                                 val exception = task.exception

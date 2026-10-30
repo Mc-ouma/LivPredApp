@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,10 +54,10 @@ fun ItemCard(
 ) {
     val cardColors = LocalCardColors.current
     val cardElevation = LocalCardElevation.current
-    var isFavorite by remember { mutableStateOf(false) }
 
-    // Use key parameter to prevent unnecessary recompositions
-    LaunchedEffect(item.fixtureId) { isFavorite = viewModel.isFavorite(item) }
+    // Reactively observe favorite status from ViewModel's cached set
+    val favoriteIds by viewModel.favoriteIds.collectAsState()
+    val isFavorite = item.fixtureId in favoriteIds
 
     Card(
             modifier =
@@ -82,7 +83,6 @@ fun ItemCard(
                     date = item.mDate ?: "Unknown",
                     isFavorite = isFavorite,
                     onFavoriteClick = {
-                        isFavorite = !isFavorite
                         onFavoriteClick(item)
                         viewModel.toggleFavorite(item)
                     }

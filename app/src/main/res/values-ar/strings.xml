@@ -407,4 +407,26 @@
     <string name="category_today_tips">نصائح اليوم</string>
     <string name="category_under_goals">أقل من %s أهداف</string>
 
+    <!-- Subscription -->
+    <string name="remove_ads">إزالة الإعلانات</string>
+    <string name="subscription_title">اشترك بريميوم</string>
+    <string name="subscription_header">استمتع بتجربة خالية من الإعلانات</string>
+    <string name="subscription_subheader">اشترك لإزالة جميع الإعلانات ودعم تطوير AI ScoreCast</string>
+    <string name="subscription_active_title">أنت بريميوم!</string>
+    <string name="subscription_active_description">لديك اشتراك نشط. استمتع بتجربتك الخالية من الإعلانات!</string>
+    <string name="subscription_manage_hint">لإدارة اشتراكك، انتقل إلى متجر Google Play > الاشتراكات</string>
+    <string name="subscription_loading">جارٍ تحميل خطط الاشتراك…</string>
+    <string name="subscription_subscribe_button">اشترك الآن</string>
+    <string name="subscription_restore">استعادة المشتريات</string>
+    <string name="subscription_terms">يتجدد الاشتراك تلقائيًا ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية. أدر اشتراكك في إعدادات متجر Google Play.</string>
+    <string name="benefit_no_ads">بدون إعلانات بانر أو بينية أو منبثقة</string>
+    <string name="benefit_faster_experience">تجربة أسرع وأنظف</string>
+    <string name="benefit_support_development">ادعم التطوير المستمر للتطبيق</string>
+    <string name="plan_monthly">شهري</string>
+    <string name="plan_yearly">سنوي</string>
+    <string name="best_value">أفضل قيمة</string>
+    <string name="upgrade_banner_title">سئمت من الإعلانات؟</string>
+    <string name="upgrade_banner_subtitle">اشترك بريميوم لتجربة خالية من الإعلانات</string>
+    <string name="upgrade_button">ترقية</string>
+
 </resources>

@@ -4,50 +4,66 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.KeyboardBackspace
-import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
+import kotlinx.coroutines.launch
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.soccertips.predictx.Menu
 import com.soccertips.predictx.R
+import com.soccertips.predictx.admob.AdManagerEntryPoint
 import com.soccertips.predictx.admob.CollapsibleBannerAdView
 import com.soccertips.predictx.admob.InterstitialAdManager
+import com.soccertips.predictx.admob.NativeAdItem
+import com.soccertips.predictx.admob.findActivity
 import com.soccertips.predictx.data.model.Category
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.UiState
@@ -55,43 +71,11 @@ import com.soccertips.predictx.ui.components.DateUtils
 import com.soccertips.predictx.ui.components.ErrorMessage
 import com.soccertips.predictx.ui.components.LoadingIndicator
 import com.soccertips.predictx.viewmodel.ItemsListViewModel
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import timber.log.Timber
-
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface AdManagerEntryPoint {
-    fun interstitialAdManager(): InterstitialAdManager
-}
-
-// Extension function to safely find the Activity from any Context
-fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) {
-            return context
-        }
-        context = context.baseContext
-    }
-    return null
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-object Last5DaysSelectableDates : SelectableDates {
-    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-        val fiveDaysAgo =
-            System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000) // 5 days in milliseconds
-        return utcTimeMillis >= fiveDaysAgo && utcTimeMillis <= System.currentTimeMillis()
-    }
-
-    override fun isSelectableYear(year: Int): Boolean {
-        return year <= LocalDate.now().year
-    }
-}
+import androidx.compose.ui.platform.LocalLocale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,7 +84,6 @@ fun ItemsListScreen(
     categoryId: String,
     categories: List<Category>,
     viewModel: ItemsListViewModel = hiltViewModel(),
-    adStrategy: String = "rewarded", // Default to rewarded strategy
 ) {
     // Access the interstitial ad manager via LocalContext and get the application context
     val context = LocalContext.current
@@ -116,18 +99,18 @@ fun ItemsListScreen(
     val isAdReady by interstitialAdManager.isAdReady.collectAsState()
 
     // Ensure the activity context is set on the interstitial ad manager
-    // and preload ad if strategy is "interstitial"
-    LaunchedEffect(interstitialAdManager, adStrategy) {
+    // and preload interstitial ad if not already loaded
+    LaunchedEffect(Unit) {
         val activity = context.findActivity()
         if (activity != null) {
             interstitialAdManager.setActivityContext(activity)
-            interstitialAdManager.useActivityContextForAdLoading(true)
 
-            // Proactively load interstitial ad when strategy is "interstitial"
-            // This ensures the ad is ready when the user navigates back
-            if (adStrategy == "interstitial") {
-                Timber.tag("InterstitialAd").d("Strategy is interstitial - preloading ad for back navigation")
-                interstitialAdManager.loadAdIfNeeded()
+            // Only trigger load if ad is not ready and not currently loading
+            if (!interstitialAdManager.isAdReady.value && !interstitialAdManager.isCurrentlyLoading()) {
+                Timber.tag("InterstitialAd").d("ItemsListScreen: Ad not ready, triggering load")
+                interstitialAdManager.forceLoadAd()
+            } else {
+                Timber.tag("InterstitialAd").d("ItemsListScreen: Ad already ready or loading")
             }
 
             Timber.d("InterstitialAdManager activity context set in ItemsListScreen")
@@ -143,223 +126,369 @@ fun ItemsListScreen(
     val category =
         remember(categoryId) { categories.find { it.url == categoryId } } ?: categories.first()
 
-    val datePickerState = rememberDatePickerState(selectableDates = Last5DaysSelectableDates)
-    var showDatePicker by rememberSaveable { mutableStateOf(false) }
-
     // Check for pending navigation date from betting success notification
     val activity = context.findActivity()
     val sharedPrefs = activity?.getSharedPreferences("predictx_prefs", Context.MODE_PRIVATE)
     val pendingNavigationDate = sharedPrefs?.getString("pending_navigation_date", null)
 
-    // Initialize selectedDate with pending navigation date if available, otherwise use today
-    var selectedDate by rememberSaveable {
-        mutableStateOf(
-            if (!pendingNavigationDate.isNullOrEmpty()) {
-                try {
-                    val parsedDate = LocalDate.parse(pendingNavigationDate)
-                    Timber.d(
-                        "ItemsListScreen: Using pending navigation date: $pendingNavigationDate"
-                    )
-                    // Clear the pending navigation date after using it
-                    sharedPrefs?.edit()?.remove("pending_navigation_date")?.apply()
-                    parsedDate
-                } catch (e: Exception) {
-                    Timber.w(
-                        "ItemsListScreen: Failed to parse pending navigation date: $pendingNavigationDate"
-                    )
-                    LocalDate.now()
-                }
-            } else {
-                Timber.d("ItemsListScreen: No pending navigation date, using today")
-                LocalDate.now()
-            }
-        )
+    // Date range: 5 days back + today + tomorrow (if available)
+    val today = LocalDate.now()
+    val pastDays = 5
+    val todayPageIndex = pastDays // page 5 = today
+
+    val tomorrowHasItems by viewModel.tomorrowHasItems.collectAsState()
+    val pageCount = todayPageIndex + 1 + (if (tomorrowHasItems) 1 else 0)
+
+    // Map page index to date
+    fun pageToDate(page: Int): LocalDate = today.minusDays((todayPageIndex - page).toLong())
+
+    // Determine initial page based on pending navigation date
+    val initialPage = if (!pendingNavigationDate.isNullOrEmpty()) {
+        try {
+            val parsedDate = LocalDate.parse(pendingNavigationDate)
+            sharedPrefs.edit().remove("pending_navigation_date").apply()
+            val daysFromToday = ChronoUnit.DAYS.between(today, parsedDate).toInt()
+            (todayPageIndex + daysFromToday).coerceIn(0, pageCount - 1)
+        } catch (e: Exception) {
+            Timber.w("Failed to parse pending navigation date: $pendingNavigationDate")
+            todayPageIndex
+        }
+    } else {
+        todayPageIndex
     }
 
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { pageCount }
+    )
+
+    // Check if tomorrow has items
+    LaunchedEffect(category) {
+        viewModel.checkTomorrowItems(category.url)
+    }
+
+    // Determine the selected date based on current page
+    val selectedDate = pageToDate(pagerState.currentPage)
     val formattedDate = DateUtils.formatRelativeDate(context, selectedDate.toString())
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-    // Function to handle back navigation with an interstitial ad
-    val navigateBackWithAd: () -> Unit = {
-        // Only show interstitial ad if strategy is "interstitial"
-        if (adStrategy == "interstitial") {
-            val isAdCurrentlyLoading = interstitialAdManager.isCurrentlyLoading()
-            Timber.tag("InterstitialAd")
-                .d(
-                    "Back navigation: isAdReady = $isAdReady, isAdLoading = $isAdCurrentlyLoading, strategy = $adStrategy"
-                )
-            if (isAdReady && !isAdCurrentlyLoading) {
-                try {
-                    val activity = navController.context as? Activity
-                    activity?.let {
-                        Timber.tag("InterstitialAd")
-                            .d("Showing interstitial ad for back navigation")
-                        interstitialAdManager.showInterstitialAdWithCallback(
-                            it,
-                            onAdDismissed = {
-                                // Navigate back after ad is dismissed
-                                Timber.tag("InterstitialAd").d("Ad dismissed, navigating back")
-                                navController.popBackStack()
-                            }
-                        )
-                    }
-                        ?: run {
-                            Timber.tag("InterstitialAd")
-                                .w("Activity is null, fallback navigation")
-                            navController.popBackStack() // Fallback if activity is null
-                        }
-                } catch (e: Exception) {
-                    Timber.tag("InterstitialAd").e("Error showing ad: ${e.message}")
-                    e.printStackTrace()
-                    navController.popBackStack() // Fallback on error
-                }
-            } else {
-                // If no ad is ready, just navigate back
-                if (isAdCurrentlyLoading) {
-                    Timber.tag("InterstitialAd")
-                        .d("Ad is loading, direct navigation without waiting")
-                } else {
-                    Timber.tag("InterstitialAd").d("No ad ready, direct navigation")
-                }
-                navController.popBackStack()
-            }
-        } else {
-            // Strategy is "rewarded" - skip interstitial ad, navigate directly
-            Timber.tag("InterstitialAd").d("Ad strategy is $adStrategy, skipping interstitial ad")
-            navController.popBackStack()
+    // Fetch items when page changes
+    LaunchedEffect(category, pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            viewModel.fetchItems(category.url, pageToDate(page))
         }
     }
 
-    // Handle system back gesture
-    BackHandler { navigateBackWithAd() }
+    val coroutineScope = rememberCoroutineScope()
 
-    // Fetch items when the category or selected date changes
-    LaunchedEffect(key1 = category, key2 = selectedDate) {
-        viewModel.fetchItems(category.url, selectedDate)
+    val navigateBack: () -> Unit = {
+        navController.popBackStack()
     }
+
+    // Handle system back gesture
+    BackHandler { navigateBack() }
 
     Scaffold(
         Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = formattedDate,
-                    )
-                },
-                // show  interstitial ad when the back button is pressed
-                navigationIcon = {
-                    IconButton(onClick = navigateBackWithAd) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
-                            contentDescription = "Back"
+            Column {
+                CenterAlignedTopAppBar(
+                    title = {
+                        val canSwipeLeft = pagerState.currentPage > 0
+                        val canSwipeRight = pagerState.currentPage < pageCount - 1
+                        val activeColor = MaterialTheme.colorScheme.onSurface
+                        val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+                        val leftColor = if (canSwipeLeft) activeColor else inactiveColor
+                        val rightColor = if (canSwipeRight) activeColor else inactiveColor
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    if (canSwipeLeft) {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                        }
+                                    }
+                                },
+                                enabled = canSwipeLeft
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription = "Previous Day",
+                                    tint = leftColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Text(
+                                text = formattedDate,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            IconButton(
+                                onClick = {
+                                    if (canSwipeRight) {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                        }
+                                    }
+                                },
+                                enabled = canSwipeRight
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = "Next Day",
+                                    tint = rightColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = navigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardBackspace,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        Menu(
+                            onNavigateToSubscription = {
+                                navController.navigate(com.soccertips.predictx.navigation.Routes.Subscription.route)
+                            }
                         )
+                    },
+                    scrollBehavior = scrollBehavior,
+                )
+
+                // Interactive Horizontal Date Tab Selector Bar
+                DateSelectorRow(
+                    pagerState = pagerState,
+                    pageCount = pageCount,
+                    pageToDate = ::pageToDate,
+                    onDateSelected = { targetPage ->
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(targetPage)
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Today,
-                            contentDescription = "Select Date",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Menu()
-                },
-                scrollBehavior = scrollBehavior,
-            )
+                )
+            }
         },
-        bottomBar = { CollapsibleBannerAdView() }
+        bottomBar = {
+            CollapsibleBannerAdView(
+                onUpgradeClick = { navController.navigate(Routes.Subscription.route) }
+            )
+        }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            when (val uiState = viewModel.uiState.collectAsState().value) {
-                is UiState.Loading -> {
-                    LoadingIndicator(
-                        modifier = Modifier.align(Alignment.Center).padding(paddingValues)
-                    )
-                }
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+        ) { page ->
+            val pageDate = pageToDate(page)
 
-                is UiState.Error -> {
-                    ErrorMessage(
-                        message =
-                            stringResource(
-                                R.string.failed_to_fetch_games_please_try_again_later
-                            ),
-                        onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                        modifier = Modifier.align(Alignment.Center).padding(paddingValues),
-                    )
-                }
+            val dateStates by viewModel.dateUiStates.collectAsState()
+            val pageUiState: UiState<List<com.soccertips.predictx.data.model.ServerResponse>> =
+                dateStates[pageDate] ?: UiState.Loading
 
-                is UiState.Success -> {
-                    val items = uiState.data
-                    if (items.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (pageUiState) {
+                    is UiState.Loading -> {
+                        LoadingIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+
+                    is UiState.Error -> {
                         ErrorMessage(
                             message =
                                 stringResource(
-                                    R.string.no_games_found_for_the_selected_date
+                                    R.string.failed_to_fetch_games_please_try_again_later
                                 ),
-                            onRetry = { viewModel.fetchItems(category.url, selectedDate) },
-                            modifier = Modifier.align(Alignment.Center).padding(paddingValues),
+                            onRetry = { viewModel.fetchItems(category.url, pageDate) },
+                            modifier = Modifier.align(Alignment.Center),
                         )
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize().padding(paddingValues),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            items(items) { item ->
-                                // Check if the item is a favorite
-                                var isFavorite by remember { mutableStateOf(false) }
-                                LaunchedEffect(item) { isFavorite = viewModel.isFavorite(item) }
+                    }
 
-                                ItemCard(
-                                    item = item,
-                                    onClick = {
-                                        navController.navigate(
-                                            Routes.FixtureDetails.createRoute(
-                                                item.fixtureId ?: ""
-                                            ),
-                                        )
-                                    },
-                                    onFavoriteClick = { viewModel.toggleFavorite(item) },
-                                    viewModel = viewModel
+                    is UiState.Success -> {
+                        val items = pageUiState.data
+                        if (items.isEmpty()) {
+                            Timber.tag("ItemsListScreen").d(
+                                "ItemsList cards count: 0 for category '${category.name}' on date $pageDate"
+                            )
+                            ErrorMessage(
+                                message =
+                                    stringResource(
+                                        R.string.no_games_found_for_the_selected_date
+                                    ),
+                                onRetry = { viewModel.fetchItems(category.url, pageDate) },
+                                modifier = Modifier.align(Alignment.Center),
+                            )
+                        } else {
+                            // Show native ad after 5th item when there are 6+ items
+                            val showNativeAd = items.size >= 6
+
+                            LaunchedEffect(items.size, pageDate) {
+                                Timber.tag("ItemsListScreen").d(
+                                    "ItemsList cards count: ${items.size} for category '${category.name}' on date $pageDate (showNativeAd: $showNativeAd)"
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                itemsIndexed(items) { index, item ->
+                                    ItemCard(
+                                        item = item,
+                                        onClick = {
+                                            val fixtureRoute = Routes.FixtureDetails.createRoute(
+                                                item.fixtureId ?: ""
+                                            )
+                                            val activity = context.findActivity()
+                                            Timber.tag("ItemsListScreen").d(
+                                                "ItemCard clicked: index=$index (card ${index + 1} of ${items.size}), fixtureId=${item.fixtureId}, match='${item.homeTeam} vs ${item.awayTeam}', checking interstitial eligibility (interval=3)"
+                                            )
+                                            if (activity != null) {
+                                                interstitialAdManager.showIfEligibleByFrequency(activity, interval = 3) {
+                                                    Timber.tag("ItemsListScreen").d(
+                                                        "ItemCard: Interstitial callback completed for fixtureId=${item.fixtureId} -> navigating to $fixtureRoute"
+                                                    )
+                                                    navController.navigate(fixtureRoute)
+                                                }
+                                            } else {
+                                                Timber.tag("ItemsListScreen").d(
+                                                    "ItemCard: Activity context is null -> navigating directly to $fixtureRoute"
+                                                )
+                                                navController.navigate(fixtureRoute)
+                                            }
+                                        },
+                                        onFavoriteClick = { viewModel.toggleFavorite(item) },
+                                        viewModel = viewModel
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Insert native ad after 5th item (index 4) and every 8 items thereafter in long lists
+                                    if (showNativeAd && (index == 4 || (index > 4 && (index - 4) % 8 == 0))) {
+                                        Timber.tag("ItemsListScreen").d(
+                                            "NativeAdItem inserted after card index $index (card count rendered so far: ${index + 1} of ${items.size})"
+                                        )
+                                        NativeAdItem()
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                }
                             }
                         }
                     }
-                }
 
-                else -> {
-                    /* No Action */
+                    is UiState.Empty -> {
+                        ErrorMessage(
+                            message = stringResource(R.string.no_games_found_for_the_selected_date),
+                            onRetry = { viewModel.fetchItems(category.url, pageDate) },
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
+
+                    is UiState.ShowSnackbar -> { /* Handled elsewhere */ }
                 }
             }
         }
+    }
+}
 
-        // Date picker dialog
-        if (showDatePicker) {
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val selectedDateMillis = datePickerState.selectedDateMillis
-                            if (selectedDateMillis != null) {
-                                selectedDate =
-                                    LocalDate.ofEpochDay(
-                                        selectedDateMillis / (24 * 60 * 60 * 1000)
-                                    )
-                            }
-                            showDatePicker = false
-                        }
-                    ) { Text(stringResource(R.string.ok)) }
-                },
-                content = { DatePicker(state = datePickerState) },
-                dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                },
-            )
+/**
+ * Modern, interactive horizontal date selector bar.
+ * Provides clear visual affordance that multiple dates are available to browse via tap or swipe.
+ */
+@Composable
+private fun DateSelectorRow(
+    pagerState: PagerState,
+    pageCount: Int,
+    pageToDate: (Int) -> LocalDate,
+    onDateSelected: (Int) -> Unit
+) {
+    val lazyListState = rememberLazyListState()
+    val today = remember { LocalDate.now() }
+
+    // Auto-scroll the selected chip into view when page changes (via swipe or tap)
+    LaunchedEffect(pagerState.currentPage) {
+        lazyListState.animateScrollToItem(
+            index = pagerState.currentPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)),
+            scrollOffset = -120
+        )
+    }
+
+    LazyRow(
+        state = lazyListState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items(pageCount) { page ->
+            val date = pageToDate(page)
+            val isSelected = pagerState.currentPage == page
+            val isToday = date == today
+
+            val dayLabel = when (date) {
+                today -> stringResource(R.string.today)
+                today.minusDays(1) -> stringResource(R.string.yesterday)
+                today.plusDays(1) -> stringResource(R.string.tomorrow)
+                else -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, LocalLocale.current.platformLocale)
+            }
+
+            val dateText = date.format(DateTimeFormatter.ofPattern("d MMM"))
+
+            val containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else if (isToday) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            }
+
+            val contentColor = if (isSelected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else if (isToday) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+
+            Surface(
+                onClick = { onDateSelected(page) },
+                shape = RoundedCornerShape(14.dp),
+                color = containerColor,
+                border = if (isToday && !isSelected) {
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                } else null,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .height(50.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = dayLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium,
+                        color = contentColor
+                    )
+                    Text(
+                        text = dateText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = if (isSelected) 0.9f else 0.75f)
+                    )
+                }
+            }
         }
     }
 }

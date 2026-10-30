@@ -1,9 +1,10 @@
+import com.android.build.api.dsl.ApplicationExtension
 import java.util.Properties
+import org.gradle.api.JavaVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     // alias(libs.plugins.kapt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
@@ -30,9 +31,9 @@ if (dotEnvFile.exists()) {
     }
 }
 
-android {
+ApplicationExtension::class.java.cast(extensions.getByName("android")).apply {
     namespace = "com.soccertips.predictx"
-    compileSdkVersion(libs.versions.compileSdk.get().toInt())
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     buildFeatures {
         buildConfig = true
@@ -43,8 +44,8 @@ android {
         applicationId = "com.soccertips.predictx"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 27
-        versionName = "2.0.7"
+        versionCode = 37
+        versionName = "2.1.3 (37)"
 
         buildConfigField("boolean", "DEBUG", "true")
 
@@ -53,21 +54,20 @@ android {
         buildConfigField("String", "DEFAULT_API_HOST", "\"${dotEnvProps["API_HOST"] ?: ""}\"")
         buildConfigField("String", "API_BASE_URL", "\"${dotEnvProps["API_BASE_URL"] ?: ""}\"")
         buildConfigField(
-                "String",
-                "DAILY_BONUS_BASE_URL",
-                "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\""
+            "String",
+            "DAILY_BONUS_BASE_URL",
+            "\"${dotEnvProps["DAILY_BONUS_BASE_URL"] ?: ""}\""
         )
         buildConfigField(
-                "String",
-                "API_BASE_URL_VALUE",
-                "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\""
+            "String",
+            "API_BASE_URL_VALUE",
+            "\"${dotEnvProps["API_BASE_URL_VALUE"] ?: ""}\""
         )
-
         javaCompileOptions {
             annotationProcessorOptions { arguments += "room.incremental" to "true" }
         }
-    }
 
+    }
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
@@ -79,12 +79,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.15" }
@@ -92,10 +93,7 @@ android {
     packaging { resources { excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1") } }
     buildToolsVersion = "36.0.0"
 
-    /*composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.androidxComposeCompiler.get()
-    }*/
-    lint {
+    lint  {
         abortOnError = false
         checkReleaseBuilds = false
         disable += "GradleDependency"
@@ -110,14 +108,14 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_11)
+        jvmTarget.set(JvmTarget.JVM_17)
         freeCompilerArgs.addAll("-opt-in=kotlin.RequiresOptIn", "-opt-in=kotlin.Experimental")
     }
 }
 
 /*
 Dependency versions are defined in the top level build.gradle file. This helps keeping track of
-all versions in a single place. This improves readability and helps managing project complexity.
+all versions in a single place. This improves readability and helps to manage project complexity.
 */
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
@@ -138,7 +136,6 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-    implementation(libs.androidx.lifecycle.runtimeCompose)
 
     implementation(libs.hilt.android.core)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -150,7 +147,6 @@ dependencies {
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compiler)
     implementation(composeBom)
     implementation(libs.androidx.compose.material.iconsExtended)
     implementation(libs.androidx.compose.foundation.core)
@@ -165,10 +161,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewModelCompose)
     implementation(libs.accompanist.appcompat.theme)
     implementation(libs.accompanist.swiperefresh)
-    implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.permissions)
 
-    debugImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.tooling.core)
 
     implementation(libs.retrofit)
@@ -213,8 +207,9 @@ dependencies {
     implementation(libs.firebase.config)
 
     // Admob
-    implementation(libs.play.services.ads)
+  //  implementation(libs.play.services.ads)
     implementation(libs.facebook)
+    implementation(libs.ads.mobile.sdk)
 
     // Facebook SDK annotation dependencies (compile-only to avoid R8 errors)
     compileOnly(libs.infer.annotation)
@@ -222,4 +217,14 @@ dependencies {
 
     // User Messaging Platform (UMP) for consent management
     implementation(libs.user.messaging.platform)
+
+    //Play Billing
+    implementation(libs.billing)
+    implementation(libs.billing.ktx)
+
+    // Testing dependencies
+}
+configurations.configureEach {
+exclude( "com.google.android.gms", module = "play-services-ads")
+exclude("com.google.android.gms", module = "play-services-ads-lite")
 }

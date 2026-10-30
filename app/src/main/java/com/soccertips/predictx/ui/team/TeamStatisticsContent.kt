@@ -301,7 +301,7 @@ fun KeyStatsGrid(statistics: TeamStatistics) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = statistics.goals.`for`.average.total,
+                    text = statistics.goals.`for`.average.total ?: "0.0",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -500,7 +500,7 @@ fun GoalStatisticsCard(statistics: TeamStatistics) {
                 ) {
                     MiniStat("Home", "${statistics.goals.`for`.total.home}")
                     MiniStat("Away", "${statistics.goals.`for`.total.away}")
-                    MiniStat("Avg", statistics.goals.`for`.average.total)
+                    MiniStat("Avg", statistics.goals.`for`.average.total ?: "0.0")
                 }
             }
 
@@ -537,7 +537,7 @@ fun GoalStatisticsCard(statistics: TeamStatistics) {
                 ) {
                     MiniStat("Home", "${statistics.goals.against.total.home}")
                     MiniStat("Away", "${statistics.goals.against.total.away}")
-                    MiniStat("Avg", statistics.goals.against.average.total)
+                    MiniStat("Avg", statistics.goals.against.average.total ?: "0.0")
                 }
             }
         }
@@ -545,10 +545,10 @@ fun GoalStatisticsCard(statistics: TeamStatistics) {
 }
 
 @Composable
-fun MiniStat(label: String, value: String) {
+fun MiniStat(label: String, value: String?) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = value,
+            text = value ?: "-",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -853,7 +853,7 @@ fun FormationCard(statistics: TeamStatistics) {
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            statistics.lineups.forEach { lineup ->
+            statistics.lineups?.forEach { lineup ->
                 val totalGames = statistics.fixtures.played.total
                 val percentage = if (totalGames > 0) lineup.played.toFloat() / totalGames else 0f
 
@@ -871,7 +871,7 @@ fun FormationCard(statistics: TeamStatistics) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = lineup.formation,
+                            text = lineup.formation ?: "-",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -1038,11 +1038,11 @@ fun BiggestResultsCard(statistics: TeamStatistics) {
                 ) {
                     ResultItem(
                         "Home",
-                        statistics.biggest.wins.home ?: "-"
+                        statistics.biggest.wins?.home ?: "-"
                     )
                     ResultItem(
                         "Away",
-                        statistics.biggest.wins.away ?: "-"
+                        statistics.biggest.wins?.away ?: "-"
                     )
                 }
             }
@@ -1080,11 +1080,11 @@ fun BiggestResultsCard(statistics: TeamStatistics) {
                 ) {
                     ResultItem(
                         "Home",
-                        statistics.biggest.loses.home ?: "-"
+                        statistics.biggest.loses?.home ?: "-"
                     )
                     ResultItem(
                         "Away",
-                        statistics.biggest.loses.away ?: "-"
+                        statistics.biggest.loses?.away ?: "-"
                     )
                 }
             }
@@ -1093,13 +1093,13 @@ fun BiggestResultsCard(statistics: TeamStatistics) {
 }
 
 @Composable
-fun ResultItem(location: String, score: String) {
+fun ResultItem(location: String, score: String?) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(8.dp)
     ) {
         Text(
-            text = score,
+            text = score ?: "-",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )

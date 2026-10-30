@@ -152,11 +152,6 @@ fun TeamScreen(
                     viewModel.getPlayers(teamId)
                 }
             }
-            val transfersDeferred = async {
-                if (!viewModel.isTransfersDataLoaded) {
-                    viewModel.getTransfers(teamId)
-                }
-            }
             val nextFixturesDeferred = async {
                 if (!viewModel.isFixturesDataLoaded) {
                     viewModel.getNextFixtures(season, teamId, "10")
@@ -177,7 +172,6 @@ fun TeamScreen(
                 teamDataDeferred,
                 teamDeferred,
                 playersDeferred,
-                transfersDeferred,
                 nextFixturesDeferred,
                 standingsDeferred,
                 fixturesDeferred
@@ -394,7 +388,7 @@ fun TeamsTab(
     val pagerState = rememberPagerState { pages.size }
     val coroutineScope = rememberCoroutineScope()
 
-    val transfersFlow = viewModel.getTransfers(teamId)
+    val transfersFlow = remember(viewModel, teamId) { viewModel.getTransfers(teamId) }
     val transfers = transfersFlow.collectAsLazyPagingItems()
 
     // Remember the current tab selection and prevent recomposition

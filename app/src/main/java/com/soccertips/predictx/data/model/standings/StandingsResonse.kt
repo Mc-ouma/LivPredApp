@@ -1,17 +1,12 @@
 package com.soccertips.predictx.data.model.standings
 
 data class StandingsResponse(
-    val get: String,
-    val parameters: Parameters,
-    val errors: List<String>,
-    val results: Int,
-    val paging: Paging,
-    val response: List<LeagueWrapper>,
-)
-
-data class Parameters(
-    val league: String,
-    val season: String,
+    val get: String? = null,
+    val parameters: Any? = null,
+    val errors: Any? = null,
+    val results: Int? = null,
+    val paging: Paging? = null,
+    val response: List<LeagueWrapper> = emptyList(),
 )
 
 data class Paging(

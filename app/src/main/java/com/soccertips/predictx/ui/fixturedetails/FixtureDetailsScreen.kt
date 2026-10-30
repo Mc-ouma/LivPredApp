@@ -77,22 +77,12 @@ import com.soccertips.predictx.data.model.Team
 import com.soccertips.predictx.navigation.Routes
 import com.soccertips.predictx.ui.FixtureDetailsUiState
 import com.soccertips.predictx.ui.UiState
+import androidx.activity.compose.BackHandler
+import com.soccertips.predictx.admob.CollapsibleBannerAdView
 import com.soccertips.predictx.viewmodel.FixtureDetailsViewModel
 import com.soccertips.predictx.viewmodel.SharedViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
-
-// Extension function to safely find the Activity from any Context
-fun Context.findActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) {
-            return context
-        }
-        context = context.baseContext
-    }
-    return null
-}
 
 enum class FixtureDetailsScreenPage(val titleResId: Int) {
     MATCH_DETAILS(R.string.match_details),
@@ -116,6 +106,12 @@ fun FixtureDetailsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val formState by sharedViewModel.fixturesState.collectAsState()
+
+    val onBackNavigate: () -> Unit = {
+        navController.popBackStack()
+    }
+
+    BackHandler(onBack = onBackNavigate)
 
     // Track if initial data fetch has been performed
     var hasInitialFetch by rememberSaveable { mutableStateOf(false) }
@@ -175,14 +171,20 @@ fun FixtureDetailsScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackNavigate) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Default.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
                 },
-                actions = { Menu() },
+                actions = {
+                    Menu(
+                        onNavigateToSubscription = {
+                            navController.navigate(com.soccertips.predictx.navigation.Routes.Subscription.route)
+                        }
+                    )
+                },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
                         containerColor =
@@ -190,6 +192,11 @@ fun FixtureDetailsScreen(
                                 3.dp
                             ),
                     )
+            )
+        },
+        bottomBar = {
+            CollapsibleBannerAdView(
+                onUpgradeClick = { navController.navigate(Routes.Subscription.route) }
             )
         }
     ) { paddingValues ->
@@ -245,6 +252,8 @@ fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData
                         rememberAsyncImagePainter(
                             ImageRequest.Builder(LocalContext.current)
                                 .data(fixtureDetails.teams.home.logo)
+                                .size(96, 96)
+                                .precision(coil.size.Precision.INEXACT)
                                 .crossfade(true)
                                 .memoryCachePolicy(CachePolicy.ENABLED)
                                 .build()
@@ -271,6 +280,8 @@ fun FixtureTopBarContent(showFixtureScore: Boolean, fixtureDetails: ResponseData
                         rememberAsyncImagePainter(
                             ImageRequest.Builder(LocalContext.current)
                                 .data(fixtureDetails.teams.away.logo)
+                                .size(96, 96)
+                                .precision(coil.size.Precision.INEXACT)
                                 .crossfade(true)
                                 .memoryCachePolicy(CachePolicy.ENABLED)
                                 .build()
@@ -477,6 +488,8 @@ fun TeamColumn(
                 rememberAsyncImagePainter(
                     ImageRequest.Builder(LocalContext.current)
                         .data(team.logo)
+                        .size(128, 128)
+                        .precision(coil.size.Precision.INEXACT)
                         .crossfade(true)
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .build()

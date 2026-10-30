@@ -4,11 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.appopen.AppOpenAd
+import com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAd
+import com.google.android.libraries.ads.mobile.sdk.appopen.AppOpenAdEventCallback
+import com.google.android.libraries.ads.mobile.sdk.common.AdLoadCallback
+import com.google.android.libraries.ads.mobile.sdk.common.AdRequest
+import com.google.android.libraries.ads.mobile.sdk.common.FullScreenContentError
+import com.google.android.libraries.ads.mobile.sdk.common.LoadAdError
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.soccertips.predictx.R
 import javax.inject.Inject
@@ -42,8 +43,13 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
     // Track ad failure events for analytics
     private var adFailureListener: ((String) -> Unit)? = null
 
-    // Flag to control whether to use Activity context for ad loading
-    private var useActivityContextForLoading = true
+    // Handler for scheduling load retries — stored so pending callbacks can be cancelled
+    private val retryHandler = Handler(Looper.getMainLooper())
+    private val retryRunnable = Runnable {
+        if (!isAdAvailable() && !isLoadingAd) {
+            loadAppOpenAd()
+        }
+    }
 
     companion object {
         private const val AD_TIMEOUT = 4 * 60 * 60 * 1000L // 4 hours in milliseconds
@@ -68,12 +74,6 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
         currentActivityContext = activity
     }
 
-    // Allows configuring whether to use Activity context for ad loading
-    // This helps prevent ViewConfiguration errors on Android 14+
-    fun useActivityContextForAdLoading(enable: Boolean) {
-        useActivityContextForLoading = enable
-    }
-
     fun setAdImpressionListener(listener: () -> Unit) {
         adImpressionListener = listener
     }
@@ -82,29 +82,48 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
         adFailureListener = listener
     }
 
+    fun shouldShowAdOnAppStart(isFirstLaunch: Boolean): Boolean {
+        val available = isAdAvailable()
+        val intervalOk = canShowAdBasedOnInterval()
+        val noOtherAd = !adStateManager.isFullScreenAdShowing()
+        val eligible = showAdOnAppStart &&
+                !isFirstLaunch &&
+                available &&
+                intervalOk &&
+                noOtherAd
+
+        Timber.tag("AppOpenAd").d(
+            "shouldShowAdOnAppStart check: eligible=$eligible (enabled=$showAdOnAppStart, isFirstLaunch=$isFirstLaunch, adAvailable=$available, intervalOk=$intervalOk, noOtherFullScreenAd=$noOtherAd)"
+        )
+        return eligible
+    }
+
+    fun shouldShowAdOnAppResume(): Boolean {
+        val available = isAdAvailable()
+        val intervalOk = canShowAdBasedOnInterval()
+        val noOtherAd = !adStateManager.isFullScreenAdShowing()
+        val eligible = showAdOnAppResume &&
+                wasAppInBackground &&
+                available &&
+                intervalOk &&
+                noOtherAd
+
+        val elapsed = System.currentTimeMillis() - lastAdDisplayTime
+        Timber.tag("AppOpenAd").d(
+            "shouldShowAdOnAppResume check: eligible=$eligible (enabled=$showAdOnAppResume, wasBackgrounded=$wasAppInBackground, adAvailable=$available, intervalOk=$intervalOk [elapsed=${elapsed}ms / min ${MIN_AD_DISPLAY_INTERVAL}ms], noOtherFullScreenAd=$noOtherAd)"
+        )
+        return eligible
+    }
+
     fun onAppBackgrounded() {
+        Timber.tag("AppOpenAd").d("onAppBackgrounded: App moved to background")
         isAppInForeground = false
         wasAppInBackground = true
     }
 
     fun onAppForegrounded() {
+        Timber.tag("AppOpenAd").d("onAppForegrounded: App returned to foreground")
         isAppInForeground = true
-    }
-
-    fun shouldShowAdOnAppStart(isFirstLaunch: Boolean): Boolean {
-        return showAdOnAppStart &&
-                !isFirstLaunch &&
-                isAdAvailable() &&
-                canShowAdBasedOnInterval() &&
-                !adStateManager.isFullScreenAdShowing()
-    }
-
-    fun shouldShowAdOnAppResume(): Boolean {
-        return showAdOnAppResume &&
-                wasAppInBackground &&
-                isAdAvailable() &&
-                canShowAdBasedOnInterval() &&
-                !adStateManager.isFullScreenAdShowing()
     }
 
     private fun canShowAdBasedOnInterval(): Boolean {
@@ -113,140 +132,143 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
     }
 
     fun loadAppOpenAd() {
-        if (isLoadingAd || isAdAvailable()) {
+        if (isLoadingAd) {
+            Timber.tag("AppOpenAd").d("loadAppOpenAd: Ad is already loading, skipping duplicate load request")
+            return
+        }
+        if (isAdAvailable()) {
+            Timber.tag("AppOpenAd").d("loadAppOpenAd: Valid ad already cached and available, skipping load")
             return
         }
 
-        // Choose the appropriate context for loading. If Activity context is required but
-        // unavailable, skip loading to avoid using a non-visual context.
         val activity = currentActivityContext
         if (activity == null) {
-            Timber.Forest.tag("AppOpenAd").w("No active activity context; skipping app open load")
+            Timber.tag("AppOpenAd").w("loadAppOpenAd: No active activity context; skipping load")
             return
         }
 
         if (activity.isFinishing || activity.isDestroyed) {
-            Timber.Forest.tag("AppOpenAd")
-                    .w("Activity is finishing or destroyed; skipping app open load")
+            Timber.tag("AppOpenAd").w("loadAppOpenAd: Activity is finishing or destroyed; skipping load")
             return
         }
 
-        val contextToUse: Context = activity
-
         isLoadingAd = true
+        Timber.tag("AppOpenAd").d("loadAppOpenAd: Requesting App Open ad from AdMob...")
         try {
             FirebaseCrashlytics.getInstance().log("AppOpen: load start")
-        } catch (_: Exception) {}
-        val request = AdRequest.Builder().build()
+        } catch (_: Exception) {
+        }
+        val request = AdRequest.Builder(adUnitId).build()
 
         AppOpenAd.load(
-                contextToUse,
-                adUnitId,
-                request,
-                object : AppOpenAd.AppOpenAdLoadCallback() {
-                    override fun onAdLoaded(ad: AppOpenAd) {
-                        Timber.Forest.tag("AppOpenAd").d("App open ad loaded")
-                        try {
-                            FirebaseCrashlytics.getInstance().log("AppOpen: onAdLoaded")
-                        } catch (_: Exception) {}
-                        appOpenAd = ad
-                        isLoadingAd = false
-                        loadTime = System.currentTimeMillis()
-
-                        ad.fullScreenContentCallback =
-                                object : FullScreenContentCallback() {
-                                    override fun onAdDismissedFullScreenContent() {
-                                        Timber.Forest.tag("AppOpenAd").d("App open ad dismissed")
-                                        try {
-                                            FirebaseCrashlytics.getInstance()
-                                                    .log("AppOpen: onAdDismissedFullScreenContent")
-                                        } catch (_: Exception) {}
-                                        adStateManager.setFullScreenAdShowing(false)
-                                        appOpenAd = null
-                                        loadAppOpenAd() // Load next ad
-                                    }
-
-                                    override fun onAdFailedToShowFullScreenContent(
-                                            adError: AdError
-                                    ) {
-                                        Timber.Forest.tag("AppOpenAd")
-                                                .d(
-                                                        "App open ad failed to show: ${'$'}{adError.message}"
-                                                )
-                                        try {
-                                            FirebaseCrashlytics.getInstance()
-                                                    .log(
-                                                            "AppOpen: onAdFailedToShow ${'$'}{adError.code}"
-                                                    )
-                                        } catch (_: Exception) {}
-                                        adStateManager.setFullScreenAdShowing(false)
-                                        adFailureListener?.invoke(adError.message)
-                                        appOpenAd = null
-                                        loadAppOpenAd()
-                                    }
-
-                                    override fun onAdShowedFullScreenContent() {
-                                        Timber.Forest.tag("AppOpenAd").d("App open ad showed")
-                                        try {
-                                            FirebaseCrashlytics.getInstance()
-                                                    .log("AppOpen: onAdShowedFullScreenContent")
-                                        } catch (_: Exception) {}
-                                        adStateManager.setFullScreenAdShowing(true)
-                                        lastAdDisplayTime = System.currentTimeMillis()
-                                        wasAppInBackground = false
-                                        adImpressionListener?.invoke()
-                                    }
-
-                                    override fun onAdImpression() {
-                                        Timber.Forest.tag("AppOpenAd")
-                                                .d("App open ad impression recorded")
-                                        try {
-                                            FirebaseCrashlytics.getInstance()
-                                                    .log("AppOpen: onAdImpression")
-                                        } catch (_: Exception) {}
-                                        adImpressionListener?.invoke()
-                                    }
-                                }
+            request,
+            object : AdLoadCallback<AppOpenAd> {
+                override fun onAdLoaded(ad: AppOpenAd) {
+                    Timber.tag("AppOpenAd").d("Callback: onAdLoaded - App open ad loaded successfully (ready for app resume)")
+                    try {
+                        FirebaseCrashlytics.getInstance().log("AppOpen: onAdLoaded")
+                    } catch (_: Exception) {
                     }
+                    appOpenAd = ad
+                    isLoadingAd = false
+                    loadTime = System.currentTimeMillis()
+                    attachAdCallbacks(ad, null)
+                }
 
-                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        Timber.Forest.tag("AppOpenAd")
-                                .d("App open ad failed to load: ${'$'}{loadAdError.message}")
-                        try {
-                            FirebaseCrashlytics.getInstance()
-                                    .log("AppOpen: onAdFailedToLoad ${'$'}{loadAdError.code}")
-                        } catch (_: Exception) {}
-                        adFailureListener?.invoke(loadAdError.message)
-                        isLoadingAd = false
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Timber.tag("AppOpenAd")
+                        .e("Callback: onAdFailedToLoad - Error: ${adError.message} (code: ${adError.code})")
+                    try {
+                        FirebaseCrashlytics.getInstance()
+                            .log("AppOpen: onAdFailedToLoad ${adError.code}")
+                    } catch (_: Exception) {
+                    }
+                    adFailureListener?.invoke(adError.message)
+                    isLoadingAd = false
 
-                        // Retry loading after a delay if error is retryable
-                        if (loadAdError.code != 2 /* NETWORK_ERROR */ &&
-                                        loadAdError.code != 3 /* NO_FILL */
-                        ) {
-                            scheduleAdLoadRetry()
-                        }
+                    // Retry loading after a delay if error is retryable
+                    if (adError.code != LoadAdError.ErrorCode.NETWORK_ERROR &&
+                        adError.code != LoadAdError.ErrorCode.NO_FILL
+                    ) {
+                        scheduleAdLoadRetry()
                     }
                 }
+            }
         )
     }
 
+    private fun attachAdCallbacks(
+        ad: AppOpenAd,
+        onShowAdCompleteListener: (() -> Unit)?
+    ) {
+        ad.adEventCallback = object : AppOpenAdEventCallback {
+            override fun onAdDismissedFullScreenContent() {
+                Timber.tag("AppOpenAd").d("Callback: onAdDismissedFullScreenContent - App open ad dismissed")
+                try {
+                    FirebaseCrashlytics.getInstance().log("AppOpen: onAdDismissedFullScreenContent")
+                } catch (_: Exception) {
+                }
+                adStateManager.setFullScreenAdShowing(false)
+                appOpenAd = null
+                onShowAdCompleteListener?.invoke()
+            }
+
+            override fun onAdFailedToShowFullScreenContent(fullScreenContentError: FullScreenContentError) {
+                Timber.tag("AppOpenAd")
+                    .e("Callback: onAdFailedToShowFullScreenContent - Error: ${fullScreenContentError.message} (code: ${fullScreenContentError.code})")
+                try {
+                    FirebaseCrashlytics.getInstance().log("AppOpen: onAdFailedToShow ${fullScreenContentError.code}")
+                } catch (_: Exception) {
+                }
+                adStateManager.setFullScreenAdShowing(false)
+                adFailureListener?.invoke(fullScreenContentError.message)
+                appOpenAd = null
+                onShowAdCompleteListener?.invoke()
+            }
+
+            override fun onAdShowedFullScreenContent() {
+                Timber.tag("AppOpenAd").d("Callback: onAdShowedFullScreenContent - App open ad presented full screen")
+                try {
+                    FirebaseCrashlytics.getInstance().log("AppOpen: onAdShowedFullScreenContent")
+                } catch (_: Exception) {
+                }
+                adStateManager.setFullScreenAdShowing(true)
+                lastAdDisplayTime = System.currentTimeMillis()
+                wasAppInBackground = false
+            }
+
+            override fun onAdImpression() {
+                Timber.tag("AppOpenAd").d("Callback: onAdImpression - App open ad impression recorded")
+                try {
+                    FirebaseCrashlytics.getInstance().log("AppOpen: onAdImpression")
+                } catch (_: Exception) {
+                }
+                adImpressionListener?.invoke()
+            }
+
+            override fun onAdClicked() {
+                Timber.tag("AppOpenAd").d("Callback: onAdClicked - App open ad clicked")
+            }
+        }
+    }
+
     private fun scheduleAdLoadRetry() {
-        // Retry loading the ad after a delay
-        Handler(Looper.getMainLooper())
-                .postDelayed(
-                        {
-                            if (!isAdAvailable() && !isLoadingAd) {
-                                loadAppOpenAd()
-                            }
-                        },
-                        60000
-                ) // Retry after 1 minute
+        // Cancel any pending retry before scheduling a new one to prevent stacked callbacks
+        retryHandler.removeCallbacks(retryRunnable)
+        retryHandler.postDelayed(retryRunnable, 60_000) // Retry after 1 minute
     }
 
     fun showAdIfAvailable(activity: Activity, onShowAdCompleteListener: () -> Unit) {
+        // Skip ads for subscribers
+        if (adStateManager.isSubscribed()) {
+            Timber.tag("AppOpenAd").d("showAdIfAvailable: User is subscribed, skipping app open ad")
+            onShowAdCompleteListener()
+            return
+        }
+
         // CRITICAL: Check if device is safe for full screen ads
         if (!adStateManager.isSafeForFullScreenAds()) {
-            Timber.Forest.tag("AppOpenAd").w("Skipping ad on problematic device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+            Timber.tag("AppOpenAd").w("showAdIfAvailable: Skipping ad on problematic device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
             try {
                 FirebaseCrashlytics.getInstance().log("AppOpen: Skipped on ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} (Android ${android.os.Build.VERSION.SDK_INT})")
             } catch (_: Exception) {}
@@ -255,25 +277,18 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
         }
 
         // Check consent status before showing ad
-        try {
-            val consentInfo = com.google.android.ump.UserMessagingPlatform.getConsentInformation(activity)
-            if (!consentInfo.canRequestAds()) {
-                Timber.Forest.tag("AppOpenAd").w("Cannot show ad - consent not granted")
-                try {
-                    FirebaseCrashlytics.getInstance().log("AppOpen: Skipped - no consent")
-                } catch (_: Exception) {}
-                onShowAdCompleteListener()
-                return
-            }
-        } catch (e: Exception) {
-            Timber.Forest.tag("AppOpenAd").e("Error checking consent: ${e.message}")
+        if (!canShowAdsWithConsent(activity)) {
+            Timber.tag("AppOpenAd").w("showAdIfAvailable: Cannot show ad - consent not granted")
+            try {
+                FirebaseCrashlytics.getInstance().log("AppOpen: Skipped - no consent")
+            } catch (_: Exception) {}
             onShowAdCompleteListener()
             return
         }
 
         // CRITICAL: Validate activity state before showing ad to prevent crashes
         if (activity.isFinishing || activity.isDestroyed) {
-            Timber.Forest.tag("AppOpenAd").w("Cannot show ad - activity is finishing or destroyed")
+            Timber.tag("AppOpenAd").w("showAdIfAvailable: Cannot show ad - activity is finishing or destroyed")
             onShowAdCompleteListener()
             return
         }
@@ -282,29 +297,29 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
         try {
             val window = activity.window
             if (window == null) {
-                Timber.Forest.tag("AppOpenAd").w("Cannot show ad - activity window is null")
+                Timber.tag("AppOpenAd").w("showAdIfAvailable: Cannot show ad - activity window is null")
                 onShowAdCompleteListener()
                 return
             }
 
             val decorView = window.decorView
-            if (decorView == null || !decorView.isAttachedToWindow) {
-                Timber.Forest.tag("AppOpenAd")
-                        .w("Cannot show ad - decor view not attached to window")
+            if (!decorView.isAttachedToWindow) {
+                Timber.tag("AppOpenAd")
+                        .w("showAdIfAvailable: Cannot show ad - decor view not attached to window")
                 onShowAdCompleteListener()
                 return
             }
         } catch (e: Exception) {
-            Timber.Forest.tag("AppOpenAd").e("Error validating activity window state: ${e.message}")
+            Timber.tag("AppOpenAd").e("showAdIfAvailable: Error validating activity window state: ${e.message}")
             onShowAdCompleteListener()
             return
         }
 
         // Check if any other full screen ad is currently showing
         if (adStateManager.isFullScreenAdShowing()) {
-            Timber.Forest.tag("AppOpenAd")
+            Timber.tag("AppOpenAd")
                     .d(
-                            "Skipped showing app open ad because another full screen ad is already showing"
+                            "showAdIfAvailable: Skipped showing app open ad because another full screen ad is already showing"
                     )
             try {
                 FirebaseCrashlytics.getInstance().log("AppOpen: show skipped - another ad showing")
@@ -314,7 +329,7 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
         }
 
         if (!isAdAvailable()) {
-            Timber.Forest.tag("AppOpenAd").d("App open ad not available")
+            Timber.tag("AppOpenAd").d("showAdIfAvailable: App open ad not available (preloading for next resume)")
             try {
                 FirebaseCrashlytics.getInstance()
                         .log("AppOpen: show requested but ad not available")
@@ -326,7 +341,7 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
 
         // Don't show ad if app is in background
         if (!isAppInForeground) {
-            Timber.Forest.tag("AppOpenAd").d("App is in background, not showing ad")
+            Timber.tag("AppOpenAd").d("showAdIfAvailable: App is in background, not showing ad")
             try {
                 FirebaseCrashlytics.getInstance()
                         .log("AppOpen: show skipped - app not in foreground")
@@ -335,65 +350,18 @@ constructor(private val context: Context, private val adStateManager: AdStateMan
             return
         }
 
-        // Set callback to be triggered after ad is dismissed
-        appOpenAd?.fullScreenContentCallback =
-                object : FullScreenContentCallback() {
-                    override fun onAdDismissedFullScreenContent() {
-                        Timber.Forest.tag("AppOpenAd").d("App open ad dismissed")
-                        try {
-                            FirebaseCrashlytics.getInstance()
-                                    .log("AppOpen: onAdDismissedFullScreenContent")
-                        } catch (_: Exception) {}
-                        adStateManager.setFullScreenAdShowing(false)
-                        appOpenAd = null
-                        onShowAdCompleteListener()
-                        loadAppOpenAd() // Load next ad
-                    }
+        appOpenAd?.let { attachAdCallbacks(it, onShowAdCompleteListener) }
 
-                    override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                        Timber.Forest.tag("AppOpenAd")
-                                .d("App open ad failed to show: ${'$'}{adError.message}")
-                        try {
-                            FirebaseCrashlytics.getInstance()
-                                    .log("AppOpen: onAdFailedToShow ${'$'}{adError.code}")
-                        } catch (_: Exception) {}
-                        adStateManager.setFullScreenAdShowing(false)
-                        adFailureListener?.invoke(adError.message)
-                        appOpenAd = null
-                        onShowAdCompleteListener()
-                        loadAppOpenAd()
-                    }
-
-                    override fun onAdShowedFullScreenContent() {
-                        Timber.Forest.tag("AppOpenAd").d("App open ad showed")
-                        try {
-                            FirebaseCrashlytics.getInstance()
-                                    .log("AppOpen: onAdShowedFullScreenContent")
-                        } catch (_: Exception) {}
-                        adStateManager.setFullScreenAdShowing(true)
-                        lastAdDisplayTime = System.currentTimeMillis()
-                        wasAppInBackground = false
-                        adImpressionListener?.invoke()
-                    }
-
-                    override fun onAdImpression() {
-                        Timber.Forest.tag("AppOpenAd").d("App open ad impression recorded")
-                        try {
-                            FirebaseCrashlytics.getInstance().log("AppOpen: onAdImpression")
-                        } catch (_: Exception) {}
-                        adImpressionListener?.invoke()
-                    }
-                }
-
-        Timber.Forest.tag("AppOpenAd").d("Showing app open ad")
+        Timber.tag("AppOpenAd").d("showAdIfAvailable: Presenting app open ad on ${activity.localClassName}")
         try {
             FirebaseCrashlytics.getInstance().log("AppOpen: show")
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
 
         try {
             appOpenAd?.show(activity)
         } catch (e: Exception) {
-            Timber.Forest.tag("AppOpenAd").e("Exception showing app open ad: ${e.message}")
+            Timber.tag("AppOpenAd").e("showAdIfAvailable: Exception showing app open ad: ${e.message}")
             try {
                 FirebaseCrashlytics.getInstance().recordException(e)
                 FirebaseCrashlytics.getInstance().log("AppOpen: show exception - ${e.message}")

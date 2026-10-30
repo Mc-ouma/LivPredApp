@@ -99,7 +99,7 @@ fun NextFixtureCard(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = fixture.league.name,
+                        text = fixture.league.name ?: "",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -116,7 +116,7 @@ fun NextFixtureCard(
                 // Home Team
                 TeamInfo(
                     logo = fixture.teams.home.logo,
-                    name = fixture.teams.home.name,
+                    name = fixture.teams.home.name ?: "",
                     modifier = Modifier.weight(1f)
                 )
 
@@ -129,14 +129,14 @@ fun NextFixtureCard(
                 ) {
 
                     Text(
-                        text = formattedDateTime.date,//date
+                        text = formattedDateTime.date ?: "",//date
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontWeight = FontWeight.Medium,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = formattedDateTime.time,//time
+                        text = formattedDateTime.time ?: "",//time
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontWeight = FontWeight.Medium
@@ -147,7 +147,7 @@ fun NextFixtureCard(
                 // Away Team
                 TeamInfo(
                     logo = fixture.teams.away.logo,
-                    name = fixture.teams.away.name,
+                    name = fixture.teams.away.name ?: "",
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -157,8 +157,8 @@ fun NextFixtureCard(
 
 @Composable
 fun TeamInfo(
-    logo: String,
-    name: String,
+    logo: String?,
+    name: String?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -174,7 +174,7 @@ fun TeamInfo(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = name,
+            text = name ?: "",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             maxLines = 2,
